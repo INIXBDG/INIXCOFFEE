@@ -223,7 +223,7 @@
 </head>
 
 <body>
-
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-scrollable" style="max-width: 550px;">
             <div class="modal-content">
@@ -298,7 +298,6 @@
     <!-- / Layout wrapper -->
 
     <!-- Core JS -->
-    <script src="{{ asset('assets/vendor/js/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.bundle.min.js') }}" defer></script>
 
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
@@ -385,6 +384,7 @@
     </script>
 
     @yield('scripts')
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}" defer></script>
 
     @if($errors->any())
     @php

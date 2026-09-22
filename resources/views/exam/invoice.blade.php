@@ -136,7 +136,13 @@
                                     <div><strong>Tgl Training</strong></div>
                                 </td>
                                 <td style="border: none">:</td>
-                                <td> {{ \Carbon\Carbon::parse($data->rkm->tanggal_awal)->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse($data->rkm->tanggal_akhir)->translatedFormat('d F Y') }}</td>
+                                <td>
+                                    @if ($data->rkm && $data->rkm->tanggal_awal && $data->rkm->tanggal_akhir)
+                                        {{ \Carbon\Carbon::parse($data->rkm->tanggal_awal)->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse($data->rkm->tanggal_akhir)->translatedFormat('d F Y') }}
+                                    @else
+                                        Belum Ditentukan
+                                    @endif
+                                </td>
                             </tr>
                             <tr>
                                 <td style="border: none">

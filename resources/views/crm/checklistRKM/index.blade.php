@@ -7,8 +7,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Checklist RKM</h4>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-light" id="periodLabel">Semua Periode</span>
-                    <span class="badge bg-light" id="recordCount">0 Records</span>
+                    <span class="badge bg-dark" style="font-size: 1.250rem;" id="periodLabel">Semua Periode</span>
+                    <span class="badge bg-dark" style="font-size: 1.250rem;" id="recordCount">0 Records</span>
                 </div>
             </div>
 
@@ -28,16 +28,27 @@
                             </div>
 
                             @php
-                                $currentMonth = date('n');
-                                $currentYear = date('Y');
-                                $selectedBulan = request('bulan', $currentMonth);
-                                $selectedTahun = request('tahun', $currentYear);
+                                $selectedBulan = (int) $selectedBulan;
+                                $selectedTahun = (int) $selectedTahun;
 
-                                if (empty($selectedBulan)) {
-                                    $selectedBulan = $currentMonth;
-                                }
-                                if (empty($selectedTahun)) {
-                                    $selectedTahun = $currentYear;
+                                $startOfMonth = Carbon\Carbon::create($selectedTahun, $selectedBulan, 1)->startOfMonth();
+                                $endOfMonth = Carbon\Carbon::create($selectedTahun, $selectedBulan, 1)->endOfMonth();
+
+                                // Senin pada minggu yang mencakup tanggal 1
+                                $weekStart = $startOfMonth->copy()->startOfWeek(Carbon\Carbon::MONDAY);
+
+                                $weeks = [];
+
+                                while ($weekStart->lte($endOfMonth)) {
+                                    $weekEnd = $weekStart->copy()->endOfWeek(Carbon\Carbon::SUNDAY);
+
+                                    $weeks[] = [
+                                        'number' => count($weeks) + 1,
+                                        'start' => $weekStart->copy(),
+                                        'end' => $weekEnd->copy(),
+                                    ];
+
+                                    $weekStart->addWeek();
                                 }
                             @endphp
 
@@ -68,11 +79,13 @@
                             <div class="col-md-2">
                                 <label class="form-label small text-muted mb-1">Minggu</label>
                                 <select name="minggu" id="mingguSelect" class="form-select">
-                                    @for ($i = 1; $i <= 4; $i++)
-                                        <option value="{{ $i }}" {{ request('minggu') == $i ? 'selected' : '' }}>
-                                            Minggu {{ $i }}
+                                    @foreach ($weeks as $week)
+                                        <option value="{{ $week['number'] }}"
+                                            {{ request('minggu') == $week['number'] ? 'selected' : '' }}>
+                                            Minggu {{ $week['number'] }}
+                                            ({{ $week['start']->format('d M') }} - {{ $week['end']->format('d M') }})
                                         </option>
-                                    @endfor
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -321,24 +334,43 @@
                 let label = 'Semua Periode';
 
                 if (tahun && bulan && minggu) {
-                    const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' });
-                    const startDay = (minggu - 1) * 7 + 1;
-                    const endDay = Math.min(minggu * 7, new Date(tahun, bulan, 0).getDate());
+                    const monthNameLong = (y, m) => new Date(y, m - 1, 1).toLocaleString('id-ID', { month: 'long' });
+                    const monthNameShort = (y, m) => new Date(y, m - 1, 1).toLocaleString('id-ID', { month: 'short' });
 
-                    let firstBusinessDay = null;
-                    let lastBusinessDay = null;
+                    // Cari Senin pertama di minggu yang memuat tanggal 1
+                    const startOfMonth = new Date(tahun, bulan - 1, 1);
+                    const dayOfWeek = startOfMonth.getDay(); // 0=Minggu, 1=Senin, ... 6=Sabtu
+                    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+                    const weekCursorStart = new Date(startOfMonth);
+                    weekCursorStart.setDate(startOfMonth.getDate() + diffToMonday);
 
-                    for (let day = startDay; day <= endDay; day++) {
-                        const date = new Date(tahun, bulan - 1, day);
-                        const dayOfWeek = date.getDay();
-                        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                            if (!firstBusinessDay) firstBusinessDay = day;
-                            lastBusinessDay = day;
-                        }
+                    const endOfMonth = new Date(tahun, bulan, 0); // tanggal terakhir bulan itu
+
+                    // Generate semua minggu (Senin-Minggu) persis seperti di Blade & backend
+                    const weeks = [];
+                    let cursor = new Date(weekCursorStart);
+                    while (cursor <= endOfMonth) {
+                        const weekStart = new Date(cursor);
+                        const weekEnd = new Date(cursor);
+                        weekEnd.setDate(weekStart.getDate() + 6);
+                        weeks.push({ start: weekStart, end: weekEnd });
+                        cursor.setDate(cursor.getDate() + 7);
                     }
 
-                    if (firstBusinessDay && lastBusinessDay) {
-                        label = `${firstBusinessDay}-${lastBusinessDay} ${monthName} ${tahun}`;
+                    const selectedWeek = weeks[minggu - 1];
+
+                    if (selectedWeek) {
+                        const { start, end } = selectedWeek;
+                        const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+
+                        if (sameMonth) {
+                            label = `${start.getDate()}-${end.getDate()} ${monthNameLong(start.getFullYear(), start.getMonth() + 1)} ${start.getFullYear()}`;
+                        } else {
+                            // Minggu melewati batas bulan, misal 29 Sep - 5 Okt
+                            label = `${start.getDate()} ${monthNameShort(start.getFullYear(), start.getMonth() + 1)} - ${end.getDate()} ${monthNameShort(end.getFullYear(), end.getMonth() + 1)} ${end.getFullYear()}`;
+                        }
+                    } else {
+                        label = `Minggu ${minggu} - ${monthNameLong(tahun, bulan)} ${tahun}`;
                     }
                 } else if (tahun && bulan) {
                     const monthName = new Date(tahun, bulan - 1, 1).toLocaleString('id-ID', { month: 'long' });

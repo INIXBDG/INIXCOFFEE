@@ -1,6 +1,95 @@
 @extends('layouts.app')
 
 @section('content')
+    <div id="incomeLockScreenOverlay" class="income-lock-overlay">
+        <div class="income-lock-card shadow-lg">
+            <div class="text-center mb-4">
+                <div class="income-lock-icon mx-auto mb-3"><i class="bi bi-shield-lock"></i></div>
+                <h4 class="fw-bold mb-1">Income Statement Terkunci</h4>
+                <p class="text-muted small mb-0" id="incomeLockSubtitle">Memeriksa status keamanan...</p>
+            </div>
+
+            <div id="incomeUnlockLoadingState" class="text-center py-3">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+                <p class="fw-semibold mb-1">Memuat Income Statement...</p>
+                <p class="text-muted small mb-0">Mohon tunggu sebentar...</p>
+            </div>
+
+            <div id="incomeUnlockForm" class="d-none">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Password Approval</label>
+                    <input type="password" id="incomeUnlockPassword" class="form-control form-control-lg text-center" placeholder="Masukkan password" autofocus>
+                    <div id="incomeUnlockError" class="text-danger small mt-1 d-none"></div>
+                </div>
+                <button class="btn btn-primary w-100 py-2 fw-semibold" id="incomeBtnUnlockApproval" onclick="incomeAttemptUnlock('approval')">
+                    <span class="btn-label"><i class="bi bi-unlock me-1"></i> Buka Kunci</span>
+                    <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
+                </button>
+                <div class="text-center mt-3"><button class="btn btn-link text-muted small text-decoration-none" onclick="incomeShowFallbackLogin()">Gunakan Password Login</button></div>
+            </div>
+
+            <div id="incomeFallbackForm" class="d-none">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">Password Login</label>
+                    <input type="password" id="incomeFallbackPassword" class="form-control form-control-lg text-center" placeholder="Masukkan password login">
+                    <div id="incomeFallbackError" class="text-danger small mt-1 d-none"></div>
+                </div>
+                <button class="btn btn-primary w-100 py-2 fw-semibold" id="incomeBtnUnlockLogin" onclick="incomeAttemptUnlock('login')">
+                    <span class="btn-label"><i class="bi bi-unlock me-1"></i> Buka dengan Password Login</span>
+                    <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
+                </button>
+                <div class="text-center mt-3"><button class="btn btn-link text-muted small text-decoration-none" onclick="incomeShowApprovalLogin()">Kembali ke Password Approval</button></div>
+            </div>
+
+            <div id="incomeFailCounter" class="text-center mt-3 d-none">
+                <span class="badge bg-danger-subtle text-danger-emphasis px-3 py-2 rounded-pill"><i class="bi bi-exclamation-triangle me-1"></i> Percobaan gagal: <span id="incomeFailCount">0</span>/3</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="incomeSetupModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg income-modal-card">
+                <div class="modal-header income-modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"></i>Pengaturan Password Approval</h5></div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">Hanya user dengan jabatan <b>Finance &amp; Accounting</b> yang dapat membuat password approval. Masukkan password login untuk konfirmasi identitas.</p>
+                    <label class="form-label fw-semibold small">Password Login Sistem</label>
+                    <input type="password" id="incomeSetupLoginPass" class="form-control" placeholder="Masukkan password login">
+                    <div id="incomeSetupLoginError" class="text-danger small mt-1 d-none"></div>
+                    <hr class="my-4">
+                    <label class="form-label fw-semibold small">Buat Password Approval Baru</label>
+                    <input type="password" id="incomeSetupNewPass" class="form-control mb-3" placeholder="Minimal 4 karakter">
+                    <label class="form-label fw-semibold small">Konfirmasi Password Approval Baru</label>
+                    <input type="password" id="incomeSetupConfirmPass" class="form-control">
+                    <div id="incomeSetupNewError" class="text-danger small mt-1 d-none"></div>
+                </div>
+                <div class="modal-footer px-4 pb-4 border-0"><button class="btn btn-primary fw-semibold w-100 py-2" onclick="incomeSubmitSetup()"><i class="bi bi-shield-check me-1"></i> Buat &amp; Simpan Password Approval</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="incomeSetupAccountingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg income-modal-card">
+                <div class="modal-header income-modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"></i>Setup Password Accounting</h5></div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning small">Password fitur sudah ada, tetapi Password Accounting belum diatur. Isi terlebih dahulu untuk melanjutkan.</div>
+                    <p class="text-muted small">Masukkan password login user Finance &amp; Accounting, lalu buat Password Accounting.</p>
+                    <label class="form-label fw-semibold small">Password Login Sistem</label>
+                    <input type="password" id="incomeAccSetupLoginPass" class="form-control">
+                    <div id="incomeAccSetupLoginError" class="text-danger small mt-1 d-none"></div>
+                    <hr class="my-4">
+                    <label class="form-label fw-semibold small">Buat Password Accounting Baru</label>
+                    <input type="password" id="incomeAccSetupNewPass" class="form-control mb-3" placeholder="Minimal 4 karakter">
+                    <label class="form-label fw-semibold small">Konfirmasi Password Accounting</label>
+                    <input type="password" id="incomeAccSetupConfirmPass" class="form-control">
+                    <div id="incomeAccSetupNewError" class="text-danger small mt-1 d-none"></div>
+                </div>
+                <div class="modal-footer px-4 pb-4 border-0"><button class="btn btn-primary fw-semibold w-100 py-2" onclick="incomeSubmitAccountingSetup()"><i class="bi bi-shield-check me-1"></i> Simpan Password Accounting</button></div>
+            </div>
+        </div>
+    </div>
+
     {{-- <div class="container-fluid income-statement-page"> --}}
         <!-- Loading Modal -->
         <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
@@ -142,7 +231,7 @@
                     <td class="display-currency avg-total-vc">0.00</td>
                     <td class="percent-total-vc">0.00%</td>
                 </tr>
-            </tbody>s
+            </tbody>
 
             <tbody id="fixedCostContainer">
                 <tr>
@@ -248,11 +337,250 @@
         .income-statement-scroll::-webkit-scrollbar-track { background: var(--pastel-header); border-radius: 6px; }
         .income-statement-scroll::-webkit-scrollbar-thumb { background: var(--pastel-primary); border-radius: 6px; }
         #incomeStatementTable { min-width: 1900px; margin-bottom: 16px; }
+
+        .income-lock-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(42, 58, 77, .6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .income-lock-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            background: #fff;
+            border: 1px solid var(--pastel-border);
+            border-radius: 20px;
+            box-shadow: 0 25px 60px -12px rgba(42, 58, 77, .35);
+        }
+
+        .income-lock-icon {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: var(--pastel-primary);
+            color: #fff;
+            font-size: 1.15rem;
+        }
+
+        .income-lock-card .form-control-lg { border-radius: 12px; letter-spacing: 2px; }
+        .income-modal-card { border-radius: 16px; }
+        .income-modal-header { background: var(--pastel-primary); color: #fff; border: none; }
     </style>
     @push('js')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
+        let incomeFailAttempts = 0;
+        const INCOME_MAX_FAILS = 3;
+
         $(document).ready(function() {
+            incomeCheckAndInitLock();
+
+            // --- SESSION KEEP-ALIVE ---
+            // Mengirim request ke server setiap 15 menit untuk mencegah session timeout
+            const keepAliveInterval = 5* 60 * 1000; // 15 menit (dalam milidetik)
+            
+            setInterval(function() {
+                $.ajax({
+                    url: '{{ route("session.keep-alive") }}',
+                    type: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        console.log('Session refreshed at: ' + new Date().toLocaleTimeString());
+                    },
+                    error: function() {
+                        console.warn('Gagal memperpanjang session.');
+                    }
+                });
+            }, keepAliveInterval);
+        });
+
+        function incomeCheckAndInitLock() {
+            $('#incomeUnlockLoadingState').removeClass('d-none');
+            $('#incomeUnlockForm, #incomeFallbackForm, #incomeFailCounter').addClass('d-none');
+            $('#incomeLockSubtitle').text('Memeriksa status keamanan...');
+            $.ajax({
+                url: '/office/approval-pendapatan/lock-status',
+                type: 'GET',
+                success: function(res) {
+                    $('#incomeUnlockLoadingState').addClass('d-none');
+                    if (!res.has_password) {
+                        $('#incomeLockScreenOverlay').addClass('d-none');
+                        new bootstrap.Modal(document.getElementById('incomeSetupModal')).show();
+                        return;
+                    }
+                    if (res.needs_accounting_setup) {
+                        $('#incomeLockScreenOverlay').addClass('d-none');
+                        new bootstrap.Modal(document.getElementById('incomeSetupAccountingModal')).show();
+                        return;
+                    }
+                    if (res.is_locked) {
+                        $('#incomeLockScreenOverlay').removeClass('d-none');
+                        $('#incomeUnlockForm').removeClass('d-none');
+                        $('#incomeLockSubtitle').text('Masukkan password untuk melanjutkan');
+                        setTimeout(function() { $('#incomeUnlockPassword').focus(); }, 300);
+                        return;
+                    }
+                    incomeUnlockPage();
+                },
+                error: function() {
+                    $('#incomeUnlockLoadingState').addClass('d-none');
+                    $('#incomeLockScreenOverlay').removeClass('d-none');
+                    $('#incomeUnlockForm').removeClass('d-none');
+                    $('#incomeLockSubtitle').text('Masukkan password untuk melanjutkan');
+                    setTimeout(function() { $('#incomeUnlockPassword').focus(); }, 300);
+                }
+            });
+        }
+
+        function incomeUnlockPage() {
+            $('#incomeLockScreenOverlay').addClass('d-none');
+            calculateIncomeStatement();
+        }
+
+        function incomeShowFallbackLogin() {
+            $('#incomeUnlockForm').addClass('d-none');
+            $('#incomeFallbackForm').removeClass('d-none');
+            $('#incomeFallbackPassword').focus();
+        }
+
+        function incomeShowApprovalLogin() {
+            $('#incomeFallbackForm').addClass('d-none');
+            $('#incomeUnlockForm').removeClass('d-none');
+            $('#incomeUnlockPassword').focus();
+        }
+
+        function incomeSetUnlockLoading(type, loading) {
+            const buttonId = type === 'approval' ? '#incomeBtnUnlockApproval' : '#incomeBtnUnlockLogin';
+            const inputId = type === 'approval' ? '#incomeUnlockPassword' : '#incomeFallbackPassword';
+            const button = $(buttonId);
+            button.prop('disabled', loading);
+            button.find('.btn-label').toggleClass('d-none', loading);
+            button.find('.btn-spinner').toggleClass('d-none', !loading);
+            $(inputId).prop('disabled', loading);
+        }
+
+        function incomeAttemptUnlock(type) {
+            const password = type === 'approval' ? $('#incomeUnlockPassword').val() : $('#incomeFallbackPassword').val();
+            const errorId = type === 'approval' ? '#incomeUnlockError' : '#incomeFallbackError';
+            if (!password) {
+                $(errorId).text('Password wajib diisi.').removeClass('d-none');
+                return;
+            }
+            $(errorId).addClass('d-none');
+            incomeSetUnlockLoading(type, true);
+            $.ajax({
+                url: '/office/approval-pendapatan/unlock',
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', password: password, type: type },
+                success: function(res) {
+                    incomeSetUnlockLoading(type, false);
+                    if (res.success) {
+                        incomeFailAttempts = 0;
+                        $('#incomeFailCounter').addClass('d-none');
+                        incomeUnlockPage();
+                    }
+                },
+                error: function(xhr) {
+                    incomeSetUnlockLoading(type, false);
+                    incomeFailAttempts++;
+                    $(errorId).text(xhr.responseJSON?.message || 'Password salah.').removeClass('d-none');
+                    $('#incomeFailCounter').removeClass('d-none');
+                    $('#incomeFailCount').text(incomeFailAttempts);
+                    if (incomeFailAttempts >= INCOME_MAX_FAILS) {
+                        incomeShowFallbackLogin();
+                        incomeFailAttempts = 0;
+                        $('#incomeFailCount').text(0);
+                    }
+                }
+            });
+        }
+
+        function incomeSubmitSetup() {
+            const loginPass = $('#incomeSetupLoginPass').val();
+            const newPass = $('#incomeSetupNewPass').val();
+            const confirmPass = $('#incomeSetupConfirmPass').val();
+            $('#incomeSetupLoginError, #incomeSetupNewError').addClass('d-none');
+            if (!loginPass) {
+                $('#incomeSetupLoginError').text('Password login wajib diisi.').removeClass('d-none');
+                return;
+            }
+            if (!newPass || newPass.length < 4) {
+                $('#incomeSetupNewError').text('Password baru minimal 4 karakter.').removeClass('d-none');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                $('#incomeSetupNewError').text('Konfirmasi password tidak cocok.').removeClass('d-none');
+                return;
+            }
+            $.ajax({
+                url: '/office/approval-pendapatan/setup-lock',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    login_password: loginPass,
+                    new_password: newPass,
+                    new_password_confirmation: confirmPass
+                },
+                success: function() {
+                    bootstrap.Modal.getInstance(document.getElementById('incomeSetupModal')).hide();
+                    incomeUnlockPage();
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON?.errors || {};
+                    if (errors.login_password) $('#incomeSetupLoginError').text(errors.login_password[0]).removeClass('d-none');
+                    if (errors.new_password) $('#incomeSetupNewError').text(errors.new_password[0]).removeClass('d-none');
+                }
+            });
+        }
+
+        function incomeSubmitAccountingSetup() {
+            const loginPass = $('#incomeAccSetupLoginPass').val();
+            const newPass = $('#incomeAccSetupNewPass').val();
+            const confirmPass = $('#incomeAccSetupConfirmPass').val();
+            $('#incomeAccSetupLoginError, #incomeAccSetupNewError').addClass('d-none');
+            if (!loginPass) {
+                $('#incomeAccSetupLoginError').text('Password login wajib diisi.').removeClass('d-none');
+                return;
+            }
+            if (!newPass || newPass.length < 4) {
+                $('#incomeAccSetupNewError').text('Password Accounting minimal 4 karakter.').removeClass('d-none');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                $('#incomeAccSetupNewError').text('Konfirmasi password tidak cocok.').removeClass('d-none');
+                return;
+            }
+            $.ajax({
+                url: '/office/approval-pendapatan/setup-accounting-password',
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    login_password: loginPass,
+                    accounting_password: newPass,
+                    accounting_password_confirmation: confirmPass
+                },
+                success: function() {
+                    bootstrap.Modal.getInstance(document.getElementById('incomeSetupAccountingModal')).hide();
+                    incomeCheckAndInitLock();
+                },
+                error: function(xhr) {
+                    const errors = xhr.responseJSON?.errors || {};
+                    if (errors.login_password) $('#incomeAccSetupLoginError').text(errors.login_password[0]).removeClass('d-none');
+                    if (errors.accounting_password) $('#incomeAccSetupNewError').text(errors.accounting_password[0]).removeClass('d-none');
+                }
+            });
+        }
 
             // --- FUNGSI FORMATTING ---
             function formatCurrency(value) {
@@ -470,10 +798,6 @@
                     saveInput(this);
                 }
             });
-
-            // Jalankan kalkulasi pertama kali
-            calculateIncomeStatement();
-        });
     </script>
     @endpush
 @endsection

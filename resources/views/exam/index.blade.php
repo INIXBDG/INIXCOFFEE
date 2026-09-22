@@ -165,6 +165,9 @@
                                     <th scope="col">Sales</th>
                                     <th scope="col">instruktur</th>
                                     <th scope="col">Aksi</th>
+                                    @if (auth()->user()->jabatan == 'Finance & Accounting')
+                                        <th scope="col">Pengajuan Barang</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -380,6 +383,164 @@
                     }
                 });
 
+                var examHistoriColumns = [
+                    { "data": null, "render": function (data) { return tableIndex2++; } },
+                    {
+                        "data": null,
+                        "render": function (data) { return data.materi?.nama_materi ?? data.rkm?.materi?.nama_materi ?? '-'; }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data) { return data.tanggal_pengajuan ? moment(data.tanggal_pengajuan).format('LL') : '-'; }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data) { return data.perusahaan?.nama_perusahaan ?? data.rkm?.perusahaan?.nama_perusahaan ?? '-'; }
+                    },
+                    { "data": "pax" },
+                    {
+                        "data": null,
+                        "render": function (data) {
+                            var statusBadge = '';
+                            if (data.status == '3') {
+                                statusBadge = '<span class="badge bg-info">Exam Only</span>';
+                                if (data.rkm && data.rkm.ruang && data.rkm.ruang !== 'Exam') {
+                                    statusBadge += ' <span class="badge bg-success">Room Assigned</span>';
+                                }
+                            } else {
+                                statusBadge = '<span class="badge bg-primary">Regular Exam</span>';
+                            }
+                            return statusBadge;
+                        }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data) {
+                            if (data.approvalexam) {
+                                var app = data.approvalexam;
+
+                                if (app.technical_support == 1) {
+                                    return '<span class="badge bg-success">Selesai</span>';
+                                }
+
+                                if (app.office_manager == 1) {
+                                    return '<span class="badge bg-info text-dark">Office Manager</span>';
+                                }
+
+                                if (app.spv_sales == 1) {
+                                    return '<span class="badge bg-info text-dark">SPV Sales</span>';
+                                }
+
+                                return '<span class="badge bg-warning text-dark">Belum Approval</span>';
+                            }
+                            return '<span class="text-muted">-</span>';
+                        }
+                    },
+                    {
+                        "data": null, "visible": true,
+                        "render": function (data) { return data.rkm?.sales_key ?? '-'; }
+                    },
+                    {
+                        "data": null, "visible": false,
+                        "render": function (data) { return data.rkm?.instruktur_key ?? ''; }
+                    },
+                    {
+                        "data": null,
+                        "render": function (data, type, row) {
+                            var actions = "";
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
+                            actions += '<div class="dropdown-menu">';
+                            actions += '<a class="dropdown-item" href="/exam/' + row.id + '">Detail</a>';
+
+                            actions += '<a class="dropdown-item text-primary" href="/daftar-peserta-exam/create/' + row.id + '"><i class="fas fa-users"></i> Assign Peserta</a>';
+                            actions += '<div class="dropdown-divider"></div>';
+
+                            var tglMulai = row.tanggal_mulai ? row.tanggal_mulai : '';
+                            var tglSelesai = row.tanggal_selesai ? row.tanggal_selesai : '';
+                            actions += '<a class="dropdown-item text-primary" href="javascript:void(0)" onclick="openTanggalModal(' + row.id + ', \'' + tglMulai + '\', \'' + tglSelesai + '\')"><i class="fas fa-calendar-alt"></i> Set Tanggal Exam</a>';
+                            actions += '<div class="dropdown-divider"></div>';
+
+                            if (row.approvalexam && row.approvalexam.spv_sales == 1) {
+                                var files = row.file_invoice;
+                                if (typeof files === 'string') {
+                                    try { files = JSON.parse(files); } catch (e) { files = []; }
+                                }
+
+                                if (files && Array.isArray(files) && files.length > 0) {
+                                    files.forEach(function (file, index) {
+                                        var fileUrl = "{{ asset('uploads/invoices') }}/" + file;
+                                        actions += '<a class="dropdown-item text-primary" href="' + fileUrl + '" target="_blank"><i class="fas fa-file-invoice"></i> Lihat File ' + (index + 1) + '</a>';
+                                        actions += '<form onsubmit="return confirm(\'Apakah Anda yakin ingin menghapus File ' + (index + 1) + ' ini?\');" action="/exam/' + row.id + '/delete-invoice/' + file + '" method="POST" style="display:inline; margin:0; padding:0;">';
+                                        actions += '@csrf @method("DELETE")';
+                                        actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus File ' + (index + 1) + '</button>';
+                                        actions += '</form>';
+                                    });
+
+                                    actions += '<div class="dropdown-divider"></div>';
+                                    actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-plus"></i> Tambah Invoice Lagi</a>';
+                                } else {
+                                    actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-upload"></i> Upload Invoice</a>';
+                                }
+                                actions += '<div class="dropdown-divider"></div>';
+                            }
+
+                            if (row.status == '3') {
+                                var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
+                                if (!roomAssigned) {
+                                    actions += '@can("Edit Exam")';
+                                    actions += '<a class="dropdown-item" href="/exam/assign-room/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>';
+                                    actions += '@endcan';
+                                } else {
+                                    actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
+                                }
+                                actions += '<div class="dropdown-divider"></div>';
+                            }
+
+                            actions += '@can("Edit Exam")';
+                            actions += '<a class="dropdown-item" href="/exam/' + row.id + '/edit">Edit</a>';
+                            actions += '@endcan';
+
+                            var examSalesKey = row.sales_key || (row.rkm?.sales_key) || '';
+                            var canDelete = (userJabatan.trim() === 'SPV Sales') || (examSalesKey === userIdSales);
+
+                            if (canDelete) {
+                                actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="/exam/' + row.id + '" method="POST">';
+                                actions += '@csrf @method("DELETE")';
+                                actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus</button>';
+                                actions += '</form>';
+                            }
+                            actions += '</div></div>';
+                            return actions;
+                        }
+                    }
+                ];
+
+                @if (auth()->user()->jabatan == 'Finance & Accounting')
+                examHistoriColumns.push({
+                    "data": null,
+                    "orderable": false,
+                    "render": function (data, type, row) {
+                        var sudahDiajukan = row.has_pengajuan_barang;
+                        var officeManagerApproved = row.approvalexam && row.approvalexam.office_manager == 1;
+
+                        if (sudahDiajukan) {
+                            return '<span class="badge bg-secondary">Sudah Diajukan</span>';
+                        }
+
+                        if (!officeManagerApproved) {
+                            return '<span class="text-muted small">Menunggu Approval Office Manager</span>';
+                        }
+
+                        return '<form action="/exam/' + row.id + '/add-pengajuan-barang" method="GET" style="display:inline;" onsubmit="return confirm(\'Buat Pengajuan Barang untuk Exam ini?\');">' +
+                                    '<button type="submit" class="btn btn-sm btn-success">' +
+                                        '<i class="fas fa-plus"></i> Add Pengajuan Barang' +
+                                    '</button>' +
+                            '</form>';
+                    }
+                });
+                @endif
+
                 $('#examhistoritable').DataTable({
                     "ajax": {
                         "url": "{{ route('getHistoriExam') }}",
@@ -399,140 +560,7 @@
                             }, 1000);
                         }
                     },
-                    "columns": [
-                        { "data": null, "render": function (data) { return tableIndex2++; } },
-                        {
-                            "data": null,
-                            "render": function (data) { return data.materi?.nama_materi ?? data.rkm?.materi?.nama_materi ?? '-'; }
-                        },
-                        {
-                            "data": null,
-                            "render": function (data) { return data.tanggal_pengajuan ? moment(data.tanggal_pengajuan).format('LL') : '-'; }
-                        },
-                        {
-                            "data": null,
-                            "render": function (data) { return data.perusahaan?.nama_perusahaan ?? data.rkm?.perusahaan?.nama_perusahaan ?? '-'; }
-                        },
-                        { "data": "pax" },
-                        {
-                            "data": null,
-                            "render": function (data) {
-                                var statusBadge = '';
-                                if (data.status == '3') {
-                                    statusBadge = '<span class="badge bg-info">Exam Only</span>';
-                                    if (data.rkm && data.rkm.ruang && data.rkm.ruang !== 'Exam') {
-                                        statusBadge += ' <span class="badge bg-success">Room Assigned</span>';
-                                    }
-                                } else {
-                                    statusBadge = '<span class="badge bg-primary">Regular Exam</span>';
-                                }
-                                return statusBadge;
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function (data) {
-                                if (data.approvalexam) {
-                                    var app = data.approvalexam;
-
-                                    if (app.technical_support == 1) {
-                                        return '<span class="badge bg-success">Selesai</span>';
-                                    }
-
-                                    if (app.office_manager == 1) {
-                                        return '<span class="badge bg-info text-dark">Office Manager</span>';
-                                    }
-
-                                    if (app.spv_sales == 1) {
-                                        return '<span class="badge bg-info text-dark">SPV Sales</span>';
-                                    }
-
-                                    return '<span class="badge bg-warning text-dark">Belum Approval</span>';
-                                }
-                                return '<span class="text-muted">-</span>';
-                            }
-                        },
-                        {
-                            "data": null, "visible": true,
-                            "render": function (data) { return data.rkm?.sales_key ?? '-'; }
-                        },
-                        {
-                            "data": null, "visible": false,
-                            "render": function (data) { return data.rkm?.instruktur_key ?? ''; }
-                        },
-                        {
-                            "data": null,
-                            "render": function (data, type, row) {
-                                var actions = "";
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
-                                actions += '<div class="dropdown-menu">';
-                                actions += '<a class="dropdown-item" href="/exam/' + row.id + '">Detail</a>';
-
-                                // Penempatan fungsi Assign Peserta agar berlaku universal untuk ID Exam
-                                actions += '<a class="dropdown-item text-primary" href="/daftar-peserta-exam/create/' + row.id + '"><i class="fas fa-users"></i> Assign Peserta</a>';
-                                actions += '<div class="dropdown-divider"></div>';
-
-                                var tglMulai = row.tanggal_mulai ? row.tanggal_mulai : '';
-                                var tglSelesai = row.tanggal_selesai ? row.tanggal_selesai : '';
-                                actions += '<a class="dropdown-item text-primary" href="javascript:void(0)" onclick="openTanggalModal(' + row.id + ', \'' + tglMulai + '\', \'' + tglSelesai + '\')"><i class="fas fa-calendar-alt"></i> Set Tanggal Exam</a>';
-                                actions += '<div class="dropdown-divider"></div>';
-
-                                if (row.approvalexam && row.approvalexam.spv_sales == 1) {
-                                    var files = row.file_invoice;
-                                    if (typeof files === 'string') {
-                                        try { files = JSON.parse(files); } catch (e) { files = []; }
-                                    }
-
-                                    if (files && Array.isArray(files) && files.length > 0) {
-                                        files.forEach(function (file, index) {
-                                            var fileUrl = "{{ asset('uploads/invoices') }}/" + file;
-                                            actions += '<a class="dropdown-item text-primary" href="' + fileUrl + '" target="_blank"><i class="fas fa-file-invoice"></i> Lihat File ' + (index + 1) + '</a>';
-                                            actions += '<form onsubmit="return confirm(\'Apakah Anda yakin ingin menghapus File ' + (index + 1) + ' ini?\');" action="/exam/' + row.id + '/delete-invoice/' + file + '" method="POST" style="display:inline; margin:0; padding:0;">';
-                                            actions += '@csrf @method("DELETE")';
-                                            actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus File ' + (index + 1) + '</button>';
-                                            actions += '</form>';
-                                        });
-
-                                        actions += '<div class="dropdown-divider"></div>';
-                                        actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-plus"></i> Tambah Invoice Lagi</a>';
-                                    } else {
-                                        actions += '<a class="dropdown-item text-success" href="javascript:void(0)" onclick="openUploadModal(' + row.id + ')"><i class="fas fa-upload"></i> Upload Invoice</a>';
-                                    }
-                                    actions += '<div class="dropdown-divider"></div>';
-                                }
-
-                                // Logika Assign Ruangan khusus untuk status Exam Only (3)
-                                if (row.status == '3') {
-                                    var roomAssigned = row.rkm && row.rkm.ruang && row.rkm.ruang !== 'Exam';
-                                    if (!roomAssigned) {
-                                        actions += '@can("Edit Exam")';
-                                        actions += '<a class="dropdown-item" href="/exam/assign-room/' + row.id + '"><i class="fas fa-home"></i> Assign Ruangan</a>';
-                                        actions += '@endcan';
-                                    } else {
-                                        actions += '<a class="dropdown-item text-success" href="#"><i class="fas fa-check"></i> Ruangan: ' + (row.rkm.ruang || '-') + '</a>';
-                                    }
-                                    actions += '<div class="dropdown-divider"></div>';
-                                }
-
-                                actions += '@can("Edit Exam")';
-                                actions += '<a class="dropdown-item" href="/exam/' + row.id + '/edit">Edit</a>';
-                                actions += '@endcan';
-
-                                var examSalesKey = row.sales_key || (row.rkm?.sales_key) || '';
-                                var canDelete = (userJabatan.trim() === 'SPV Sales') || (examSalesKey === userIdSales);
-
-                                if (canDelete) {
-                                    actions += '<form onsubmit="return confirm(\'Yakin ingin menghapus Exam ini? Tindakan tidak dapat dibatalkan.\');" action="/exam/' + row.id + '" method="POST">';
-                                    actions += '@csrf @method("DELETE")';
-                                    actions += '<button type="submit" class="dropdown-item text-danger"><i class="fas fa-trash"></i> Hapus</button>';
-                                    actions += '</form>';
-                                }
-                                actions += '</div></div>';
-                                return actions;
-                            }
-                        }
-                    ],
+                    "columns": examHistoriColumns,
                     "order": [[0, 'asc']],
                     "initComplete": function () {
                         this.api().columns(8).search(idInstruktur).draw();

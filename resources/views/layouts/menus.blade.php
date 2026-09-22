@@ -1698,7 +1698,6 @@
                                 </div>
                             </div>
                             @endcan
-
                             <div class="col-md-12 mt-1">
                                 <div class="card">
                                     <div class="card-body">
@@ -1781,8 +1780,7 @@
                                                 </div>
                                             </div>
                                             @endcan
-                                            @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT
-                                            Service Management')
+                                            @can ('View ITSM Only')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1834,7 +1832,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1885,9 +1882,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @if (Auth::user()->hasAnyRole(['itsm', 'ITSM', 'Koordinator ITSM',
-                                            'Programmer', 'Technical Support']) || (Auth::user()->karyawan &&
-                                            Auth::user()->karyawan->divisi === 'IT Service Management'))
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1906,9 +1900,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
-                                            @if ((Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT
-                                            Service Management'))
+                                            @endcan
+                                            @can ('View ITSM Only')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1926,7 +1919,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
+                                            @endcan
                                         </div>
                                     </div>
                                 </div>
@@ -2322,12 +2315,16 @@
                             </div>
                             @endcan
 
-                            <div class="col-md-12 mt-1">
+                           <div class="col-md-12 mt-1">
+                                <!-- Section Performance Assessment -->
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Performance Assesment</h5>
                                         <div class="row">
-                                            @php $auth = Auth()->user()->jabatan; @endphp
+                                            @php
+                                                $auth = Auth()->user()->jabatan;
+                                                $id_karyawan = Auth()->user()->karyawan_id;
+                                            @endphp
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -2335,11 +2332,92 @@
                                                             <i class="fa fa-ranking-star" style="font-size: 30px;"></i>
                                                         </div>
                                                         <div class="col-md-10" style="margin-left: 10px">
-                                                            <a href="{{ route('berandaKPI.get') }}"
-                                                                class="link stretched-link text-decoration-none">
+                                                            <a href="{{ route('berandaKPI.get') }}" class="link stretched-link text-decoration-none">
                                                                 <h5 class="card-title">Penilaian</h5>
                                                             </a>
-                                                            <p class="card-text">Data Penilaian Semua Karyawan.</p>
+                                                            <p class="card-text">Dashboard Database Penilaian.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @if (
+                                                $auth === 'Koordinator ITSM' ||
+                                                $auth === 'HRD' ||
+                                                $auth === 'Education Manager' ||
+                                                $auth === 'GM' ||
+                                                $auth === 'SPV Sales')
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa fa-bullseye" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('kpi.index') }}" class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Target Divisi</h5>
+                                                                </a>
+                                                                <p class="card-text">Data target divisi.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6 mt-2">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2">
+                                                                <i class="fa fa-chart-line" style="font-size: 30px;"></i>
+                                                            </div>
+                                                            <div class="col-md-10" style="margin-left: 10px">
+                                                                <a href="{{ route('kpi.overview.index') }}" class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Overview Departement</h5>
+                                                                </a>
+                                                                <p class="card-text">Seluruh Perkembangan Target KPI Divisi</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa fa-chart-line" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('kpi.overview.indexPersonal') }}" class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Overview Personal</h5>
+                                                            </a>
+                                                            <p class="card-text">Seluruh Progress Target KPI Anda.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa fa-user-check" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ url('/penilaian360/index/' . $id_karyawan) }}" class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Penilaian Anda</h5>
+                                                            </a>
+                                                            <p class="card-text">Data Hasil Penilaian 360 Anda.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa fa-file-pen" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ url('/getFormPenilaianUser/' . $id_karyawan) }}" class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Form Penilaian</h5>
+                                                            </a>
+                                                            <p class="card-text">Form  penilaian untuk anda.</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2348,7 +2426,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             @can('Fitur Menu Education')
                             <div class="col-md-12 mt-1">
                                 <div class="card">

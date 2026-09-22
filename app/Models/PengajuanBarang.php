@@ -69,6 +69,11 @@ class PengajuanBarang extends Model
         return $this->hasOne(Pelatihan::class, 'id_pengajuan_barang');
     }
 
+    public function exam()
+    {
+        return $this->hasOne(eksam::class, 'id_pengajuan_barang');
+    }
+
     public function sertifikasi()
     {
         return $this->hasOne(Sertifikasi::class, 'id_pengajuan_barang');

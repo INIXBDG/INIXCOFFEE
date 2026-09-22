@@ -37,6 +37,7 @@ class eksam extends Model
         'status',
         'kode_karyawan',
         'mata_uang',
+        'id_pengajuan_barang',
         'deleted_at',
         'deleted_by',
         
@@ -70,6 +71,10 @@ class eksam extends Model
     public function materi()
     {
         return $this->belongsTo(Materi::class, 'materi', 'id');
+    }
+    public function pengajuanBarang()
+    {
+        return $this->belongsTo(PengajuanBarang::class, 'id_pengajuan_barang');
     }
 
     public function perusahaan()

@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
     @php
         $userJabatan = auth()->user()->jabatan;
-        $isExecutive = in_array($userJabatan, ['HRD', 'GM', 'Direktur Utama', 'Koordinator ITSM']);
+        $isExecutive = in_array($userJabatan, ['HRD', 'GM', 'Direktur Utama', 'Direktur']);
         $currentQuartal = 'Q' . ceil(date('m') / 3);
         $currentYear = date('Y');
     @endphp
@@ -106,76 +106,103 @@
                     </div>
                 </div>
 
-                <div class="row g-4 mb-4">
-                    <div class="col-xl-8 d-flex">
-                        <div class="plain-card flex-fill">
-                            <div class="card-body">
-                                <div class="section-header">
-                                    <h5><i class="fas fa-fire text-danger me-2"></i>KPI Alerts & Prioritas</h5>
-                                    <span class="badge-count" id="alertsCount">0 Alerts</span>
+                @if ($isExecutive)
+                    <div class="row g-4 mb-4">
+                        <div class="col-xl-8 d-flex">
+                            <div class="plain-card flex-fill">
+                                <div class="card-body">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-fire text-danger me-2"></i>KPI Alerts & Prioritas</h5>
+                                        <span class="badge-count" id="alertsCount">0 Alerts</span>
+                                    </div>
+                                    <div id="kpiAlertsContainer" style="max-height: 340px; overflow-y: auto;">
+                                        <div class="skeleton skeleton-row"></div>
+                                        <div class="skeleton skeleton-row"></div>
+                                        <div class="skeleton skeleton-row"></div>
+                                    </div>
                                 </div>
-                                <div id="kpiAlertsContainer" style="max-height: 340px; overflow-y: auto;">
-                                    <div class="skeleton skeleton-row"></div>
-                                    <div class="skeleton skeleton-row"></div>
-                                    <div class="skeleton skeleton-row"></div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 d-flex">
+                            <div class="plain-card flex-fill">
+                                <div class="card-body">
+                                    <div class="section-header">
+                                        <h5><i class="fas fa-calendar-check text-primary me-2"></i>Deadline Terdekat</h5>
+                                    </div>
+                                    <div id="upcomingDeadlinesContainer" style="max-height: 340px; overflow-y: auto;">
+                                        <div class="skeleton skeleton-timeline"></div>
+                                        <div class="skeleton skeleton-timeline"></div>
+                                        <div class="skeleton skeleton-timeline"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-4 d-flex">
-                        <div class="plain-card flex-fill">
-                            <div class="card-body">
-                                <div class="section-header">
-                                    <h5><i class="fas fa-calendar-check text-primary me-2"></i>Deadline Terdekat</h5>
-                                </div>
-                                <div id="upcomingDeadlinesContainer" style="max-height: 340px; overflow-y: auto;">
-                                    <div class="skeleton skeleton-timeline"></div>
-                                    <div class="skeleton skeleton-timeline"></div>
-                                    <div class="skeleton skeleton-timeline"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endif
 
-                <div class="row g-4 mb-4">
-                    <div class="col-12">
-                        <div class="plain-card">
-                            <div class="card-body">
-                                <div class="section-header">
-                                    <h5><i class="fas fa-th text-primary me-2"></i>Heatmap Performa Divisi</h5>
-                                    <select id="heatmapMetricSelect" class="form-select form-select-sm w-auto">
-                                        <option value="progress">Progress</option>
-                                        <option value="completion">Completion</option>
-                                        <option value="engagement">Engagement</option>
-                                    </select>
-                                </div>
-                                <div id="performanceHeatmapContainer">
-                                    <div class="d-flex gap-1 flex-wrap" id="heatmapGrid">
-                                        <div class="skeleton" style="width:100%;height:160px;"></div>
+                @if ($isExecutive)
+                    <div class="row g-4 mb-4">
+                        <div class="col-12">
+                            <div class="plain-card">
+                                <div class="card-body">
+                                    <div class="section-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-th text-primary me-2"></i>Heatmap Performa Divisi
+                                        </h5>
+
+                                        {{-- Select hanya untuk HRD --}}
+                                        @if ($isExecutive)
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <select id="heatmapMetricSelect" class="form-select form-select-sm" style="min-width:140px;">
+                                                    <option value="progress">Progress</option>
+                                                    <option value="completion">Completion</option>
+                                                    <option value="engagement">Engagement</option>
+                                                </select>
+
+                                                <select id="heatmapDivisiSelect" class="form-select form-select-sm" style="min-width:180px;">
+                                                    <option value="">Pilih Divisi</option>
+                                                </select>
+                                            </div>
+                                        @else
+                                            {{-- Non-HRD: hanya tampilkan metric (opsional, bisa dihilangkan) --}}
+                                            <select id="heatmapMetricSelect" class="form-select form-select-sm" style="min-width:140px;">
+                                                <option value="progress">Progress</option>
+                                                <option value="completion">Completion</option>
+                                                <option value="engagement">Engagement</option>
+                                            </select>
+                                        @endif
                                     </div>
-                                    <div class="d-flex justify-content-between mt-3 small text-muted">
-                                        <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span>
-                                        <span>Mei</span><span>Jun</span><span>Jul</span><span>Agu</span>
-                                        <span>Sep</span><span>Okt</span><span>Nov</span><span>Des</span>
+
+                                    <!-- Penjelasan metric -->
+                                    <div id="heatmapMetricDesc" class="alert alert-light border small mb-3 py-2 px-3">
+                                        <i class="fas fa-info-circle text-primary me-1"></i>
+                                        <span id="heatmapMetricDescText">Pilih metric untuk melihat penjelasan.</span>
                                     </div>
-                                    <div class="d-flex justify-content-end align-items-center gap-2 mt-2 small">
-                                        <span>Rendah</span>
-                                        <div class="d-flex gap-1">
-                                            <div class="heatmap-cell heatmap-empty" style="width:16px;height:16px;padding:0;"></div>
-                                            <div class="heatmap-cell heatmap-1" style="width:16px;height:16px;padding:0;"></div>
-                                            <div class="heatmap-cell heatmap-2" style="width:16px;height:16px;padding:0;"></div>
-                                            <div class="heatmap-cell heatmap-3" style="width:16px;height:16px;padding:0;"></div>
-                                            <div class="heatmap-cell heatmap-4" style="width:16px;height:16px;padding:0;"></div>
-                                            <div class="heatmap-cell heatmap-5" style="width:16px;height:16px;padding:0;"></div>
+
+                                    <div id="performanceHeatmapContainer">
+                                        <div id="heatmapGrid" class="d-flex gap-1 flex-wrap justify-content-between">
+                                            <div class="skeleton" style="width:100%;height:90px;"></div>
                                         </div>
-                                        <span>Tinggi</span>
+
+                                        <!-- Legend -->
+                                        <div class="d-flex justify-content-end align-items-center gap-2 mt-3 small">
+                                            <span>Rendah</span>
+                                            <div class="d-flex gap-1">
+                                                <div class="heatmap-cell heatmap-empty" style="width:16px;height:16px;padding:0;"></div>
+                                                <div class="heatmap-cell heatmap-1" style="width:16px;height:16px;padding:0;"></div>
+                                                <div class="heatmap-cell heatmap-2" style="width:16px;height:16px;padding:0;"></div>
+                                                <div class="heatmap-cell heatmap-3" style="width:16px;height:16px;padding:0;"></div>
+                                                <div class="heatmap-cell heatmap-4" style="width:16px;height:16px;padding:0;"></div>
+                                                <div class="heatmap-cell heatmap-5" style="width:16px;height:16px;padding:0;"></div>
+                                            </div>
+                                            <span>Tinggi</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                @endif
             @endif
 
             <div class="row g-4 mb-4 align-items-stretch">
@@ -397,6 +424,127 @@
             </div>
         </div>
     </div>
+    
+    {{-- 4. Modal Drilldown Divisi (paling penting untuk heatmap) --}}
+    <div class="modal fade" id="modalDivisiDrilldown" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="drilldownDivisiTitle">Detail Divisi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="drilldownLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="text-muted mt-2 mb-0">Memuat data divisi...</p>
+                    </div>
+                    <div id="drilldownEmpty" class="text-center py-5 d-none text-muted">Data tidak tersedia.</div>
+                    <div id="drilldownContent" class="d-none">
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <h6 class="fw-bold mb-3">Tren Progress Bulanan</h6>
+                                <div style="height:260px;"><canvas id="drilldownChart"></canvas></div>
+                            </div>
+                            <div class="col-lg-5">
+                                <h6 class="fw-bold mb-3">Insight</h6>
+                                <div id="drilldownInsights" class="d-flex flex-column gap-2" style="max-height:260px;overflow-y:auto;"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6 class="fw-bold mb-3">Anggota Tim</h6>
+                        <div id="drilldownTeamList" class="d-flex flex-column gap-2" style="max-height:300px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 5. Modal Deadline Detail --}}
+    <div class="modal fade" id="modalDeadlineDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Detail Deadline</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="deadlineDetailLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                    <div id="deadlineDetailContent" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 6. Modal Activity Detail --}}
+    <div class="modal fade" id="modalActivityDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Detail Aktivitas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="activityDetailLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                    <div id="activityDetailContent" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 7. Modal Achievement Detail --}}
+    <div class="modal fade" id="modalAchievementDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Detail Pencapaian</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="achievementDetailLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                    <div id="achievementDetailContent" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 8. Modal News Detail --}}
+    <div class="modal fade" id="modalNewsDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Detail Pengumuman</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="newsDetailLoading" class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                    <div id="newsDetailContent" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 9. Modal Peringkat (kalau dipakai) --}}
+    <div class="modal fade" id="modalPeringkatPenilaian360" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="title_peringkat">Peringkat Divisi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="bodyContentPeringkat"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
 
@@ -413,6 +561,9 @@
         window.defaultProfileUrl = "{{ asset('template_KPI/dist/assets/images/screenshots/user-profile.jpg') }}";
         window.userJabatan = "{{ $userJabatan }}";
         window.isExecutive = {{ $isExecutive ? 'true' : 'false' }};
+
+        window.userDivisi = "{{ auth()->user()->divisi ?? '' }}";
+        window.isHRD = {{ $userJabatan === 'HRD' ? 'true' : 'false' }};
     </script>
 
     <script src="{{ asset('assets/js/penilaian360/dashboard.js') }}" defer></script>

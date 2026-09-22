@@ -133,6 +133,8 @@
                                     <option value="" disabled selected>-- Pilih Tipe --</option>
                                     <option value="debit">Pemasukan (Debit)</option>
                                     <option value="kredit">Pengeluaran (Kredit)</option>
+                                    <!-- Tambahkan Opsi Ini -->
+                                    <option value="debit_kredit">Keduanya (Debit & Kredit)</option>
                                 </select>
                             </div>
                             <div class="mb-3">
@@ -922,7 +924,7 @@
                                 var actions = '<button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>';
                                 actions += '<div class="dropdown-menu px-2">';
                                 actions += '<button type="button" class="btn-edit-jurnal dropdown-item mb-2 rounded-2 bg-primary text-white" data-id="' + row.id + '">Edit</button>';
-                                actions += '<button type="button" class="dropdown-item bg-danger text-white rounded-2 btn-pdf-jurnal" data-id="' + row.id + '">PDF</button>';                                
+                                actions += '<button type="button" class="dropdown-item bg-danger text-white rounded-2 btn-pdf-jurnal" data-id="' + row.id + '">PDF</button>';
                                 actions += '</div>';
                                 return actions;
                             }

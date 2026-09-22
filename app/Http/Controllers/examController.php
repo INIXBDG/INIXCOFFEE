@@ -5,17 +5,21 @@ namespace App\Http\Controllers;
 use App\Exports\rekapExamExport;
 use App\Models\approvalexam;
 use App\Models\changeexam;
+use App\Models\detailPengajuanBarang;
 use App\Models\eksam;
 use App\Models\karyawan;
 use App\Models\listexam;
 use App\Models\PoExamSertifa;
 use App\Models\Materi;
+use App\Models\PengajuanBarang;
 use App\Models\Perusahaan;
 use App\Models\RKM;
 use App\Models\Tickets;
+use App\Models\tracking_pengajuan_barang;
 use App\Models\User;
 use App\Notifications\ApprovalExamNotification;
 use App\Notifications\BayarExamNotification;
+use App\Notifications\pengajuanbarangNotification;
 use App\Notifications\PengajuanexamNotification;
 use App\Notifications\TicketNotification;
 use App\Notifications\updateExamNotification;
@@ -297,6 +301,10 @@ class examController extends Controller
             'approvalexam',
         ])->orderBy('created_at', 'desc')->get();
 
+        $rkm->each(function ($item) {
+            $item->has_pengajuan_barang = !is_null($item->id_pengajuan_barang);
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'List Registrasi',
@@ -538,9 +546,16 @@ class examController extends Controller
         $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
         $harga = $rkm->harga * $rkm->kurs;
 
-        Log::info('Exam Show - ID: '.$id.', RKM: '.json_encode($rkm));
+        $hasPengajuanBarang = !is_null($rkm->id_pengajuan_barang);
 
-        return view('exam.show', compact('rkm', 'exam', 'approvalexam', 'biaya_admin', 'harga'));
+        return view('exam.show', compact(
+            'rkm', 
+            'exam', 
+            'approvalexam', 
+            'biaya_admin', 
+            'harga',
+            'hasPengajuanBarang'
+        ));
     }
 
     public function edit(string $id)
@@ -830,6 +845,89 @@ class examController extends Controller
         ]);
 
         return redirect()->route('exam.show', $id);
+    }
+
+    public function AddPengajuanBarang($id)
+    {
+        try {
+            $exam = eksam::with('rkm', 'approvalexam')->findOrFail($id);
+            $karyawan = auth()->user()->karyawan;
+
+            if (!$karyawan) {
+                return back()->with('error', 'Data karyawan tidak ditemukan.');
+            }
+
+            if ($exam->id_pengajuan_barang) {
+                return back();
+            }
+
+            DB::beginTransaction();
+
+            $PengajuanBarang = PengajuanBarang::create([
+                'tipe'        => 'Exam',
+                'id_karyawan' => $karyawan->id,
+            ]);
+
+            $exam->update([
+                'id_pengajuan_barang' => $PengajuanBarang->id,
+            ]);
+
+            detailPengajuanBarang::create([
+                'id_pengajuan_barang' => $PengajuanBarang->id,
+                'nama_barang'         => 'Exam - ' . $exam->materi,
+                'qty'                 => $exam->pax,
+                'harga'               => $exam->total,
+                'keterangan'          => 'Pengajuan Exam. Invoice: ' . $exam->invoice .
+                                        ' | Perusahaan: ' . $exam->perusahaan .
+                                        ' | Tanggal Pengajuan Exam: ' . \Carbon\Carbon::parse($exam->tanggal_pengajuan)->format('d-m-Y'),
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ]);
+
+            $tracking = 'Pengajuan Exam (Sudah Diapprove SPV Sales & GM melalui Approval Exam) - Sedang Ditinjau oleh Finance & Accounting';
+
+            $tracking_pengajuan_barang = tracking_pengajuan_barang::create([
+                'id_pengajuan_barang' => $PengajuanBarang->id,
+                'tracking'            => $tracking,
+                'tanggal'             => now(),
+                'created_at'          => now(),
+                'updated_at'          => now(),
+            ]);
+
+            $PengajuanBarang->update([
+                'id_tracking' => $tracking_pengajuan_barang->id,
+            ]);
+
+            DB::commit();
+
+            $financeUsers = User::whereHas('karyawan', function ($q) {
+                $q->where('jabatan', 'Finance & Accounting');
+            })->get();
+
+            $dataNotif = [
+                'id_karyawan'       => $karyawan->id,
+                'tipe'              => 'Exam',
+                'tanggal_pengajuan' => now(),
+                'id_pengajuan'      => $PengajuanBarang->id,
+            ];
+
+            $path = '/pengajuanbarang';
+            $type = 'Mengajukan Permintaan Barang (dari Exam)';
+
+            foreach ($financeUsers as $user) {
+                NotificationFacade::send(
+                    $user,
+                    new pengajuanbarangNotification($dataNotif, $path, $type, $user->id)
+                );
+            }
+
+            return back()->with('success', 'Pengajuan Barang untuk Exam berhasil dibuat dan ditinjau oleh Finance & Accounting.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal membuat Pengajuan Barang dari Exam: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat Pengajuan Barang: ' . $e->getMessage());
+        }
     }
 
     public function invoice($id)
