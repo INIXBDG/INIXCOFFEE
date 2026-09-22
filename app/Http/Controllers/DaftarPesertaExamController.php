@@ -159,9 +159,13 @@ class DaftarPesertaExamController extends Controller
         $registrasi = registexam::with([
             'peserta',
             'exam.materi',
+            'exam.rkm' => function ($query) {
+                $query->withTrashed();
+            },
             'exam.rkm.perusahaan',
-            'exam.rkm.instruktur'
-        ])->findOrFail($id);
+            'exam.rkm.instruktur',
+        ])
+        ->findOrFail($id);
 
         $perusahaan = $registrasi->exam?->rkm?->perusahaan ?? $registrasi->exam?->perusahaan;
         $instruktur = $registrasi->exam?->rkm?->instruktur ?? $registrasi->exam?->karyawan;

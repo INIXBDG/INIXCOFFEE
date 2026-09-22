@@ -1,8 +1,8 @@
 @extends('layouts_office.app')
 @section('office_contents')
 
-@include('layouts_office.skeleton_table')
-<div id="real-dashboard" class="container-fluid py-3 d-none">
+{{-- @include('layouts_office.skeleton_table') --}}
+<div id="real-dashboard" class="container-fluid py-3">
   <h5 class="mb-3">Rekap Laporan Exam</h5>
 
   {{-- Filter --}}

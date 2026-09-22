@@ -76,7 +76,7 @@
             <strong>Pilih Data yang Di-hide</strong>
             <small class="text-muted">Perubahan tersimpan otomatis saat checkbox diklik</small>
             <div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCheckAll">Pilih Semua (halaman ini)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCheckAll">Hide Semua (halaman ini)</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnUncheckAll">Batal Semua (halaman ini)</button>
             </div>
         </div>
@@ -85,8 +85,17 @@
                 <table class="table table-bordered table-striped table-sm align-middle">
                     <thead>
                         <tr>
-                            <th style="width:40px;">
-                                <input type="checkbox" id="checkAllHeader">
+                            <th style="width:40px;" title="Hide (umum)">
+                                <input type="checkbox" id="checkAllHide">
+                                <div><small>Hide</small></div>
+                            </th>
+                            <th style="width:40px;" title="Hide Materi">
+                                <input type="checkbox" id="checkAllMateri">
+                                <div><small>Materi</small></div>
+                            </th>
+                            <th style="width:40px;" title="Hide Perusahaan">
+                                <input type="checkbox" id="checkAllPerusahaan">
+                                <div><small>Perusahaan</small></div>
                             </th>
                             <th>#</th>
                             <th>Periode Mulai</th>
@@ -102,14 +111,28 @@
                                 <td>
                                     <input type="checkbox"
                                            class="chk-hide"
+                                           data-field="hide"
                                            data-id="{{ $item->id }}"
                                            {{ $item->hide ? 'checked' : '' }}>
+                                </td>
+                                <td>
+                                    <input type="checkbox"
+                                           class="chk-hide"
+                                           data-field="hide_materi"
+                                           data-id="{{ $item->id }}"
+                                           {{ $item->hide_materi ? 'checked' : '' }}>
+                                </td>
+                                <td>
+                                    <input type="checkbox"
+                                           class="chk-hide"
+                                           data-field="hide_perusahaan"
+                                           data-id="{{ $item->id }}"
+                                           {{ $item->hide_perusahaan ? 'checked' : '' }}>
                                 </td>
                                 <td>{{ $peluang->firstItem() + $loop->index }}</td>
                                 <td>
                                     {{ optional($item->peluang)->periode_mulai ? \Carbon\Carbon::parse($item->peluang->periode_mulai)->format('d/m/Y') : ($item->tanggal_awal ? \Carbon\Carbon::parse($item->tanggal_awal)->format('d/m/Y') : '-') }}
                                 </td>
-
                                 <td>
                                     {{ optional($item->peluang)->periode_selesai ? \Carbon\Carbon::parse($item->peluang->periode_selesai)->format('d/m/Y') : ($item->tanggal_akhir ? \Carbon\Carbon::parse($item->tanggal_akhir)->format('d/m/Y') : '-') }}
                                 </td>
@@ -123,7 +146,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">Tidak ada data untuk filter/pencarian ini</td>
+                                <td colspan="9" class="text-center">Tidak ada data untuk filter/pencarian ini</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -174,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => { alertBox.innerHTML = ''; }, 2500);
     }
 
+    // Badge status cuma mengikuti field "hide" (umum), bukan hide_materi/hide_perusahaan
     function updateRowBadge(id, hide) {
         const row = document.querySelector(`tr[data-id="${id}"]`);
         if (!row) return;
@@ -183,39 +207,40 @@ document.addEventListener('DOMContentLoaded', function () {
         badge.classList.add(hide ? 'bg-secondary' : 'bg-success');
     }
 
+    function toggleSingle(id, field, hide, checkboxEl) {
+        fetch("{{ route('office.rekapRkm.toggleHide') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ rkm_id: id, field: field, hide: hide }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                if (field === 'hide') updateRowBadge(id, hide);
+                showAlert('Status berhasil diperbarui.');
+            } else {
+                checkboxEl.checked = !hide;
+                showAlert('Gagal memperbarui status.', 'danger');
+            }
+        })
+        .catch(() => {
+            checkboxEl.checked = !hide;
+            showAlert('Terjadi kesalahan koneksi.', 'danger');
+        });
+    }
+
     document.querySelectorAll('.chk-hide').forEach(function (chk) {
         chk.addEventListener('change', function () {
-            const id = this.dataset.id;
-            const hide = this.checked;
-
-            fetch("{{ route('office.rekapRkm.toggleHide') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({ rkm_id: id, hide: hide }),
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    updateRowBadge(id, hide);
-                    showAlert('Status berhasil diperbarui.');
-                } else {
-                    this.checked = !hide;
-                    showAlert('Gagal memperbarui status.', 'danger');
-                }
-            })
-            .catch(() => {
-                this.checked = !hide;
-                showAlert('Terjadi kesalahan koneksi.', 'danger');
-            });
+            toggleSingle(this.dataset.id, this.dataset.field, this.checked, this);
         });
     });
 
-    function bulkToggle(hide) {
-        const checkboxes = document.querySelectorAll('.chk-hide');
+    function bulkToggle(hide, field) {
+        const checkboxes = document.querySelectorAll(`.chk-hide[data-field="${field}"]`);
         const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
 
         if (!ids.length) return;
@@ -227,14 +252,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRF-TOKEN': csrfToken,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify({ ids: ids, hide: hide }),
+            body: JSON.stringify({ ids: ids, field: field, hide: hide }),
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
                 checkboxes.forEach(cb => {
                     cb.checked = hide;
-                    updateRowBadge(cb.dataset.id, hide);
+                    if (field === 'hide') updateRowBadge(cb.dataset.id, hide);
                 });
                 showAlert(`${data.count} data berhasil diperbarui.`);
             } else {
@@ -244,11 +269,19 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(() => showAlert('Terjadi kesalahan koneksi.', 'danger'));
     }
 
-    document.getElementById('btnCheckAll').addEventListener('click', () => bulkToggle(true));
-    document.getElementById('btnUncheckAll').addEventListener('click', () => bulkToggle(false));
+    // Tombol umum di header card -> field "hide"
+    document.getElementById('btnCheckAll').addEventListener('click', () => bulkToggle(true, 'hide'));
+    document.getElementById('btnUncheckAll').addEventListener('click', () => bulkToggle(false, 'hide'));
 
-    document.getElementById('checkAllHeader').addEventListener('change', function () {
-        bulkToggle(this.checked);
+    // Checkbox di header kolom tabel -> masing-masing field
+    document.getElementById('checkAllHide').addEventListener('change', function () {
+        bulkToggle(this.checked, 'hide');
+    });
+    document.getElementById('checkAllMateri').addEventListener('change', function () {
+        bulkToggle(this.checked, 'hide_materi');
+    });
+    document.getElementById('checkAllPerusahaan').addEventListener('change', function () {
+        bulkToggle(this.checked, 'hide_perusahaan');
     });
 });
 </script>

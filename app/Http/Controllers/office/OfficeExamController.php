@@ -332,97 +332,273 @@ class OfficeExamController extends Controller
         return view('office.exam.rekapExam');
     }
 
+    // public function rekapJson(Request $request)
+    // {
+    //     $query = ModelsEksam::with([
+    //         'registexam.dokumentasiExam',
+    //         'rkm' => function ($q) {
+    //             $q->withTrashed();
+    //         },
+    //         'rkm.instruktur',
+    //         'rkm.materi',
+    //         'approvalexam',
+    //     ])->whereHas('approvalexam', function ($q) {
+    //         $q->where('technical_support', 1)
+    //             ->orWhere('office_manager', 1);
+    //     });
+
+    //     // ── Filter waktu ──────────────────────────────────────────
+    //     if ($request->filled('tahun')) {
+    //         $query->whereYear('tanggal_pengajuan', $request->tahun);
+    //     }
+
+    //     if ($request->filled('triwulan')) {
+    //         $startMonth = ((int) $request->triwulan - 1) * 3 + 1;
+    //         $endMonth   = $startMonth + 2;
+    //         $query->whereMonth('tanggal_pengajuan', '>=', $startMonth)
+    //             ->whereMonth('tanggal_pengajuan', '<=', $endMonth);
+    //     } elseif ($request->filled('bulan')) {
+    //         $query->whereMonth('tanggal_pengajuan', $request->bulan);
+    //     }
+
+    //     $exams = $query->get();
+
+    //     // ── Helper ────────────────────────────────────────────────
+    //     $lulus = fn ($registexam) => $registexam
+    //         ->filter(fn ($r) => strtolower(optional($r->dokumentasiExam)->keterangan_lulus ?? '') === 'lulus')
+    //         ->count();
+
+    //     $tidakExam = fn ($registexam) => $registexam
+    //         ->filter(fn ($r) => $r->dokumentasiExam === null)
+    //         ->count();
+
+    //     $tidakLulus = fn ($registexam) => $registexam->count() - $lulus($registexam) - $tidakExam($registexam);
+
+    //     $ringkasan = fn ($group) => [
+    //         'total_exam'        => $group->count(),
+    //         'total_peserta'     => $group->sum(fn ($e) => $e->registexam->count()),
+    //         'total_lulus'       => $group->sum(fn ($e) => $lulus($e->registexam)),
+    //         'total_tidak_lulus' => $group->sum(fn ($e) => $tidakLulus($e->registexam)),
+    //         'total_tidak_exam'  => $group->sum(fn ($e) => $tidakExam($e->registexam)),
+    //     ];
+
+    //     // ── Grand total ───────────────────────────────────────────
+    //     $totalExam       = $exams->count();
+    //     $totalPeserta    = $exams->sum(fn ($e) => $e->registexam->count());
+    //     $totalLulus      = $exams->sum(fn ($e) => $lulus($e->registexam));
+    //     $totalTidakLulus = $exams->sum(fn ($e) => $tidakLulus($e->registexam));
+    //     $totalTidakExam  = $exams->sum(fn ($e) => $tidakExam($e->registexam));
+
+    //     // ── Group by materi ───────────────────────────────────────
+    //     $materiExam = $exams
+    //         ->groupBy(fn ($e) => ($e->rkm?->materi?->alias_exam ?? $e->materi) . " | " . ($e->rkm?->materi?->kategori_exam ?? '#'))
+    //         ->map($ringkasan);
+
+    //     // ── Group by perusahaan ───────────────────────────────────
+    //     $instansi = $exams
+    //         ->groupBy(fn ($e) => $e->perusahaan ?? 'Unknown')
+    //         ->map($ringkasan);
+
+    //     // ── Group by instruktur ───────────────────────────────────
+    //     $keberhasilanMengajar = $exams
+    //         ->groupBy(fn ($e) => optional($e->rkm?->instruktur)->nama_lengkap ?? 'Unknown')
+    //         ->map($ringkasan);
+
+    //     // ── Group by kategori exam (total count per kategori) ─────
+    //     $kategori = $exams
+    //         ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+    //         ->map(fn ($group) => $group->count());
+
+    //     $kategoriData = $exams
+    //         ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+    //         ->map(function ($group) {
+    //             return $group->values()->map(function ($e) {
+    //                 return [
+    //                     'tanggal_pengajuan' => $e->tanggal_pengajuan?->format('d M Y'),
+    //                     'tanggal_mulai'     => $e->tanggal_mulai?->format('d M Y'),
+    //                     'tanggal_selesai'   => $e->tanggal_selesai?->format('d M Y'),
+    //                     'materi'            => $e->materi ?? '-',
+    //                     'perusahaan'        => $e->perusahaan ?? '-',
+    //                     'instruktur'        => $e->rkm?->instruktur?->nama_lengkap ?? '-',
+    //                 ];
+    //             });
+    //         });
+
+    //     return response()->json([
+    //         'filter' => [
+    //             'tahun'    => $request->tahun,
+    //             'triwulan' => $request->triwulan,
+    //             'bulan'    => $request->bulan,
+    //         ],
+    //         'total_exam'        => $totalExam,
+    //         'total_peserta'     => $totalPeserta,
+    //         'total_lulus'       => $totalLulus,
+    //         'total_tidak_lulus' => $totalTidakLulus,
+    //         'total_tidak_exam'  => $totalTidakExam,
+    //         'materi_exam'       => $materiExam,
+    //         'instansi'          => $instansi,
+    //         'instruktur'        => $keberhasilanMengajar,
+    //         'kategori'          => $kategori,
+    //         'kategori_data'     => $kategoriData,
+    //     ]);
+    // }
+
+
     public function rekapJson(Request $request)
     {
-        $query = ModelsEksam::with([
-            'registexam.dokumentasiExam',
-            'rkm' => function ($q) {
+        $query = DokumentasiExam::with([
+            'registrasi',
+            'registrasi.exam',
+            'registrasi.exam.rkm' => function ($q) {
                 $q->withTrashed();
             },
-            'rkm.instruktur',
-            'rkm.materi',
-            'approvalexam',
-        ])->whereHas('approvalexam', function ($q) {
-            $q->where('technical_support', 1)
-                ->orWhere('office_manager', 1);
-        });
+            'registrasi.exam.rkm.instruktur',
+            'registrasi.exam.rkm.materi',
+        ]);
 
-        // ── Filter waktu ──────────────────────────────────────────
+        // ── Filter waktu berdasarkan tanggal_pelaksanaan ──────────
         if ($request->filled('tahun')) {
-            $query->whereYear('tanggal_pengajuan', $request->tahun);
+            $query->whereYear('tanggal_pelaksanaan', $request->tahun);
         }
 
         if ($request->filled('triwulan')) {
             $startMonth = ((int) $request->triwulan - 1) * 3 + 1;
             $endMonth   = $startMonth + 2;
-            $query->whereMonth('tanggal_pengajuan', '>=', $startMonth)
-                ->whereMonth('tanggal_pengajuan', '<=', $endMonth);
+
+            $query->whereMonth('tanggal_pelaksanaan', '>=', $startMonth)
+                ->whereMonth('tanggal_pelaksanaan', '<=', $endMonth);
         } elseif ($request->filled('bulan')) {
-            $query->whereMonth('tanggal_pengajuan', $request->bulan);
+            $query->whereMonth('tanggal_pelaksanaan', $request->bulan);
         }
 
-        $exams = $query->get();
+        $dokumentasi = $query->get();
 
-        // ── Helper ────────────────────────────────────────────────
-        $lulus = fn ($registexam) => $registexam
-            ->filter(fn ($r) => strtolower(optional($r->dokumentasiExam)->keterangan_lulus ?? '') === 'lulus')
-            ->count();
+        // ── Helper status ─────────────────────────────────────────
 
-        $tidakExam = fn ($registexam) => $registexam
-            ->filter(fn ($r) => $r->dokumentasiExam === null)
-            ->count();
+        $isLulus = fn ($d) =>
+            strtolower(trim($d->keterangan_lulus ?? '')) === 'lulus';
 
-        $tidakLulus = fn ($registexam) => $registexam->count() - $lulus($registexam) - $tidakExam($registexam);
+        $isTidakLulus = fn ($d) =>
+            strtolower(trim($d->keterangan_lulus ?? '')) === 'tidak lulus';
 
-        $ringkasan = fn ($group) => [
-            'total_exam'        => $group->count(),
-            'total_peserta'     => $group->sum(fn ($e) => $e->registexam->count()),
-            'total_lulus'       => $group->sum(fn ($e) => $lulus($e->registexam)),
-            'total_tidak_lulus' => $group->sum(fn ($e) => $tidakLulus($e->registexam)),
-            'total_tidak_exam'  => $group->sum(fn ($e) => $tidakExam($e->registexam)),
-        ];
+        $isTidakExam = fn ($d) => is_null($d->keterangan_lulus);
 
         // ── Grand total ───────────────────────────────────────────
-        $totalExam       = $exams->count();
-        $totalPeserta    = $exams->sum(fn ($e) => $e->registexam->count());
-        $totalLulus      = $exams->sum(fn ($e) => $lulus($e->registexam));
-        $totalTidakLulus = $exams->sum(fn ($e) => $tidakLulus($e->registexam));
-        $totalTidakExam  = $exams->sum(fn ($e) => $tidakExam($e->registexam));
+
+        $totalExam = $dokumentasi
+            ->pluck('registrasi.exam.id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        $totalPeserta = $dokumentasi
+            ->pluck('registrasi')
+            ->filter()
+            ->unique('id')
+            ->count();
+
+        $totalLulus = $dokumentasi->filter($isLulus)->count();
+
+        $totalTidakLulus = $dokumentasi->filter($isTidakLulus)->count();
+
+        $totalTidakExam = $dokumentasi->filter($isTidakExam)->count();
+
+        // ── Helper ringkasan ──────────────────────────────────────
+
+        $ringkasan = function ($group) use ($isLulus, $isTidakLulus, $isTidakExam) {
+            $totalPeserta = $group
+                ->pluck('registrasi.id')
+                ->filter()
+                ->unique()
+                ->count();
+
+            return [
+                'total_exam'        => $group
+                    ->pluck('registrasi.exam.id')
+                    ->filter()
+                    ->unique()
+                    ->count(),
+
+                'total_peserta'     => $totalPeserta,
+
+                'total_lulus'       => $group->filter($isLulus)->count(),
+
+                'total_tidak_lulus' => $group->filter($isTidakLulus)->count(),
+
+                'total_tidak_exam'  => $group->filter($isTidakExam)->count(),
+            ];
+        };
 
         // ── Group by materi ───────────────────────────────────────
-        $materiExam = $exams
-            ->groupBy(fn ($e) => ($e->rkm?->materi?->alias_exam ?? $e->materi) . " | " . ($e->rkm?->materi?->kategori_exam ?? '#'))
+
+        $materiExam = $dokumentasi
+            ->groupBy(function ($d) {
+                $exam = $d->registrasi?->exam;
+                $materi = $exam?->rkm?->materi;
+
+                return ($materi?->alias_exam ?? $exam?->materi ?? '-')
+                    . ' | '
+                    . ($materi?->kategori_exam ?? '#');
+            })
             ->map($ringkasan);
 
-        // ── Group by perusahaan ───────────────────────────────────
-        $instansi = $exams
-            ->groupBy(fn ($e) => $e->perusahaan ?? 'Unknown')
+        // ── Group by perusahaan ──────────────────────────────────
+
+        $instansi = $dokumentasi
+            ->groupBy(function ($d) {
+                return $d->registrasi?->exam?->perusahaan ?? 'Unknown';
+            })
             ->map($ringkasan);
 
         // ── Group by instruktur ───────────────────────────────────
-        $keberhasilanMengajar = $exams
-            ->groupBy(fn ($e) => optional($e->rkm?->instruktur)->nama_lengkap ?? 'Unknown')
+
+        $keberhasilanMengajar = $dokumentasi
+            ->groupBy(function ($d) {
+                return $d->registrasi?->exam?->rkm?->instruktur?->nama_lengkap
+                    ?? 'Unknown';
+            })
             ->map($ringkasan);
 
-        // ── Group by kategori exam (total count per kategori) ─────
-        $kategori = $exams
-            ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+        // ── Group by kategori exam ────────────────────────────────
+
+        $kategori = $dokumentasi
+            ->groupBy(function ($d) {
+                return $d->registrasi?->exam?->rkm?->materi?->kategori_exam
+                    ?? 'Unknown';
+            })
             ->map(fn ($group) => $group->count());
 
-        $kategoriData = $exams
-            ->groupBy(fn ($e) => $e->rkm?->materi?->kategori_exam ?? 'Unknown')
+        // ── Detail kategori ───────────────────────────────────────
+
+        $kategoriData = $dokumentasi
+            ->groupBy(function ($d) {
+                return $d->registrasi?->exam?->rkm?->materi?->kategori_exam
+                    ?? 'Unknown';
+            })
             ->map(function ($group) {
-                return $group->values()->map(function ($e) {
+                return $group->values()->map(function ($d) {
+                    $exam = $d->registrasi?->exam;
+                    $rkm = $exam?->rkm;
+
                     return [
-                        'tanggal_pengajuan' => $e->tanggal_pengajuan?->format('d M Y'),
-                        'tanggal_mulai'     => $e->tanggal_mulai?->format('d M Y'),
-                        'tanggal_selesai'   => $e->tanggal_selesai?->format('d M Y'),
-                        'materi'            => $e->materi ?? '-',
-                        'perusahaan'        => $e->perusahaan ?? '-',
-                        'instruktur'        => $e->rkm?->instruktur?->nama_lengkap ?? '-',
+                        'tanggal_pelaksanaan' => $d->tanggal_pelaksanaan
+                            ? \Carbon\Carbon::parse($d->tanggal_pelaksanaan)->format('d M Y')
+                            : '-',
+
+                        'materi' => $rkm?->materi?->alias_exam
+                            ?? $exam?->materi
+                            ?? '-',
+
+                        'perusahaan' => $exam?->perusahaan ?? '-',
+
+                        'instruktur' => $rkm?->instruktur?->nama_lengkap ?? '-',
+
+                        'keterangan_lulus' => $d->keterangan_lulus ?? '-',
                     ];
                 });
             });
+
+        // ── Response JSON ─────────────────────────────────────────
 
         return response()->json([
             'filter' => [
@@ -430,11 +606,13 @@ class OfficeExamController extends Controller
                 'triwulan' => $request->triwulan,
                 'bulan'    => $request->bulan,
             ],
+
             'total_exam'        => $totalExam,
             'total_peserta'     => $totalPeserta,
             'total_lulus'       => $totalLulus,
             'total_tidak_lulus' => $totalTidakLulus,
             'total_tidak_exam'  => $totalTidakExam,
+
             'materi_exam'       => $materiExam,
             'instansi'          => $instansi,
             'instruktur'        => $keberhasilanMengajar,
