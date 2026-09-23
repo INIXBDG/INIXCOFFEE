@@ -11,10 +11,15 @@
 
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold">Contact Client</h4>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal"
-                    onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
-                    Tambah Client
-                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        Export Data
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientModal"
+                        onclick="resetForm()" @if (in_array(Auth::user()->jabatan, $createNotAllowed)) disabled @endif>
+                        Tambah Client
+                    </button>
+                </div>
             </div>
 
             <div class="card">
@@ -48,6 +53,60 @@
                                 </tr>
                             </thead>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Export Data -->
+            <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exportModalLabel">Export Data Contact</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form id="exportForm" action="{{ route('pic.exportData') }}" method="GET">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="export_status" class="form-label">Status</label>
+                                    <select name="status[]" id="export_status" class="form-select" multiple>
+                                        <option value="Contact Baru">Contact Baru</option>
+                                        <option value="Contact">Contact</option>
+                                        <option value="Peserta Regist">Peserta Regist</option>
+                                    </select>
+                                    <div class="form-text">Kosongkan untuk memilih semua status. Bisa pilih lebih dari satu (Ctrl/Cmd + klik).</div>
+                                </div>
+
+                                @if(in_array(Auth::user()->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
+                                    <div class="mb-3">
+                                        <label for="export_sales" class="form-label">Sales</label>
+                                        <select name="sales_key" id="export_sales" class="form-select">
+                                            <option value="">Semua Sales</option>
+                                            @foreach ($sales as $item)
+                                                <option value="{{ $item->kode_karyawan }}">{{ $item->nama_lengkap }}</option>
+                                            @endforeach
+                                        </select>
+                                        <div class="form-text">Kosongkan untuk semua sales.</div>
+                                    </div>
+                                @endif
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="export_start_date" class="form-label">Dari Tanggal</label>
+                                        <input type="date" class="form-control" id="export_start_date" name="start_date">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="export_end_date" class="form-label">Sampai Tanggal</label>
+                                        <input type="date" class="form-control" id="export_end_date" name="end_date">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-success">Export</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -361,6 +420,33 @@
             // Inisialisasi select2
             initPerusahaanSelect2('#id_perusahaan');       // form tambah
             initPerusahaanSelect2('#edit_id_perusahaan');  // form edit
+        });
+
+        $('#exportForm').on('submit', function(e) {
+            var start = $('#export_start_date').val();
+            var end = $('#export_end_date').val();
+
+            // Validasi tanggal
+            if (start && end && end < start) {
+                e.preventDefault();
+
+                // Tutup SweetAlert jika sedang terbuka
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+
+                alert('Tanggal akhir tidak boleh lebih awal dari tanggal mulai.');
+
+                return;
+            }
+
+            // Form tetap submit secara normal
+            // Tutup loading SweetAlert setelah request dikirim
+            setTimeout(function() {
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    Swal.close();
+                }
+            }, 1000);
         });
 
         // Fungsi umum select2

@@ -787,8 +787,12 @@ Route::prefix('crm')->group(function () {
     Route::delete('/contact/delete/{id}', [ContactController::class, 'delete'])->name('delete.contact');
     Route::put('/contact/update/{id}', [ContactController::class, 'update'])->name('update.contact');
     Route::get('/contact/data', [ContactController::class, 'getPerusahaan'])->name('contact.data');
+    Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
+    Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
+    Route::post('/pic/store', [PicController::class, 'store'])->name('store.pic');
     Route::put('/update/pic', [PicController::class, 'updatePIC'])->name('pic.update');
     Route::delete('/delete/pic/{id}', [PicController::class, 'deletePIC'])->name('pic.delete');
+    Route::get('/export/data/pic', [PicController::class, 'exportData'])->name('pic.exportData');
     Route::get('/contact/history-status/all', [ContactController::class, 'allHistoryStatus'])->name('crm.contact.all_history_status');
     Route::get('/contact/history-analytics-api', [ContactController::class, 'apiHistoryAnalytics'])->name('crm.contact.history_analytics_api');
     Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
@@ -856,10 +860,6 @@ Route::prefix('crm')->group(function () {
     Route::put('/update/deskripsi/{id}', [RegisFormController::class, 'updateDeskripsi'])->name('crm.update.deskripsi');
     Route::delete('/delete/deskripsi/{id}', [RegisFormController::class, 'deleteDeskripsi'])->name('crm.delete.deskripsi');
     Route::post('/store-prospect-penawaran', [RegisFormController::class, 'storeProspectAktivitas'])->name('crm.store.prospect.penawaran');
-
-    Route::get('/pic', [PicController::class, 'index'])->name('index.pic');
-    Route::get('/index/pic', [PicController::class, 'indexJson'])->name('index.json.pic');
-    Route::post('/pic/store', [PicController::class, 'store'])->name('store.pic');
 
     // Lokasi
     Route::get('lokasi', [MapController::class, 'index'])->name('crm.lokasi');
