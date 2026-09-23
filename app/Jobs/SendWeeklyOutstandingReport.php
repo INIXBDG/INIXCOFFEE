@@ -29,7 +29,8 @@ class SendWeeklyOutstandingReport implements ShouldQueue
     {
         Log::info('Menjalankan Job: SendWeeklyOutstandingNotificationsJob...'); // Ubah nama log agar sesuai
 
-        $outstandings = Outstanding::where('status_pembayaran', '0')
+        $outstandings = Outstanding::with('rkm.perusahaan', 'rkm.materi')
+            ->where('status_pembayaran', '0')
             ->whereDate('due_date', '>=', now())
             ->get();
 
@@ -38,8 +39,23 @@ class SendWeeklyOutstandingReport implements ShouldQueue
 
         try {
             if ($financeUsers->isNotEmpty() && $outstandings->isNotEmpty()) {
-                Notification::send($financeUsers, new OutstandingNotification($outstandings, $path));
-                 Log::info('Job SendWeeklyOutstandingNotificationsJob: Mengirim notifikasi ke ' . $financeUsers->count() . ' user untuk ' . $outstandings->count() . ' outstanding.');
+                foreach ($outstandings as $outstanding) {
+                    if (!$outstanding->rkm) continue;
+
+                    $data = [
+                        'nama_materi' => $outstanding->rkm->materi->nama_materi ?? '-',
+                        'nama_perusahaan' => $outstanding->rkm->perusahaan->nama_perusahaan ?? '-',
+                        'due_date' => $outstanding->due_date,
+                        'status_pembayaran' => $outstanding->status_pembayaran,
+                        'sales_key' => $outstanding->rkm->sales_key ?? '-',
+                        'net_sales' => $outstanding->net_sales ?? 0,
+                    ];
+
+                    foreach ($financeUsers as $user) {
+                        Notification::send($user, new OutstandingNotification($data, $path, $user->id));
+                    }
+                }
+                Log::info('Job SendWeeklyOutstandingNotificationsJob: Mengirim notifikasi ke ' . $financeUsers->count() . ' user untuk ' . $outstandings->count() . ' outstanding.');
             } else {
                  Log::info('Job SendWeeklyOutstandingNotificationsJob: Tidak ada user finance atau outstanding ditemukan.');
             }

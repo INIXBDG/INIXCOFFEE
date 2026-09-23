@@ -1836,40 +1836,6 @@
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
                                                         <div class="col-md-2">
-                                                            <i class="fa-solid fa-headset" style="font-size: 30px;"></i>
-                                                        </div>
-                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                            <a href="{{ route('tickets.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">IT Helpdesk (Ticketing)</h5>
-                                                            </a>
-                                                            <p class="card-text">Laporkan Insiden dan Risiko yang anda
-                                                                alami.</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-2">
-                                                <div class="card" id="card-hover">
-                                                    <div class="card-body d-flex">
-                                                        <div class="col-md-2">
-                                                            <i class="fa-solid fa-square-poll-vertical"
-                                                                style="font-size: 30px;"></i>
-                                                        </div>
-                                                        <div class="col-md-10" style="margin-left: 10px">
-                                                            <a href="{{ route('surveykepuasan.index') }}"
-                                                                class="link stretched-link text-decoration-none">
-                                                                <h5 class="card-title">Survey Kepuasan</h5>
-                                                            </a>
-                                                            <p class="card-text">Survey kepuasan pelayanan ITSM.</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-sm-6 mt-2">
-                                                <div class="card" id="card-hover">
-                                                    <div class="card-body d-flex">
-                                                        <div class="col-md-2">
                                                             <i class="fa-solid fa-book" style="font-size: 30px;"></i>
                                                         </div>
                                                         <div class="col-md-10" style="margin-left: 10px">
@@ -1920,6 +1886,40 @@
                                                 </div>
                                             </div>
                                             @endcan
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-headset" style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('tickets.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">IT Helpdesk (Ticketing)</h5>
+                                                            </a>
+                                                            <p class="card-text">Laporkan Insiden dan Risiko yang anda
+                                                                alami.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 mt-2">
+                                                <div class="card" id="card-hover">
+                                                    <div class="card-body d-flex">
+                                                        <div class="col-md-2">
+                                                            <i class="fa-solid fa-square-poll-vertical"
+                                                                style="font-size: 30px;"></i>
+                                                        </div>
+                                                        <div class="col-md-10" style="margin-left: 10px">
+                                                            <a href="{{ route('surveykepuasan.index') }}"
+                                                                class="link stretched-link text-decoration-none">
+                                                                <h5 class="card-title">Survey Kepuasan</h5>
+                                                            </a>
+                                                            <p class="card-text">Survey kepuasan pelayanan ITSM.</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2202,7 +2202,7 @@
                                                     <div class="card-body d-flex">
                                                         <div class="col-md-2">
                                                             <img src="{{ asset('icon/wallet.svg') }}"
-                                                                class="img-responsive" width="30px">
+                                                              cket-responsive" width="30px">
                                                         </div>
                                                         <div class="col-md-10" style="margin-left: 10px">
                                                             <a href="/creditcard"
