@@ -38,6 +38,8 @@ class RKM extends Model
         'deleted_at',
         'deleted_by',
         'hide',
+        'hide_materi',
+        'hide_perusahaan',
     ];
     protected $casts = [
         'tanggal_awal' => 'date',
