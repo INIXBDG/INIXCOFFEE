@@ -948,11 +948,11 @@ function fetchTabInix(year) {
 
                 // Foto Karyawan Terbaik
                 const defaultImage = '/images/download.png';
-                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto) 
-                    ? `/storage/posts/${data.sales_terbaik.sales.foto}` 
+                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto)
+                    ? `/storage/posts/${data.sales_terbaik.sales.foto}`
                     : defaultImage;
-                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto) 
-                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}` 
+                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto)
+                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}`
                     : defaultImage;
                 const fotoOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.foto)
                     ? `/storage/posts/${data.office_terbaik.office.foto}`
@@ -967,17 +967,17 @@ function fetchTabInix(year) {
                 $('#foto_itsm').attr('src', fotoItsm);
 
                 // Nama Karyawan Terbaik
-                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap) 
-                    ? data.sales_terbaik.sales.nama_lengkap 
+                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap)
+                    ? data.sales_terbaik.sales.nama_lengkap
                     : (data.sales_terbaik && data.sales_terbaik.sales_key ? data.sales_terbaik.sales_key : 'Belum Ada');
-                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap) 
-                    ? data.instruktur_terbaik.instruktur.nama_lengkap 
+                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap)
+                    ? data.instruktur_terbaik.instruktur.nama_lengkap
                     : 'Belum Ada';
-                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap) 
-                    ? data.office_terbaik.office.nama_lengkap 
+                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap)
+                    ? data.office_terbaik.office.nama_lengkap
                     : ((data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.office_nama) ? data.office_terbaik.office.office_nama : 'Belum Ada');
-                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap) 
-                    ? data.itsm_terbaik.itsm.nama_lengkap 
+                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap)
+                    ? data.itsm_terbaik.itsm.nama_lengkap
                     : ((data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.itsm_nama) ? data.itsm_terbaik.itsm.itsm_nama : 'Belum Ada');
 
                 $('#nama_sales').text(namaSales);
@@ -1028,8 +1028,8 @@ function fetchTabInix(year) {
                         else if (item.rank === 2) rankBadgeClass = 'rank-pill-2';
                         else if (item.rank === 3) rankBadgeClass = 'rank-pill-3';
 
-                        const kodeHtml = item.kode_materi && item.kode_materi !== '-' 
-                            ? `<span class="class-code-tag">${item.kode_materi}</span>` 
+                        const kodeHtml = item.kode_materi && item.kode_materi !== '-'
+                            ? `<span class="class-code-tag">${item.kode_materi}</span>`
                             : '';
 
                         const row = `
@@ -2971,137 +2971,123 @@ const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-wa
  * Memuat data SLA Digital berdasarkan filter bulan yang dipilih.
  * @param {string|null} selectedMonth - Nilai bulan (1-12) atau 'all'.
  */
-async function loadSlaDigital(selectedMonth = null) {
-    console.log('🚀 [SLA Digital] Memuat data dari endpoint dashboardDigital()');
+    async function loadSlaDigital() {
+        console.log('🚀 [SLA Digital] Memuat data');
 
-    const $container = $('#sla-digital-container');
-    const baseUrl = $container.data('url') || '/dashboard-digital';
+        const $container = $('#sla-digital-container');
+        const baseUrl = $container.data('url') || '/dashboard-sla/digital';
 
-    console.log('📡 [SLA Digital] Request URL:', baseUrl);
+        $('#digital_sla_period').text('Memuat periode data...');
+        $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
+        $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('...');
+        $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
-    // Set Loading State
-    $('#digital_sla_period').text('Memuat periode data...');
-    $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
-    $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('...');
-    $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
+        try {
+            let startDate, endDate;
+            const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
+            const selectedMonth = $('#globalBulanFilter').val();
 
-    try {
-        let startDate, endDate;
-        // Ambil referensi tahun aktif, gunakan tahun berjalan sebagai nilai awal
-        const currentYear = $('#tahun').val() ? parseInt($('#tahun').val()) : new Date().getFullYear();
+            if (selectedMonth && selectedMonth !== 'all') {
+                const monthIndex = parseInt(selectedMonth) - 1;
+                startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+            } else {
+                startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+            }
 
-        // Logika resolusi tanggal berdasarkan parameter bulan
-        if (selectedMonth && selectedMonth !== 'all') {
-            const monthIndex = parseInt(selectedMonth) - 1;
-            startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
-            endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
-        } else if (selectedMonth === 'all') {
-            startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-            endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
-        } else {
-            const now = new Date();
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            const response = await $.ajax({
+                url: baseUrl,
+                method: 'GET',
+                data: { start_date: startDate, end_date: endDate },
+                dataType: 'json',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                timeout: 15000
+            });
+
+            if (!response || !response.kpi) {
+                throw new Error('Response tidak valid.');
+            }
+
+            const { kpi, content_details } = response;
+
+            if (kpi.filters) {
+                const start = kpi.filters.start?.split(' ')[0] || '-';
+                const end = kpi.filters.end?.split(' ')[0] || '-';
+                $('#digital_sla_period').text(`Periode: ${start} s/d ${end}`);
+            }
+
+            const resComp = parseFloat(kpi.ticket_resolution_compliance) || 0;
+            const respComp = parseFloat(kpi.ticket_response_compliance) || 0;
+            const avgTime = parseFloat(kpi.avg_resolution_time) || 0;
+
+            $('#digital-ticket-res-sla').text(`${resComp.toFixed(1)}%`).attr('class', `fs-2 fw-bold ${getSlaClass(resComp)}`);
+            $('#digital-ticket-resp-sla').text(`${respComp.toFixed(1)}%`).attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
+            $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
+
+            const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
+            const totalContent = parseInt(kpi.total_content_uploaded) || 0;
+            const weeksMet = parseInt(kpi.weeks_met) || 0;
+            const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
+
+            $('#digital-content-sla').text(`${contentComp.toFixed(1)}%`).attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
+
+            const topDigitalEl = document.getElementById('top-digital-sla');
+            if (topDigitalEl) {
+                topDigitalEl.textContent = formatPercent(contentComp);
+                topDigitalEl.className = `fs-2 fw-bold ${getSlaClass(contentComp)}`;
+            }
+
+            $('#digital-content-total').text(totalContent);
+            $('#digital-weeks-met').text(weeksMet);
+            $('#digital-weeks-total').text(totalWeeks);
+
+            renderDigitalWeeklyTable(content_details || []);
+
+        } catch (err) {
+            console.error('❌ Error SLA Digital:', err);
+            $('#digital_sla_period').html(`<span class="text-danger">⚠️ Gagal: ${err.message}</span>`);
+            $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('-').addClass('text-muted');
+            $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('-').addClass('text-muted');
+            $('#digital-weekly-table-body').html(`<tr><td colspan="4" class="text-center py-3 text-danger">Error: ${err.message}</td></tr>`);
         }
-
-        const response = await $.ajax({
-            url: baseUrl,
-            method: 'GET',
-            data: { start_date: startDate, end_date: endDate },
-            dataType: 'json',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            timeout: 15000
-        });
-
-        console.log('✅ [SLA Digital] Response diterima:', response);
-
-        // Validasi response
-        if (!response || !response.kpi) {
-            throw new Error('Response tidak memiliki field "kpi". Cek endpoint /dashboard-digital');
-        }
-
-        const { kpi, content_details } = response;
-
-        // 1. Update Header Periode
-        if (kpi.filters) {
-            const start = kpi.filters.start?.split(' ')[0] || '-';
-            const end = kpi.filters.end?.split(' ')[0] || '-';
-            $('#digital_sla_period').text(`Periode: ${start} s/d ${end}`);
-        }
-
-        // 2. Update SLA Ticketing (Support) - kanan
-        const resComp = parseFloat(kpi.ticket_resolution_compliance) || 0;
-        const respComp = parseFloat(kpi.ticket_response_compliance) || 0;
-        const avgTime = parseFloat(kpi.avg_resolution_time) || 0;
-
-        $('#digital-ticket-res-sla')
-            .text(`${resComp.toFixed(1)}%`)
-            .attr('class', `fs-2 fw-bold ${getSlaClass(resComp)}`);
-        $('#digital-ticket-resp-sla')
-            .text(`${respComp.toFixed(1)}%`)
-            .attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
-        $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
-
-        // 3. Update SLA Konten - kiri
-        const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
-        const totalContent = parseInt(kpi.total_content_uploaded) || 0;
-        const weeksMet = parseInt(kpi.weeks_met) || 0;
-        const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
-
-        $('#digital-content-sla')
-            .text(`${contentComp.toFixed(1)}%`)
-            .attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
-        $('#digital-content-total').text(totalContent);
-        $('#digital-weeks-met').text(weeksMet);
-        $('#digital-weeks-total').text(totalWeeks);
-
-        // 4. Render Tabel Mingguan dari content_details
-        renderDigitalWeeklyTable(content_details || []);
-
-        console.log('✅ [SLA Digital] Render selesai. Data:', {
-            ticketing: { resComp, respComp, avgTime },
-            content: { contentComp, totalContent, weeksMet, totalWeeks }
-        });
-
-    } catch (err) {
-        console.error('❌ [SLA Digital] Error:', err);
-        $('#digital_sla_period').html(`<span class="text-danger">⚠️ Gagal: ${err.message}</span>`);
-        $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg')
-            .text('-').addClass('text-muted');
-        $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total')
-            .text('-').addClass('text-muted');
-        $('#digital-weekly-table-body')
-            .html(`<tr><td colspan="4" class="text-center py-3 text-danger">Error: ${err.message}</td></tr>`);
-    }
-}
-
-function renderDigitalWeeklyTable(data) {
-    const $tbody = $('#digital-weekly-table-body');
-
-    if (!data || !Array.isArray(data) || data.length === 0) {
-        $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
-        return;
     }
 
-    const rows = data.map(row => {
-        const period = row.week_range || row.period || '-';
-        const uploads = row.count ?? row.uploads ?? 0;
-        const target = row.target ?? 3;
-        const status = row.status || '-';
-        const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
+    function renderDigitalWeeklyTable(data) {
+        const $tbody =$('#digital-weekly-table-body');
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
+            return;
+        }
 
-        return `
-            <tr>
-                <td>${period}</td>
-                <td class="text-center fw-bold">${uploads}</td>
-                <td class="text-center">${target}</td>
-                <td class="text-center"><span class="badge ${badgeClass}">${status}</span></td>
-            </tr>
-        `;
-    }).join('');
+        const rows = data.map(row => {
+            const period = row.week_range || row.period || '-';
+            const uploads = row.count ?? row.uploads ?? 0;
+            const target = row.target ?? 3;
+            const status = row.status || '-';
 
-    $tbody.html(rows);
-}
+            // Render label hari aktif jika ada dari controller
+            const activeDaysLabel = row.active_days !== undefined
+                ? `<br><small class="text-muted">(${row.active_days} Hari Aktif)</small>`
+                : '';
+
+            const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
+
+            return `
+                <tr>
+                    <td>${period}</td>
+                    <td class="text-center fw-bold align-middle">${uploads}</td>
+                    <td class="text-center align-middle">
+                        <strong>${target}</strong>
+                        ${activeDaysLabel}
+                    </td>
+                    <td class="text-center align-middle"><span class="badge ${badgeClass}">${status}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        $tbody.html(rows);
+    }
 
 $(document).ready(function () {
 

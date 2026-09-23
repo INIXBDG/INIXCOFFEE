@@ -63,18 +63,28 @@ $(document).ready(function () {
             document.getElementById('tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('slaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
+            const pData = kpi.tickets_by_priority || {};
             if (slaProgrammerChart) slaProgrammerChart.destroy();
+
             if (kpi.total_tickets > 0) {
                 $('#programmer-chart-row').show();
                 slaProgrammerChart = new Chart(chartCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['High', 'Medium', 'Low', 'Other'],
+                        // Tambahkan 'High (Ext)' ke labels
+                        labels: ['High', 'High (Ext)', 'Medium', 'Low', 'Other'],
                         datasets: [{
                             label: 'Jumlah Tiket',
-                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
-                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
+                            // Tarik data 'High-Extended'
+                            data: [
+                                pData.High || 0,
+                                pData['High-Extended'] || 0,
+                                pData.Medium || 0,
+                                pData.Low || 0,
+                                pData.Other || 0
+                            ],
+                            // Tambahkan warna maroon (#842029) untuk High-Extended
+                            backgroundColor: ['#dc3545', '#842029', '#ffc107', '#198754', '#6c757d']
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
@@ -94,9 +104,25 @@ $(document).ready(function () {
                 tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                const priority = item.tickets_by_priority || { High: 0, Medium: 0, Low: 0 };
-                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span> <span class="badge bg-success">L:${priority.Low}</span></td></tr>`;
-            });
+                            const priority = item.tickets_by_priority || {};
+
+                            // Tambahkan span badge untuk HE (High-Extended)
+                            const badgeHtml = `
+                                <span class="badge bg-danger">H:${priority.High || 0}</span>
+                                <span class="badge bg-dark">HE:${priority['High-Extended'] || 0}</span>
+                                <span class="badge bg-warning text-dark">M:${priority.Medium || 0}</span>
+                                <span class="badge bg-success">L:${priority.Low || 0}</span>
+                            `;
+
+                            tableBody.innerHTML += `<tr>
+                                <td><strong>${item.nama_programmer}</strong></td>
+                                <td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td>
+                                <td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td>
+                                <td>${formatHours(item.avg_resolution_time)}</td>
+                                <td><strong>${formatValue(item.total_tickets)}</strong></td>
+                                <td>${badgeHtml}</td>
+                            </tr>`;
+                        });
         } catch (error) { console.error('Gagal SLA Prog User:', error); }
     }
 
@@ -155,18 +181,25 @@ $(document).ready(function () {
             document.getElementById('ts-tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('tsSlaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
+            const pData = kpi.tickets_by_priority || {};
             if (slaTsTimChart) slaTsTimChart.destroy();
+
             if (kpi.total_tickets > 0) {
                 $('#ts-chart-row').show();
                 slaTsTimChart = new Chart(chartCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['High', 'Medium', 'Low', 'Other'],
+                        labels: ['High', 'High (Ext)', 'Medium', 'Low', 'Other'],
                         datasets: [{
                             label: 'Jumlah Tiket',
-                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
-                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
+                            data: [
+                                pData.High || 0,
+                                pData['High-Extended'] || 0,
+                                pData.Medium || 0,
+                                pData.Low || 0,
+                                pData.Other || 0
+                            ],
+                            backgroundColor: ['#dc3545', '#842029', '#ffc107', '#198754', '#6c757d']
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
@@ -186,8 +219,24 @@ $(document).ready(function () {
                 tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                const priority = item.tickets_by_priority || { High: 0, Medium: 0 };
-                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span></td></tr>`;
+                const priority = item.tickets_by_priority || {};
+
+                // Tambahkan span badge untuk HE
+                const badgeHtml = `
+                    <span class="badge bg-danger">H:${priority.High || 0}</span>
+                    <span class="badge bg-dark">HE:${priority['High-Extended'] || 0}</span>
+                    <span class="badge bg-warning text-dark">M:${priority.Medium || 0}</span>
+                    <span class="badge bg-success">L:${priority.Low || 0}</span>
+                `;
+
+                tableBody.innerHTML += `<tr>
+                    <td><strong>${item.nama_programmer}</strong></td>
+                    <td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td>
+                    <td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td>
+                    <td>${formatHours(item.avg_resolution_time)}</td>
+                    <td><strong>${formatValue(item.total_tickets)}</strong></td>
+                    <td>${badgeHtml}</td>
+                </tr>`;
             });
         } catch (error) { console.error('Gagal SLA TS User:', error); }
     }
@@ -370,7 +419,7 @@ $(document).ready(function () {
     }
 
     function renderDigitalWeeklyTable(data) {
-        const $tbody = $('#digital-weekly-table-body');
+        const $tbody =$('#digital-weekly-table-body');
         if (!data || !Array.isArray(data) || data.length === 0) {
             $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
             return;
@@ -381,14 +430,23 @@ $(document).ready(function () {
             const uploads = row.count ?? row.uploads ?? 0;
             const target = row.target ?? 3;
             const status = row.status || '-';
+
+            // Render label hari aktif jika ada dari controller
+            const activeDaysLabel = row.active_days !== undefined
+                ? `<br><small class="text-muted">(${row.active_days} Hari Aktif)</small>`
+                : '';
+
             const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
 
             return `
                 <tr>
                     <td>${period}</td>
-                    <td class="text-center fw-bold">${uploads}</td>
-                    <td class="text-center">${target}</td>
-                    <td class="text-center"><span class="badge ${badgeClass}">${status}</span></td>
+                    <td class="text-center fw-bold align-middle">${uploads}</td>
+                    <td class="text-center align-middle">
+                        <strong>${target}</strong>
+                        ${activeDaysLabel}
+                    </td>
+                    <td class="text-center align-middle"><span class="badge ${badgeClass}">${status}</span></td>
                 </tr>
             `;
         }).join('');
