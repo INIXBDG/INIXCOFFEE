@@ -60,7 +60,7 @@ class SendDailyOutstandingNotificationsJob implements ShouldQueue
 
                     $user = User::find($item->user_id);
                     if ($user) {
-                        $user->notify(new OutstandingNotification($userData, '/outstanding'));
+                        $user->notify(new OutstandingNotification($userData, '/outstanding', $user->id));
                         $notificationsSent++;
                     }
                 } catch (\Exception $e) {
