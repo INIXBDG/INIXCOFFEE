@@ -1603,6 +1603,10 @@ class OfficeController extends Controller
             ])
             ->where('status', '0')
             ->where('metode_kelas', '!=', 'Exam Only')
+            ->whereHas('peluang', function ($q) {
+                $q->where('tahap', 'merah')
+                  ->where('tentatif', false);
+            })
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
                 // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
                 $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
