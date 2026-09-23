@@ -317,9 +317,13 @@ class PicController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $status = $request->input('status', []);
+        $idPerusahaan = $request->input('id_perusahaan', []);
 
         $filename = 'contact_client_export_' . now()->format('Ymd_His') . '.xlsx';
 
-        return Excel::download(new ContactClientExport($startDate, $endDate, $status, $salesKey), $filename);
+        return Excel::download(
+            new ContactClientExport($startDate, $endDate, $status, $salesKey, $idPerusahaan),
+            $filename
+        );
     }
 }
