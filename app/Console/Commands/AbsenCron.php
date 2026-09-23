@@ -28,7 +28,7 @@ class AbsenCron extends Command
     public function handle()
     {
         // Cari absensi HARI INI yang jam masuk-nya antara 05:00:00 - 12:00:00 dan jam keluar-nya masih null
-        $jabatan = ['Instruktur', 'Programmer', 'Technical Support'];
+        $jabatan = ['Instruktur', 'Programmer', 'Technical Support', 'Koordinator ITSM'];
 
         $transactions = AbsensiKaryawan::with('karyawan')
             ->whereHas('karyawan', function ($query) use ($jabatan) {
@@ -58,7 +58,7 @@ class AbsenCron extends Command
 
             // 5. Timpa updated_at (dan created_at jika mau) dengan waktu random
             $transaction->updated_at = $fullDateTime;
-            $transaction->created_at = $fullDateTime; // Uncomment jika memang ingin disamakan
+            // $transaction->created_at = $fullDateTime; // Uncomment jika memang ingin disamakan
 
             $transaction->save();
         }
