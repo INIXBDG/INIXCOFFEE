@@ -60,7 +60,7 @@ class ProgrammerKPIService
             };
         }, $picNames))->flatten()->toArray();
 
-        $picFilter = $personId !== null 
+        $picFilter = $personId !== null
             ? (function() use ($personId) {
                 $karyawanData = karyawan::find($personId);
                 if (!$karyawanData) return null;
@@ -82,7 +82,7 @@ class ProgrammerKPIService
             ->when(!is_array($picFilter), fn($q) => $q->where('pic', $picFilter))
             ->count();
 
-        $ticketsError = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan')
+        $ticketsError = Tickets::select('created_at', 'tanggal_selesai', 'jam_selesai', 'tingkat_kesulitan', 'kategori')
             ->whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Error (Aplikasi)')
             ->where('keperluan', 'Programming')
@@ -113,12 +113,23 @@ class ProgrammerKPIService
 
                     $durasiJam = $this->hitungJamKerja($startAt, $endAt);
 
-                    $skorDurasi = match (true) {
-                        $durasiJam <= 4 => 100,
-                        $durasiJam <= 8 => 80,
-                        $durasiJam <= 24 => 60,
-                        default => 30,
-                    };
+                    // PENYESUAIAN: Cek jika kategori Error (Aplikasi) dan tingkat kesulitan Major
+                    if (strtolower($ticket->tingkat_kesulitan) === 'major') {
+                        // Batas seminggu. (Asumsi 40 jam kerja = 1 minggu. Ubah ke 168 jika pakai jam kalender 7x24 jam)
+                        $skorDurasi = match (true) {
+                            $durasiJam <= 40 => 100,
+                            $durasiJam <= 56 => 80,  // Toleransi tambahan waktu
+                            $durasiJam <= 72 => 60,
+                            default => 30,
+                        };
+                    } else {
+                        $skorDurasi = match (true) {
+                            $durasiJam <= 4 => 100,
+                            $durasiJam <= 8 => 80,
+                            $durasiJam <= 24 => 60,
+                            default => 30,
+                        };
+                    }
 
                     $bobot = match ($ticket->tingkat_kesulitan) {
                         'Major' => 1.5,
@@ -167,7 +178,7 @@ class ProgrammerKPIService
         $picNames = [];
         if (!empty($idKaryawans)) {
             $picNames = array_filter(array_map(
-                fn($nama) => explode(' ', trim($nama))[0] ?? '', 
+                fn($nama) => explode(' ', trim($nama))[0] ?? '',
                 karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray()
             ));
         }
@@ -185,7 +196,8 @@ class ProgrammerKPIService
                 'created_at',
                 'tanggal_selesai',
                 'jam_selesai',
-                'tingkat_kesulitan'
+                'tingkat_kesulitan',
+                'kategori'
             )
             ->whereBetween('created_at', [$start, $end])
             ->where('kategori', 'Error (Aplikasi)')
@@ -227,12 +239,23 @@ class ProgrammerKPIService
                         : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
                     $durasiJam = $this->hitungJamKerja($startAt, $endAt);
-                    $skorDurasi = match (true) {
-                        $durasiJam <= 4 => 100,
-                        $durasiJam <= 8 => 80,
-                        $durasiJam <= 24 => 60,
-                        default => 30,
-                    };
+
+                    // PENYESUAIAN: Cek jika kategori Error (Aplikasi) dan tingkat kesulitan Major
+                    if (strtolower($ticket->tingkat_kesulitan) === 'major') {
+                        $skorDurasi = match (true) {
+                            $durasiJam <= 40 => 100, // 40 jam kerja = 1 minggu
+                            $durasiJam <= 56 => 80,
+                            $durasiJam <= 72 => 60,
+                            default => 30,
+                        };
+                    } else {
+                        $skorDurasi = match (true) {
+                            $durasiJam <= 4 => 100,
+                            $durasiJam <= 8 => 80,
+                            $durasiJam <= 24 => 60,
+                            default => 30,
+                        };
+                    }
 
                     $bobot = match ($ticket->tingkat_kesulitan) {
                         'Major' => 1.5,
@@ -359,7 +382,7 @@ class ProgrammerKPIService
             return 0;
         }
 
-        $picFilter = $personId !== null 
+        $picFilter = $personId !== null
             ? (function() use ($personId) {
                 $karyawanData = karyawan::find($personId);
                 if (!$karyawanData) return null;
@@ -381,7 +404,7 @@ class ProgrammerKPIService
             ->whereNotNull('tanggal_selesai')
             ->when(is_array($picFilter), fn($q) => $q->whereIn('pic', $picFilter))
             ->when(!is_array($picFilter), fn($q) => $q->where('pic', $picFilter))
-            ->get();        
+            ->get();
 
         if ($tickets->isEmpty()) {
             return 0;
@@ -392,8 +415,11 @@ class ProgrammerKPIService
 
         foreach ($tickets as $ticket) {
             try {
+                // PENYESUAIAN: Prioritas khusus Error & Major
                 $priority = 'Low';
-                if (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
+                if ($ticket->kategori === 'Error (Aplikasi)' && strtolower($ticket->tingkat_kesulitan) === 'major') {
+                    $priority = 'Error_Major';
+                } elseif (in_array(strtolower($ticket->tingkat_kesulitan), ['major', 'moderate'])) {
                     $priority = 'High';
                 } elseif ($ticket->kategori === 'Error (Aplikasi)') {
                     $priority = 'Medium';
@@ -405,7 +431,9 @@ class ProgrammerKPIService
                     : Carbon::parse($ticket->tanggal_selesai . ' ' . ($ticket->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
                 $actualHours = $this->hitungJamKerja($startAt, $endAt);
+
                 $slaMet = match ($priority) {
+                    'Error_Major' => $actualHours <= 40, // 40 jam = seminggu jam kerja
                     'High' => $actualHours <= 24,
                     'Medium' => $actualHours <= 40,
                     default => true,
@@ -458,7 +486,7 @@ class ProgrammerKPIService
             ->toArray();
 
         $picNames = array_filter(array_map(
-            fn($n) => explode(' ', trim($n))[0] ?? '', 
+            fn($n) => explode(' ', trim($n))[0] ?? '',
             karyawan::whereIn('id', $idKaryawans)->pluck('nama_lengkap')->toArray()
         ));
 
@@ -513,9 +541,15 @@ class ProgrammerKPIService
 
         foreach ($tickets as $t) {
             $priority = 'Low';
-            if (in_array(strtolower($t->tingkat_kesulitan), ['major', 'moderate'])) {
+
+            // PENYESUAIAN: Filter prioritas Error + Major
+            if ($t->kategori === 'Error (Aplikasi)' && strtolower($t->tingkat_kesulitan) === 'major') {
+                $priority = 'Error_Major';
+            } elseif (in_array(strtolower($t->tingkat_kesulitan), ['major', 'moderate'])) {
                 $priority = 'High';
             } elseif (in_array(strtolower($t->tingkat_kesulitan), ['minor', 'normal']) && $t->kategori === 'Error (Aplikasi)') {
+                $priority = 'Medium';
+            } elseif ($t->kategori === 'Error (Aplikasi)') {
                 $priority = 'Medium';
             }
 
@@ -525,7 +559,9 @@ class ProgrammerKPIService
                 : Carbon::parse($t->tanggal_selesai . ' ' . ($t->jam_selesai ?? '23:59:59'), 'Asia/Jakarta');
 
             $hours = $this->hitungJamKerja($startAt, $endAt);
+
             $slaMet = match ($priority) {
+                'Error_Major' => $hours <= 40, // 40 jam kerja = seminggu
                 'High' => $hours <= 24,
                 'Medium' => $hours <= 40,
                 default => true
