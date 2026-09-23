@@ -77,6 +77,16 @@
                                     <div class="form-text">Kosongkan untuk memilih semua status. Bisa pilih lebih dari satu (Ctrl/Cmd + klik).</div>
                                 </div>
 
+                                <div class="mb-3">
+                                    <label for="export_id_perusahaan" class="form-label">Perusahaan</label>
+                                    <select name="id_perusahaan[]" id="export_id_perusahaan" class="form-select" multiple>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}">{{ $perusahaan->nama_perusahaan }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text">Kosongkan untuk semua perusahaan. Bisa pilih lebih dari satu.</div>
+                                </div>
+
                                 @if(in_array(Auth::user()->jabatan, ['GM', 'SPV Sales', 'Adm Sales']))
                                     <div class="mb-3">
                                         <label for="export_sales" class="form-label">Sales</label>
@@ -420,32 +430,31 @@
             // Inisialisasi select2
             initPerusahaanSelect2('#id_perusahaan');       // form tambah
             initPerusahaanSelect2('#edit_id_perusahaan');  // form edit
+            initPerusahaanSelect2('#export_id_perusahaan'); //form export
         });
 
         $('#exportForm').on('submit', function(e) {
+            var $form = $(this); // simpan referensi form
             var start = $('#export_start_date').val();
             var end = $('#export_end_date').val();
 
-            // Validasi tanggal
             if (start && end && end < start) {
                 e.preventDefault();
 
-                // Tutup SweetAlert jika sedang terbuka
                 if (typeof Swal !== 'undefined') {
                     Swal.close();
                 }
+                $form.find('button[type="submit"]').prop('disabled', false);
 
                 alert('Tanggal akhir tidak boleh lebih awal dari tanggal mulai.');
-
                 return;
             }
 
-            // Form tetap submit secara normal
-            // Tutup loading SweetAlert setelah request dikirim
             setTimeout(function() {
                 if (typeof Swal !== 'undefined' && Swal.isVisible()) {
                     Swal.close();
                 }
+                $form.find('button[type="submit"]').prop('disabled', false); // pakai $form, bukan $(this)
             }, 1000);
         });
 

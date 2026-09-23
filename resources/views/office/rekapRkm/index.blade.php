@@ -118,6 +118,10 @@
                 <div class="card-header">
                     <div class="row g-2">
                         <div class="col-md-3">
+                            <label class="form-label mb-1">Cari</label>
+                            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Materi / Perusahaan...">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label mb-1">Status Hide</label>
                             <select id="filterHide" class="form-select form-select-sm">
                                 <option value="all">Semua</option>
@@ -224,10 +228,11 @@
             }
         });
 
-        // Filter status untuk tabel (Hide, Hide Materi, Hide Perusahaan)
+        // Filter status untuk tabel (Hide, Hide Materi, Hide Perusahaan) + Search
         const filterHide = document.getElementById('filterHide');
         const filterHideMateri = document.getElementById('filterHideMateri');
         const filterHidePerusahaan = document.getElementById('filterHidePerusahaan');
+        const searchInput = document.getElementById('searchInput');
 
         function matchStatus(value, filterValue) {
             if (filterValue === 'all') return true;
@@ -235,11 +240,22 @@
             return filterValue === 'hide' ? isHide : !isHide;
         }
 
+        function matchSearch(item, keyword) {
+            if (!keyword) return true;
+            const target = keyword.toLowerCase();
+            const materi = (item.nama_materi ?? '').toLowerCase();
+            const perusahaan = (item.nama_perusahaan ?? '').toLowerCase();
+            return materi.includes(target) || perusahaan.includes(target);
+        }
+
         function applyTableFilter() {
+            const keyword = searchInput.value.trim();
+
             filteredData = currentData.filter(item =>
                 matchStatus(item.hide, filterHide.value) &&
                 matchStatus(item.hide_materi, filterHideMateri.value) &&
-                matchStatus(item.hide_perusahaan, filterHidePerusahaan.value)
+                matchStatus(item.hide_perusahaan, filterHidePerusahaan.value) &&
+                matchSearch(item, keyword)
             );
             currentPage = 1;
             renderTable();
@@ -247,6 +263,12 @@
 
         [filterHide, filterHideMateri, filterHidePerusahaan].forEach(el => {
             el.addEventListener('change', applyTableFilter);
+        });
+
+        let searchDebounce;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(applyTableFilter, 250);
         });
 
         function loadData() {
@@ -264,9 +286,8 @@
             fetch(apiUrl + '?' + params.toString())
                 .then(res => res.json())
                 .then(data => {
-                    // response: { peluang, materi_terbanyak, top_materi, rkm_per_minggu, top_minggu }
                     currentData = data.peluang ?? [];
-                    applyTableFilter(); // render tabel dengan filter status yang aktif
+                    applyTableFilter();
                     renderChart(currentData);
                     renderMateriChart(data.materi_terbanyak ?? []);
                     renderMingguChart(data.rkm_per_minggu ?? []);
@@ -390,7 +411,6 @@
         }
 
         function renderMateriChart(materiData) {
-            // Batasi maksimal 10 materi teratas biar chart tidak terlalu panjang
             const topMateri = materiData.slice(0, 10);
 
             const labels = topMateri.map(m => m.nama_materi ?? '-');
@@ -424,7 +444,7 @@
                     }]
                 },
                 options: {
-                    indexAxis: 'y', // horizontal bar, biar nama materi yang panjang tetap kebaca
+                    indexAxis: 'y',
                     responsive: true,
                     plugins: {
                         legend: { display: false },
@@ -458,7 +478,6 @@
                 return;
             }
 
-            // Cari index minggu dengan jumlah tertinggi, buat warnanya beda
             const maxValue = Math.max(...values);
             const pointColors = values.map(v => v === maxValue ? '#dc3545' : '#0d6efd');
 
@@ -493,7 +512,6 @@
 
         document.getElementById('btnFilter').addEventListener('click', loadData);
 
-        // Load pertama kali dengan default filter (bulan ini, tahun ini)
         filterType.value = 'bulan';
         loadData();
     });

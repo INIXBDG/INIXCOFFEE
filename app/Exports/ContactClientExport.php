@@ -13,13 +13,15 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
     protected $endDate;
     protected $status;
     protected $salesKey;
+    protected $idPerusahaan;
 
-    public function __construct($startDate = null, $endDate = null, $status = [], $salesKey = null)
+    public function __construct($startDate = null, $endDate = null, $status = [], $salesKey = null, $idPerusahaan = [])
     {
         $this->startDate = $startDate;
         $this->endDate = $endDate;
         $this->status = $status;
         $this->salesKey = $salesKey;
+        $this->idPerusahaan = $idPerusahaan;
     }
 
     /**
@@ -48,6 +50,9 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
         if (!empty($this->salesKey)) {
             $pesertaQuery->where('pr.sales_key', $this->salesKey);
         }
+        if (!empty($this->idPerusahaan)) {
+            $pesertaQuery->whereIn('pr.id', (array) $this->idPerusahaan);
+        }
 
         $contactQuery = DB::table('contacts as c')
             ->selectRaw('
@@ -72,6 +77,9 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
 
         if (!empty($this->salesKey)) {
             $contactQuery->where('pr.sales_key', $this->salesKey);
+        }
+        if (!empty($this->idPerusahaan)) {
+            $contactQuery->whereIn('pr.id', (array) $this->idPerusahaan);
         }
 
         $pesertaSql = $pesertaQuery->toSql();
