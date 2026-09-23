@@ -1601,7 +1601,7 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', '0')
+            ->where('status', ['0', '3'])
             ->where('metode_kelas', '!=', 'Exam Only')
             ->whereHas('peluang', function ($q) {
                 $q->where('tahap', 'merah')
