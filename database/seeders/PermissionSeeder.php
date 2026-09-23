@@ -148,6 +148,7 @@ class PermissionSeeder extends Seeder
         'Delete SOP Perusahaan',
         'View RekapRKM Office',
         'Update RekapRKM Office',
+        'View ITSM Only',
     ];
 
     public function run(): void
@@ -165,6 +166,6 @@ class PermissionSeeder extends Seeder
             );
         }
 
-        $this->command->info(count($this->permissions) . ' permissions berhasil di-seed.');
+        $this->command->info(count($this->permissions).' permissions berhasil di-seed.');
     }
 }

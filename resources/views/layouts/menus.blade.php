@@ -1698,7 +1698,6 @@
                                 </div>
                             </div>
                             @endcan
-
                             <div class="col-md-12 mt-1">
                                 <div class="card">
                                     <div class="card-body">
@@ -1781,8 +1780,7 @@
                                                 </div>
                                             </div>
                                             @endcan
-                                            @if (Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT
-                                            Service Management')
+                                            @can ('View ITSM Only')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1834,7 +1832,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1885,9 +1882,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @if (Auth::user()->hasAnyRole(['itsm', 'ITSM', 'Koordinator ITSM',
-                                            'Programmer', 'Technical Support']) || (Auth::user()->karyawan &&
-                                            Auth::user()->karyawan->divisi === 'IT Service Management'))
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1906,9 +1900,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
-                                            @if ((Auth::user()->karyawan && Auth::user()->karyawan->divisi === 'IT
-                                            Service Management'))
+                                            @endcan
+                                            @can ('View ITSM Only')
                                             <div class="col-sm-6 mt-2">
                                                 <div class="card" id="card-hover">
                                                     <div class="card-body d-flex">
@@ -1926,7 +1919,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            @endif
+                                            @endcan
                                         </div>
                                     </div>
                                 </div>
@@ -2433,7 +2426,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             @can('Fitur Menu Education')
                             <div class="col-md-12 mt-1">
                                 <div class="card">

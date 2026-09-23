@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Exports\ContactClientExport;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function Symfony\Component\VarDumper\Dumper\esc;
 
@@ -299,4 +301,25 @@ class PicController extends Controller
         $contact->delete();
     }
 
+    public function exportData(Request $request)
+    {
+        $user = Auth::user();
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'GM'];
+
+        if ($user->jabatan === 'Sales') {
+            $salesKey = $user->id_sales;
+        } elseif (in_array($user->jabatan, $allowedJabatan)) {
+            $salesKey = $request->input('sales_key');
+        } else {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $status = $request->input('status', []);
+
+        $filename = 'contact_client_export_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new ContactClientExport($startDate, $endDate, $status, $salesKey), $filename);
+    }
 }

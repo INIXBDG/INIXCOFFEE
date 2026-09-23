@@ -301,11 +301,8 @@ class examController extends Controller
             'approvalexam',
         ])->orderBy('created_at', 'desc')->get();
 
-        $examIds = $rkm->pluck('id')->toArray();
-        $existingPengajuan = PengajuanBarang::whereIn('id_exam', $examIds)->pluck('id_exam')->toArray();
-
-        $rkm->each(function ($item) use ($existingPengajuan) {
-            $item->has_pengajuan_barang = in_array($item->id, $existingPengajuan);
+        $rkm->each(function ($item) {
+            $item->has_pengajuan_barang = !is_null($item->id_pengajuan_barang);
         });
 
         return response()->json([
@@ -549,7 +546,7 @@ class examController extends Controller
         $biaya_admin = $rkm->biaya_admin * $rkm->kurs_dollar;
         $harga = $rkm->harga * $rkm->kurs;
 
-        $hasPengajuanBarang = \App\Models\PengajuanBarang::where('id_exam', $id)->exists();
+        $hasPengajuanBarang = !is_null($rkm->id_pengajuan_barang);
 
         return view('exam.show', compact(
             'rkm', 
@@ -860,8 +857,7 @@ class examController extends Controller
                 return back()->with('error', 'Data karyawan tidak ditemukan.');
             }
 
-            $sudahAda = PengajuanBarang::where('id_exam', $exam->id)->exists();
-            if ($sudahAda) {
+            if ($exam->id_pengajuan_barang) {
                 return back();
             }
 
@@ -870,7 +866,10 @@ class examController extends Controller
             $PengajuanBarang = PengajuanBarang::create([
                 'tipe'        => 'Exam',
                 'id_karyawan' => $karyawan->id,
-                'id_exam'     => $exam->id,
+            ]);
+
+            $exam->update([
+                'id_pengajuan_barang' => $PengajuanBarang->id,
             ]);
 
             detailPengajuanBarang::create([

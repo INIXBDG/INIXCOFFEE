@@ -461,7 +461,7 @@
             updateGapKompetensi: "{{ route('kpi.updateGapKompetensi') }}",
             manualValue: "{{ route('kpi.manualValue') }}",
             assistantRoutes: "{{ route('kpi.assistantRoutes') }}",
-            hapusTarget: "{{ route('kpi.dataTarget.destroy', ['id' => 'REPLACE_ID']) }}",
+            hapusTarget: "{{ route('kpi.hapus', ['id' => 'REPLACE_ID']) }}",
             
             // Tokens & Dates
             csrfToken: "{{ csrf_token() }}",
