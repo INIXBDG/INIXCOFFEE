@@ -218,6 +218,25 @@
             padding: 0;
         }
 
+        .masonry-container {
+            column-count: 2;
+            column-gap: 1rem;
+            padding: 0.5rem;
+        }
+
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            display: inline-block;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .masonry-container {
+                column-count: 1;
+            }
+        }
+
         .notification {
             background-color: #f9f9f9;
             padding: 10px;
@@ -1313,10 +1332,8 @@
         {{-- {{auth()->user()->hashids}} --}}
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
-                <div class="row justify-content-between">
-                    <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
-                        <div class="row">
-                            <div class="col-md-12 mt-1">
+                <div class="masonry-container">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Karyawan</h5>
@@ -1612,7 +1629,7 @@
                             </div>
 
                             @can('Fitur Menu Peserta')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Peserta</h5>
@@ -1698,7 +1715,7 @@
                                 </div>
                             </div>
                             @endcan
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">IT Service Management</h5>
@@ -1924,13 +1941,8 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-12 col-sm-12 col-xs-12 col-lg-6 col-xl-6">
                         @can('Fitur Menu RKM')
-                        <div class="row">
-                            <div class="col-md-12 mt-1">
+                        <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Rencana Kelas Mingguan</h5>
@@ -2153,7 +2165,7 @@
                             @endcan
 
                             @can('Fitur Menu Finance')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Finance</h5>
@@ -2315,7 +2327,7 @@
                             </div>
                             @endcan
 
-                           <div class="col-md-12 mt-1">
+                           <div class="masonry-item">
                                 <!-- Section Performance Assessment -->
                                 <div class="card">
                                     <div class="card-body">
@@ -2427,7 +2439,7 @@
                                 </div>
                             </div>
                             @can('Fitur Menu Education')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Education</h5>
@@ -2626,7 +2638,7 @@
                             @endcan
 
                             @can('Fitur Menu Office')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Office</h5>
@@ -2789,7 +2801,7 @@
                             @endcan
 
                             @can('Fitur CRM')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Customer Relationship Management</h5>
@@ -2836,7 +2848,7 @@
                             @endcan
 
                             @can('Fitur Menu Manajemen')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Management</h5>
@@ -2865,7 +2877,7 @@
                             @endcan
 
                             @can('Fitur Menu Project')
-                            <div class="col-md-12 mt-1">
+                            <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Project</h5>
@@ -2965,8 +2977,6 @@
                             </div>
                             @endcan
                         </div>
-                    </div>
-                </div>
             </div>
 
             <div class="tab-pane fade" id="pills-admin" role="tabpanel" aria-labelledby="pills-admin-tab">
