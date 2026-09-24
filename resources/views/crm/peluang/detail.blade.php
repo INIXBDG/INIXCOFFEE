@@ -32,8 +32,8 @@
                     @if ($isLost)
                         <span class="btn btn-sm btn-info" style="pointer-events: none; opacity: 0.5;">Lihat di RKM</span>
                     @else
-                        <a class="btn btn-sm btn-info" target="blank_"
-                            href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas }}">Lihat
+                        <a class="btn btn-sm btn-info" target="_blank"
+                            href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas_kode }}">Lihat
                             di RKM</a>
                     @endif
                     <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal">

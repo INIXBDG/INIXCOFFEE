@@ -306,6 +306,7 @@
             var table = $('#picTable').DataTable({
                 processing: true,
                 serverSide: true,
+                order: [],
                 ajax: {
                     url: "{{ route('index.json.pic') }}",
                     type: 'GET',
