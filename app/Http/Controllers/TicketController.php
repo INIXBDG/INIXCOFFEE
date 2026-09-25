@@ -6,39 +6,37 @@ use App\Models\karyawan;
 use App\Models\Tickets;
 use App\Models\User;
 use App\Notifications\TicketNotification;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Google\Client;
+use DateTime;
 use Google\Service\Sheets;
 use Google\Service\Sheets\ValueRange;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Telegram\Bot\Laravel\Facades\Telegram;
-use DateTime;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+
 // use Google_Service_Sheets_ValueRange;
 class TicketController extends Controller
 {
-        public function __construct()
+    public function __construct()
     {
-        $this->middleware('auth')->except(['handleInternalUpdate', 'getOpenTickets', 'webhookTelegram']);
+        $this->middleware('auth')->except(['handleInternalUpdate', 'getOpenTickets']);
     }
 
     private function normalizeTimestamp($timestamp)
     {
         // Jika sudah objek DateTime
-        if ($timestamp instanceof DateTime) {
+        if ($timestamp instanceof \DateTime) {
             return $timestamp->format('n/j/Y H:i:s');
         }
 
         // Jika string, coba deteksi format terlebih dahulu
         if (is_string($timestamp)) {
             // Cek format dengan regex atau coba parse dulu
-            $date = DateTime::createFromFormat('m/d/Y H:i:s', $timestamp);
+            $date = \DateTime::createFromFormat('m/d/Y H:i:s', $timestamp);
             if ($date !== false) {
                 return $date->format('n/j/Y H:i:s');
             }
-            $date = DateTime::createFromFormat('Y-m-d H:i:s', $timestamp);
+            $date = \DateTime::createFromFormat('Y-m-d H:i:s', $timestamp);
             if ($date !== false) {
                 return $date->format('n/j/Y H:i:s');
             }
@@ -51,7 +49,7 @@ class TicketController extends Controller
         }
 
         // Jika timestamp tidak dikenali, return apa adanya (atau bisa dikasih default)
-        return (string)$timestamp;
+        return (string) $timestamp;
     }
 
     public function store(Request $request)
@@ -71,41 +69,30 @@ class TicketController extends Controller
             'kategori' => $request->kategori,
             'keperluan' => $request->keperluan,
             'detail_kendala' => $request->detail_kendala,
-            'timestamp' => $request->datetime
+            'timestamp' => $request->datetime,
             // nilai default lainnya tetap
         ]);
 
         $todayCount = Tickets::whereDate('created_at', today())->count();
         $char = chr(96 + $todayCount); // a untuk tiket pertama, b untuk kedua, dst.
-        $ticketId = 'NIX' . now()->format('ymd') . $char;
+        $ticketId = 'NIX'.now()->format('ymd').$char;
         $ticket->ticket_id = $ticketId;
         $ticket->save();
 
-
         $message = "Ada Ticketing Masuk:\n"
-            . "ID Tiket: *{$ticket->ticket_id}*\n\n"
-            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
-            . "Divisi: {$ticket->divisi}\n"
-            . "Kategori: {$ticket->kategori}\n"
-            . "Keperluan: {$ticket->keperluan}\n"
-            . "Detail Kendala: {$ticket->detail_kendala}\n\n"
-            . "Balas dengan format:\n"
-            . "`/terima {$ticket->ticket_id}` untuk memproses.";
+            ."ID Tiket: *{$ticket->ticket_id}*\n\n"
+            ."Nama Karyawan: {$ticket->nama_karyawan}\n"
+            ."Divisi: {$ticket->divisi}\n"
+            ."Kategori: {$ticket->kategori}\n"
+            ."Keperluan: {$ticket->keperluan}\n"
+            ."Detail Kendala: {$ticket->detail_kendala}\n\n"
+            ."Balas dengan format:\n"
+            ."`/terima {$ticket->ticket_id}` untuk memproses.";
 
-
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!A:H';  // Pastikan nama sheet dan kolom sesuai di Spreadsheet Anda
         $timestamp = $this->normalizeTimestamp($ticket->timestamp);
         $detail_kendala_ts = '';
         $detail_kendala_pr = '';
         $detail_kendala_td = '';
-
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
-        // ])->post('https://api.fonnte.com/send', [
-        //     'target'  => '120363418574215044@g.us', // pakai Group ID
-        //     'message' => $message,
-        // ]);
 
         if ($ticket->keperluan == 'Technical Support') {
             $detail_kendala_ts = $ticket->detail_kendala;
@@ -124,12 +111,9 @@ class TicketController extends Controller
                 $ticket->keperluan,
                 $detail_kendala_pr,
                 $detail_kendala_td,
-            ]
+            ],
         ];
-        // $message = $this->appendValues($spreadsheetId, $range, $values);
-        // $ticket->update([
-        //     'row' => $message
-        // ]);
+
         $itsm = karyawan::where('divisi', 'IT Service Management')->get();
 
         // Ambil array kode_karyawan
@@ -146,7 +130,7 @@ class TicketController extends Controller
         })->get();
 
         $path = '/tickets';
-        $status = "Ticketing Baru";
+        $status = 'Ticketing Baru';
 
         foreach ($users as $user) {
             $receiverId = $user->id;
@@ -158,35 +142,35 @@ class TicketController extends Controller
         // =========================================================================
         try {
             $botToken = env('TELEGRAM_BOT_TOKEN');
-            $groupId  = env('TELEGRAM_GROUP_ID');
+            $groupId = env('TELEGRAM_GROUP_ID');
 
             $telegramMessage = "🔔 *Ada Ticketing Masuk:*\n\n"
-                . "ID Tiket: `{$ticket->ticket_id}`\n"
-                . "Nama: {$ticket->nama_karyawan}\n"
-                . "Divisi: {$ticket->divisi}\n"
-                . "Kategori: {$ticket->kategori}\n"
-                . "Keperluan: {$ticket->keperluan}\n"
-                . "Kendala: {$ticket->detail_kendala}\n\n"
-                . "Silahkan klik tombol di bawah atau balas dengan `/terima {$ticket->ticket_id}`";
+                ."ID Tiket: `{$ticket->ticket_id}`\n"
+                ."Nama: {$ticket->nama_karyawan}\n"
+                ."Divisi: {$ticket->divisi}\n"
+                ."Kategori: {$ticket->kategori}\n"
+                ."Keperluan: {$ticket->keperluan}\n"
+                ."Kendala: {$ticket->detail_kendala}\n\n"
+                ."Silahkan klik tombol di bawah atau balas dengan `/terima {$ticket->ticket_id}`";
 
             Http::withoutVerifying()->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id'    => $groupId,
-                'text'       => $telegramMessage,
+                'chat_id' => $groupId,
+                'text' => $telegramMessage,
                 'parse_mode' => 'Markdown',
                 'reply_markup' => json_encode([
                     'inline_keyboard' => [
                         [
                             ['text' => '✅ Terima', 'callback_data' => "accept:{$ticket->ticket_id}"],
-                            ['text' => '❌ Tolak', 'callback_data' => "reject:{$ticket->ticket_id}"]
+                            ['text' => '❌ Tolak', 'callback_data' => "reject:{$ticket->ticket_id}"],
                         ],
                         [
-                            ['text' => '🏁 Selesai', 'callback_data' => "finish:{$ticket->ticket_id}"]
-                        ]
-                    ]
-                ])
+                            ['text' => '🏁 Selesai', 'callback_data' => "finish:{$ticket->ticket_id}"],
+                        ],
+                    ],
+                ]),
             ]);
         } catch (\Exception $e) {
-            Log::error("Gagal mengirim tiket baru ke Telegram: " . $e->getMessage());
+            Log::error('Gagal mengirim tiket baru ke Telegram: '.$e->getMessage());
         }
 
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dibuat, akan segera diprovide. Terimakasih!');
@@ -199,75 +183,38 @@ class TicketController extends Controller
         // =========================================================================
         try {
             $botToken = env('TELEGRAM_BOT_TOKEN');
-            $groupId  = env('TELEGRAM_GROUP_ID');
+            $groupId = env('TELEGRAM_GROUP_ID');
 
             $picName = $pic ?? ($ticket->pic ?? '-');
             $infoKeterangan = $keterangan ?? '-';
 
             if ($action === 'accepted') {
                 $text = "✅ *TICKET DITERIMA*\n\n"
-                      . "ID: `{$ticket->ticket_id}`\n"
-                      . "PIC: {$picName}\n"
-                      . "Status: Sedang Diproses";
+                      ."ID: `{$ticket->ticket_id}`\n"
+                      ."PIC: {$picName}\n"
+                      .'Status: Sedang Diproses';
             } elseif ($action === 'finished') {
                 $text = "🏁 *TICKET SELESAI*\n\n"
-                      . "ID: `{$ticket->ticket_id}`\n"
-                      . "PIC: {$picName}\n"
-                      . "Keterangan: {$infoKeterangan}\n"
-                      . "Status: Selesai";
+                      ."ID: `{$ticket->ticket_id}`\n"
+                      ."PIC: {$picName}\n"
+                      ."Keterangan: {$infoKeterangan}\n"
+                      .'Status: Selesai';
             } else {
                 $text = "🚫 *TICKET TERKENDALA / DITOLAK*\n\n"
-                      . "ID: `{$ticket->ticket_id}`\n"
-                      . "Keterangan: {$infoKeterangan}\n"
-                      . "Status: Dibatalkan / Terkendala";
+                      ."ID: `{$ticket->ticket_id}`\n"
+                      ."Keterangan: {$infoKeterangan}\n"
+                      .'Status: Dibatalkan / Terkendala';
             }
 
             Http::withoutVerifying()->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
-                'chat_id'    => $groupId,
-                'text'       => $text,
-                'parse_mode' => 'Markdown'
+                'chat_id' => $groupId,
+                'text' => $text,
+                'parse_mode' => 'Markdown',
             ]);
         } catch (\Exception $e) {
-            Log::error("Gagal kirim update ke Telegram: " . $e->getMessage());
+            Log::error('Gagal kirim update ke Telegram: '.$e->getMessage());
         }
     }
-
-    // private function appendValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
-    // {
-    //     $client = new Client();
-    //     $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
-    //     $client->addScope(Sheets::SPREADSHEETS);
-
-    //     $service = new Sheets($client);
-
-    //     try {
-    //         $body = new \Google\Service\Sheets\ValueRange();
-    //         $body->setValues($values);
-
-    //         $params = ['valueInputOption' => $valueInputOption];
-
-    //         $result = $service->spreadsheets_values->append(
-    //             $spreadsheetId,
-    //             $range,
-    //             $body,
-    //             $params
-    //         );
-
-    //         $updatedRange = $result->getUpdates()->getUpdatedRange();
-
-    //         if (preg_match('/![A-Z]+(\d+):[A-Z]+\d+$/', $updatedRange, $matches)) {
-    //             $startRow = intval($matches[1]);
-    //             printf("%d.", $result->getUpdates()->getUpdatedCells(), $startRow);
-    //             return $startRow;
-    //         } else {
-    //             printf("%d cells appended. Namun gagal mengambil baris ID.", $result->getUpdates()->getUpdatedCells());
-    //             return 500;
-    //         }
-    //     } catch (\Exception $e) {
-    //         echo 'Message: ' . $e->getMessage();
-    //         return 500;
-    //     }
-    // }
 
     public function index()
     {
@@ -290,6 +237,7 @@ class TicketController extends Controller
                 $query->where('id', $user);
             })->latest()->get();
         }
+
         return response()->json([
             'success' => true,
             'message' => 'List Tickets Karyawan',
@@ -300,6 +248,7 @@ class TicketController extends Controller
     public function create()
     {
         $karyawan = karyawan::get();
+
         return view('ticket.create', compact('karyawan'));
     }
 
@@ -317,7 +266,7 @@ class TicketController extends Controller
         ]);
 
         $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!I' . $ticket->row . ':M' . $ticket->row;
+        $range = 'Form Responses 1!I'.$ticket->row.':M'.$ticket->row;
         $values = [
             [
                 $tanggal_response,
@@ -325,28 +274,21 @@ class TicketController extends Controller
                 $request->pic,
                 $ticket->penanganan,
                 $ticket->status,
-            ]
+            ],
         ];
-        // $data = $this->updatedValues($spreadsheetId, $range, $values);
 
         $message = "Ticket Sedang Ditangani Oleh:\n"
-            . "Nama Karyawan: {$request->pic}\n"
-            . "Divisi: IT Service Management\n"
-            . "Penanganan: Sedang Diperbaiki/Dicek\n"
-            . "Waktu Response: {$tanggal_response} {$jam_response}\n"
-            . "Mohon tunggu. Terimakasih!";
+            ."Nama Karyawan: {$request->pic}\n"
+            ."Divisi: IT Service Management\n"
+            ."Penanganan: Sedang Diperbaiki/Dicek\n"
+            ."Waktu Response: {$tanggal_response} {$jam_response}\n"
+            .'Mohon tunggu. Terimakasih!';
 
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
-        // ])->post('https://api.fonnte.com/send', [
-        //     'target'  => '120363418574215044@g.us', // pakai Group ID
-        //     'message' => $message,
-        // ]);
         $this->notifyTelegram('accepted', $ticket, $request->pic);
         if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Ticket processed via API'
+                'status' => 'success',
+                'message' => 'Ticket processed via API',
             ], 200);
         }
 
@@ -368,8 +310,6 @@ class TicketController extends Controller
             'tingkat_kesulitan' => $request->kesulitan,
         ]);
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
         $values = [
             [
                 $ticket->penanganan,
@@ -380,36 +320,28 @@ class TicketController extends Controller
                 '',
                 '',
                 $ticket->tingkat_kesulitan,
-            ]
+            ],
         ];
-        // $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Sudah Selesai:\n"
-            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
-            . "Divisi: {$ticket->divisi}\n"
-            . "Detail Kendala: {$ticket->detail_kendala}\n"
-            . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
-            . "Terimakasih!";
+            ."Nama Karyawan: {$ticket->nama_karyawan}\n"
+            ."Divisi: {$ticket->divisi}\n"
+            ."Detail Kendala: {$ticket->detail_kendala}\n"
+            ."Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
+            .'Terimakasih!';
 
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
-        // ])->post('https://api.fonnte.com/send', [
-        //     'target'  => '120363418574215044@g.us', // pakai Group ID
-        //     'message' => $message,
-        // ]);
-        // ... kode update DB, Sheets, Fonnte Anda ...
-        $pembuatTiket = \App\Models\User::whereHas('karyawan', function ($query) use ($ticket) {
+        $pembuatTiket = User::whereHas('karyawan', function ($query) use ($ticket) {
             $query->where('nama_lengkap', $ticket->nama_karyawan);
         })->first();
 
         // Pengiriman notifikasi sistem jika pengguna ditemukan
         if ($pembuatTiket) {
-            \Illuminate\Support\Facades\Notification::send($pembuatTiket, new \App\Notifications\SurveyReminderNotification($ticket));
+            NotificationFacade::send($pembuatTiket, new \App\Notifications\SurveyReminderNotification($ticket));
         }
         $this->notifyTelegram('finished', $ticket, $ticket->pic, $request->keterangan);
         if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Ticket Finished via API'
+                'status' => 'success',
+                'message' => 'Ticket Finished via API',
             ], 200);
         }
 
@@ -430,8 +362,6 @@ class TicketController extends Controller
             'jam_selesai' => $jam_selesai,
         ]);
 
-        $spreadsheetId = '1k_NRI52B-alnGVeLTGB8cecL3f1G-C7_WCVGnQQGe9Y';
-        $range = 'Form Responses 1!L' . $ticket->row . ':S' . $ticket->row;
         $values = [
             [
                 $ticket->penanganan,
@@ -442,29 +372,22 @@ class TicketController extends Controller
                 '',
                 '',
                 $ticket->kesulitan,
-            ]
+            ],
         ];
-        // $data = $this->updatedValues($spreadsheetId, $range, $values);
         $message = "Ticket Terkendala:\n"
-            . "Nama Karyawan: {$ticket->nama_karyawan}\n"
-            . "Divisi: {$ticket->divisi}\n"
-            . "Detail Kendala: {$ticket->detail_kendala}\n"
-            . "Keterangan: {$request->keterangan}\n"
-            . "Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
-            . "Terimakasih!";
+            ."Nama Karyawan: {$ticket->nama_karyawan}\n"
+            ."Divisi: {$ticket->divisi}\n"
+            ."Detail Kendala: {$ticket->detail_kendala}\n"
+            ."Keterangan: {$request->keterangan}\n"
+            ."Waktu Selesai: {$tanggal_selesai} {$jam_selesai}\n"
+            .'Terimakasih!';
 
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'HmqnkbnayTamYJSL1BKc',
-        // ])->post('https://api.fonnte.com/send', [
-        //     'target'  => '120363418574215044@g.us', // pakai Group ID
-        //     'message' => $message,
-        // ]);
         $this->notifyTelegram('rejected', $ticket, null, $request->keterangan);
 
         if ($request->from_internal || $request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'status'  => 'success',
-                'message' => 'Ticket processed via API'
+                'status' => 'success',
+                'message' => 'Ticket processed via API',
             ], 200);
         }
 
@@ -476,37 +399,6 @@ class TicketController extends Controller
         return view('ticket.detail', compact('ticket'));
     }
 
-    // private function updatedValues($spreadsheetId, $range, $values, $valueInputOption = 'RAW')
-    // {
-    //     $client = new Client();
-    //     $client->setAuthConfig(storage_path('app/google/chart-spreadsheet-api.json'));
-    //     $client->addScope(Sheets::SPREADSHEETS);
-
-    //     $service = new Sheets($client);
-
-    //     try {
-    //         // Gunakan nama class yang benar sesuai namespace
-    //         $body = new \Google\Service\Sheets\ValueRange();
-    //         $body->setValues($values);
-
-
-    //         $params = ['valueInputOption' => $valueInputOption];
-
-    //         $result = $service->spreadsheets_values->update(
-    //             $spreadsheetId,
-    //             $range,
-    //             $body,
-    //             $params
-    //         );
-
-    //         printf("%d cells updated.", $result->getUpdatedCells());
-    //         return $result;
-    //     } catch (\Exception $e) {
-    //         echo 'Message: ' . $e->getMessage();
-    //         return null;
-    //     }
-    // }
-
     public function handleInternalUpdate(Request $request)
     {
         $request->headers->set('Accept', 'application/json');
@@ -516,10 +408,10 @@ class TicketController extends Controller
         }
         Log::info('Laravel B: Internal Update Request Received', [
             'ip_pengirim' => $request->ip(),
-            'ticket_id'   => $request->ticket_id,
-            'action'      => $request->action,
-            'pic_name'    => $request->pic_name,
-            'full_payload'=> $request->all()
+            'ticket_id' => $request->ticket_id,
+            'action' => $request->action,
+            'pic_name' => $request->pic_name,
+            'full_payload' => $request->all(),
         ]);
 
         $ticket = Tickets::where('ticket_id', $request->ticket_id)->first();
@@ -532,36 +424,39 @@ class TicketController extends Controller
         // --- LOGIC ACCEPT ---
         if ($action === 'accept') {
             $fakeRequest = new Request([
-                'pic'              => $request->pic_name,
+                'pic' => $request->pic_name,
                 'tanggal_response' => now()->format('Y-m-d'),
-                'jam_response'     => now()->format('H:i:s'),
-                'from_internal'    => true,
+                'jam_response' => now()->format('H:i:s'),
+                'from_internal' => true,
             ]);
+
             return $this->accept($fakeRequest, $ticket);
         }
 
         // --- LOGIC FINISH ---
         if ($action === 'finish') {
             $fakeRequest = new Request([
-                'penanganan'     => 'Selesai via Telegram',
-                'keterangan'     => $request->keterangan ?? 'Selesai',
-                'kesulitan'      => 'Normal',
-                'tanggal_selesai'=> now()->format('Y-m-d'),
-                'jam_selesai'    => now()->format('H:i:s'),
-                'from_internal'  => true,
+                'penanganan' => 'Selesai via Telegram',
+                'keterangan' => $request->keterangan ?? 'Selesai',
+                'kesulitan' => 'Normal',
+                'tanggal_selesai' => now()->format('Y-m-d'),
+                'jam_selesai' => now()->format('H:i:s'),
+                'from_internal' => true,
             ]);
+
             return $this->finish($fakeRequest, $ticket);
         }
 
         // --- LOGIC REJECT (BLOCK) ---
         if ($action === 'reject') {
             $fakeRequest = new Request([
-                'penanganan'     => 'Terkendala/Ditolak via Telegram',
-                'keterangan'     => 'Dibatalkan oleh ' . ($request->pic_name ?? 'IT'),
-                'tanggal_selesai'=> now()->format('Y-m-d'),
-                'jam_selesai'    => now()->format('H:i:s'),
-                'from_internal'  => true,
+                'penanganan' => 'Terkendala/Ditolak via Telegram',
+                'keterangan' => 'Dibatalkan oleh '.($request->pic_name ?? 'IT'),
+                'tanggal_selesai' => now()->format('Y-m-d'),
+                'jam_selesai' => now()->format('H:i:s'),
+                'from_internal' => true,
             ]);
+
             return $this->block($fakeRequest, $ticket);
         }
 
@@ -585,95 +480,4 @@ class TicketController extends Controller
 
         return response()->json($tickets);
     }
-
-        // =========================================================================
-    // ENTRY POINT WEBHOOK PENERIMA TOMBOL DARI TELEGRAM
-    // =========================================================================
-    public function webhookTelegram(Request $request)
-    {
-        Log::info('Telegram Webhook Masuk:', $request->all());
-        $update = $request->all();
-
-        // 1. Jika pengguna mengklik TOMBOL (Terima / Tolak / Selesai)
-        if (isset($update['callback_query'])) {
-            $callback   = $update['callback_query'];
-            $telegramId = $callback['from']['id'];
-            $firstName  = $callback['from']['first_name'] ?? 'User';
-            $data       = $callback['data']; // Contoh: accept:NIX260917b
-
-            // Cari nama karyawan asli dari ID Telegram
-            $picName = $this->getTelegramUserRealName($telegramId, $firstName);
-
-            $parts    = explode(':', $data);
-            $action   = $parts[0] ?? '';
-            $ticketId = $parts[1] ?? '';
-
-            // Panggil fungsi internal update yang sudah ada di controller ini
-            $internalReq = new Request([
-                'action'     => $action,
-                'ticket_id'  => $ticketId,
-                'pic_name'   => $picName,
-                'keterangan' => 'Diproses via Tombol Telegram',
-            ]);
-            $internalReq->headers->set('X-Internal-Token', 'TOKEN_RAHASIA_KITA_123');
-
-            $this->handleInternalUpdate($internalReq);
-
-            // Beritahu Telegram agar animasi loading di tombol berhenti
-            $botToken = env('TELEGRAM_BOT_TOKEN');
-            Http::withoutVerifying()->post("https://api.telegram.org/bot{$botToken}/answerCallbackQuery", [
-                'callback_query_id' => $callback['id'],
-                'text'              => 'Tiket berhasil diproses!',
-            ]);
-
-            return response()->json(['status' => 'callback_success']);
-        }
-
-        // 2. Jika pengguna membalas via TEKS manual (Contoh: /terima NIX260917b)
-        if (isset($update['message']['text'])) {
-            $text       = trim($update['message']['text']);
-            $telegramId = $update['message']['from']['id'];
-            $firstName  = $update['message']['from']['first_name'] ?? 'User';
-            $picName    = $this->getTelegramUserRealName($telegramId, $firstName);
-
-            if (strpos($text, '/terima ') === 0) {
-                $ticketId = trim(substr($text, 8));
-                $internalReq = new Request([
-                    'action'    => 'accept',
-                    'ticket_id' => $ticketId,
-                    'pic_name'  => $picName,
-                ]);
-                $internalReq->headers->set('X-Internal-Token', 'TOKEN_RAHASIA_KITA_123');
-                $this->handleInternalUpdate($internalReq);
-            }
-
-            return response()->json(['status' => 'text_success']);
-        }
-
-        return response()->json(['status' => 'ignored']);
-    }
-
-    /**
-     * Helper mapping ID Telegram ke Nama Asli Karyawan
-     */
-    private function getTelegramUserRealName($telegramId, $defaultName)
-    {
-        $userMap = [
-            '6284939842' => 'Juli',
-            '2021670238' => 'Ardhan',
-            '1564401546' => 'Ferdi',
-            '1050252661' => 'Eggi',
-            '5004624382' => 'Sergio',
-            '6619591483' => 'Valen',
-            '8433454495' => 'Stephan',
-            '7219122230' => 'Eurisko',
-            '5831857683' => 'Vicky',
-            '8261377656' => 'Yendra',
-            '8019408343' => 'Ravael', // ID Telegram Anda
-        ];
-
-        return $userMap[$telegramId] ?? $defaultName;
-    }
 }
-
-//
