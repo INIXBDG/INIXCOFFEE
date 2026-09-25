@@ -273,6 +273,7 @@
                     "render": function(data, type, row) {
                         var pic = "{{ auth()->user()->username }}";
                         var divisi = "{{ auth()->user()->karyawan->divisi }}";
+                        var canDeleteTicket = @json(auth()->user()->jabatan === 'Koordinator ITSM' && optional(auth()->user()->karyawan)->divisi === 'IT Service Management');
                         switch(pic.toLowerCase()) {
                             case 'ardhan':
                                 pic = 'Ardhan';
@@ -328,6 +329,9 @@
                                 // actions += '</form>';
                             }
                             actions += '<button type="button" class="dropdown-item" onclick=\'openDetailModal(' + JSON.stringify(data) + ')\'><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
+                            if (canDeleteTicket) {
+                                actions += '<button type="button" class="dropdown-item text-danger" onclick="hapusTiket(' + data.id + ')"><i class="bi bi-trash me-2"></i>Hapus</button>';
+                            }
                             actions += '</div>';
                             actions += '</div>';
                             return actions;
@@ -341,6 +345,21 @@
 
         });
     });
+
+    function hapusTiket(ticketId) {
+        if (!confirm('Hapus tiket ini? Data yang dihapus tidak dapat dikembalikan.')) {
+            return;
+        }
+
+        var form = $('<form>', {
+            method: 'POST',
+            action: "{{ url('/tickets') }}/" + ticketId
+        });
+        form.append('@csrf');
+        form.append('@method('DELETE')');
+        $('body').append(form);
+        form.submit();
+    }
     function formatRupiah(angka, prefix) {
         var number_string = angka.toString().replace(/[^,\d]/g, ''),
             split = number_string.split(','),

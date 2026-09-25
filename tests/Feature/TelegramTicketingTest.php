@@ -11,6 +11,14 @@ class TelegramTicketingTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private function postWebhook(array $payload)
+    {
+        return $this->withHeader(
+            'X-Telegram-Bot-Api-Secret-Token',
+            (string) env('TELEGRAM_WEBHOOK_SECRET')
+        )->postJson('/api/telegram/webhook', $payload);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -35,7 +43,7 @@ class TelegramTicketingTest extends TestCase
     {
         $ticket = $this->createTicket('TG-ACCEPT-'.uniqid());
 
-        $response = $this->postJson('/api/telegram/webhook', [
+        $response = $this->postWebhook([
             'message' => [
                 'from' => ['id' => 8019408343, 'first_name' => 'Telegram User'],
                 'text' => '/terima '.$ticket->ticket_id,
@@ -54,7 +62,7 @@ class TelegramTicketingTest extends TestCase
     {
         $ticket = $this->createTicket('TG-REJECT-'.uniqid());
 
-        $response = $this->postJson('/api/telegram/webhook', [
+        $response = $this->postWebhook([
             'callback_query' => [
                 'id' => 'callback-'.uniqid(),
                 'from' => ['id' => 2021670238, 'first_name' => 'Telegram User'],
@@ -78,7 +86,7 @@ class TelegramTicketingTest extends TestCase
     {
         $ticket = $this->createTicket('TG-FINISH-'.uniqid());
 
-        $response = $this->postJson('/api/telegram/webhook', [
+        $response = $this->postWebhook([
             'message' => [
                 'from' => ['id' => 1564401546, 'first_name' => 'Telegram User'],
                 'text' => '/selesai '.$ticket->ticket_id.' Masalah sudah diperbaiki',
