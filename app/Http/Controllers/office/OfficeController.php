@@ -1601,7 +1601,7 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', ['0', '3'])
+            ->whereIn('status', ['0', '3'])
             ->where('metode_kelas', '!=', 'Exam Only')
             ->whereHas('peluang', function ($q) {
                 $q->where('tahap', 'merah')
@@ -1731,7 +1731,7 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', ['0', '3'])
+            ->whereIn('status', ['0', '3'])
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
                 // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
                 $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
