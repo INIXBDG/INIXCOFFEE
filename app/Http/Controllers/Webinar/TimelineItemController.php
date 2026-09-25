@@ -12,11 +12,12 @@ class TimelineItemController extends Controller
 {
     public function store(Request $request)
     {
-        // --- AUTH CHECK: Hanya Tim Digital ---
-        if (auth()->user()->jabatan !== 'Tim Digital') {
-            return response()->json(['message' => 'Akses Ditolak: Hanya Tim Digital yang boleh mengubah timeline.'], 403);
+        $user = auth()->user();
+
+        // Cek permission edit-timeline-item
+        if (!$user || !$user->can('edit-timeline-item')) {
+            return response()->json(['message' => 'Akses Ditolak: Anda tidak memiliki izin untuk mengubah timeline.'], 403);
         }
-        // -------------------------------------
 
         $request->validate([
             'item_date' => 'required|date',
@@ -40,5 +41,4 @@ class TimelineItemController extends Controller
 
         return response()->json(['status' => 'saved', 'data' => $item]);
     }
-
 }

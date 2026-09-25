@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timeline Webinar - Triwulan {{ $quarter }}</title>
 
-    {{-- CDN Tailwind CSS & Alpine.js --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -19,12 +18,19 @@
 </head>
 <body class="bg-gray-50 text-slate-800 font-sans" x-data="webinarApp()">
 
-    {{-- CEK PERMISSION --}}
     @php
-        $isTimDigital = auth()->check() && auth()->user()->jabatan === 'Tim Digital';
+        $user = auth()->user();
+        $canEditTimeline = $user && $user->can('edit-timeline-item');
+        $canManageMaster = $user && $user->can('manage-master-plan');
+        $canUpdateChecklist = $user && $user->can('update-checklist');
+        $canAny = $canEditTimeline || $canManageMaster || $canUpdateChecklist;
     @endphp
 
-    <div class="max-w-[1800px] mx-auto p-6" x-data="{ canEdit: {{ $isTimDigital ? 'true' : 'false' }} }">
+    <div class="max-w-[1800px] mx-auto p-6" x-data="{
+        canEditTimeline: {{ $canEditTimeline ? 'true' : 'false' }},
+        canManageMaster: {{ $canManageMaster ? 'true' : 'false' }},
+        canUpdateChecklist: {{ $canUpdateChecklist ? 'true' : 'false' }}
+    }">
 
         {{-- HEADER --}}
         <div class="mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -104,9 +110,9 @@
                                     '{{ $data['planned_date_raw'] }}',
                                     {{ $data['duration'] }}
                                 )"
-                                class="{{ $isTimDigital ? 'bg-blue-600 hover:bg-blue-500' : 'bg-slate-600 hover:bg-slate-500' }} text-white text-xs px-3 py-1.5 rounded shadow transition flex items-center gap-1">
+                                class="{{ $canManageMaster ? 'bg-blue-600 hover:bg-blue-500' : 'bg-slate-600 hover:bg-slate-500' }} text-white text-xs px-3 py-1.5 rounded shadow transition flex items-center gap-1">
 
-                                @if($isTimDigital)
+                                @if($canManageMaster)
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                     Kelola Event
                                 @else
@@ -136,38 +142,32 @@
 
                     {{-- BODY KALENDER --}}
                     <div class="grid grid-cols-5 auto-rows-fr bg-white flex-grow">
-
-                        {{-- 1. PADDING SEL KOSONG --}}
                         @for($i = 0; $i < $data['start_padding']; $i++)
                             <div class="bg-gray-50/50 border-b border-r border-gray-100"></div>
                         @endfor
 
-                        {{-- 2. LOOP TANGGAL KERJA --}}
                         @foreach($data['dates'] as $date)
                             <div
-                                @click="canEdit ? openDailyModal(
+                                @click="canEditTimeline ? openDailyModal(
                                         '{{ $date['full_date'] }}',
                                         {{ $data['mapping_id'] }},
                                         {{ json_encode($date['item']->content ?? '') }}
                                     ) : null"
                                 class="border-b border-r border-gray-100 p-2 relative group flex flex-col justify-between
-                                {{ $isTimDigital ? 'cursor-pointer hover:bg-blue-50' : 'cursor-default' }}
+                                {{ $canEditTimeline ? 'cursor-pointer hover:bg-blue-50' : 'cursor-default' }}
                                 {{ $isSingleView ? 'min-h-[140px]' : 'min-h-[90px]' }}
                                 {{ $date['is_dday'] ? 'bg-blue-600' : 'bg-white' }}">
 
-                                {{-- NOMOR TANGGAL --}}
                                 <div class="text-right text-xs font-bold {{ $date['is_dday'] ? 'text-white' : ($date['item'] ? 'text-blue-600' : 'text-slate-300') }}">
                                     {{ $date['day'] }}
                                 </div>
 
-                                {{-- TAMPILAN D-DAY --}}
                                 @if($date['is_dday'])
                                     <div class="flex-grow flex flex-col items-center justify-center text-center">
                                         <span class="text-yellow-300 font-black text-sm tracking-tighter drop-shadow-sm">D-DAY</span>
                                     </div>
                                 @endif
 
-                                {{-- KONTEN AKTIVITAS --}}
                                 @if($date['item'])
                                     <div class="mt-1 p-1 text-[9px] font-bold leading-tight rounded border
                                         {{ $date['is_dday'] ? 'bg-blue-700 text-white border-blue-400' : 'bg-blue-50 text-blue-800 border-blue-100' }}">
@@ -177,8 +177,7 @@
                                     </div>
                                 @endif
 
-                                {{-- ICON TAMBAH (TIM DIGITAL ONLY) --}}
-                                @if($isTimDigital && !$date['item'] && !$date['is_dday'])
+                                @if($canEditTimeline && !$date['item'] && !$date['is_dday'])
                                     <div class="hidden group-hover:flex absolute inset-0 items-center justify-center text-blue-300 opacity-40">
                                         <span class="text-xl">+</span>
                                     </div>
@@ -190,8 +189,8 @@
             @endforeach
         </div>
 
-        {{-- MODAL A: HARIAN (Hanya bisa dibuka Tim Digital karena trigger klik dimatikan utk yg lain) --}}
-        <div x-show="modals.daily.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" x-transition>
+        {{-- MODAL A: HARIAN (Hanya bisa dibuka jika punya permission edit-timeline-item) --}}
+        <div x-show="modals.daily.open && canEditTimeline" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" x-transition>
             <div class="bg-white w-full max-w-md rounded-lg shadow-2xl overflow-hidden p-6" @click.away="modals.daily.open = false">
                 <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <span class="bg-blue-100 text-blue-600 p-1 rounded">📅</span>
@@ -220,7 +219,7 @@
         <div x-show="modals.event.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" x-transition>
             <div class="bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex overflow-hidden" @click.away="modals.event.open = false">
 
-                {{-- KIRI: FORM EVENT --}}
+                {{-- KIRI: FORM EVENT (Dikontrol oleh canManageMaster) --}}
                 <div class="w-1/3 bg-slate-50 border-r border-slate-200 p-8 flex flex-col overflow-y-auto custom-scroll">
                     <div class="mb-6 border-b border-slate-200 pb-4">
                         <div class="text-xs font-bold text-slate-400 uppercase">Pengaturan Bulan</div>
@@ -232,16 +231,16 @@
                             <h4 class="text-xs font-bold text-blue-800 uppercase flex items-center gap-1">⚙️ Master Plan</h4>
                             <div>
                                 <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Tema Utama</label>
-                                <input type="text" x-model="modals.event.form.theme" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm font-semibold text-blue-900 outline-none">
+                                <input type="text" x-model="modals.event.form.theme" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm font-semibold text-blue-900 outline-none">
                             </div>
                             <div class="flex gap-2">
                                 <div class="w-2/3">
                                     <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Tgl Pelaksanaan</label>
-                                    <input type="date" x-model="modals.event.form.planned_date" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm outline-none">
+                                    <input type="date" x-model="modals.event.form.planned_date" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm outline-none">
                                 </div>
                                 <div class="w-1/3">
                                     <label class="block text-[10px] font-bold text-blue-600 uppercase mb-1">Durasi</label>
-                                    <input type="number" x-model="modals.event.form.duration" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm outline-none">
+                                    <input type="number" x-model="modals.event.form.duration" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full border-blue-200 rounded p-2 text-sm outline-none">
                                 </div>
                             </div>
                         </div>
@@ -250,25 +249,25 @@
                             <h4 class="text-xs font-bold text-slate-400 uppercase border-t pt-2">📝 Detail Acara</h4>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Judul Webinar</label>
-                                <input type="text" x-model="modals.event.form.title" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm">
+                                <input type="text" x-model="modals.event.form.title" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Narasumber</label>
-                                <input type="text" x-model="modals.event.form.speaker" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm">
+                                <input type="text" x-model="modals.event.form.speaker" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Keterangan</label>
-                                <textarea x-model="modals.event.form.desc" :disabled="!canEdit" :class="!canEdit ? 'bg-gray-100' : 'bg-white'" class="w-full h-20 border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm"></textarea>
+                                <textarea x-model="modals.event.form.desc" :disabled="!canManageMaster" :class="!canManageMaster ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'" class="w-full h-20 border-slate-300 rounded p-2.5 text-sm outline-none shadow-sm"></textarea>
                             </div>
                         </div>
 
-                        <button x-show="canEdit" @click="saveEventDetails()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-lg font-bold text-sm shadow transition">
+                        <button x-show="canManageMaster" @click="saveEventDetails()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-lg font-bold text-sm shadow transition">
                             Simpan Perubahan
                         </button>
                     </div>
                 </div>
 
-                {{-- KANAN: CHECKLIST OTOMATIS (READ ONLY UNTUK SELAIN TIM DIGITAL) --}}
+                {{-- KANAN: CHECKLIST OTOMATIS (Dikontrol oleh canUpdateChecklist) --}}
                 <div class="w-2/3 flex flex-col bg-white">
                     <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center shadow-md z-10">
                         <div>
@@ -302,11 +301,11 @@
                                 <template x-for="item in items" :key="item.id">
                                     <div class="grid grid-cols-12 gap-3 items-center py-2 border-b border-slate-100 hover:bg-slate-50 transition text-sm group">
 
-                                        {{-- Checkbox Read-Only Logic --}}
+                                        {{-- Checkbox --}}
                                         <div class="col-span-1 flex justify-center">
                                             <input type="checkbox" :checked="item.is_checked"
-                                                @change="canEdit ? toggleChecklist(item) : null"
-                                                :disabled="!canEdit"
+                                                @change="canUpdateChecklist ? toggleChecklist(item) : null"
+                                                :disabled="!canUpdateChecklist"
                                                 class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
                                         </div>
 
@@ -314,21 +313,21 @@
                                             <span x-text="item.todo.task_name"></span>
                                         </div>
 
-                                        {{-- Input PJ Read-Only Logic --}}
+                                        {{-- Input PJ --}}
                                         <div class="col-span-3">
                                             <input type="text" x-model="item.pic"
-                                                @blur="canEdit ? updateChecklistDetail(item) : null"
-                                                :disabled="!canEdit"
-                                                class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-xs py-1 text-center disabled:bg-transparent disabled:text-slate-600"
+                                                @blur="canUpdateChecklist ? updateChecklistDetail(item) : null"
+                                                :disabled="!canUpdateChecklist"
+                                                class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-xs py-1 text-center disabled:bg-transparent disabled:cursor-not-allowed"
                                                 placeholder="-">
                                         </div>
 
-                                        {{-- Input Note Read-Only Logic --}}
+                                        {{-- Input Note --}}
                                         <div class="col-span-4">
                                             <input type="text" x-model="item.notes"
-                                                @blur="canEdit ? updateChecklistDetail(item) : null"
-                                                :disabled="!canEdit"
-                                                class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-xs py-1 text-blue-600 disabled:bg-transparent disabled:text-blue-800"
+                                                @blur="canUpdateChecklist ? updateChecklistDetail(item) : null"
+                                                :disabled="!canUpdateChecklist"
+                                                class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none text-xs py-1 text-blue-600 disabled:bg-transparent disabled:cursor-not-allowed"
                                                 placeholder="Keterangan...">
                                         </div>
                                     </div>
@@ -345,7 +344,7 @@
     </div>
 
     {{-- SCRIPTS --}}
-    <script>2
+    <script>
         function webinarApp() {
             return {
                 isLoading: false,
@@ -369,13 +368,14 @@
                     return groups;
                 },
                 openDailyModal(date, mappingId, content) {
+                    if (!this.canEditTimeline) return;
                     this.modals.daily.date = date;
                     this.modals.daily.mappingId = mappingId;
                     this.modals.daily.content = content;
                     this.modals.daily.open = true;
                 },
                 async saveDailyItem() {
-                    if (this.isLoading) return;
+                    if (this.isLoading || !this.canEditTimeline) return;
                     this.isLoading = true;
 
                     try {
@@ -419,6 +419,7 @@
                     this.fetchChecklists(mappingId);
                 },
                 async saveEventDetails() {
+                    if (!this.canManageMaster) return;
                     const id = this.modals.event.mappingId;
                     try {
                         const res = await fetch(`/api/event/${id}/update`, {
@@ -443,6 +444,7 @@
                     this.isLoadingChecklist = false;
                 },
                 async toggleChecklist(item) {
+                    if (!this.canUpdateChecklist) return;
                     item.is_checked = !item.is_checked;
                     await fetch(`/api/checklist/${item.id}/toggle`, {
                         method: 'PATCH',
@@ -450,6 +452,7 @@
                     });
                 },
                 async updateChecklistDetail(item) {
+                    if (!this.canUpdateChecklist) return;
                     await fetch(`/api/checklist/${item.id}/detail`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
