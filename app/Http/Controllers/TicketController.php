@@ -394,6 +394,21 @@ class TicketController extends Controller
         return redirect()->route('tickets.index')->with('success', 'Tiket ditandai sebagai terkendala.');
     }
 
+    public function destroy(Tickets $ticket)
+    {
+        $user = auth()->user();
+        $isItsmCoordinator = $user
+            && $user->jabatan === 'Koordinator ITSM'
+            && optional($user->karyawan)->divisi === 'IT Service Management';
+
+        abort_unless($isItsmCoordinator, 403);
+
+        $deleted = Tickets::whereKey($ticket->getKey())->delete();
+        abort_unless($deleted === 1, 404);
+
+        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dihapus.');
+    }
+
     public function show(Tickets $ticket)
     {
         return view('ticket.detail', compact('ticket'));

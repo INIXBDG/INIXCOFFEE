@@ -980,6 +980,7 @@ Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('ticket
 Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->name('tickets.accept');
 Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
 Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
+Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
 
 // Gaji
