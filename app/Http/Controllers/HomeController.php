@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
-use App\Models\notif;
 use App\Models\LeadProject;
+use App\Models\notif;
 use App\Models\Registrasi;
 use App\Models\RKM;
 use App\Models\target;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -64,7 +62,7 @@ class HomeController extends Controller
         $endDate = Carbon::now()->endOfWeek();
         $sekarang = Carbon::now()->toDateString();
         // Mengambil notifikasi yang berada di antara tanggal awal dan akhir minggu ini
-        $notifikasi = Notif::with('users')
+        $notifikasi = notif::with('users')
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('tanggal_awal', [$startDate, $endDate])
                     ->orWhereBetween('tanggal_akhir', [$startDate, $endDate]);
@@ -74,22 +72,45 @@ class HomeController extends Controller
         $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
             ->where('tanggal', $sekarang)
             ->first();
+
         // return $absenHariIni;
         return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
-
     }
+
     private function getTotalSales($year)
     {
-        if ($year === "2023" || $year === "2024" || $year === "2025") {
+        if ($year === '2023' || $year === '2024' || $year === '2025') {
             return DB::table('r_k_m_s')
                 ->where('status', '0') // Hanya data dengan status 0
                 ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
                 ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
                 ->value('total_sales');
         } else {
-            return DB::table('approval_pendapatans')
-                ->whereYear('tanggal_mulai', $year)
-                ->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+            // return DB::table('approval_pendapatans')
+            //     ->whereYear('tanggal_mulai', $year)
+            //     ->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
+            //     ->value('total_sales');
+            // sementara ganti dulu ke rkm
+
+            return DB::table('peluangs')
+                ->whereNotNull('merah')
+                ->whereYear('periode_mulai', $year)
+                ->select(DB::raw('
+                    ROUND(
+                        SUM(
+                            CASE
+                                WHEN final IS NULL THEN
+                                    (
+                                        CAST(harga AS DECIMAL(15,2))
+                                        - COALESCE(CAST(netsales AS DECIMAL(15,2)), 0)
+                                    ) * COALESCE(CAST(pax AS UNSIGNED), 0)
+                                ELSE
+                                    CAST(final AS DECIMAL(15,2))
+                            END
+                        ),
+                        0
+                    ) as total_sales
+                '))
                 ->value('total_sales');
         }
     }
@@ -118,16 +139,16 @@ class HomeController extends Controller
         $formatTarget = function ($value) {
             if ($value >= 1000000000) {
                 // If the value is in billions, display in 'M' (for millions)
-                return ($value / 1000000000) . ' M';
+                return ($value / 1000000000).' M';
             } elseif ($value >= 100000000) {
                 // If the value is in hundreds of millions, display in 'JT'
-                return ($value / 1000000) . ' JT';
+                return ($value / 1000000).' JT';
             } elseif ($value >= 10000000) {
                 // If the value is in tens of millions, display in 'JT'
-                return ($value / 1000000) . ' JT';
+                return ($value / 1000000).' JT';
             } elseif ($value >= 1000000) {
                 // If the value is in millions, display in 'JT'
-                return ($value / 1000000) . ' JT';
+                return ($value / 1000000).' JT';
             } else {
                 // If the value is smaller than one million, use regular number format
                 return number_format($value);
@@ -136,9 +157,10 @@ class HomeController extends Controller
 
         // Divide the target into 8 sections, using the helper function to format each one
         $targetLabels = [];
-        for ($i = 0; $i <= 8; $i++) {
+        for ($i = 0; $i <= 8; ++$i) {
             $targetLabels[] = $formatTarget(($target / 8) * $i);
         }
+
         return response()->json([
             'target' => $target,
             'progress' => $progress,
@@ -161,11 +183,11 @@ class HomeController extends Controller
             // Generate labels untuk ruler (9 titik: 0%, 12.5%, 25%, ... 100%)
             $targetLabels = [];
             if ($targetProject > 0) {
-                for ($i = 0; $i <= 8; $i++) {
+                for ($i = 0; $i <= 8; ++$i) {
                     $targetLabels[] = $this->formatTargetLabel(($i / 8) * $targetProject);
                 }
             } else {
-                $targetLabels = array_fill(0, 9, "0");
+                $targetLabels = array_fill(0, 9, '0');
             }
 
             return response()->json([
@@ -177,8 +199,9 @@ class HomeController extends Controller
         } catch (\Throwable $e) {
             \Log::error('getProjectTarget error', [
                 'msg' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json(['success' => false, 'message' => 'Server error'], 500);
         }
     }
@@ -186,10 +209,13 @@ class HomeController extends Controller
     // Helper function (jika belum ada)
     private function formatTargetLabel($value)
     {
-        if ($value >= 1000000000)
-            return round($value / 1000000000, 1) . ' M';
-        if ($value >= 1000000)
-            return round($value / 1000000, 1) . ' JT';
+        if ($value >= 1000000000) {
+            return round($value / 1000000000, 1).' M';
+        }
+        if ($value >= 1000000) {
+            return round($value / 1000000, 1).' JT';
+        }
+
         return number_format($value, 0, ',', '.');
     }
 }
