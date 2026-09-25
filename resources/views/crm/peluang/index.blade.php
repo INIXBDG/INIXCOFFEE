@@ -435,7 +435,7 @@
                     autoWidth: false,
                     deferRender: true,
                     scrollX: true,
-                    order: [[10, 'desc']], // Ubah urutan default ke indeks 10 (Aksi/ID)
+                    order: [],
                     ajax: {
                         url: '{{ route("index.peluang.json") }}',
                         type: 'GET',
@@ -461,7 +461,7 @@
                     autoWidth: false,
                     deferRender: true,
                     scrollX: true,
-                    order: [[10, 'desc']], // Ubah urutan default ke indeks 10 (Aksi/ID)
+                    order: [],
                     ajax: {
                         url: '{{ route("index.peluang.json") }}',
                         type: 'GET',

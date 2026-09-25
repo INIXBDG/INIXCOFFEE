@@ -69,6 +69,7 @@ class PicController extends Controller
 
             $pesertaQuery = DB::table('pesertas as p')
                 ->selectRaw('
+                2 AS source_type,
                 p.id AS peserta_id,
                 NULL AS contact_id,
                 p.nama,
@@ -88,8 +89,10 @@ class PicController extends Controller
                 $pesertaQuery->where('pr.sales_key', $salesFilter);
             }
 
+            // 2. Tambahkan "1 AS source_type" untuk Contact
             $contactQuery = DB::table('contacts as c')
                 ->selectRaw('
+                1 AS source_type,
                 NULL AS peserta_id,
                 c.id AS contact_id,
                 c.nama,
@@ -119,13 +122,9 @@ class PicController extends Controller
             $contactSql = $contactQuery->toSql();
             $contactBindings = $contactQuery->getBindings();
 
-            $unionSql = "({$pesertaSql}) UNION ALL ({$contactSql})";
-            $unionBindings = array_merge($pesertaBindings, $contactBindings);
-
-            Log::debug('Manual Union SQL', [
-                'sql' => $unionSql,
-                'bindings' => $unionBindings,
-            ]);
+            // 3. (PENTING) CONTACT DULU BARU PESERTA DI UNION
+            $unionSql = "({$contactSql}) UNION ALL ({$pesertaSql})";
+            $unionBindings = array_merge($contactBindings, $pesertaBindings);
 
             $masterQuery = DB::table(DB::raw("({$unionSql}) as master"))
                 ->setBindings($unionBindings);
@@ -135,29 +134,10 @@ class PicController extends Controller
             $length = $request->get('length', 10);
             $searchValue = $request->get('search')['value'] ?? '';
             $salesFilterDropdown = $request->input('sales_filter');
-            $orderColumnIndex = $request->get('order')[0]['column'] ?? 0;
-            $orderDirection = $request->get('order')[0]['dir'] ?? 'desc';
-
-            $orderColumns = [
-                'nama',
-                'email',
-                'cp',
-                'perusahaan_key',
-                'divisi',
-                'contact_status',
-                'nama_perusahaan',
-                'sales_key',
-                'created_at',
-                'peserta_id',
-                'contact_id'
-            ];
-            $orderColumn = $orderColumns[$orderColumnIndex] ?? 'created_at';
 
             if (!empty($searchValue)) {
                 $masterQuery->where(function ($q) use ($searchValue) {
                     $searchValueLower = strtolower($searchValue);
-
-                    // Cek pencarian berdasarkan nama, email, cp, dan perusahaan
                     $q->whereRaw('LOWER(nama) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
@@ -172,14 +152,43 @@ class PicController extends Controller
             }
 
             $totalFiltered = $masterQuery->count();
-            Log::debug('TotalFiltered: ' . $totalFiltered);
+
+            // 4. MAPPING KOLOM (Kolom 0 diabaikan karena hanya nomor urut)
+            $orderColumns = [
+                1 => 'nama',
+                2 => 'nama_perusahaan',
+                3 => 'sales_key',
+                4 => 'status_text',
+                5 => 'email',
+                6 => 'cp',
+                7 => 'divisi',
+            ];
+
+            $orderReq = $request->input('order');
+            $isSortingApplied = false;
+
+            // 5. PENGECEKAN PENGURUTAN (SORTING) YANG KETAT
+            if (!empty($orderReq) && isset($orderReq[0]['column'])) {
+                $orderColumnIndex = (int) $orderReq[0]['column'];
+
+                // JIKA INDEXNYA > 0 (Artinya bukan kolom nomor urut), maka terapkan pengurutan
+                if ($orderColumnIndex > 0 && array_key_exists($orderColumnIndex, $orderColumns)) {
+                    $orderDirection = $orderReq[0]['dir'] ?? 'desc';
+                    $orderColumn = $orderColumns[$orderColumnIndex];
+                    $masterQuery->orderBy($orderColumn, $orderDirection);
+
+                    $isSortingApplied = true; // Tandai bahwa user nge-klik kolom khusus
+                }
+            }
+
+            if (!$isSortingApplied) {
+                $masterQuery->orderBy('source_type', 'asc')->orderBy('created_at', 'desc');
+            }
 
             $rawData = $masterQuery
-                ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)
                 ->get();
-
             $totalRecords = DB::table(DB::raw("({$unionSql}) as master"))
                 ->setBindings($unionBindings)
                 ->count();
