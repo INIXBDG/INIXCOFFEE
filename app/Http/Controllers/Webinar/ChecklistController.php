@@ -10,17 +10,14 @@ use Illuminate\Support\Facades\Auth; // Tambahkan facade Auth
 
 class ChecklistController extends Controller
 {
-    /**
-     * AMBIL LIST CHECKLIST PER EVENT
-     */
     public function index($mappingId)
     {
         $count = EventTodo::where('year_mapping_id', $mappingId)->count();
-        $user = Auth::user(); // Ambil user dengan aman
+        $user = Auth::user();
 
         if ($count === 0) {
-            // Cek: User ada DAN jabatannya Tim Digital
-            if ($user && $user->jabatan === 'Tim Digital') {
+            // Cek permission langsung via database/Spatie
+            if ($user && $user->can('update-checklist')) {
                 $masterTodos = Todo::where('is_active', true)->orderBy('sort_order')->get();
                 $newChecklists = [];
                 foreach ($masterTodos as $todo) {
@@ -49,16 +46,13 @@ class ChecklistController extends Controller
         return response()->json($checklists);
     }
 
-    /**
-     * TOGGLE STATUS (CENTANG / UNCENTANG)
-     */
     public function toggle($id)
     {
         $user = Auth::user();
 
-
-        if (!$user || $user->jabatan !== 'Tim Digital') {
-            return response()->json(['message' => 'Akses Ditolak.'], 403);
+        // Cek permission update-checklist
+        if (!$user || !$user->can('update-checklist')) {
+            return response()->json(['message' => 'Akses Ditolak: Anda tidak memiliki izin mencentang checklist.'], 403);
         }
 
         $checklist = EventTodo::findOrFail($id);
@@ -69,16 +63,13 @@ class ChecklistController extends Controller
         return response()->json(['success' => true, 'is_checked' => $checklist->is_checked]);
     }
 
-    /**
-     * UPDATE DETAIL (PJ & CATATAN)
-     */
     public function updateDetail(Request $request, $id)
     {
         $user = Auth::user();
 
-        // FIX ERROR DISINI JUGA:
-        if (!$user || $user->jabatan !== 'Tim Digital') {
-            return response()->json(['message' => 'Akses Ditolak.'], 403);
+        // Cek permission update-checklist
+        if (!$user || !$user->can('update-checklist')) {
+            return response()->json(['message' => 'Akses Ditolak: Anda tidak memiliki izin mengubah PIC/Catatan.'], 403);
         }
 
         $checklist = EventTodo::findOrFail($id);
