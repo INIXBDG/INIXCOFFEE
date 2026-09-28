@@ -44,7 +44,54 @@
         </div>
     @endif
 
-    @if ($tipePesan == 'Update Catering')
+    @if ($tipePesan == 'Info Registrasi Peserta')
+        <div class="notification mb-3">
+            <p>
+                <strong style="text-transform: capitalize;">
+                    Peserta Sudah Registrasi
+                </strong>
+                <br>
+
+                @php
+                    $message = $notification->data['message'] ?? [];
+                    $pesan = $message['pesan'] ?? '';
+                    $lines = explode("\n", $pesan);
+                    $header = array_shift($lines);
+                @endphp
+
+                {{ $header }}
+
+                @if (!empty($lines))
+                    <ul class="mt-2 mb-0" style="padding-left: 20px; margin-bottom: 0;">
+                        @foreach ($lines as $line)
+                            @if (trim($line))
+                                <li>{{ trim(str_replace('• ', '', $line)) }}</li>
+                            @endif
+                        @endforeach
+                    </ul>
+                @endif
+            </p>
+
+            <br>
+
+            <div class="d-flex">
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}"
+                    method="POST"
+                    class="d-inline">
+                    @csrf
+                    @method('PUT')
+
+                    <button type="submit"
+                        class="btn btn-danger btn-sm"
+                        style="margin-left: 8px;">
+                        Tandai sebagai Dibaca
+                    </button>
+                </form>
+            </div>
+        </div>
+    @endif
+
+        @if ($tipePesan == 'Update Catering')
         <div class="notification mb-3">
             <p><strong style="text-transform: capitalize;">Update Pengajuan Catering</strong>
                 <br>
