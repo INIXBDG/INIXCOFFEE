@@ -16,12 +16,20 @@ class FinanceAccountingKPIService
 {
     use KPIDefaultResponseTrait;
 
-    private function isTepatTenggat($data)
+    private function getStatus($data)
     {
-        if ($data->status_pembayaran != 1 || empty($data->tanggal_bayar) || empty($data->due_date)) {
-            return false;
+        if ($data->status_pembayaran == 1 && !empty($data->tanggal_bayar) && !empty($data->due_date)) {
+            return Carbon::parse($data->tanggal_bayar)->lte(Carbon::parse($data->due_date))
+                ? 'tepat'
+                : 'terlambat';
         }
-        return Carbon::parse($data->tanggal_bayar)->lte(Carbon::parse($data->due_date));
+
+        if ($data->status_pembayaran != 1 && !empty($data->due_date)
+            && now()->lte(Carbon::parse($data->due_date)->addMonths(6))) {
+            return 'on_track';
+        }
+
+        return 'terlambat';
     }
 
     public function calculateOutstanding($item, $personId)
@@ -38,25 +46,26 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        $nilaiTarget = (float) $detail->nilai_target;
-        if ($nilaiTarget <= 0) {
+        if ((float) $detail->nilai_target <= 0) {
             return 0;
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
+        $grouped = outstanding::whereBetween('created_at', [$start, $end])
+            ->get()
+            ->groupBy(fn($d) => $this->getStatus($d));
 
-        if ($outstandings->isEmpty()) {
+        $tepat = $grouped->get('tepat', collect())->count();
+        $terlambat = $grouped->get('terlambat', collect())->count();
+
+        $totalData = $tepat + $terlambat;
+        if ($totalData === 0) {
             return 0;
         }
 
-        $totalData = $outstandings->count();
-        $tepatTenggat = $outstandings->filter(fn($d) => $this->isTepatTenggat($d))->count();
-        $presentase = ($tepatTenggat / $totalData) * 100;
-
-        return round($presentase, 1);
+        return round(($tepat / $totalData) * 100, 1);
     }
 
     public function calculateOutstandingDetail($itemDetail, $personId = null)
@@ -77,67 +86,56 @@ class FinanceAccountingKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
+        $rows = outstanding::whereBetween('created_at', [$start, $end])
+            ->get()
+            ->map(fn($d) => [
+                'date'   => Carbon::parse($d->created_at),
+                'status' => $this->getStatus($d),
+            ])
+            ->reject(fn($r) => $r['status'] === 'on_track')
+            ->map(fn($r) => $r + ['pct' => $r['status'] === 'tepat' ? 100 : 0])
+            ->values();
 
-        if ($outstandings->isEmpty()) {
+        if ($rows->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalData = $outstandings->count();
-        $above = $outstandings->filter(fn($d) => $this->isTepatTenggat($d))->count();
+        $totalData = $rows->count();
+        $above = $rows->where('status', 'tepat')->count();
         $below = $totalData - $above;
 
-        $progress = $totalData > 0 ? ($above / $totalData) * 100 : 0;
-        $progress = round($progress, 1);
+        $progress = round(($above / $totalData) * 100, 1);
 
-        $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
+        $gap = $progress < $nilaiTarget
+            ? rtrim(rtrim(sprintf('%.1f', $nilaiTarget - $progress), '0'), '.')
+            : 0;
         if ($gap === '') $gap = '0';
 
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
+        $byMonth = $rows->groupBy(fn($r) => $r['date']->format('Y-m'));
 
-        foreach ($outstandings as $data) {
-            $date = Carbon::parse($data->created_at);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
+        $monthlyAverages = $byMonth
+            ->map(fn($g) => round($g->avg('pct'), 1))
+            ->sortKeys()
+            ->all();
 
-            $pct = $this->isTepatTenggat($data) ? 100 : 0;
-
-            $monthlyData[$monthKey][] = $pct;
-            $monthlyProgress[$monthKey][] = $pct;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey][] = $pct;
-            $dailyProgressPerMonth[$monthKey][$dayKey][] = $pct;
-        }
-
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $values) {
-            $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
-            $monthlyProgressAverages[$month] = round(array_sum($values) / count($values), 1);
-        }
-
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $day => $values) {
-                $dailyBreakdownPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
-                $dailyProgressPerMonth[$month][$day] = round(array_sum($values) / count($values), 1);
-            }
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
+        $dailyPerMonth = $byMonth
+            ->map(fn($g) => $g
+                ->groupBy(fn($r) => $r['date']->format('Y-m-d'))
+                ->map(fn($d) => round($d->avg('pct'), 1))
+                ->sortKeys()
+                ->all()
+            )
+            ->sortKeys()
+            ->all();
 
         return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => ['above' => $above, 'below' => $below],
-            'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'progress'                  => $progress,
+            'gap'                       => $gap,
+            'pie_chart'                 => ['above' => $above, 'below' => $below],
+            'monthly_data'              => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyPerMonth,
+            'monthly_progress'          => $monthlyAverages,
+            'daily_progress_per_month'  => $dailyPerMonth,
         ];
     }
 

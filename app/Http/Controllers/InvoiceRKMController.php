@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -361,6 +362,145 @@ public function store(Request $request)
         $dueDateManual,
         $isUpdate,
     );
+}
+
+public function bulkStore(Request $request)
+{
+    $data = $request->validate([
+        'items'                    => 'required|array|min:1',
+        'items.*.id_rkm'           => 'required|exists:r_k_m_s,id',
+        'items.*.invoice_number'   => 'required|string|max:255',
+        'items.*.pph23'            => 'required|boolean',
+        'items.*.purchase_order'   => 'nullable|string|max:255',
+        'items.*.bank_name'        => 'required|string|max:255',
+        'items.*.account_number'   => 'required|string|max:50',
+        'items.*.is_peserta'       => 'required|boolean',
+        'items.*.is_ttd'           => 'required|boolean',
+    ]);
+
+    // Nomor invoice tidak boleh kembar di dalam satu batch
+    $numbers = array_column($data['items'], 'invoice_number');
+    if (count($numbers) !== count(array_unique($numbers))) {
+        return response()->json(['message' => 'Ada nomor invoice yang kembar di dalam pilihan.'], 422);
+    }
+
+    $results = [];
+    foreach ($data['items'] as $item) {
+        try {
+            // Satu transaksi per invoice: satu gagal tidak membatalkan yang lain
+            $results[] = DB::transaction(fn () => $this->createInvoiceFromBulkItem($item));
+        } catch (\Throwable $e) {
+            $results[] = [
+                'id_rkm'         => $item['id_rkm'],
+                'invoice_number' => $item['invoice_number'],
+                'ok'             => false,
+                'message'        => $e->getMessage(),
+            ];
+        }
+    }
+
+    return response()->json(['results' => $results]);
+}
+
+private function createInvoiceFromBulkItem(array $item): array
+{
+    $rkm = RKM::with(['materi', 'perusahaan', 'registrasi.peserta'])->findOrFail($item['id_rkm']);
+
+    if (Invoice::where('id_rkm', $rkm->id)->exists()) {
+        throw new \RuntimeException('RKM ini sudah punya invoice.');
+    }
+    if (Invoice::where('invoice_number', $item['invoice_number'])->exists()) {
+        throw new \RuntimeException('Nomor invoice sudah dipakai.');
+    }
+
+    $penandatangan = karyawan::where('status_aktif', '1')
+        ->where('jabatan', 'Finance & Accounting')->first();
+    if (!$penandatangan) {
+        throw new \RuntimeException('Karyawan aktif Finance & Accounting tidak ditemukan.');
+    }
+
+    // ---- Semua yang "aman" digenerate otomatis ----
+    $unitPrice = (float) ($rkm->harga_jual ?? 0);
+    $pax       = (int) ($rkm->pax ?? 0);
+    $subtotal  = $unitPrice * $pax;
+    $ppn       = round($subtotal * 0.11);
+    $pph       = $item['pph23'] ? round($subtotal * 0.02) : 0;
+    $total     = $subtotal + $ppn - $pph;
+
+    $tglAwal   = $rkm->tanggal_awal->toDateString();
+    $tglAkhir  = $rkm->tanggal_akhir->toDateString();
+    $terbilang = ucfirst($this->terbilang((int) $total)) . ' Rupiah';
+
+    $invoice = Invoice::create([
+        'invoice_number'  => $item['invoice_number'],
+        'tanggal_invoice' => now()->toDateString(),
+        'due_date'        => $rkm->tanggal_akhir->copy()->addMonths(6)->toDateString(),
+        'purchase_order'  => $item['purchase_order'] ?? null,
+        'id_rkm'          => $rkm->id,
+        'amount'          => $pax * $unitPrice + $ppn,   // rumus sama dengan store() lama
+        'unit_price'      => $unitPrice,
+        'pax'             => $pax,
+        'jumlah'          => $subtotal,
+        'subtotal'        => $subtotal,
+        'ppn'             => $ppn,
+        'pph'             => $pph,
+        'total'           => $total,
+        'bank_name'       => $item['bank_name'],
+        'account_number'  => $item['account_number'],
+        'terbilang'       => $terbilang,
+    ]);
+
+    $ap = new ApprovalPendapatan();
+    $ap->id_rkm                = $rkm->id;
+    $ap->no_invoice            = $invoice->invoice_number;
+    $ap->PPN                   = $ppn;
+    $ap->PPH                   = $pph;
+    $ap->pax                   = $pax;
+    $ap->harga_net             = $unitPrice;
+    $ap->total_penjualan_kotor = $unitPrice * $pax;
+    $ap->materi                = $rkm->materi_key;
+    $ap->perusahaan            = $rkm->perusahaan_key;
+    $ap->tanggal_mulai         = $tglAwal;
+    $ap->tanggal_selesai       = $tglAkhir;
+    $ap->save();
+
+    $outstanding = outstanding::where('id_rkm', $rkm->id)->first();
+    if ($outstanding) {
+        trackingOutstanding::where('id_outstanding', $outstanding->id)->update(['invoice' => 1]);
+        $outstanding->no_invoice = $invoice->invoice_number;
+        $outstanding->update();
+    }
+
+    $namaMateri = $rkm->materi->nama_materi ?? '-';
+    $this->storeKwitansi(new Request([
+        'invoice_id'         => $invoice->id,
+        'nomor_kwitansi'     => 'KW-' . $invoice->invoice_number,
+        'tanggal'            => now()->toDateString(),
+        'tanggal_ttd'        => now()->toDateString(),
+        'nama_penandatangan' => $penandatangan->nama_karyawan,
+        'keterangan'         => $namaMateri,
+        'nama_penerima'      => $rkm->perusahaan->nama_perusahaan ?? '-',
+        'tanggal_awal'       => $tglAwal,
+        'tanggal_akhir'      => $tglAkhir,
+        'jumlah_uang'        => $total,
+        'jumlah_peserta'     => $pax,
+    ]));
+
+    $pesertaList = $rkm->registrasi->pluck('peserta.nama')->filter()->values()->all();
+    $pdfUrl = route('download.pdf', [
+        'id'         => $invoice->id,
+        'peserta'    => $pesertaList,
+        'is_peserta' => $item['is_peserta'] ? 'true' : 'false',
+        'is_ttd'     => $item['is_ttd'] ? 'true' : 'false',
+        'pph23'      => $item['pph23'] ? 'true' : '0',
+    ]);
+
+    return [
+        'id_rkm'         => $rkm->id,
+        'invoice_number' => $invoice->invoice_number,
+        'ok'             => true,
+        'pdf_url'        => $pdfUrl,
+    ];
 }
 
 public function storeKwitansi(Request $request)

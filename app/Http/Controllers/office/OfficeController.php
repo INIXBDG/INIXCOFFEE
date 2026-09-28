@@ -340,7 +340,6 @@ class OfficeController extends Controller
     {
         $year = $request->year ?? Carbon::now()->year;
 
-        // Cache data outstanding per tahun selama 5 menit
         $data = Cache::remember("grafik_outstanding_v2_{$year}", now()->addMinutes(5), function () use ($year) {
             return outstanding::select([
                 'id',
@@ -365,42 +364,55 @@ class OfficeController extends Controller
                 ->get();
         });
 
-        $belum_bayar = 0;
-        $tepat_waktu = 0;
-        $terlambat = 0;
+        $labelStatus = [
+            'on_track'  => 'On Track',
+            'tepat'     => 'Tepat Waktu',
+            'terlambat' => 'Terlambat',
+        ];
 
-        foreach ($data as $item) {
+        $data->each(fn($item) => $item->status_label = $labelStatus[$this->getStatus($item)]);
 
-            if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
-                $belum_bayar++;
-            } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
-
-                if ($item->tanggal_bayar <= $item->due_date) {
-                    $tepat_waktu++;
-                } else {
-                    $terlambat++;
-                }
-            }
-        }
+        $counts = $data->countBy('status_label');
+        $on_track    = $counts->get('On Track', 0);
+        $tepat_waktu = $counts->get('Tepat Waktu', 0);
+        $terlambat   = $counts->get('Terlambat', 0);
 
         return response()->json([
-            'labels' => ['Belum Bayar', 'Tepat Waktu', 'Terlambat'],
-            'data' => [$belum_bayar, $tepat_waktu, $terlambat],
-            'total' => $belum_bayar + $tepat_waktu + $terlambat,
-            'datas' => $data->map(function ($item) {
+            'labels' => ['On Track', 'Tepat Waktu', 'Terlambat'],
+            'data'   => [$on_track, $tepat_waktu, $terlambat],
+            'total'  => $tepat_waktu + $terlambat,
+            'datas'  => $data->map(function ($item) {
+                $amount = $item->rkm?->invoice?->amount;
+
                 return [
-                    'perusahaan' => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
-                    'kelas' => $item->rkm?->materi->nama_materi ?? '-',
-                    'sales' => $item->sales_key ?? '-',
-                    'tanggal' => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
-                    'tagihan' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'tenggat_waktu' => $item->due_date ?? '-',
-                    'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'status' => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) ? "Belum Bayar" : (($item->status_pembayaran == 1 && $item->tanggal_bayar) ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat") : "Belum Bayar"),
+                    'perusahaan'         => $item->rkm?->perusahaan?->nama_perusahaan ?? '-',
+                    'kelas'              => $item->rkm?->materi?->nama_materi ?? '-',
+                    'sales'              => $item->sales_key ?? '-',
+                    'tanggal'            => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                    'tagihan'            => $amount !== null ? (int) $amount : '-',
+                    'tenggat_waktu'      => $item->due_date ?? '-',
+                    'tanggal_bayar'      => $item->tanggal_bayar ?? '-',
+                    'nominal_pembayaran' => $amount !== null ? (int) $amount : '-',
+                    'status'             => $item->status_label,
                 ];
-            })
+            })->values(),
         ]);
+    }
+
+    private function getStatus($data)
+    {
+        if ($data->status_pembayaran == 1 && !empty($data->tanggal_bayar) && !empty($data->due_date)) {
+            return Carbon::parse($data->tanggal_bayar)->lte(Carbon::parse($data->due_date))
+                ? 'tepat'
+                : 'terlambat';
+        }
+
+        if ($data->status_pembayaran != 1 && !empty($data->due_date)
+            && now()->lte(Carbon::parse($data->due_date)->addMonths(6))) {
+            return 'on_track';
+        }
+
+        return 'terlambat';
     }
 
     public function GrafikKetepatanWaktu(Request $request)
