@@ -911,6 +911,8 @@ Route::prefix('crm')->group(function () {
 Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
 Route::get('/crm/approval-pendapatan-sales/get/{tahun}/{bulan}', [ApprovalPendapatanSalesController::class, 'get']);
 Route::post('/crm/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
+Route::get('/crm/approval-pendapatan-sales/rkm-search', [ApprovalPendapatanSalesController::class, 'searchRkm']);
+Route::post('/crm/approval-pendapatan-sales/store', [ApprovalPendapatanSalesController::class, 'store']);
 
 //INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
