@@ -911,6 +911,8 @@ Route::prefix('crm')->group(function () {
 Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
 Route::get('/crm/approval-pendapatan-sales/get/{tahun}/{bulan}', [ApprovalPendapatanSalesController::class, 'get']);
 Route::post('/crm/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
+Route::get('/crm/approval-pendapatan-sales/rkm-search', [ApprovalPendapatanSalesController::class, 'searchRkm']);
+Route::post('/crm/approval-pendapatan-sales/store', [ApprovalPendapatanSalesController::class, 'store']);
 
 //INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
@@ -923,7 +925,7 @@ Route::delete('/invoice/{id}', [InvoiceRKMController::class, 'destroy'])->name('
 Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf'])->name('invoices.export-pdf');
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
-
+Route::post('/invoice-bulk', [InvoiceRKMController::class, 'bulkStore'])->name('invoice.bulk.store');
 //Kwitansi
 Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
 Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])->name('kwitansi.create');
@@ -980,6 +982,7 @@ Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('ticket
 Route::post('/tickets/{ticket}/accept', [TicketController::class, 'accept'])->name('tickets.accept');
 Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
 Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
+Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
 
 // Gaji

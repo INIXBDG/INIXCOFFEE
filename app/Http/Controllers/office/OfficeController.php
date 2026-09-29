@@ -340,7 +340,6 @@ class OfficeController extends Controller
     {
         $year = $request->year ?? Carbon::now()->year;
 
-        // Cache data outstanding per tahun selama 5 menit
         $data = Cache::remember("grafik_outstanding_v2_{$year}", now()->addMinutes(5), function () use ($year) {
             return outstanding::select([
                 'id',
@@ -365,42 +364,55 @@ class OfficeController extends Controller
                 ->get();
         });
 
-        $belum_bayar = 0;
-        $tepat_waktu = 0;
-        $terlambat = 0;
+        $labelStatus = [
+            'on_track'  => 'On Track',
+            'tepat'     => 'Tepat Waktu',
+            'terlambat' => 'Terlambat',
+        ];
 
-        foreach ($data as $item) {
+        $data->each(fn($item) => $item->status_label = $labelStatus[$this->getStatus($item)]);
 
-            if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
-                $belum_bayar++;
-            } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
-
-                if ($item->tanggal_bayar <= $item->due_date) {
-                    $tepat_waktu++;
-                } else {
-                    $terlambat++;
-                }
-            }
-        }
+        $counts = $data->countBy('status_label');
+        $on_track    = $counts->get('On Track', 0);
+        $tepat_waktu = $counts->get('Tepat Waktu', 0);
+        $terlambat   = $counts->get('Terlambat', 0);
 
         return response()->json([
-            'labels' => ['Belum Bayar', 'Tepat Waktu', 'Terlambat'],
-            'data' => [$belum_bayar, $tepat_waktu, $terlambat],
-            'total' => $belum_bayar + $tepat_waktu + $terlambat,
-            'datas' => $data->map(function ($item) {
+            'labels' => ['On Track', 'Tepat Waktu', 'Terlambat'],
+            'data'   => [$on_track, $tepat_waktu, $terlambat],
+            'total'  => $tepat_waktu + $terlambat,
+            'datas'  => $data->map(function ($item) {
+                $amount = $item->rkm?->invoice?->amount;
+
                 return [
-                    'perusahaan' => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
-                    'kelas' => $item->rkm?->materi->nama_materi ?? '-',
-                    'sales' => $item->sales_key ?? '-',
-                    'tanggal' => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
-                    'tagihan' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'tenggat_waktu' => $item->due_date ?? '-',
-                    'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'status' => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) ? "Belum Bayar" : (($item->status_pembayaran == 1 && $item->tanggal_bayar) ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat") : "Belum Bayar"),
+                    'perusahaan'         => $item->rkm?->perusahaan?->nama_perusahaan ?? '-',
+                    'kelas'              => $item->rkm?->materi?->nama_materi ?? '-',
+                    'sales'              => $item->sales_key ?? '-',
+                    'tanggal'            => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                    'tagihan'            => $amount !== null ? (int) $amount : '-',
+                    'tenggat_waktu'      => $item->due_date ?? '-',
+                    'tanggal_bayar'      => $item->tanggal_bayar ?? '-',
+                    'nominal_pembayaran' => $amount !== null ? (int) $amount : '-',
+                    'status'             => $item->status_label,
                 ];
-            })
+            })->values(),
         ]);
+    }
+
+    private function getStatus($data)
+    {
+        if ($data->status_pembayaran == 1 && !empty($data->tanggal_bayar) && !empty($data->due_date)) {
+            return Carbon::parse($data->tanggal_bayar)->lte(Carbon::parse($data->due_date))
+                ? 'tepat'
+                : 'terlambat';
+        }
+
+        if ($data->status_pembayaran != 1 && !empty($data->due_date)
+            && now()->lte(Carbon::parse($data->due_date)->addMonths(6))) {
+            return 'on_track';
+        }
+
+        return 'terlambat';
     }
 
     public function GrafikKetepatanWaktu(Request $request)
@@ -1601,19 +1613,12 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', '0')
-            ->where('metode_kelas', '!=', 'Exam Only')
-            ->whereHas('peluang', function ($q) {
-                $q->where('tahap', 'merah')
-                  ->where('tentatif', false);
-            })
+            ->whereIn('status', ['0', '3'])
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
-                // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
                 $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
                     $q1->whereDoesntHave('peluang');
                     $this->applyPeriodeFilter($q1, 'tanggal_awal', $filterType, $tahun, $bulan, $triwulan);
                 })
-                // Kasus 2: RKM punya peluang -> filter tentatif/tahap + periode_mulai peluang
                 ->orWhereHas('peluang', function ($q2) use ($filterType, $tahun, $bulan, $triwulan) {
                     $q2->where('tentatif', false)
                     ->where('tahap', 'merah');
@@ -1657,15 +1662,19 @@ class OfficeController extends Controller
             ];
         })->values();
 
-        $rkmPerMinggu = $data->where('hide', '!=', true)
+        $rkmPerMinggu = $data
+            ->where('hide', '!=', true)
+            ->filter(function ($rkm) {
+                $pel = $rkm->peluang;
+                return $pel
+                    && $pel->tahap === 'merah'
+                    && !$pel->tentatif;
+            })
             ->map(function ($rkm) {
-                $tanggal = optional($rkm->peluang)->periode_mulai ?? $rkm->tanggal_awal;
-                return ['tanggal' => $tanggal];
+                return ['tanggal' => $rkm->peluang->periode_mulai];
             })
             ->filter(fn($item) => !empty($item['tanggal']))
-            ->groupBy(function ($item) {
-                return Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-            })
+            ->groupBy(fn($item) => Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d'))
             ->map(function ($items, $weekStart) {
                 $start = Carbon::parse($weekStart);
                 $end   = $start->copy()->endOfWeek(Carbon::SUNDAY);
@@ -1731,7 +1740,7 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', '0')
+            ->whereIn('status', ['0', '3'])
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
                 // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
                 $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {

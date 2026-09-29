@@ -655,21 +655,33 @@ class ChartController extends Controller
 
     public function getAbsenPerbulan($year, $month)
     {
-        if($month === 'All'){
+        if ($month === 'All') {
             // Fetch data for the specified month and year
             $totalketerlambatan = AbsensiKaryawan::whereYear('tanggal', $year)
                 ->with('karyawan')
                 ->get();
 
-            // Filter the records where 'waktu_keterlambatan' is greater than 1 minute
             $filteredData = $totalketerlambatan->filter(function ($item) {
-                // Convert 'waktu_keterlambatan' from HH:MM:SS to total seconds
+                if (empty($item->waktu_keterlambatan)) {
+                    return false;
+                }
                 $timeParts = explode(':', $item->waktu_keterlambatan);
-                $seconds = ($timeParts[0] * 3600) + ($timeParts[1] * 60) + $timeParts[2];  // Convert to total seconds
+                $seconds = ((int) ($timeParts[0] ?? 0) * 3600) + ((int) ($timeParts[1] ?? 0) * 60) + (int) ($timeParts[2] ?? 0);
 
-                // Return true if the time is greater than 60 seconds
                 return $seconds > 60;
             });
+
+            // Filter the records where 'waktu_keterlambatan' is greater than 1 minute
+            // $filteredData = $totalketerlambatan->filter(function ($item) {
+            // //   Convert 'waktu_keterlambatan' from HH:MM:SS to total seconds
+            //     $timeParts = explode(':', $item->waktu_keterlambatan);
+            //     $seconds = ($timeParts[0] * 3600) + ($timeParts[1] * 60) + $timeParts[2];   // Convert to total seconds
+                
+
+            //     //  Return true if the time is greater than 60 seconds
+            //     return $seconds > 60;
+            // });
+
 
             // Group by 'id_karyawan' and count occurrences of lateness
             $latenessCount = $filteredData->groupBy('id_karyawan')->map(function ($items) {
@@ -694,22 +706,31 @@ class ChartController extends Controller
                 'data' => $latenessArray
             ]);
         }
-        else{
+        else {
             // Fetch data for the specified month and year
             $totalketerlambatan = AbsensiKaryawan::whereMonth('tanggal', $month)
                 ->whereYear('tanggal', $year)
                 ->with('karyawan')
                 ->get();
 
-            // Filter the records where 'waktu_keterlambatan' is greater than 1 minute
             $filteredData = $totalketerlambatan->filter(function ($item) {
-                // Convert 'waktu_keterlambatan' from HH:MM:SS to total seconds
+                if (empty($item->waktu_keterlambatan)) {
+                    return false;
+                }
                 $timeParts = explode(':', $item->waktu_keterlambatan);
-                $seconds = ($timeParts[0] * 3600) + ($timeParts[1] * 60) + $timeParts[2];  // Convert to total seconds
+                $seconds = ((int) ($timeParts[0] ?? 0) * 3600) + ((int) ($timeParts[1] ?? 0) * 60) + (int) ($timeParts[2] ?? 0);
 
-                // Return true if the time is greater than 60 seconds
                 return $seconds > 60;
             });
+            // Filter the records where 'waktu_keterlambatan' is greater than 1 minute
+            // $filteredData = $totalketerlambatan->filter(function ($item) {
+            //     // Convert 'waktu_keterlambatan' from HH:MM:SS to total seconds
+            //     $timeParts = explode(':', $item->waktu_keterlambatan);
+            //     $seconds = ($timeParts[0] * 3600) + ($timeParts[1] * 60) + $timeParts[2];  // Convert to total seconds
+
+            //     // Return true if the time is greater than 60 seconds
+            //     return $seconds > 60;
+            // });
 
             // Group by 'id_karyawan' and count occurrences of lateness
             $latenessCount = $filteredData->groupBy('id_karyawan')->map(function ($items) {
