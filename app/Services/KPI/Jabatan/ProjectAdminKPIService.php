@@ -3,6 +3,7 @@
 namespace App\Services\KPI\Jabatan;
 
 use App\Models\colaborator;
+use App\Models\QuarterEvent;
 use App\Traits\KPIDefaultResponseTrait;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -138,6 +139,122 @@ class ProjectAdminKPIService
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyAverages,
+            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+            'monthly_progress' => $monthlyProgressAvg,
+            'daily_progress_per_month' => $dailyProgressPerMonth,
+        ];
+    }
+
+    public function calculateWebinar($item, $personId)
+    {
+        $detail = $item->detailTargetKPI->first();
+
+        if (!$detail || !$detail->detail_jangka) {
+            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
+        $dataPelaksanaanWebinar = QuarterEvent::whereHas('mapping', function ($query) use ($tahun) {
+            $query->where('year', $tahun);
+        })->count();
+
+        if ($dataPelaksanaanWebinar <= 0) {
+            return 0;
+        }
+
+        $progress = $dataPelaksanaanWebinar;
+
+        return $progress;
+    }
+
+    public function calculateWebinarDetail($itemDetail, $personId = null)
+    {
+        $detail = $itemDetail->detailTargetKPI->first();
+
+        if (!$detail || !$detail->detail_jangka) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $tahun = (int) $detail->detail_jangka;
+        $target = (int) $detail->nilai_target;
+
+        if ($target <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+            return $this->getDefaultDetailResponse();
+        }
+
+        $dataWebinar = QuarterEvent::with('mapping')->whereHas('mapping', function ($query) use ($tahun) {
+            $query->where('year', $tahun);
+        })->get();
+
+        $totalData = $dataWebinar->count();
+
+        if ($totalData <= 0) {
+            return array_merge($this->getDefaultDetailResponse(), [
+                'gap' => rtrim(rtrim(sprintf('%.1f', (float)(0 - $target)), '0'), '.'),
+                'pie_chart' => ['above' => 0, 'below' => 4],
+            ]);
+        }
+
+        $progress = $totalData; 
+        $gapRaw = $progress - $target;
+        $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $quartersWith = [];
+        $monthlyData = [];
+        $dailyBreakdownPerMonth = [];
+
+        foreach ($dataWebinar as $webinar) {
+            if (!$webinar->mapping) {
+                continue;
+            }
+
+            $mapYear = (int) $webinar->mapping->year;
+            $mapMonth = (int) $webinar->mapping->month;
+
+            $quarter = (int) ceil($mapMonth / 3);
+            $quartersWith[$quarter] = true;
+
+            $monthKey = sprintf('%04d-%02d', $mapYear, $mapMonth);
+
+            $dayKey = $webinar->created_at->format('Y-m-d');
+
+            if (!isset($monthlyData[$monthKey])) {
+                $monthlyData[$monthKey] = 0;
+            }
+            $monthlyData[$monthKey]++;
+
+            if (!isset($dailyBreakdownPerMonth[$monthKey])) {
+                $dailyBreakdownPerMonth[$monthKey] = [];
+            }
+            if (!isset($dailyBreakdownPerMonth[$monthKey][$dayKey])) {
+                $dailyBreakdownPerMonth[$monthKey][$dayKey] = 0;
+            }
+            $dailyBreakdownPerMonth[$monthKey][$dayKey]++;
+        }
+
+        $above = count($quartersWith);
+        $below = 4 - $above;
+
+        $monthlyProgressAvg = $monthlyData;
+        $dailyProgressPerMonth = $dailyBreakdownPerMonth;
+
+        ksort($monthlyData);
+        ksort($dailyBreakdownPerMonth);
+        ksort($monthlyProgressAvg);
+        ksort($dailyProgressPerMonth);
+
+        return [
+            'progress' => $progress,
+            'gap' => $gap,
+            'pie_chart' => ['above' => $above, 'below' => $below],
+            'monthly_data' => $monthlyData,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgressAvg,
             'daily_progress_per_month' => $dailyProgressPerMonth,
