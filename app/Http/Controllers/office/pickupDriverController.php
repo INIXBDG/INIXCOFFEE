@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\activityLog;
 use App\Models\BiayaTransportasiDriver;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\TrackingPickupDriver;
 use App\Models\User;
 use App\Notifications\KoordinasiDriverNotifcation;
@@ -37,9 +37,9 @@ class pickupDriverController extends Controller
 
     public function index()
     {
-        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+        $latestPerKendaraan = perbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
 
-        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+        $kendaraan = perbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
             $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
         })
             ->where(function ($query) {
@@ -65,7 +65,7 @@ class pickupDriverController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.pickupdriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
     }
 
     public function create()
@@ -103,7 +103,7 @@ class pickupDriverController extends Controller
         $extends = 'layouts_office.app';
         $section = 'office_contents';
 
-        return view('office.pickupdriver.create', compact('dataDriver', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.create', compact('dataDriver', 'kendaraan', 'extends', 'section'));
     }
 
     public function store(Request $request)

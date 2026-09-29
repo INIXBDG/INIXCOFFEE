@@ -9,7 +9,7 @@ class KomplainPeserta extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $guarded = ['komplain','tanggal_selesai','status','nilaifeedback_id','kategori_feedback'];
 
     public function nilaifeedback()
     {

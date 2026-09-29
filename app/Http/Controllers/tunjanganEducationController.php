@@ -61,12 +61,12 @@ class tunjanganEducationController extends Controller
             END
         ';
 
-        // Pakai DB::raw hanya dalam select (atau selectRaw)
         $collection = rekapMengajarInstruktur::with('instruktur')
-            ->select('rekap_mengajar_instrukturs.*', DB::raw("($caseMonth) as bulan_berlaku"), DB::raw("($caseYear) as tahun_berlaku"))
-            // untuk filtering gunakan whereRaw dengan string CASE asli (bukan objek)
-            ->whereRaw("($caseMonth) = ?", [$bulan])
-            ->whereRaw("($caseYear) = ?", [$tahun])
+            ->select('rekap_mengajar_instrukturs.*')
+            ->selectRaw("(" . $caseMonth . ") as bulan_berlaku")
+            ->selectRaw("(" . $caseYear . ") as tahun_berlaku")
+            ->havingRaw("bulan_berlaku = ?", [$bulan])
+            ->havingRaw("tahun_berlaku = ?", [$tahun])
             ->get();
 
         // Kumpulkan firstIdRkm untuk menghindari N+1
