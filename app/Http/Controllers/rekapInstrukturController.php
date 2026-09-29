@@ -46,20 +46,13 @@ class rekapInstrukturController extends Controller
 
     public function getListMengajar($bulan, $tahun)
     {
-        // =========================================================================
-        // 1. AMBIL DAN EKSTRAK ID RKM DARI REKAP MENGAJAR INSTRUKTUR
-        // =========================================================================
         $existingRKMs = rekapMengajarInstruktur::pluck('id_rkm')->filter()->toArray();
 
-        // Gabungkan semua string array menjadi satu string dengan pemisah koma
         $existingRKMsString = implode(',', $existingRKMs);
 
         // Pecah berdasarkan koma, hilangkan spasi, dan pastikan nilainya unik
         $excludedRkmIds = array_unique(array_filter(array_map('trim', explode(',', $existingRKMsString))));
 
-        // =========================================================================
-        // 2. LOGIKA CASE BULAN & TAHUN
-        // =========================================================================
         $caseMonth = '
             CASE
                 -- Cek apakah lintas bulan
@@ -90,9 +83,7 @@ class rekapInstrukturController extends Controller
             END
         ';
 
-        // =========================================================================
-        // 3. QUERY DATA RKM
-        // =========================================================================
+
         $data = RKM::with(['materi', 'peluang', 'rekomendasilanjutan'])
             ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
             // ---> TAMBAHAN: Kecualikan ID RKM yang sudah ada di rekap <---
@@ -103,9 +94,11 @@ class rekapInstrukturController extends Controller
             ->whereDoesntHave('peluang', function ($query) {
                 $query->where('tentatif', 1);
             })
-            ->select(
-                DB::raw("($caseMonth) as bulan_berlaku"),
-                DB::raw("($caseYear) as tahun_berlaku"),
+
+            ->selectRaw("(" . $caseMonth . ") as bulan_berlaku")
+            ->selectRaw("(" . $caseYear . ") as tahun_berlaku")
+            // Pertahankan struktur SELECT lainnya
+            ->addSelect([
                 DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
                 DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
                 DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
@@ -122,18 +115,18 @@ class rekapInstrukturController extends Controller
                 DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
                 'r_k_m_s.tanggal_awal',
                 DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-            )
+            ])
             ->groupBy(
                 'r_k_m_s.materi_key',
                 'r_k_m_s.ruang',
                 'r_k_m_s.metode_kelas',
                 'r_k_m_s.event',
                 'r_k_m_s.tanggal_awal',
-                'r_k_m_s.tanggal_akhir' // Tambahkan ini jika ingin data yang tgl akhirnya beda dipisah
+                'r_k_m_s.tanggal_akhir'
             )
-            // 3. Gunakan havingRaw() karena kita memfilter hasil dari MAX()
-            ->havingRaw("($caseMonth) = ?", [$bulan])
-            ->havingRaw("($caseYear) = ?", [$tahun])
+            // Perbaikan 2 (Baris 135, 136, 295, 296): Gunakan alias 'bulan_berlaku' dan 'tahun_berlaku' di havingRaw
+            ->havingRaw("bulan_berlaku = ?", [$bulan])
+            ->havingRaw("tahun_berlaku = ?", [$tahun])
             ->orderBy('status_all', 'asc')
             ->orderBy('r_k_m_s.tanggal_awal', 'asc')
             ->get();
@@ -186,7 +179,6 @@ class rekapInstrukturController extends Controller
             'data' => collect($result),
         ]);
     }
-
     public function store(Request $request)
     {
         // dd($request->all());
@@ -292,8 +284,8 @@ class rekapInstrukturController extends Controller
 
         // 2. Terapkan ke dalam Base Query
         $query = rekapMengajarInstruktur::with('instruktur')
-            ->whereRaw("($caseMonth) = ?", [$month])
-            ->whereRaw("($caseYear) = ?", [$year]);
+            ->whereRaw("(" . $caseMonth . ") = ?", [$month])
+            ->whereRaw("(" . $caseYear . ") = ?", [$year]);
 
         // 3. Eksekusi kondisi berdasarkan ID
         if ($id == 'OL') {

@@ -27,35 +27,35 @@
 @if ($feature->short_description)
     <div class="section">
         <div class="section-title">RINGKASAN</div>
-        <div class="section-content">{!! $feature->short_description !!}</div>
+        <div class="section-content">{!! clean($feature->short_description) !!}</div>
     </div>
 @endif
 
 @if ($feature->purpose)
     <div class="section">
         <div class="section-title">TUJUAN</div>
-        <div class="section-content">{!! $feature->purpose !!}</div>
+        <div class="section-content">{!! clean($feature->purpose) !!}</div>
     </div>
 @endif
 
 @if ($feature->problem_solved)
     <div class="section">
         <div class="section-title">MASALAH YANG DISELESAIKAN</div>
-        <div class="section-content">{!! $feature->problem_solved !!}</div>
+        <div class="section-content">{!! clean($feature->problem_solved) !!}</div>
     </div>
 @endif
 
 @if ($feature->how_it_works)
     <div class="section">
         <div class="section-title">CARA PENGGUNAAN</div>
-        <div class="section-content">{!! $feature->how_it_works !!}</div>
+        <div class="section-content">{!! clean($feature->how_it_works) !!}</div>
     </div>
 @endif
 
 @if ($feature->user_access)
     <div class="section">
         <div class="section-title">HAK AKSES PENGGUNA</div>
-        <div class="section-content">{!! $feature->user_access !!}</div>
+        <div class="section-content">{!! clean($feature->user_access) !!}</div>
     </div>
 @endif
 
