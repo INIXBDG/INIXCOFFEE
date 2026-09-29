@@ -183,16 +183,51 @@
     </div>
 
     <input type="hidden" id="currentKaryawanId" value="{{ $targetId ?? Auth::id() }}">
-    
+        <style>
+        .target-card {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .target-card .card-body-inner {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .target-card .mt-auto {
+            margin-top: auto;
+        }
+        
+        #targetCardContainer .col-12 {
+            display: flex;
+        }
+        
+        #targetCardContainer .target-card {
+            flex: 1;
+        }
+    </style>
     <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
+    @php
+        $authUser = auth()->user();
+        $authKaryawan = $authUser->karyawan ?? null;
+    @endphp
+
     <script>
         window.authUser = {
-            nama: "{{ auth()->user()->karyawan->nama_lengkap ?? 'User' }}",
-            jabatan: "{{ auth()->user()->jabatan ?? '-' }}"
+            id: {{ $authUser->id }},
+            karyawan_id: {{ $authKaryawan ? $authKaryawan->id : 'null' }},
+            nama: "{{ $authKaryawan ? $authKaryawan->nama_lengkap : 'User' }}",
+            jabatan: "{{ $authKaryawan ? $authKaryawan->jabatan : ($authUser->jabatan ?? '-') }}",
+            jabatan_user_table: "{{ $authUser->jabatan ?? '-' }}"
         };
 
         window.KPI_CONFIG = {
-            targetId: {{ $targetId ?? auth()->user()->id }},
+            userId: {{ $authUser->id }},
+            userJabatan: "{{ $authKaryawan ? $authKaryawan->jabatan : ($authUser->jabatan ?? '-') }}",
+            targetId: {{ $targetId ?? $authUser->id }},
             currentYear: {{ now()->year }},
             csrfToken: "{{ csrf_token() }}",
             dataPersonalRoute: "{{ route('kpi.overview.dataPersonal') }}",

@@ -764,36 +764,88 @@
                                 });
                             }, 0);
                         } else if (allowedDetailAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
-                            const isKoordinatorItsm = window.authUser?.jabatan === 'Koordinator ITSM';
+                            const jabatanFromConfig = window.KPI_CONFIG?.userJabatan || '';
+                            const jabatanFromAuth = window.authUser?.jabatan || '';
+                            const jabatanUser = jabatanFromConfig !== '-' ? jabatanFromConfig : (jabatanFromAuth !== '-' ? jabatanFromAuth : '');
+                            const jabatanLower = (jabatanUser || '').toLowerCase().trim();
+                            
+                            const isKoordinatorItsm = jabatanLower.includes('koordinator itsm') || jabatanLower.includes('koordinator');
+                            
                             const disabledAttr = isKoordinatorItsm ? '' : 'disabled';
                             const submitBtnHtml = isKoordinatorItsm ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : '';
+                            
+                            const currentUserId = String(window.KPI_CONFIG?.userId || window.authUser?.id || '');
+                            const currentKaryawanId = String(window.authUser?.karyawan_id || window.KPI_CONFIG?.userId || '');
+
+                            const filteredKaryawan = (data.karyawan || []).filter(item => {
+                                if (isKoordinatorItsm) return true;
+                                const itemKaryawanId = String(item.id_karyawan || '');
+                                const itemId = String(item.id || '');
+                                return itemKaryawanId === currentKaryawanId || itemKaryawanId === currentUserId || itemId === currentKaryawanId || itemId === currentUserId;
+                            });
+
                             contentStatisticChart = `
-                                <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
-                                    <form id="formGapKompetensi">
-                                        <div class="row mb-2 fw-semibold text-muted border-bottom pb-2"><div class="col-md-4">Nama Karyawan</div><div class="col-md-4">Kemampuan (%)</div><div class="col-md-4">Standar (%)</div></div>
-                                        ${(data.karyawan || []).map((item, index) => {
-                                            const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
-                                            const standar = parseFloat(item.presentase_standar ?? 100);
-                                            let badge = '';
-                                            if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
-                                            else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
-                                            else badge = `<span class="badge bg-success">Achieved</span>`;
-                                            return `<div class="row mb-2 align-items-center p-2 rounded"><div class="col-md-4 d-flex justify-content-between align-items-center"><span>${item.nama_lengkap ?? '-'}</span>${badge}</div><div class="col-md-4"><input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}></div><div class="col-md-4"><input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}></div><input type="hidden" name="data[${index}][id]" value="${item.id || ''}"></div>`;
-                                        }).join('')}
-                                        ${submitBtnHtml}
-                                    </form>
-                                </div></div></div>
+                                <div class="mt-4">
+                                    <div class="card shadow-sm border-0 rounded-4">
+                                        <div class="card-body">
+                                            <h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
+                                            <form id="formGapKompetensi">
+                                                <input type="hidden" name="_token" value="${window.KPI_CONFIG.csrfToken}">
+                                                <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                                                    <div class="col-md-4">Nama Karyawan</div>
+                                                    <div class="col-md-4">Kemampuan (%)</div>
+                                                    <div class="col-md-4">Standar (%)</div>
+                                                </div>
+                                                ${filteredKaryawan.map((item, index) => {
+                                                    const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
+                                                    const standar = parseFloat(item.presentase_standar ?? 100);
+                                                    let badge = '';
+                                                    if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
+                                                    else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
+                                                    else badge = `<span class="badge bg-success">Achieved</span>`;
+                                                    
+                                                    return `<div class="row mb-2 align-items-center p-2 rounded">
+                                                        <div class="col-md-4 d-flex justify-content-between align-items-center">
+                                                            <span>${item.nama_lengkap ?? '-'}</span>
+                                                            ${badge}
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}>
+                                                        </div>
+                                                        <input type="hidden" name="data[${index}][id]" value="${item.id || ''}">
+                                                        <input type="hidden" name="data[${index}][id_karyawan]" value="${item.id_karyawan}">
+                                                        <input type="hidden" name="data[${index}][detailTargetKey]" value="${item.detailTargetKey}">
+                                                    </div>`;
+                                                }).join('')}
+                                                ${submitBtnHtml}
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             `;
+                            
                             $(document).off('submit', '#formGapKompetensi').on('submit', '#formGapKompetensi', function(e) {
                                 e.preventDefault();
+                                
+                                // Serialize sekarang akan OTOMATIS mengambil input _token yang kita tambahkan di atas
                                 let formData = $(this).serialize();
+                                
                                 $.ajax({
                                     url: window.KPI_CONFIG.updateGapKompetensiRoute,
                                     method: 'POST',
                                     data: formData,
-                                    success: function() {
+                                    success: function(response) {
                                         if (typeof Swal !== 'undefined') {
-                                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Berhasil diupdate.', timer: 2000, showConfirmButton: false }).then(() => {
+                                            Swal.fire({ 
+                                                icon: 'success', 
+                                                title: 'Berhasil!', 
+                                                text: response.message || 'Berhasil diupdate.', 
+                                                timer: 2000, 
+                                                showConfirmButton: false 
+                                            }).then(() => {
                                                 const modalEl = document.getElementById('detailTargetModal');
                                                 const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                                                 modal.hide();
@@ -803,7 +855,13 @@
                                     },
                                     error: function(err) {
                                         if (typeof Swal !== 'undefined') {
-                                            Swal.fire({ icon: 'error', title: 'Gagal!', html: err.responseJSON?.message || 'Terjadi kesalahan' });
+                                            Swal.fire({ 
+                                                icon: 'error', 
+                                                title: 'Gagal!', 
+                                                html: err.responseJSON?.message || 'Terjadi kesalahan' 
+                                            });
+                                        } else {
+                                            alert('Terjadi kesalahan: ' + (err.responseJSON?.message || 'Unknown error'));
                                         }
                                     }
                                 });
