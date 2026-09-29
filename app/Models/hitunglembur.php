@@ -14,7 +14,12 @@ class hitunglembur extends Model
         'approval_gm',
         'alasan',
     ];
-    protected $guarded = [];
+    protected $guarded = [
+        'id_lembur',
+        'nilai_lembur',
+        'approval_gm',
+        'alasan',
+    ];
 
     public function lembur()
     {

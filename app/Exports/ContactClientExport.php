@@ -24,12 +24,8 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
         $this->idPerusahaan = $idPerusahaan;
     }
 
-    /**
-     * @return \Illuminate\Support\Collection
-     */
     public function collection()
     {
-        // ===== Query union: pesertas + contacts =====
         $pesertaQuery = DB::table('pesertas as p')
             ->selectRaw('
                 p.id AS peserta_id,
@@ -54,6 +50,7 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
             $pesertaQuery->whereIn('pr.id', (array) $this->idPerusahaan);
         }
 
+        // ===== Query 2: contacts =====
         $contactQuery = DB::table('contacts as c')
             ->selectRaw('
                 NULL AS peserta_id,
@@ -82,17 +79,17 @@ class ContactClientExport implements FromCollection, WithHeadings, WithMapping
             $contactQuery->whereIn('pr.id', (array) $this->idPerusahaan);
         }
 
-        $pesertaSql = $pesertaQuery->toSql();
-        $pesertaBindings = $pesertaQuery->getBindings();
+        // =====================================================================
+        // PERBAIKAN: Gunakan fitur UNION dan Subquery bawaan Laravel
+        // =====================================================================
 
-        $contactSql = $contactQuery->toSql();
-        $contactBindings = $contactQuery->getBindings();
+        // 1. Gabungkan query menggunakan unionAll()
+        $unionQuery = $pesertaQuery->unionAll($contactQuery);
 
-        $unionSql = "({$pesertaSql}) UNION ALL ({$contactSql})";
-        $unionBindings = array_merge($pesertaBindings, $contactBindings);
+        // 2. Gunakan fromSub() untuk membungkus union query sebagai tabel 'master'
+        $masterQuery = DB::query()->fromSub($unionQuery, 'master');
 
-        $masterQuery = DB::table(DB::raw("({$unionSql}) as master"))
-            ->setBindings($unionBindings);
+        // =====================================================================
 
         if (!empty($this->status)) {
             $masterQuery->whereIn('status_text', (array) $this->status);

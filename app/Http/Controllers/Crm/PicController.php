@@ -116,18 +116,18 @@ class PicController extends Controller
                 $contactQuery->where('pr.sales_key', $salesFilter);
             }
 
-            $pesertaSql = $pesertaQuery->toSql();
-            $pesertaBindings = $pesertaQuery->getBindings();
-
-            $contactSql = $contactQuery->toSql();
-            $contactBindings = $contactQuery->getBindings();
+            // =================================================================
+            // PERBAIKAN: Hapus toSql() dan getBindings()
+            // =================================================================
 
             // 3. (PENTING) CONTACT DULU BARU PESERTA DI UNION
-            $unionSql = "({$contactSql}) UNION ALL ({$pesertaSql})";
-            $unionBindings = array_merge($contactBindings, $pesertaBindings);
+            $unionQuery = clone $contactQuery;
+            $unionQuery->unionAll($pesertaQuery);
 
-            $masterQuery = DB::table(DB::raw("({$unionSql}) as master"))
-                ->setBindings($unionBindings);
+            // Gunakan fromSub() untuk menggantikan DB::table(DB::raw(...))
+            $masterQuery = DB::query()->fromSub($unionQuery, 'master');
+
+            // =================================================================
 
             $draw = $request->get('draw', 1);
             $start = $request->get('start', 0);
@@ -189,9 +189,12 @@ class PicController extends Controller
                 ->offset($start)
                 ->limit($length)
                 ->get();
-            $totalRecords = DB::table(DB::raw("({$unionSql}) as master"))
-                ->setBindings($unionBindings)
-                ->count();
+
+            // =================================================================
+            // PERBAIKAN TOTAL RECORDS: Gunakan kembali $unionQuery dengan fromSub()
+            // =================================================================
+            $totalRecords = DB::query()->fromSub($unionQuery, 'master')->count();
+            // =================================================================
 
             $data = $rawData->map(function ($item) {
                 if ($item->contact_status === '1' || $item->contact_status === 1) {
@@ -237,7 +240,6 @@ class PicController extends Controller
             ], 500);
         }
     }
-
 
     public function store(Request $request)
     {
