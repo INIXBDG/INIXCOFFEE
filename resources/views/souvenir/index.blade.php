@@ -305,8 +305,8 @@
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
-                        $('#souvenirtable').DataTable().ajax.reload(null, false);
-                        $('#souvenirtableinactive').DataTable().ajax.reload(null, false);
+                        // $('#souvenirtable').DataTable().ajax.reload(null, false);
+                        // $('#souvenirtableinactive').DataTable().ajax.reload(null, false);
                         window.location.reload();
                     },
                     error: function(xhr) {
