@@ -1662,15 +1662,19 @@ class OfficeController extends Controller
             ];
         })->values();
 
-        $rkmPerMinggu = $data->where('hide', '!=', true)
+        $rkmPerMinggu = $data
+            ->where('hide', '!=', true)
+            ->filter(function ($rkm) {
+                $pel = $rkm->peluang;
+                return $pel
+                    && $pel->tahap === 'merah'
+                    && !$pel->tentatif;
+            })
             ->map(function ($rkm) {
-                $tanggal = optional($rkm->peluang)->periode_mulai ?? $rkm->tanggal_awal;
-                return ['tanggal' => $tanggal];
+                return ['tanggal' => $rkm->peluang->periode_mulai];
             })
             ->filter(fn($item) => !empty($item['tanggal']))
-            ->groupBy(function ($item) {
-                return Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-            })
+            ->groupBy(fn($item) => Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d'))
             ->map(function ($items, $weekStart) {
                 $start = Carbon::parse($weekStart);
                 $end   = $start->copy()->endOfWeek(Carbon::SUNDAY);
