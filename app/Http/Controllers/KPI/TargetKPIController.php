@@ -137,7 +137,8 @@ class TargetKPIController extends Controller
             ],
 
             'project administrator & business support' => [
-                'efektifitas digital marketing'
+                'efektifitas digital marketing',
+                'timeline webinar'
             ],
 
             'technical support' => [
@@ -744,10 +745,10 @@ class TargetKPIController extends Controller
         ],
         'tim digital' => [
             'konsistensi campaign digital',
-            'efektifitas digital marketing'
         ],
         'project administrator & business support' => [
             'efektifitas digital marketing',
+            'timeline webinar'
         ],
         'technical support' => [
             'keberhasilan support memenuhi sla',
