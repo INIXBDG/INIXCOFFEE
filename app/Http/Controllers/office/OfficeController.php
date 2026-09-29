@@ -1603,42 +1603,44 @@ class OfficeController extends Controller
 
     public function rekapRkmJson(Request $request)
     {
-        $tahun      = $request->input('tahun', now()->year);
+        $tahun      = (int) $request->input('tahun', now()->year);
         $filterType = $request->input('filter_type', 'bulan');
-        $bulan      = $request->input('bulan', now()->month);
-        $triwulan   = $request->input('triwulan', ceil(now()->month / 3));
+        $bulan      = (int) $request->input('bulan', now()->month);
+        $triwulan   = (int) $request->input('triwulan', ceil(now()->month / 3));
 
+        // ===== Data utama (tabel & materi terbanyak) =====
         $query = RKM::with([
                 'materi:id,nama_materi',
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
             ->whereIn('status', ['0', '3'])
+            // Periode mengikuti RKM (dibungkus closure supaya orWhere di dalam
+            // applyPeriodeFilter tidak bocor ke kondisi lain)
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
-                $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
-                    $q1->whereDoesntHave('peluang');
-                    $this->applyPeriodeFilter($q1, 'tanggal_awal', $filterType, $tahun, $bulan, $triwulan);
-                })
-                ->orWhereHas('peluang', function ($q2) use ($filterType, $tahun, $bulan, $triwulan) {
-                    $q2->where('tentatif', false)
-                    ->where('tahap', 'merah');
-                    $this->applyPeriodeFilter($q2, 'periode_mulai', $filterType, $tahun, $bulan, $triwulan);
+                $this->applyPeriodeFilter($q, 'tanggal_awal', $filterType, $tahun, $bulan, $triwulan);
+            })
+            // RKM tanpa peluang boleh masuk; kalau punya peluang harus merah & tidak tentatif
+            ->where(function ($q) {
+                $q->whereDoesntHave('peluang')
+                ->orWhereHas('peluang', function ($p) {
+                    $p->where('tentatif', false)
+                        ->where('tahap', 'merah');
                 });
             });
 
         $data = $query->get();
 
+        // ===== List peluang (tabel) =====
         $peluang = $data->map(function ($rkm) {
-            $pel = $rkm->peluang;
-
             return [
                 'id'              => $rkm->id,
-                'periode_mulai'   => optional($pel)->periode_mulai
-                    ? Carbon::parse($pel->periode_mulai)->format('d/m/Y')
-                    : ($rkm->tanggal_awal ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y') : '-'),
-                'periode_selesai' => optional($pel)->periode_selesai
-                    ? Carbon::parse($pel->periode_selesai)->format('d/m/Y')
-                    : ($rkm->tanggal_akhir ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y') : '-'),
+                'periode_mulai'   => $rkm->tanggal_awal
+                    ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y')
+                    : '-',
+                'periode_selesai' => $rkm->tanggal_akhir
+                    ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y')
+                    : '-',
                 'nama_materi'     => optional($rkm->materi)->nama_materi,
                 'nama_perusahaan' => optional($rkm->perusahaan)->nama_perusahaan,
                 'hide'            => $rkm->hide,
@@ -1648,42 +1650,67 @@ class OfficeController extends Controller
             ];
         });
 
-        $materiCount = $data
+        // ===== Materi terbanyak =====
+        $materiTerbanyak = $data
             ->where('hide_materi', '!=', true)
             ->map(fn($rkm) => optional($rkm->materi)->nama_materi)
             ->filter()
             ->countBy()
-            ->sortDesc();
-
-        $materiTerbanyak = $materiCount->map(function ($jumlah, $namaMateri) {
-            return [
+            ->sortDesc()
+            ->map(fn($jumlah, $namaMateri) => [
                 'nama_materi' => $namaMateri,
                 'jumlah'      => $jumlah,
-            ];
-        })->values();
+            ])
+            ->values();
 
-        $rkmPerMinggu = $data
-            ->where('hide', '!=', true)
-            ->filter(function ($rkm) {
-                $pel = $rkm->peluang;
-                return $pel
-                    && $pel->tahap === 'merah'
-                    && !$pel->tentatif;
+        // ===== Rentang periode -> diperlebar ke minggu penuh =====
+        if ($filterType === 'triwulan') {
+            $start = Carbon::create($tahun, (($triwulan - 1) * 3) + 1, 1)->startOfMonth();
+            $end   = $start->copy()->addMonths(2)->endOfMonth();
+        } elseif ($filterType === 'tahun') {
+            $start = Carbon::create($tahun, 1, 1)->startOfYear();
+            $end   = $start->copy()->endOfYear();
+        } else { // bulan
+            $start = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $end   = $start->copy()->endOfMonth();
+        }
+
+        $rangeStart = $start->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $rangeEnd   = $end->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
+
+        // ===== RKM per minggu (filter sama dengan showMonth) =====
+        $rkmMinggu = RKM::whereBetween('tanggal_awal', [$rangeStart, $rangeEnd])
+            ->whereHas('materi') // padanan join ke tabel materis
+            ->where('hide', false)
+            ->whereDoesntHave('peluang', function ($q) {
+                $q->where(function ($w) {
+                    $w->where('tentatif', 1)->orWhere('tahap', 'lost');
+                });
             })
-            ->map(function ($rkm) {
-                return ['tanggal' => $rkm->peluang->periode_mulai];
-            })
-            ->filter(fn($item) => !empty($item['tanggal']))
-            ->groupBy(fn($item) => Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d'))
+            ->get(['id', 'materi_key', 'ruang', 'metode_kelas', 'event', 'tanggal_awal']);
+
+        $rkmPerMinggu = $rkmMinggu
+            ->groupBy(fn($r) => Carbon::parse($r->tanggal_awal)
+                ->startOfWeek(Carbon::MONDAY)
+                ->format('Y-m-d'))
             ->map(function ($items, $weekStart) {
                 $start = Carbon::parse($weekStart);
                 $end   = $start->copy()->endOfWeek(Carbon::SUNDAY);
+
+                // 1 grup = 1 kartu di showMonth
+                $jumlah = $items->unique(fn($r) => implode('|', [
+                    $r->materi_key,
+                    $r->ruang,
+                    $r->metode_kelas,
+                    $r->event,
+                    Carbon::parse($r->tanggal_awal)->toDateString(),
+                ]))->count();
 
                 return [
                     'week_start' => $start->format('Y-m-d'),
                     'week_end'   => $end->format('Y-m-d'),
                     'label'      => $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d M Y'),
-                    'jumlah'     => $items->count(),
+                    'jumlah'     => $jumlah,
                 ];
             })
             ->sortBy('week_start')
