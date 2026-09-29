@@ -43,7 +43,7 @@ class OfficeController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
-        
+
         $this->middleware('permission:View RekapRKM Office', ['only' => ['rekapRkm', 'rekapRkmJson']]);
         $this->middleware('permission:Update RekapRKM Office', ['only' => ['selectHide', 'toggleHide', 'bulkToggleHide']]);
     }
@@ -836,8 +836,8 @@ class OfficeController extends Controller
                     ->whereNotNull('asisten_key')
             );
 
-        $query = DB::table(DB::raw("({$baseQuery->toSql()}) as t"))
-            ->mergeBindings($baseQuery)
+        $query = DB::query()
+            ->fromSub($baseQuery, 't') // 't' adalah alias tabel virtual
             ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan')
             ->leftJoin('materis', 'materis.id', '=', 't.materi_key');
 
@@ -848,7 +848,8 @@ class OfficeController extends Controller
             ->when($filter === 'triwulan' && is_numeric($value), function ($q) use ($value, $tahun) {
                 $bulanMulai = ($value - 1) * 3 + 1;
                 $q->whereYear('t.tanggal_awal', $tahun)
-                    ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+                    ->whereMonth('t.tanggal_awal', '>=', $bulanMulai)
+                    ->whereMonth('t.tanggal_awal', '<=', $bulanMulai + 2);
             });
 
         $results = $query->select(
@@ -1313,7 +1314,7 @@ class OfficeController extends Controller
     public function detailMengajar($id, Request $request)
     {
         $karyawan = Karyawan::findOrFail($id);
-        $kodeKaryawan = $karyawan->kode_karyawan; 
+        $kodeKaryawan = $karyawan->kode_karyawan;
 
         Carbon::setLocale('id');
 
@@ -1335,8 +1336,8 @@ class OfficeController extends Controller
                     ->whereNotNull('asisten_key')
             );
 
-        $query = DB::table(DB::raw("({$baseQuery->toSql()}) as t"))
-            ->mergeBindings($baseQuery)
+        $query = DB::query()
+            ->fromSub($baseQuery, 't') // 't' adalah alias tabel virtual
             ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan')
             ->where('t.kode_karyawan', $kodeKaryawan)
             ->leftJoin('materis', 'materis.id', '=', 't.materi_key')
@@ -1351,7 +1352,8 @@ class OfficeController extends Controller
             $bulanMulai = ($value - 1) * 3 + 1;
 
             $q->whereYear('t.tanggal_awal', $tahun)
-            ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+                ->whereMonth('t.tanggal_awal', '>=', $bulanMulai)
+                ->whereMonth('t.tanggal_awal', '<=', $bulanMulai + 2);
         });
 
         $results = $query->select(
