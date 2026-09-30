@@ -219,21 +219,27 @@
         }
 
         .masonry-container {
-            column-count: 2;
-            column-gap: 1rem;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
             padding: 0.5rem;
         }
 
+        .masonry-column {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 0;
+        }
+
         .masonry-item {
-            break-inside: avoid;
-            margin-bottom: 1rem;
-            display: inline-block;
+            display: block;
             width: 100%;
         }
 
         @media (max-width: 768px) {
             .masonry-container {
-                column-count: 1;
+                grid-template-columns: 1fr;
             }
         }
 
@@ -1332,8 +1338,17 @@
         {{-- {{auth()->user()->hashids}} --}}
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+                @php
+                    $layoutOrder = \App\Models\DashboardLayout::orderBy('sort_order', 'asc')->pluck('section_key')->toArray();
+                    if (empty($layoutOrder)) {
+                        $layoutOrder = ['karyawan', 'peserta', 'itsm', 'rkm', 'finance', 'performance', 'education', 'office', 'crm', 'management', 'project'];
+                    }
+                @endphp
+
                 <div class="masonry-container">
-                            <div class="masonry-item">
+                @foreach($layoutOrder as $key)
+                    @if($key == 'karyawan')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Karyawan</h5>
@@ -1626,10 +1641,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            @can('Fitur Menu Peserta')
-                            <div class="masonry-item">
+                    </div>
+                    @elseif($key == 'peserta')
+                    @can('Fitur Menu Peserta')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Peserta</h5>
@@ -1713,9 +1728,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'itsm')
+                    @canany(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature', 'View ITSM Only'])
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">IT Service Management</h5>
@@ -1940,9 +1957,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        @can('Fitur Menu RKM')
-                        <div class="masonry-item">
+                    </div>
+                    @endcanany
+                    @elseif($key == 'rkm')
+                    @can('Fitur Menu RKM')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Rencana Kelas Mingguan</h5>
@@ -2161,11 +2180,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                            @can('Fitur Menu Finance')
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'finance')
+                    @can('Fitur Menu Finance')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Finance</h5>
@@ -2324,10 +2343,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                           <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'performance')
+                    <div class="masonry-item">
                                 <!-- Section Performance Assessment -->
                                 <div class="card">
                                     <div class="card-body">
@@ -2437,9 +2456,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @can('Fitur Menu Education')
-                            <div class="masonry-item">
+                    </div>
+                    @elseif($key == 'education')
+                    @can('Fitur Menu Education')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Education</h5>
@@ -2634,11 +2654,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                            @can('Fitur Menu Office')
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'office')
+                    @can('Fitur Menu Office')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Office</h5>
@@ -2797,11 +2817,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                            @can('Fitur CRM')
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'crm')
+                    @can('Fitur CRM')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Customer Relationship Management</h5>
@@ -2844,11 +2864,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                            @can('Fitur Menu Manajemen')
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'management')
+                    @can('Fitur Menu Manajemen')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Management</h5>
@@ -2873,11 +2893,11 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-
-                            @can('Fitur Menu Project')
-                            <div class="masonry-item">
+                    </div>
+                    @endcan
+                    @elseif($key == 'project')
+                    @can('Fitur Menu Project')
+                    <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="text-center card-title">Project</h5>
@@ -2974,9 +2994,37 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            @endcan
-                        </div>
+                    </div>
+                    @endcan
+                    @endif
+                @endforeach
+                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const container = document.querySelector('#pills-home .masonry-container');
+                        if (!container) return;
+
+                        const items = Array.from(container.querySelectorAll('.masonry-item'));
+                        const mobileLayout = window.matchMedia('(max-width: 768px)');
+
+                        function arrangeSections() {
+                            container.replaceChildren();
+
+                            if (mobileLayout.matches) {
+                                items.forEach((item) => container.appendChild(item));
+                                return;
+                            }
+
+                            const columns = [document.createElement('div'), document.createElement('div')];
+                            columns.forEach((column) => column.classList.add('masonry-column'));
+                            items.forEach((item, index) => columns[index % 2].appendChild(item));
+                            columns.forEach((column) => container.appendChild(column));
+                        }
+
+                        arrangeSections();
+                        mobileLayout.addEventListener('change', arrangeSections);
+                    });
+                </script>
             </div>
 
             <div class="tab-pane fade" id="pills-admin" role="tabpanel" aria-labelledby="pills-admin-tab">
@@ -2987,6 +3035,22 @@
                                 <h5 class="text-center card-title">Fitur Menu Development</h5>
                                 <div class="row">
                                     @can('Akses Development')
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <i class="fa-solid fa-sliders" style="font-size: 30px;"></i>
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="{{ route('admin.layout-setting') }}"
+                                                        class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Setting Dashboard</h5>
+                                                    </a>
+                                                    <p class="card-text">Atur card dashboard secara drag & drop.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="col-sm-6 mt-2">
                                         <div class="card" id="card-hover">
                                             <div class="card-body d-flex">

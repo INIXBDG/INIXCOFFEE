@@ -29,6 +29,7 @@ use App\Http\Controllers\DaftarPesertaExamController;
 use App\Http\Controllers\DaftarTugasController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\DashboardItsmController;
+use App\Http\Controllers\DashboardLayoutController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\HR\EmployeeJobDeskController;
@@ -183,6 +184,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/webpush/status', [WebPushController::class, 'subscriptionStatus']);
 
     Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
+
+    Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
+    Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
