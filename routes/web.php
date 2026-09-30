@@ -1161,6 +1161,7 @@ Route::prefix('office')->group(function () {
         Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
         Route::post('/export-excel', [KomisiSalesController::class, 'exportExcel'])->name('export-excel');
         Route::post('/update-inline/{id_rkm}', [KomisiSalesController::class, 'updateInline'])->name('update-inline');
+        Route::post('/update-row/{id_rkm}', [KomisiSalesController::class, 'updateRow']);
         Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
         Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
         Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);

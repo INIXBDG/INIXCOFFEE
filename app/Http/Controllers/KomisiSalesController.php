@@ -514,6 +514,50 @@ class KomisiSalesController extends Controller
         ]);
     }
 
+    public function updateRow(Request $request, $id_rkm)
+    {
+        $validated = $request->validate([
+            'fields'   => 'required|array',
+            'fields.*' => 'nullable',
+        ]);
+
+        $approval = ApprovalPendapatan::where('id_rkm', $id_rkm)->first();
+        if (!$approval) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
+        }
+
+        $allowed = [
+            'pax', 'total_penjualan_kotor', 'total_diskon', 'total_pa', 'total_cashback',
+            'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'oleh_oleh',
+            'entertainment', 'biaya_lain_lain', 'pengurangan_pph', 'exam',
+        ];
+
+        foreach ($validated['fields'] as $field => $value) {
+            if (!in_array($field, $allowed, true)) {
+                continue;
+            }
+            $clean = (float) preg_replace('/[^0-9.]/', '', (string) $value);
+            $approval->forceFill([$field => $field === 'pax' ? (int) $clean : $clean]);
+        }
+
+        $deductions = 0;
+        foreach ([
+            'total_diskon', 'total_pa', 'total_cashback', 'total_uang_saku', 'total_akomodasi',
+            'biaya_transport', 'oleh_oleh', 'biaya_lain_lain', 'entertainment', 'exam', 'pengurangan_pph',
+        ] as $f) {
+            $deductions += (float) ($approval->{$f} ?? 0);
+        }
+
+        if (array_key_exists('diskon', $approval->getAttributes())) {
+            $deductions += (float) ($approval->diskon ?? 0);
+        }
+
+        $approval->total_penjualan_bersih = max(0, (float) ($approval->total_penjualan_kotor ?? 0) - $deductions);
+        $approval->save();
+
+        return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui.']);
+    }
+
     public function exportExcel(Request $request)
     {
         $rawPayload = $request->input('payload');
