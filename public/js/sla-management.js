@@ -11,22 +11,45 @@ $(document).ready(function () {
     function updateFilterDisplay(filters, elementId) {
         try {
             if (!filters || !filters.start || !filters.end) return;
-            const startDate = new Date(filters.start);
-            const year = startDate.getFullYear();
-            const month = startDate.getMonth();
-            const semester = (month < 6) ? 1 : 2;
-            const el = document.getElementById(elementId);
-            if (el) {
-                el.innerHTML = `<strong>Tahun: ${year} - Semester: ${semester}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+            const startDate = new Date(filters.start.replace(' ', 'T'));
+            const endDate   = new Date(filters.end.replace(' ', 'T'));
+            const year      = startDate.getFullYear();
+            const el        = document.getElementById(elementId);
+            if (!el) return;
+
+            // Cek apakah range mencakup seluruh tahun (1 Jan – 31 Des)
+            const isFullYear =
+                startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                endDate.getMonth()   === 11 && endDate.getDate()   === 31;
+
+            if (isFullYear) {
+                el.innerHTML = `<strong>Tahun: ${year} - Semua Bulan</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+            } else {
+                const namaBulan = startDate.toLocaleString('id-ID', { month: 'long' });
+                el.innerHTML = `<strong>Bulan: ${namaBulan} ${year}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
             }
         } catch (e) { console.error("Gagal update filter display", e); }
     }
 
-    // Resolusi Parameter URL berdasarkan status Filter Global
+    // Bangun parameter start_date & end_date dari pilihan filter global
     function buildQueryString() {
-        const year = $('#globalTahunFilter').val() || new Date().getFullYear();
-        const month = $('#globalBulanFilter').val() || 'all';
-        return `?tahun=${year}&bulan=${month}`;
+        const year          = parseInt($('#globalTahunFilter').val()) || new Date().getFullYear();
+        const selectedMonth = $('#globalBulanFilter').val();
+
+        let startDate, endDate;
+
+        const pad = n => String(n).padStart(2, '0');
+        if (selectedMonth && selectedMonth !== 'all') {
+            const monthIndex = parseInt(selectedMonth) - 1;
+            const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+            startDate = `${year}-${pad(monthIndex + 1)}-01`;
+            endDate   = `${year}-${pad(monthIndex + 1)}-${pad(lastDay)}`;
+        } else {
+            startDate = `${year}-01-01`;
+            endDate   = `${year}-12-31`;
+        }
+
+        return `?start_date=${startDate}&end_date=${endDate}`;
     }
 
     // =======================================================================
@@ -348,26 +371,13 @@ $(document).ready(function () {
         $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
         try {
-            let startDate, endDate;
-            const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
-            const selectedMonth = $('#globalBulanFilter').val();
-
-            if (selectedMonth && selectedMonth !== 'all') {
-                const monthIndex = parseInt(selectedMonth) - 1;
-                startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
-                endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
-            } else {
-                startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-                endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
-            }
-
+            const query    = buildQueryString();
             const response = await $.ajax({
-                url: baseUrl,
-                method: 'GET',
-                data: { start_date: startDate, end_date: endDate },
-                dataType: 'json',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                timeout: 15000
+                url:         baseUrl + query,
+                method:      'GET',
+                dataType:    'json',
+                headers:     { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                timeout:     15000
             });
 
             if (!response || !response.kpi) {
