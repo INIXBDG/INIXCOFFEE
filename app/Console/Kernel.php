@@ -23,46 +23,48 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // 1. Kirim Notifikasi Outstanding Mingguan
-$schedule->call(function () {
-    try {
-        // Eager load relationships agar tidak terjadi N+1 query
-        $outstandings = Outstanding::with('rkm.perusahaan', 'rkm.materi')
-            ->where('status_pembayaran', '0')
-            ->whereDate('due_date', '>=', now())
-            ->get();
+        $schedule->call(function () {
+            try {
+                // Eager load relationships agar tidak terjadi N+1 query
+                $outstandings = Outstanding::with('rkm.perusahaan', 'rkm.materi')
+                    ->where('status_pembayaran', '0')
+                    ->whereDate('due_date', '>=', now())
+                    ->get();
 
-        $financeUsers = User::where('jabatan', 'Finance & Accounting')->get();
-        $path = '/outstanding';
+                $financeUsers = User::where('jabatan', 'Finance & Accounting')->get();
+                $path = '/outstanding';
 
-        foreach ($outstandings as $outstanding) {
-            // Pastikan relasi rkm ada
-            if (!$outstanding->rkm) continue;
+                foreach ($outstandings as $outstanding) {
+                    // Pastikan relasi rkm ada
+                    if (!$outstanding->rkm) {
+                        continue;
+                    }
 
-            // 1. Siapkan data array (sama seperti di Controller)
-            $data = [
-                'nama_materi' => $outstanding->rkm->materi->nama_materi ?? '-',
-                'nama_perusahaan' => $outstanding->rkm->perusahaan->nama_perusahaan ?? '-',
-                'due_date' => $outstanding->due_date,
-                'status_pembayaran' => $outstanding->status_pembayaran,
-                'sales_key' => $outstanding->rkm->sales_key ?? '-',
-                'net_sales' => $outstanding->net_sales ?? 0,
-            ];
+                    // 1. Siapkan data array (sama seperti di Controller)
+                    $data = [
+                        'nama_materi' => $outstanding->rkm->materi->nama_materi ?? '-',
+                        'nama_perusahaan' => $outstanding->rkm->perusahaan->nama_perusahaan ?? '-',
+                        'due_date' => $outstanding->due_date,
+                        'status_pembayaran' => $outstanding->status_pembayaran,
+                        'sales_key' => $outstanding->rkm->sales_key ?? '-',
+                        'net_sales' => $outstanding->net_sales ?? 0,
+                    ];
 
-            // 2. Looping users karena OutstandingNotification butuh receiverId spesifik
-            foreach ($financeUsers as $user) {
-                \Illuminate\Support\Facades\Notification::send(
-                    $user, 
-                    new \App\Notifications\OutstandingNotification($data, $path, $user->id)
-                );
+                    // 2. Looping users karena OutstandingNotification butuh receiverId spesifik
+                    foreach ($financeUsers as $user) {
+                        Notification::send(
+                            $user,
+                            new OutstandingNotification($data, $path, $user->id)
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send notifications: '.$e->getMessage());
+                // Jangan throw $e agar scheduler tidak berhenti total jika satu gagal,
+                // atau biarkan throw $e jika ingin tahu errornya di log scheduler.
+                // throw $e;
             }
-        }
-    } catch (\Exception $e) {
-        Log::error('Failed to send notifications: ' . $e->getMessage());
-        // Jangan throw $e agar scheduler tidak berhenti total jika satu gagal, 
-        // atau biarkan throw $e jika ingin tahu errornya di log scheduler.
-        // throw $e; 
-    }
-})->weeklyOn(1, '08:00')->description('Kirim Notifikasi Outstanding Mingguan');
+        })->weeklyOn(1, '08:00')->description('Kirim Notifikasi Outstanding Mingguan');
 
         // 2. Update Status Read Notifikasi Outstanding
         $schedule->call(function () {
@@ -282,6 +284,7 @@ $schedule->call(function () {
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
+        $schedule->command('absen:cron')->dailyAt('21:00');
     }
 
     protected function commands(): void
