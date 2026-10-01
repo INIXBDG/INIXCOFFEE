@@ -137,7 +137,8 @@ class TargetKPIController extends Controller
             ],
 
             'project administrator & business support' => [
-                'efektifitas digital marketing'
+                'efektifitas digital marketing',
+                'timeline webinar'
             ],
 
             'technical support' => [
@@ -313,18 +314,36 @@ class TargetKPIController extends Controller
     public function updateGapKompetensi(Request $request)
     {
         $data = $request->input('data');
-        if (empty($data)) return response()->json(['status' => false, 'message' => 'Data kosong'], 400);
+        if (empty($data)) {
+            return response()->json(['status' => false, 'message' => 'Data kosong'], 400);
+        }
 
         foreach ($data as $item) {
-            $id = $item['id'] ?? null;
-            if (!$id) continue;
+            $idKaryawan = $item['id_karyawan'] ?? null;
+            $detailTargetKey = $item['detailTargetKey'] ?? null;
 
-            $detail = detailPersonKPI::find($id);
-            if (!$detail) continue;
+            if (!$idKaryawan || !$detailTargetKey) {
+                continue;
+            }
 
-            $detail->presentase_kemampuan = $item['kemampuan'] ?? 0;
-            $detail->presentase_standar = $item['standar'] ?? 0;
-            $detail->save();
+            $detailTarget = \App\Models\DetailTargetKPI::find($detailTargetKey);
+            $idTarget = $detailTarget ? $detailTarget->id_targetKPI : null;
+
+            if (!$idTarget) {
+                continue;
+            }
+
+            detailPersonKPI::updateOrCreate(
+                [
+                    'id_karyawan'     => $idKaryawan,
+                    'detailTargetKey' => $detailTargetKey
+                ],
+                [
+                    'presentase_kemampuan' => $item['kemampuan'] ?? 0,
+                    'presentase_standar'   => $item['standar'] ?? 100,
+                    'id_target'            => $idTarget
+                ]
+            );
         }
 
         return response()->json(['status' => true, 'message' => 'Data berhasil diupdate']);
@@ -423,7 +442,7 @@ class TargetKPIController extends Controller
 
     public function getDataOverviewPersonal(Request $request, OverviewDashboardService $overviewService)
     {
-        $karyawanId = auth()->id();
+        $karyawanId = $request->id_karyawan ?? auth()->id(); 
         $tahunFilter = (int) ($request->tahun ?? now()->year);
 
         $data = $overviewService->getPersonalOverviewData($karyawanId, $tahunFilter);
@@ -601,33 +620,85 @@ class TargetKPIController extends Controller
         $idTarget = $request->id;
         $personId = $request->idUser ?? null;
 
+        $user = auth()->user();
+        $userJabatan = strtolower($user->jabatan ?? '');
+        $isUserKoordinatorItsm = str_contains($userJabatan, 'koordinator itsm') || str_contains($userJabatan, 'koordinator');
+
+        $target = targetKPI::find($idTarget);
+        $detailTarget = $target?->detailTargetKPI->first();
+        $routeName = $detailTarget?->dataTarget?->asistant_route ?? '';
+        $isGapKompetensiTarget = ($routeName === 'persentase gap kompetensi tim terhadap standar skill');
+
         $query = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])->where('id', $idTarget);
-        if ($personId !== null) {
+        
+        $shouldFilterByPerson = !($isUserKoordinatorItsm && $isGapKompetensiTarget);
+        
+        if ($personId !== null && $shouldFilterByPerson) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $personId));
         }
 
         $detailList = $query->get();
 
         $data = [
-            'detail' => $detailList->map(function ($itemDetail) use ($personId) {
+            'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $isGapKompetensiTarget) {
                 $detail = $itemDetail->detailTargetKPI->first();
                 if (!$detail) return null;
 
+                if ($isUserKoordinatorItsm && $isGapKompetensiTarget) {
+                    $divisi = $detail->divisi;
+                    
+                    $karyawanDiDivisi = \App\Models\karyawan::where('divisi', $divisi)
+                        ->where('status_aktif', '1')
+                        ->whereNot('jabatan', 'Outsource')
+                        ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                        ->whereNot('jabatan', 'Pilih Jabatan')
+                        ->whereNotNull('nip')
+                        ->where('divisi', '!=', 'Direksi')
+                        ->get();
+
+                    $existingGaps = \App\Models\detailPersonKPI::where('detailTargetKey', $detail->id)
+                        ->get()
+                        ->keyBy('id_karyawan');
+
+                    $karyawanCollection = $karyawanDiDivisi->map(function($k) use ($existingGaps, $detail) {
+                        $existing = $existingGaps->get($k->id);
+                        return [
+                            'id' => $existing ? $existing->id : null, 
+                            'id_karyawan' => $k->id,
+                            'detailTargetKey' => $detail->id,
+                            'nama_lengkap' => $k->nama_lengkap,
+                            'jabatan' => $k->jabatan,
+                            'presentase_kemampuan' => $existing ? (float)$existing->presentase_kemampuan : 0,
+                            'presentase_standar' => $existing ? (float)$existing->presentase_standar : 100,
+                        ];
+                    })->values();
+                } else {
+                    $karyawanCollection = $itemDetail->detailTargetKPI->flatMap(function ($detailItem) use ($personId) {
+                        return $detailItem->detailPersonKPI->where('id_karyawan', $personId);
+                    })->map(fn($person) => [
+                        'id' => $person->id, 
+                        'id_karyawan' => $person->id_karyawan,
+                        'nama_lengkap' => $person->karyawan->nama_lengkap ?? null,
+                        'jabatan' => $person->karyawan->jabatan ?? null, 
+                        'presentase_kemampuan' => $person->presentase_kemampuan ?? 0,
+                        'presentase_standar' => $person->presentase_standar ?? 100,
+                    ])->values();
+                }
+
                 $dataOutput = [
-                    'pembuat' => $itemDetail->karyawan->nama_lengkap ?? null, 'judul' => $itemDetail->judul,
-                    'condition' => $detail->dataTarget?->asistant_route, 'deskripsi' => $itemDetail->deskripsi,
-                    'jabatan_kpi' => $detail->jabatan, 'divisi_kpi' => $detail->divisi,
-                    'karyawan' => $itemDetail->detailTargetKPI->flatMap(function ($detailItem) {
-                        return $detailItem->detailPersonKPI->map(fn($person) => [
-                            'id' => $person->id, 'nama_lengkap' => $person->karyawan->nama_lengkap ?? null,
-                            'jabatan' => $person->karyawan->jabatan ?? null, 'presentase_kemampuan' => $person->presentase_kemampuan ?? 0,
-                            'presentase_standar' => $person->presentase_standar ?? 100,
-                        ]);
-                    })->values(),
-                    'jangka_target' => $detail->jangka_target, 'detail_jangka' => $detail->detail_jangka,
-                    'tipe_target' => $detail->tipe_target, 'nilai_target' => $detail->nilai_target,
+                    'pembuat' => $itemDetail->karyawan->nama_lengkap ?? null, 
+                    'judul' => $itemDetail->judul,
+                    'condition' => $detail->dataTarget?->asistant_route, 
+                    'deskripsi' => $itemDetail->deskripsi,
+                    'jabatan_kpi' => $detail->jabatan, 
+                    'divisi_kpi' => $detail->divisi,
+                    'karyawan' => $karyawanCollection,
+                    'jangka_target' => $detail->jangka_target, 
+                    'detail_jangka' => $detail->detail_jangka,
+                    'tipe_target' => $detail->tipe_target, 
+                    'nilai_target' => $detail->nilai_target,
                     'tenggat_waktu' => $this->formatTenggatWaktuExport($detail->jangka_target ?? '', $detail->detail_jangka ?? ''),
-                    'data_detail' => $this->getCalculationByRoute($itemDetail, $personId),
+                    'data_detail' => $this->getCalculationByRoute($itemDetail, ($isUserKoordinatorItsm && $isGapKompetensiTarget) ? null : $personId),
                 ];
 
                 return ['data' => $dataOutput];
@@ -744,10 +815,10 @@ class TargetKPIController extends Controller
         ],
         'tim digital' => [
             'konsistensi campaign digital',
-            'efektifitas digital marketing'
         ],
         'project administrator & business support' => [
             'efektifitas digital marketing',
+            'timeline webinar'
         ],
         'technical support' => [
             'keberhasilan support memenuhi sla',

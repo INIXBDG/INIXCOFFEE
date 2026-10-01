@@ -6,10 +6,14 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="container-fluid mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="m-0 fw-bold">Validasi Penjualan Sales</h3>
+                    <div class="d-flex align-items-center gap-3">
+                        <h3 class="m-0 fw-bold">Validasi Penjualan Sales</h3>
+                        <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#petunjukModal">
+                            <i class="bi bi-question-circle me-1"></i>Petunjuk
+                        </button>
+                    </div>
                     <span class="badge bg-primary-subtle text-primary-emphasis fs-6 px-3 py-2" id="current-period"></span>
                 </div>
-
                 <div class="card shadow-sm mb-4 border-0 bg-gradient">
                     <div class="card-body">
                         <div class="row g-3 align-items-end">
@@ -54,7 +58,7 @@
                                     @endphp
                                 </select>
                             </div>
-                            <div class="col-md-3 mx-1">
+                            <div class="col-md-3 mx-1 d-flex gap-2">
                                 <button class="btn btn-primary" onclick="loadTable();">Refresh</button>
                             </div>
                         </div>
@@ -78,10 +82,10 @@
                     <div class="d-flex align-items-center gap-3">
                         <div class="modal-icon-wrap d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-20"
                             style="width:40px;height:40px;">
-                            <i class="bi bi-pencil-square fs-5"></i>
+                            <i class="bi bi-pencil-square fs-5" id="modal-icon"></i>
                         </div>
                         <div>
-                            <h5 class="modal-title fw-bold mb-0">Update Validasi Penjualan Sales</h5>
+                            <h5 class="modal-title fw-bold mb-0" id="modal-title-text">Update Validasi Penjualan Sales</h5>
                             <small class="text-white text-opacity-75" id="modal-subtitle">—</small>
                         </div>
                     </div>
@@ -104,11 +108,28 @@
                 <form id="formUpdate">
                     @csrf
                     <input type="hidden" id="update_id">
+                    <input type="hidden" id="is_create_mode" value="0">
 
                     <div class="modal-body p-0" style="background:#f8fafc;max-height:70vh;overflow-y:auto;">
 
                         <div class="step-content p-4" id="step-1">
                             <div class="row g-3">
+
+                                <div class="col-12 d-none" id="rkm-picker-wrapper">
+                                    <div class="section-label-bar">
+                                        <i class="bi bi-list-check me-2 text-primary"></i>
+                                        <span>Pilih Training (RKM)</span>
+                                    </div>
+                                    <select class="form-select" id="rkm_select">
+                                        <option value="">-- Pilih RKM --</option>
+                                    </select>
+                                    <small class="text-muted">Hanya menampilkan RKM yang belum punya data penjualan di minggu ini. Begitu dipilih, data langsung tersimpan otomatis.</small>
+                                    <div id="rkm_saved_info" class="alert alert-success py-2 px-3 mt-2 d-none">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        <span id="rkm_saved_text"></span>
+                                    </div>
+                                </div>
+
                                 <div class="col-12">
                                     <div class="section-label-bar">
                                         <i class="bi bi-file-text me-2 text-primary"></i>
@@ -154,7 +175,7 @@
                             </div>
 
                             <div class="d-flex justify-content-end mt-4">
-                                <button type="button" class="btn btn-primary px-4" onclick="goStep(2)">
+                                <button type="button" class="btn btn-primary px-4" id="btnGoStep2" onclick="goStep(2)">
                                     Selanjutnya <i class="bi bi-arrow-right ms-1"></i>
                                 </button>
                             </div>
@@ -280,6 +301,15 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
+                                    <label class="form-label fw-semibold small">Pengurangan PHH</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white text-muted small">Rp</span>
+                                        <input type="text" inputmode="numeric"
+                                            class="form-control input-calc currency-input" id="pengurangan_phh" name="pengurangan_phh">
+                                    </div>
+                                    <small class="text-muted">Kosongkan jika tidak ingin dikurangi</small>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label fw-semibold small">Exam</label>
                                     <div class="input-group"><span
                                             class="input-group-text bg-white text-muted small">Rp</span>
@@ -335,14 +365,125 @@
                                 <button type="button" class="btn btn-light px-4" onclick="goStep(1)">
                                     <i class="bi bi-arrow-left me-1"></i> Kembali
                                 </button>
-                                <button type="submit" class="btn btn-success px-5 fw-semibold" id="btnSimpan">
-                                    <i class="bi bi-save me-2"></i>Simpan
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success px-5 fw-semibold" id="btnSimpan">
+                                        <i class="bi bi-save me-2"></i>Simpan
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addMoreModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-body text-center p-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem;"></i>
+                    <h5 class="fw-bold mt-3 mb-1">Data Berhasil Disimpan</h5>
+                    <p class="text-muted mb-4">Ingin langsung menambahkan data training lain?</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light px-4" id="btnSelesaiTambah">Selesai</button>
+                        <button type="button" class="btn btn-success px-4" id="btnTambahLagi">
+                            <i class="bi bi-plus-lg me-1"></i>Tambah Lagi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="petunjukModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header bg-info bg-opacity-10">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-info-circle me-2 text-info"></i>Petunjuk Penggunaan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    <h6 class="fw-bold mb-3">Apa itu halaman ini?</h6>
+                    <p class="text-muted">
+                        Halaman ini digunakan untuk <strong>memvalidasi / mengisi rincian penjualan sales</strong> 
+                        dari setiap kelas yang dijual dalam periode tertentu. Data ditampilkan per minggu agar lebih rapi.
+                    </p>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">Arti Warna Baris</h6>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded" style="width:28px;height:28px;background:#fff;border:1px solid #dee2e6;"></div>
+                            <div>
+                                <strong>Putih / Biasa</strong><br>
+                                <small class="text-muted">Data sudah tervalidasi (status valid)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded" style="width:28px;height:28px;background:#fff3cd;border:1px solid #ffecb5;"></div>
+                            <div>
+                                <strong>Kuning</strong><br>
+                                <small class="text-muted">Data belum tervalidasi (masih kosong / belum diisi)</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded" style="width:28px;height:28px;background:#d1e7dd;border:1px solid #badbcc;"></div>
+                            <div>
+                                <strong>Hijau</strong><br>
+                                <small class="text-muted">Data yang ditambahkan secara manual (bukan dari payment advance (prospect) otomatis)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">Cara Menambah Data Baru</h6>
+                    <ol class="text-muted">
+                        <li class="mb-2">Pilih <strong>Tahun</strong> dan <strong>Bulan</strong> yang diinginkan, lalu klik <strong>Refresh</strong>.</li>
+                        <li class="mb-2">Pada kartu minggu yang sesuai, klik tombol hijau <strong>+ Tambah Data</strong>.</li>
+                        <li class="mb-2">Pilih Training (RKM) dari daftar yang muncul. Hanya RKM yang belum punya data penjualan yang ditampilkan.</li>
+                        <li class="mb-2">Setelah dipilih, data langsung tersimpan dan form terisi otomatis dari data RKM (harga, pax, dll).</li>
+                        <li class="mb-2">Lanjutkan ke langkah <strong>Perhitungan</strong> untuk melengkapi diskon, biaya, transport, dll.</li>
+                        <li>Klik <strong>Simpan</strong> bila sudah selesai.</li>
+                    </ol>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">Cara Mengubah Data yang Sudah Ada</h6>
+                    <p class="text-muted mb-2">
+                        Cukup <strong>klik baris</strong> data yang ingin diubah. Modal akan terbuka dan Anda bisa mengedit semua isian, lalu klik <strong>Simpan</strong>.
+                    </p>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">Dari mana data berasal?</h6>
+                    <ul class="text-muted">
+                        <li class="mb-2">
+                            <strong>Data biasa (putih/kuning)</strong> — diambil dari payment advance (prospect) yang sudah ada, 
+                            lalu bisa dilengkapi / divalidasi di sini.
+                        </li>
+                        <li>
+                            <strong>Data hijau (manual)</strong> — data yang Anda tambahkan sendiri melalui tombol 
+                            <strong>+ Tambah Data</strong>. Biasanya dipakai bila training belum punya payment advance (prospect).
+                        </li>
+                    </ul>
+
+                    <div class="alert alert-info mt-4 mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>Tips:</strong> Setelah menambah data, form sudah terisi otomatis dari data RKM 
+                        (harga jual, jumlah peserta, dll). Anda tinggal cek dan lengkapi bagian yang masih kosong.
+                    </div>
+
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Mengerti</button>
+                </div>
             </div>
         </div>
     </div>
@@ -386,6 +527,10 @@
         color: #fff;
         border-top: 3px double #495057;
         font-size: .85rem;
+    }
+
+    .table-success td {
+        background-color: #d1e7dd !important;
     }
 
     .sync-scroll-wrapper {
@@ -433,7 +578,7 @@
     }
 
     .step-pill.done .step-num {
-        background: #16a34a;
+        background: #25c6607a;
         color: #fff;
     }
 
@@ -469,12 +614,25 @@
     .form-label {
         margin-bottom: .35rem;
     }
+
+    #rkm_suggestions .list-group-item {
+        cursor: pointer;
+        font-size: .85rem;
+    }
+
+    #rkm_suggestions .list-group-item:hover {
+        background: #f1f5f9;
+    }
 </style>
 
 @section('scripts')
     <script>
         let manualTotalKotor = false;
         let manualTotalBersih = false;
+        let rkmSearchTimer = null;
+        let filterWeekStart = null;
+        let filterWeekEnd = null;
+        let selectedRkmId = null;
 
         $(document).ready(function() {
             updateCurrentPeriod();
@@ -600,6 +758,7 @@
                 parseNumber($('#oleh_oleh').val()) +
                 parseNumber($('#biaya_lain_lain').val()) +
                 parseNumber($('#entertainment').val()) +
+                parseNumber($('#pengurangan_phh').val()) +
                 parseNumber($('#exam_value').val());
 
             let totalPenjualanSales = Math.max(0, total - deductions);
@@ -621,6 +780,218 @@
                 if (s >= n) $(this).find('.step-num').text(s);
             });
         }
+
+        function resetForm() {
+            $('#formUpdate')[0].reset();
+            $('#update_id').val('');
+            $('#materi').val('');
+            $('#perusahaan').val('');
+            $('#nama_sales').val('');
+            $('#instruktur').val('');
+            $('.currency-input').val('');
+            $('#pax').val('');
+            $('#transportasi_select').val('');
+            $('#transportasi_manual').addClass('d-none').val('');
+            manualTotalKotor = false;
+            manualTotalBersih = false;
+            selectedRkmId = null;
+            filterWeekStart = null;
+            filterWeekEnd = null;
+
+            // Reset dropdown RKM
+            $('#rkm_select').html('<option value="">-- Pilih RKM --</option>').prop('disabled', false);
+            $('#rkm_saved_info').addClass('d-none');
+        }
+
+        $('#btnTambahLagi').on('click', function() {
+            bootstrap.Modal.getInstance(document.getElementById('addMoreModal'))?.hide();
+            openCreateModal(filterWeekStart, filterWeekEnd);
+        });
+
+        function openCreateModal(start = null, end = null) {
+            resetForm();
+            filterWeekStart = start;
+            filterWeekEnd = end;
+
+            $('#is_create_mode').val('1');
+            $('#modal-title-text').text('Tambah Data Penjualan Sales');
+            $('#modal-icon').removeClass('bi-pencil-square').addClass('bi-plus-circle');
+
+            if (start && end) {
+                $('#modal-subtitle').text('Pilih RKM untuk periode ' + moment(start).format('DD MMM') + ' - ' + moment(end).format('DD MMM YYYY'));
+            } else {
+                $('#modal-subtitle').text('Pilih RKM untuk memulai');
+            }
+
+            $('#rkm-picker-wrapper').removeClass('d-none');
+            $('#btnGoStep2').prop('disabled', true);
+            $('#materi, #perusahaan').prop('disabled', true);
+
+            loadRkmByWeek(start, end);
+
+            goStep(1);
+            new bootstrap.Modal(document.getElementById('updateModal')).show();
+        }
+
+        function loadRkmByWeek(start, end) {
+            let $select = $('#rkm_select');
+            $select.html('<option value="">Memuat data RKM...</option>').prop('disabled', true);
+
+            $.ajax({
+                url: `/crm/approval-pendapatan-sales/rkm-search`,
+                type: 'GET',
+                data: { start, end },
+                success: function(res) {
+                    $select.empty().append('<option value="">-- Pilih RKM --</option>');
+
+                    if (!res.length) {
+                        $select.append('<option value="" disabled>Tidak ada RKM tersedia di minggu ini</option>');
+                    } else {
+                        res.forEach(r => {
+                            $select.append(`<option value="${r.id}">${escapeHtml(r.label)}</option>`);
+                        });
+                    }
+                    $select.prop('disabled', false);
+                },
+                error: function() {
+                    $select.html('<option value="">Gagal memuat data</option>');
+                    showAlert('danger', 'Gagal memuat data RKM.');
+                }
+            });
+        }
+
+        $('#rkm_select').on('change', function() {
+            let id = $(this).val();
+            if (!id) return;
+
+            $(this).prop('disabled', true);
+            createFromRkm(id);
+        });
+
+        $('#rkm_search').on('input', function() {
+            let q = $(this).val();
+            clearTimeout(rkmSearchTimer);
+            rkmSearchTimer = setTimeout(() => searchRkm(q), 350);
+        });
+
+        function searchRkm(q) {
+            let data = { q };
+            if (filterWeekStart && filterWeekEnd) {
+                data.start = filterWeekStart;
+                data.end = filterWeekEnd;
+            }
+
+            $.ajax({
+                url: `/crm/approval-pendapatan-sales/rkm-search`,
+                type: 'GET',
+                data: data,
+                success: function(res) {
+                    let $box = $('#rkm_suggestions');
+                    $box.empty();
+
+                    if (!res.length) {
+                        $box.append(
+                            `<div class="list-group-item text-muted small">Tidak ada RKM ditemukan / semua sudah punya data.</div>`
+                        );
+                    } else {
+                        res.forEach(r => {
+                            $box.append(
+                                `<button type="button" class="list-group-item list-group-item-action" data-id="${r.id}">${escapeHtml(r.label)}</button>`
+                            );
+                        });
+                    }
+                    $box.removeClass('d-none');
+                },
+                error: function() {
+                    showAlert('danger', 'Gagal mencari data RKM.');
+                }
+            });
+        }
+
+        $(document).on('click', '#rkm_suggestions button', function() {
+            let id = $(this).data('id');
+            let label = $(this).text();
+            $('#rkm_search').val(label);
+            $('#rkm_suggestions').addClass('d-none').empty();
+            createFromRkm(id);
+        });
+
+        function createFromRkm(idRkm) {
+            $.ajax({
+                url: `/crm/approval-pendapatan-sales/store`,
+                type: 'POST',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    id_rkm: idRkm
+                },
+                success: function(response) {
+                    if (!response.success) {
+                        showAlert('danger', response.message || 'Gagal membuat data.');
+                        $('#rkm_select').prop('disabled', false);
+                        return;
+                    }
+
+                    let item = response.data;
+                    selectedRkmId = item.id_rkm;
+
+                    // Set ID & info
+                    $('#update_id').val(item.id_rkm);
+                    $('#modal-subtitle').text(item.materi + ' — tersimpan otomatis');
+                    $('#materi').val(item.materi_id ?? '');
+                    $('#perusahaan').val(item.perusahaan_id ?? '');
+                    $('#nama_sales').val(item.nama_sales ?? '');
+                    $('#instruktur').val(item.instruktur ?? '');
+
+                    // === PREFILL DARI RKM / NET SALES ===
+                    setCurrencyValue('#harga', item.harga);
+                    $('#pax').val(item.pax ?? '');
+                    setCurrencyValue('#total', item.total_penjualan_kotor);
+
+                    setCurrencyValue('#diskon', item.diskon);
+                    setCurrencyValue('#total_diskon', item.total_diskon);
+                    setCurrencyValue('#total_pa', item.total_pa);
+                    setCurrencyValue('#total_cashback', item.total_cashback);
+                    setCurrencyValue('#total_uang_saku', item.total_uang_saku);
+                    setCurrencyValue('#total_akomodasi', item.total_akomodasi);
+                    setCurrencyValue('#oleh_oleh', item.oleh_oleh);
+                    setCurrencyValue('#biaya_lain_lain', item.biaya_lain_lain);
+                    setCurrencyValue('#entertainment', item.entertainment);
+                    setCurrencyValue('#pengurangan_phh', item.pengurangan_phh);
+                    setCurrencyValue('#exam_value', item.exam_value);
+                    setCurrencyValue('#total_penjualan_sales', item.total_penjualan_sales);
+
+                    // Hitung ulang total bersih
+                    manualTotalKotor = false;
+                    manualTotalBersih = false;
+                    calculateTotal();
+                    calculateTotalPenjualanSales();
+
+                    // Info sukses
+                    $('#rkm_saved_text').text('Data untuk "' + item.materi + '" sudah tersimpan & diisi otomatis. Silakan cek / lengkapi rincian penjualannya.');
+                    $('#rkm_saved_info').removeClass('d-none');
+
+                    $('#btnGoStep2').prop('disabled', false);
+                    $('#materi, #perusahaan').prop('disabled', false);
+
+                    loadTable();
+                },
+                error: function(xhr) {
+                    let msg = xhr.responseJSON?.message || 'Gagal membuat data baru.';
+                    showAlert('danger', msg);
+                    $('#rkm_select').prop('disabled', false);
+                }
+            });
+        }
+
+        $('#btnTambahLagi').on('click', function() {
+            bootstrap.Modal.getInstance(document.getElementById('addMoreModal'))?.hide();
+            openCreateModal();
+        });
+
+        $('#btnSelesaiTambah').on('click', function() {
+            bootstrap.Modal.getInstance(document.getElementById('addMoreModal'))?.hide();
+            loadTable();
+        });
 
         function loadTable() {
             let bulan = $('#month').val();
@@ -645,6 +1016,7 @@
                     let monthDataList = response.data || [];
                     let footerBulanan = response.footer_bulanan || {};
                     let footerTahunan = response.footer_tahunan || {};
+                    let isFinancePeriod = response.is_finance_period === true;
 
                     if (monthDataList.length === 0) {
                         container.html(`
@@ -676,20 +1048,23 @@
 
                             if (weekData.data.length === 0) {
                                 rows =
-                                    `<tr><td colspan="22" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
+                                rows = `<tr><td colspan="23" class="text-center">Tidak Ada Data pada Periode Ini</td></tr>`;
                             } else {
                                 weekData.data.forEach((item, i) => {
                                     let totalVal = Number(item.total_penjualan_kotor ??
                                         (item.harga * item.pax) ?? 0);
                                     let rowClass = item.valid === 'valid' ? '' :
                                         'table-warning';
+                                    if (item.manual) {
+                                        rowClass = 'table-success';
+                                    }
                                     let encodedItem = encodeURIComponent(JSON.stringify(
                                         item));
-
+                                    let manualBadge = '';
                                     rows += `
                                         <tr class="${rowClass} cursor-pointer btn-edit" data-item="${encodedItem}">
                                             <td class="text-center fw-bold">${i + 1}</td>
-                                            <td>${escapeHtml(item.materi)}</td>
+                                            <td>${escapeHtml(item.materi)}${manualBadge}</td>
                                             <td>${escapeHtml(item.tanggal_training)}</td>
                                             <td>${escapeHtml(item.perusahaan)}</td>
                                             <td>${escapeHtml(item.nama_sales)}</td>
@@ -708,6 +1083,7 @@
                                             <td class="text-end">${formatRupiah(item.entertainment || 0)}</td>
                                             <td>${escapeHtml(item.jenis_transport || '-')}</td>
                                             <td class="text-end">${formatRupiah(item.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(item.pengurangan_phh || 0)}</td>
                                             <td>${item.exam}</td>
                                             <td class="text-end">${formatRupiah(item.total_penjualan_sales || 0)}</td>
                                         </tr>
@@ -732,6 +1108,7 @@
                                             <td class="text-end">${formatRupiah(footerBulanan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerBulanan.pengurangan_phh || 0)}</td> 
                                             <td class="text-end">${formatRupiah(footerBulanan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerBulanan.total_penjualan_sales || 0)}</td>
                                         </tr>
@@ -748,6 +1125,7 @@
                                             <td class="text-end">${formatRupiah(footerTahunan.entertainment || 0)}</td>
                                             <td class="text-end">-</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.biaya_transport || 0)}</td>
+                                            <td class="text-end">${formatRupiah(footerTahunan.pengurangan_phh || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_exam || 0)}</td>
                                             <td class="text-end">${formatRupiah(footerTahunan.total_penjualan_sales || 0)}</td>
                                         </tr>
@@ -755,11 +1133,31 @@
                                 `;
                             }
 
+                            let btnTambahHtml = '';
+                            if (!isFinancePeriod) {
+                                btnTambahHtml = `
+                                    <button class="btn btn-sm btn-success" onclick="openCreateModal('${weekData.start}', '${weekData.end}')">
+                                        <i class="bi bi-plus-lg me-1"></i>Tambah Data
+                                    </button>
+                                `;
+                            } else {
+                                btnTambahHtml = `
+                                    <button class="btn btn-sm btn-secondary" onclick="alertFinancePeriod()">
+                                        <i class="bi bi-lock me-1"></i>Tambah Data
+                                    </button>
+                                `;
+                            }
+
                             container.append(`
                                 <div class="card my-1">
                                     <div class="card-body p-2">
-                                        <h3 class="card-title my-1 fs-6 fw-bold">Validasi Penjualan Sales</h3>
-                                        <p class="card-title my-1 text-muted small">Periode : ${moment(startOfWeek).format('DD MMMM YYYY')} - ${moment(endOfWeek).format('DD MMMM YYYY')}</p>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <div>
+                                                <h3 class="card-title my-1 fs-6 fw-bold">Validasi Penjualan Sales</h3>
+                                                <p class="card-title my-1 text-muted small mb-0">Periode : ${moment(startOfWeek).format('DD MMMM YYYY')} - ${moment(endOfWeek).format('DD MMMM YYYY')}</p>
+                                            </div>
+                                            ${btnTambahHtml}
+                                        </div>
                                         <div class="sync-scroll-wrapper table-scroll-sync">
                                             <table class="table table-striped table-hover mb-0" style="min-width:1800px;">
                                                 <thead>
@@ -784,6 +1182,7 @@
                                                         <th>Entertainment</th>
                                                         <th>Jenis Transport</th>
                                                         <th>Biaya Transport</th>
+                                                        <th>Pengurangan PHH</th>
                                                         <th>Exam</th>
                                                         <th>Total Penjualan Sales (Bersih)</th>
                                                     </tr>
@@ -808,6 +1207,37 @@
             });
         }
 
+        function alertFinancePeriod() {
+            $('#financeAlertModal').remove();
+
+            let modalHtml = `
+                <div class="modal fade" id="financeAlertModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                            <div class="modal-body text-center p-4">
+                                <i class="bi bi-lock-fill text-warning" style="font-size:2.5rem;"></i>
+                                <h5 class="fw-bold mt-3 mb-2">Tidak Dapat Menambah Data</h5>
+                                <p class="text-muted mb-0">
+                                    Periode <strong>Januari – September 2026</strong> merupakan data approval pendapatan accounting yang digunakan untuk validasi.<br>
+                                    Penambahan data manual tidak diperbolehkan pada periode ini.
+                                </p>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center pb-4">
+                                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">Mengerti</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('body').append(modalHtml);
+            new bootstrap.Modal(document.getElementById('financeAlertModal')).show();
+
+            $('#financeAlertModal').on('hidden.bs.modal', function () {
+                $(this).remove();
+            });
+        }
+
         function bindSyncScroll() {
             let $wrappers = $('.table-scroll-sync');
             let isSyncing = false;
@@ -828,8 +1258,13 @@
             e.stopPropagation();
             let item = JSON.parse(decodeURIComponent($(this).data('item')));
 
-            manualTotalKotor = false;
-            manualTotalBersih = false;
+            resetForm();
+            $('#is_create_mode').val('0');
+            $('#modal-title-text').text('Update Validasi Penjualan Sales');
+            $('#modal-icon').removeClass('bi-plus-circle').addClass('bi-pencil-square');
+            $('#rkm-picker-wrapper').addClass('d-none');
+            $('#btnGoStep2').prop('disabled', false);
+            $('#materi, #perusahaan').prop('disabled', false);
 
             $('#update_id').val(item.id_rkm);
             $('#modal-subtitle').text(item.materi || '—');
@@ -878,6 +1313,13 @@
         $('#formUpdate').submit(function(e) {
             e.preventDefault();
             let id = $('#update_id').val();
+
+            if (!id) {
+                showAlert('danger', 'Silakan pilih RKM terlebih dahulu.');
+                return;
+            }
+
+            let isCreateMode = $('#is_create_mode').val() === '1';
             let jenisTransport = $('#transportasi_select').val() === 'Lainnya' ?
                 $('#transportasi_manual').val() :
                 $('#transportasi_select').val();
@@ -901,6 +1343,7 @@
                     oleh_oleh: getCurrencyValue('#oleh_oleh'),
                     biaya_lain_lain: getCurrencyValue('#biaya_lain_lain'),
                     entertainment: getCurrencyValue('#entertainment'),
+                    pengurangan_phh: getCurrencyValue('#pengurangan_phh'),
                     exam: getCurrencyValue('#exam_value'),
                     total_penjualan_sales: getCurrencyValue('#total_penjualan_sales'),
                     materi: $('#materi').val(),
@@ -918,9 +1361,17 @@
                             $('body').removeClass('modal-open');
                             $('body').css('overflow', '');
                             $('body').css('padding-right', '');
+
+                            if (isCreateMode) {
+                                new bootstrap.Modal(document.getElementById('addMoreModal')).show();
+                            } else {
+                                loadTable();
+                            }
                         }, 300);
-                        loadTable();
-                        showAlert('success', 'Data berhasil diupdate!');
+
+                        if (!isCreateMode) {
+                            showAlert('success', 'Data berhasil diupdate!');
+                        }
                     } else {
                         showAlert('danger', response.message || 'Gagal menyimpan data.');
                     }

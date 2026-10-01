@@ -55,6 +55,7 @@ const assistantRouteUrlMap = {
     "mengukur kualitas aplikasi agar minim bug": "/tickets",
     "konsistensi campaign digital": "/content-schedules",
     "efektifitas digital marketing": "/colaborator",
+    "timeline webinar": "/timeline",
     "keberhasilan support memenuhi sla": "/tickets",
     "kualitas layanan exam": "/registrasi",
     "presentase kinerja instruktur": "/activityinstruktur",

@@ -84,38 +84,31 @@ class PeluangController extends Controller
             $start = $request->input('start', 0);
             $length = $request->input('length', 10);
             $searchValue = $request->input('search.value');
-            $orderColumnIndex = $request->input('order.0.column', 11);
-            $orderDir = $request->input('order.0.dir', 'desc');
             $statusFilter = $request->input('status_filter', 'aktif');
 
-            $columns = [
-                0 => 'id',
-                4 => 'harga',
-                5 => 'netsales',
-                6 => 'pax',
-                7 => 'periode_mulai',
-                9 => 'tahap',
-                10 => 'id_sales',
-                11 => 'id',
-            ];
-
-            $orderColumn = $columns[$orderColumnIndex] ?? 'id';
-
-            $query = Peluang::select('id', 'materi', 'harga', 'netsales', 'pax', 'periode_mulai', 'periode_selesai', 'tahap', 'created_at', 'id_rkm', 'id_sales');
+            // Inisialisasi Kueri Dasar
+            $query = Peluang::select(
+                'id', 'materi', 'harga', 'netsales', 'pax',
+                'periode_mulai', 'periode_selesai', 'tahap',
+                'created_at', 'id_rkm', 'id_sales'
+            );
 
             // 2. Integrasi Gate untuk restriksi visibilitas kueri data
             if (!Gate::allows('akses-filter-sales')) {
                 $query->where('id_sales', $user->id_sales);
             }
 
+            // Filter Berdasarkan Status (Aktif / Lost)
             if ($statusFilter === 'lost') {
                 $query->where('tahap', 'lost');
             } else {
                 $query->where('tahap', '!=', 'lost');
             }
 
+            // Total Record Sebelum Filter Pencarian
             $recordsTotal = $query->count();
 
+            // Fitur Pencarian Global
             if (!empty($searchValue)) {
                 $query->where(function($q) use ($searchValue) {
                     $q->where('tahap', 'like', "%{$searchValue}%")
@@ -126,9 +119,41 @@ class PeluangController extends Controller
                 });
             }
 
+            // Total Record Setelah Filter Pencarian
             $recordsFiltered = $query->count();
+            $orderReq = $request->input('order');
 
-            $query->orderBy($orderColumn, $orderDir);
+            if (!empty($orderReq) && isset($orderReq[0]['column'])) {
+                $orderColumnIndex = $orderReq[0]['column'];
+                $orderDir = $orderReq[0]['dir'] ?? 'desc';
+
+                $columns = [
+                    0 => 'id',
+                    4 => 'harga',
+                    5 => 'netsales',
+                    6 => 'pax',
+                    7 => 'periode_mulai',
+                    9 => 'tahap',
+                    10 => 'id_sales',
+                    11 => 'id',
+                ];
+
+                // Jika kolom ditemukan, gunakan untuk sorting
+                if (array_key_exists($orderColumnIndex, $columns)) {
+                    $orderColumn = $columns[$orderColumnIndex];
+
+                    // Mencegah error jika data kosong dengan memberi default 'desc' atau 'asc'
+                    $orderDir = strtolower($orderDir) === 'asc' ? 'asc' : 'desc';
+                    $query->orderBy($orderColumn, $orderDir);
+                } else {
+                    $query->orderBy('id', 'desc');
+                }
+            } else {
+                // FALLBACK JIKA SAMA SEKALI TIDAK ADA KLIK SORTING DARI USER
+                $query->orderBy('id', 'desc');
+            }
+
+            // Pagination
             if ($length != -1) {
                 $query->offset($start)->limit($length);
             }
@@ -140,6 +165,7 @@ class PeluangController extends Controller
                 }
             ])->get();
 
+            // Ambil Data Histori Peluang untuk Pengecekan
             $peluangIds = $rawData->pluck('id')->toArray();
             $historiPeluang = [];
 
@@ -150,6 +176,7 @@ class PeluangController extends Controller
                     ->toArray();
             }
 
+            // Manipulasi (Mapping) Data untuk Dikirim ke Frontend
             $data = $rawData->map(function ($item) use ($historiPeluang) {
                 $item->periode = $item->periode_mulai . ' s/d ' . $item->periode_selesai;
 
@@ -181,6 +208,7 @@ class PeluangController extends Controller
                 return $item;
             });
 
+            // Kembalikan Response JSON Format DataTables
             return response()->json([
                 'draw' => intval($draw),
                 'recordsTotal' => $recordsTotal,
@@ -211,12 +239,26 @@ class PeluangController extends Controller
             'perusahaan.peserta'
         ])->findOrFail($id);
 
-        // 2. Normalisasi atribut temporal RKM
-        if ($peluang->rkm && $peluang->rkm->tanggal_awal) {
-            $timestamp = strtotime($peluang->rkm->tanggal_awal);
-            $peluang->rkm->tanggal_awal_day = date('d', $timestamp);
-            $peluang->rkm->tanggal_awal_month = date('n', $timestamp);
-            $peluang->rkm->tanggal_awal_year = date('Y', $timestamp);
+        if ($peluang->rkm) {
+            if ($peluang->rkm->tanggal_awal) {
+                $timestamp = strtotime($peluang->rkm->tanggal_awal);
+                $peluang->rkm->tanggal_awal_day = date('d', $timestamp);
+                $peluang->rkm->tanggal_awal_month = date('n', $timestamp);
+                $peluang->rkm->tanggal_awal_year = date('Y', $timestamp);
+            }
+
+            // MAPPING METODE KELAS
+            $metode = 'vir'; // default
+            if ($peluang->rkm->metode_kelas === 'Offline') {
+                $metode = 'off';
+            } elseif ($peluang->rkm->metode_kelas === 'Inhouse Bandung') {
+                $metode = 'inhb';
+            } elseif ($peluang->rkm->metode_kelas === 'Inhouse Luar Bandung') {
+                $metode = 'inhlb';
+            }
+
+            // Simpan hasil mapping ke properti baru
+            $peluang->rkm->metode_kelas_kode = $metode;
         }
 
         // 3. Pengambilan dependensi entitas tunggal

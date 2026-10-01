@@ -3149,6 +3149,12 @@
                                 document.getElementById('lblTerlambat').innerText =
                                     `${terlambatPercent}% (${data.data[2]})`;
 
+                                const warnaLabel = {
+                                    'On Track': '#fd7e14',
+                                    'Tepat Waktu': '#198754',
+                                    'Terlambat':   '#dc3545'
+                                };
+
                                 // CHART
                                 chartInstanceOutstanding = new Chart(ctx, {
                                     type: 'pie',
@@ -3156,11 +3162,7 @@
                                         labels: data.labels,
                                         datasets: [{
                                             data: data.data,
-                                            backgroundColor: [
-                                                '#dc3545',
-                                                '#198754',
-                                                '#fd7e14'
-                                            ]
+                                            backgroundColor: data.labels.map(label => warnaLabel[label] || '#6c757d')
                                         }]
                                     },
                                     options: {
