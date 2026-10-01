@@ -270,6 +270,7 @@ class KomisiSalesController extends Controller
                     'id_rkm' => $r->id_rkm,
                     'materi' => $r->dataMateri?->nama_materi ?? '-',
                     'pax' => (int) ($r->pax ?? 0),
+                    'harga_pax' => (float) ($r->harga_net ?? 0),
                     'penjualan' => (float) ($r->total_penjualan_kotor ?? 0),
                     'discount' => (float) ($r->total_diskon ?? 0),
                     'pa' => (float) ($r->total_pa ?? 0),
@@ -527,7 +528,7 @@ class KomisiSalesController extends Controller
         }
 
         $allowed = [
-            'pax', 'total_penjualan_kotor', 'total_diskon', 'total_pa', 'total_cashback',
+            'pax', 'harga_net', 'total_penjualan_kotor', 'total_diskon', 'total_pa', 'total_cashback',
             'total_uang_saku', 'total_akomodasi', 'biaya_transport', 'oleh_oleh',
             'entertainment', 'biaya_lain_lain', 'pengurangan_pph', 'exam',
         ];
@@ -556,6 +557,19 @@ class KomisiSalesController extends Controller
         $approval->save();
 
         return response()->json(['success' => true, 'message' => 'Data berhasil diperbarui.']);
+    }
+
+    public function deleteRow($id_rkm)
+    {
+        $approval = ApprovalPendapatan::where('id_rkm', $id_rkm)->first();
+
+        if (!$approval) {
+            return response()->json(['success' => false, 'message' => 'Data tidak ditemukan.'], 404);
+        }
+
+        $approval->delete();
+
+        return response()->json(['success' => true, 'message' => 'Data berhasil dihapus.']);
     }
 
     public function exportExcel(Request $request)

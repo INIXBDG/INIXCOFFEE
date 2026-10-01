@@ -930,6 +930,9 @@ Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 Route::post('/invoice-bulk', [InvoiceRKMController::class, 'bulkStore'])->name('invoice.bulk.store');
+Route::post('/invoice/{invoice}/peserta-pdf', [InvoiceRKMController::class, 'pesertaPdf'])->name('invoice.peserta.pdf');
+Route::post('/invoice/{invoice}/peserta-kwitansi', [InvoiceRKMController::class, 'pesertaKwitansiPdf'])->name('invoice.peserta.kwitansi');
+Route::post('/invoice/{invoice}/update-number', [InvoiceRKMController::class, 'updateNumber'])->name('invoice.number.update');
 //Kwitansi
 Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
 Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])->name('kwitansi.create');
@@ -1172,6 +1175,7 @@ Route::prefix('office')->group(function () {
         Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
         Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
         Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
+        Route::delete('/delete-row/{id_rkm}', [KomisiSalesController::class, 'deleteRow']);
     });
     
     route::prefix('exam')->name('office.exam.')->group(function () {
