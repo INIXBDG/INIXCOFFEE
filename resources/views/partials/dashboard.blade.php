@@ -1061,6 +1061,31 @@
                         aria-labelledby="pills-sla-programmer-tab" tabindex="0">
                         <div class="container-fluid" id="sla-programmer-container">
 
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4">
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-calendar-month text-primary"></i>
+                                        </span>
+                                        <select id="filterBulanProg" class="form-select fw-bold">
+                                            <option value="all">Semua Bulan</option>
+                                            <option value="1" {{ date('n') == 1 ? 'selected' : '' }}>Januari</option>
+                                            <option value="2" {{ date('n') == 2 ? 'selected' : '' }}>Februari</option>
+                                            <option value="3" {{ date('n') == 3 ? 'selected' : '' }}>Maret</option>
+                                            <option value="4" {{ date('n') == 4 ? 'selected' : '' }}>April</option>
+                                            <option value="5" {{ date('n') == 5 ? 'selected' : '' }}>Mei</option>
+                                            <option value="6" {{ date('n') == 6 ? 'selected' : '' }}>Juni</option>
+                                            <option value="7" {{ date('n') == 7 ? 'selected' : '' }}>Juli</option>
+                                            <option value="8" {{ date('n') == 8 ? 'selected' : '' }}>Agustus</option>
+                                            <option value="9" {{ date('n') == 9 ? 'selected' : '' }}>September</option>
+                                            <option value="10" {{ date('n') == 10 ? 'selected' : '' }}>Oktober</option>
+                                            <option value="11" {{ date('n') == 11 ? 'selected' : '' }}>November</option>
+                                            <option value="12" {{ date('n') == 12 ? 'selected' : '' }}>Desember</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div id="sla-period-display" class="row mb-3">
                                 <div class="col-md-12">
                                     <div class="alert alert-primary" role="alert">
@@ -1223,6 +1248,31 @@
                     <div class="tab-pane fade" style="height:auto;" id="pills-sla-tech-support" role="tabpanel"
                         aria-labelledby="pills-sla-tech-support-tab" tabindex="0">
                         <div class="container-fluid" id="sla-tech-support-container">
+
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-4">
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white">
+                                            <i class="bi bi-calendar-month text-primary"></i>
+                                        </span>
+                                        <select id="filterBulanTs" class="form-select fw-bold">
+                                            <option value="all">Semua Bulan</option>
+                                            <option value="1" {{ date('n') == 1 ? 'selected' : '' }}>Januari</option>
+                                            <option value="2" {{ date('n') == 2 ? 'selected' : '' }}>Februari</option>
+                                            <option value="3" {{ date('n') == 3 ? 'selected' : '' }}>Maret</option>
+                                            <option value="4" {{ date('n') == 4 ? 'selected' : '' }}>April</option>
+                                            <option value="5" {{ date('n') == 5 ? 'selected' : '' }}>Mei</option>
+                                            <option value="6" {{ date('n') == 6 ? 'selected' : '' }}>Juni</option>
+                                            <option value="7" {{ date('n') == 7 ? 'selected' : '' }}>Juli</option>
+                                            <option value="8" {{ date('n') == 8 ? 'selected' : '' }}>Agustus</option>
+                                            <option value="9" {{ date('n') == 9 ? 'selected' : '' }}>September</option>
+                                            <option value="10" {{ date('n') == 10 ? 'selected' : '' }}>Oktober</option>
+                                            <option value="11" {{ date('n') == 11 ? 'selected' : '' }}>November</option>
+                                            <option value="12" {{ date('n') == 12 ? 'selected' : '' }}>Desember</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
                             <div id="sla-period-display-ts" class="row mb-3">
                                 <div class="col-md-12">

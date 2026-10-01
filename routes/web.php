@@ -29,6 +29,7 @@ use App\Http\Controllers\DaftarPesertaExamController;
 use App\Http\Controllers\DaftarTugasController;
 use App\Http\Controllers\DailyActivityController;
 use App\Http\Controllers\DashboardItsmController;
+use App\Http\Controllers\DashboardLayoutController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
 use App\Http\Controllers\HR\EmployeeJobDeskController;
@@ -183,6 +184,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/webpush/status', [WebPushController::class, 'subscriptionStatus']);
 
     Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
+
+    Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
+    Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
@@ -926,6 +930,9 @@ Route::get('/invoices/{id}/export-pdf', [InvoiceRKMController::class, 'exportPdf
 Route::get('/invoices/{id}/export-excel', [InvoiceRKMController::class, 'exportExcel'])->name('invoices.export-excel');
 Route::get('/invoice/download/{id}', [InvoiceRKMController::class, 'downloadPDF'])->name('download.pdf');
 Route::post('/invoice-bulk', [InvoiceRKMController::class, 'bulkStore'])->name('invoice.bulk.store');
+Route::post('/invoice/{invoice}/peserta-pdf', [InvoiceRKMController::class, 'pesertaPdf'])->name('invoice.peserta.pdf');
+Route::post('/invoice/{invoice}/peserta-kwitansi', [InvoiceRKMController::class, 'pesertaKwitansiPdf'])->name('invoice.peserta.kwitansi');
+Route::post('/invoice/{invoice}/update-number', [InvoiceRKMController::class, 'updateNumber'])->name('invoice.number.update');
 //Kwitansi
 Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
 Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])->name('kwitansi.create');
@@ -1161,12 +1168,14 @@ Route::prefix('office')->group(function () {
         Route::post('/export-pdf', [KomisiSalesController::class, 'exportPdf'])->name('export-pdf');
         Route::post('/export-excel', [KomisiSalesController::class, 'exportExcel'])->name('export-excel');
         Route::post('/update-inline/{id_rkm}', [KomisiSalesController::class, 'updateInline'])->name('update-inline');
+        Route::post('/update-row/{id_rkm}', [KomisiSalesController::class, 'updateRow']);
         Route::get('/lock-status', [KomisiSalesController::class, 'checkLockStatus']);
         Route::post('/unlock', [KomisiSalesController::class, 'unlock']);
         Route::post('/setup-lock', [KomisiSalesController::class, 'setupLockPassword']);
         Route::post('/change-lock-password', [KomisiSalesController::class, 'changeLockPassword']);
         Route::post('/change-accounting-password', [KomisiSalesController::class, 'changeAccountingPassword']);
         Route::post('/setup-accounting-password', [KomisiSalesController::class, 'setupAccountingPassword']);
+        Route::delete('/delete-row/{id_rkm}', [KomisiSalesController::class, 'deleteRow']);
     });
     
     route::prefix('exam')->name('office.exam.')->group(function () {

@@ -66,54 +66,84 @@ class DashboardSLAController extends Controller
     // =========================================================================
     /**
      * Validasi input tanggal dan mengembalikannya sebagai objek Carbon.
+     * Mendukung parameter:
+     *   - tahun & bulan (integer 1-12, atau 'all' untuk seluruh tahun)
+     *   - start_date & end_date (format tanggal eksplisit)
+     * Default: bulan berjalan.
      */
     private function validateAndParseDates(Request $request)
     {
-        // --- LOGIKA BARU UNTUK SEMESTER ---
         $now = Carbon::now($this->timezone);
 
-        if ($now->month <= 6) {
-            // Semester 1 (Jan - Jun)
-            $defaultStartDate = $now->copy()->month(1)->startOfMonth()->startOfDay(); // 1 Jan
-            $defaultEndDate = $now->copy()->month(6)->endOfMonth()->endOfDay();   // 30 Jun
-        } else {
-            // Semester 2 (Jul - Dec)
-            $defaultStartDate = $now->copy()->month(7)->startOfMonth()->startOfDay(); // 1 Jul
-            $defaultEndDate = $now->copy()->month(12)->endOfMonth()->endOfDay();  // 31 Des
-        }
-        // --- SELESAI LOGIKA SEMESTER ---
+        // --- LOGIKA BARU: DEFAULT KE BULAN BERJALAN ---
+        $defaultStartDate = $now->copy()->startOfMonth()->startOfDay();
+        $defaultEndDate   = $now->copy()->endOfMonth()->endOfDay();
+        // ----------------------------------------------
 
-        $validator = Validator::make($request->all(), [
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        // Prioritas 1: Jika ada start_date & end_date eksplisit, gunakan itu
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $validator = Validator::make($request->all(), [
+                'start_date' => 'nullable|date',
+                'end_date'   => 'nullable|date|after_or_equal:start_date',
+            ]);
 
-        if ($validator->fails()) {
-            // Gunakan default SEMESTER jika validasi gagal
+            if ($validator->fails()) {
+                return [
+                    'startDate' => $defaultStartDate,
+                    'endDate'   => $defaultEndDate,
+                    'filters'   => [
+                        'start' => $defaultStartDate->toDateTimeString(),
+                        'end'   => $defaultEndDate->toDateTimeString(),
+                        'error' => $validator->errors()->first(),
+                    ],
+                ];
+            }
+
+            $startDate = $request->filled('start_date')
+                ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
+                : $defaultStartDate;
+
+            $endDate = $request->filled('end_date')
+                ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
+                : $defaultEndDate;
+
             return [
-                'startDate' => $defaultStartDate,
-                'endDate' => $defaultEndDate,
-                'filters' => [
-                    'start' => $defaultStartDate->toDateTimeString(),
-                    'end' => $defaultEndDate->toDateTimeString(),
-                    'error' => $validator->errors()->first()
-                ]
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
             ];
         }
 
-        // Gunakan input jika valid, atau default SEMESTER jika kosong
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
-            : $defaultStartDate;
+        // Prioritas 2: Jika ada parameter tahun & bulan dari filter global JS
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan'); // integer 1-12 atau 'all'
 
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
-            : $defaultEndDate;
+        if ($tahun && is_numeric($tahun)) {
+            $year = (int) $tahun;
 
+            if ($bulan && $bulan !== 'all' && is_numeric($bulan)) {
+                // Filter per bulan tertentu
+                $month      = (int) $bulan;
+                $startDate  = Carbon::createFromDate($year, $month, 1, $this->timezone)->startOfMonth()->startOfDay();
+                $endDate    = $startDate->copy()->endOfMonth()->endOfDay();
+            } else {
+                // bulan = 'all' → tampilkan seluruh tahun
+                $startDate  = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfMonth()->startOfDay();
+                $endDate    = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfMonth()->endOfDay();
+            }
+
+            return [
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
+            ];
+        }
+
+        // Prioritas 3: Default → bulan berjalan
         return [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'filters' => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()]
+            'startDate' => $defaultStartDate,
+            'endDate'   => $defaultEndDate,
+            'filters'   => ['start' => $defaultStartDate->toDateTimeString(), 'end' => $defaultEndDate->toDateTimeString()],
         ];
     }
 
@@ -142,10 +172,6 @@ class DashboardSLAController extends Controller
         ];
     }
 
-    // =========================================================================
-    // FUNGSI UTAMA 1: DASHBOARD TIM (GABUNGAN)
-    // =========================================================================
-    // Terima $team dari rute (misal: 'programmer' atau 'tech-support')
     public function dashboardTim(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
@@ -705,11 +731,15 @@ class DashboardSLAController extends Controller
             }
 
             // Hitung Target Proporsional
-            $dynamicTarget = (int) round((3 / 5) * $activeWorkingDays);
-            if ($dynamicTarget < 1 && $activeWorkingDays > 0) {
-                $dynamicTarget = 1;
+            if ($activeWorkingDays >= 4) {
+                $dynamicTarget = 3;
+            } else {
+                $dynamicTarget = (int) round((3 / 5) * $activeWorkingDays);
+
+                if ($dynamicTarget < 1 && $activeWorkingDays > 0) {
+                    $dynamicTarget = 1;
+                }
             }
-            // ----------------------------------------------------------------
 
             // PERBAIKAN: Gunakan format jam 00:00:00 s/d 23:59:59 untuk akurasi Datetime
             $startDateString = $startOfWeek->copy()->startOfDay()->format('Y-m-d H:i:s');
