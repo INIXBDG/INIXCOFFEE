@@ -2985,15 +2985,17 @@ const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-wa
         try {
             let startDate, endDate;
             const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
-            const selectedMonth = $('#globalBulanFilter').val();
+            const selectedMonth = $('#filterBulanDigital').val() || $('#globalBulanFilter').val();
 
+            const pad = n => String(n).padStart(2, '0');
             if (selectedMonth && selectedMonth !== 'all') {
                 const monthIndex = parseInt(selectedMonth) - 1;
-                startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
-                endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+                const lastDay = new Date(currentYear, monthIndex + 1, 0).getDate();
+                startDate = `${currentYear}-${pad(monthIndex + 1)}-01`;
+                endDate = `${currentYear}-${pad(monthIndex + 1)}-${pad(lastDay)}`;
             } else {
-                startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-                endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+                startDate = `${currentYear}-01-01`;
+                endDate = `${currentYear}-12-31`;
             }
 
             const response = await $.ajax({
@@ -3114,10 +3116,30 @@ $(document).ready(function () {
 
     // Event Listener Filter Bulan untuk SLA Digital
     $('#filterBulanDigital').on('change', function () {
+        $('#pills-sla-digital-tab').data('loaded', false);
         if (typeof loadSlaDigital === 'function') {
-            loadSlaDigital($(this).val());
+            loadSlaDigital();
         }
     });
+
+    // Event Listener Filter Bulan untuk SLA Programmer
+    $('#filterBulanProg').on('change', function () {
+        // Reset loaded flag agar tab bisa reload
+        $('#pills-sla-programmer-tab').data('loaded', false);
+        loadSlaTim();
+        loadSlaUser();
+        loadSlaKritis();
+    });
+
+    // Event Listener Filter Bulan untuk SLA Technical Support
+    $('#filterBulanTs').on('change', function () {
+        // Reset loaded flag agar tab bisa reload
+        $('#pills-sla-tech-support-tab').data('loaded', false);
+        loadSlaTsTim();
+        loadSlaTsUser();
+        loadSlaTsKritis();
+    });
+
 
     // Event Listeners PILLS (Tab Lama)
     $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () { fetchJumlahTicketingData($('#filterBulan').val() || 'all'); });
@@ -3152,13 +3174,22 @@ $(document).ready(function () {
 
     function updateFilterDisplay(filters, elementId) {
         try {
-            const startDate = new Date(filters.start);
+            if (!filters || !filters.start || !filters.end) return;
+            const startDate = new Date(filters.start.replace(' ', 'T'));
+            const endDate = new Date(filters.end.replace(' ', 'T'));
             const year = startDate.getFullYear();
-            const month = startDate.getMonth();
-            const semester = (month < 6) ? 1 : 2;
             const el = document.getElementById(elementId);
             if (el) {
-                el.innerHTML = `<strong>Tahun: ${year} - Semester: ${semester}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                const isFullYear = 
+                    startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                    endDate.getMonth() === 11 && endDate.getDate() === 31;
+                
+                if (isFullYear) {
+                    el.innerHTML = `<strong>Tahun: ${year} - Semua Bulan</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                } else {
+                    const namaBulan = startDate.toLocaleString('id-ID', { month: 'long' });
+                    el.innerHTML = `<strong>Bulan: ${namaBulan} ${year}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                }
             }
         } catch (e) { console.error("Gagal update filter display", e); }
     }
@@ -3172,10 +3203,18 @@ $(document).ready(function () {
     const slaProgKritisUrl = "/dashboard-sla/programmer/kritis";
     let slaProgrammerChart;
 
+    function getSlaProgQueryString() {
+        const tahun = document.getElementById('globalTahunFilter')?.value || new Date().getFullYear();
+        const bulan = document.getElementById('filterBulanProg')?.value || document.getElementById('globalBulanFilter')?.value || 'all';
+        return `?tahun=${tahun}&bulan=${bulan}`;
+    }
+
     async function loadSlaTim() {
         try {
-            const response = await fetch(slaProgTimUrl); const kpi = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgTimUrl + qs); const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'sla_current_period');
+
 
             const resEl = document.getElementById('tim-sla-resolution');
             resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
@@ -3200,7 +3239,8 @@ $(document).ready(function () {
 
     async function loadSlaUser() {
         try {
-            const response = await fetch(slaProgUserUrl); const data = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgUserUrl + qs); const data = await response.json();
             const tableBody = document.getElementById('sla-user-table-body'); tableBody.innerHTML = '';
             if (data.kpi.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return; }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
@@ -3211,7 +3251,8 @@ $(document).ready(function () {
 
     async function loadSlaKritis() {
         try {
-            const response = await fetch(slaProgKritisUrl); const data = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgKritisUrl + qs); const data = await response.json();
             const kpi = data.kpi;
             document.getElementById('kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
             document.getElementById('kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);
@@ -3236,9 +3277,16 @@ $(document).ready(function () {
     const slaTsKritisUrl = "/dashboard-sla/tech-support/kritis";
     let slaTsTimChart;
 
+    function getSlaTsQueryString() {
+        const tahun = document.getElementById('globalTahunFilter')?.value || new Date().getFullYear();
+        const bulan = document.getElementById('filterBulanTs')?.value || document.getElementById('globalBulanFilter')?.value || 'all';
+        return `?tahun=${tahun}&bulan=${bulan}`;
+    }
+
     async function loadSlaTsTim() {
         try {
-            const response = await fetch(slaTsTimUrl); const kpi = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsTimUrl + qs); const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'ts_sla_current_period');
 
             document.getElementById('ts-tim-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
@@ -3258,7 +3306,8 @@ $(document).ready(function () {
 
     async function loadSlaTsUser() {
         try {
-            const response = await fetch(slaTsUserUrl); const data = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsUserUrl + qs); const data = await response.json();
             const tableBody = document.getElementById('ts-sla-user-table-body'); tableBody.innerHTML = '';
             if (data.kpi.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return; }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
@@ -3269,7 +3318,8 @@ $(document).ready(function () {
 
     async function loadSlaTsKritis() {
         try {
-            const response = await fetch(slaTsKritisUrl); const data = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsKritisUrl + qs); const data = await response.json();
             const kpi = data.kpi;
             document.getElementById('ts-kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
             document.getElementById('ts-kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);
