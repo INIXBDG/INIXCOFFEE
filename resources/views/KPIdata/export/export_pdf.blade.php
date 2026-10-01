@@ -995,7 +995,7 @@
 
     <div class="narrative-box info">
         <div class="pred-title">{{ $predZoneIcon }} Prediksi Kinerja & Rekomendasi Strategis</div>
-        {!! $predText !!}
+        {!! clean($predText )!!}
     </div>
 
     <!-- INSIGHT BOX -->
@@ -1033,7 +1033,7 @@
         <strong>Personal Insight</strong>
         <ul>
             @foreach ($insights as $insight)
-                <li>{!! $insight !!}</li>
+                <li>{!! clean($insight) !!}</li>
             @endforeach
         </ul>
     </div>
@@ -1283,7 +1283,7 @@
     <!-- RISK ANALYSIS -->
     <div class="narrative-box {{ $riskType }}" style="margin-top: 16px;">
         <div class="pred-title"> Analisis Risiko Volatilitas</div>
-        {!! $riskText !!}
+        {!! clean($riskText) !!}
     </div>
 
     <!-- ========================================== -->
@@ -1371,7 +1371,7 @@
     @foreach ($recs as $rec)
         <div class="narrative-box {{ $rec['type'] }}">
             <div class="pred-title">{{ $rec['icon'] }} {{ $rec['title'] }}</div>
-            {!! $rec['text'] !!}
+            {!! clean($rec['text']) !!}
         </div>
     @endforeach
 
@@ -1437,7 +1437,7 @@
                             : (str_contains($s, 'berjalan')
                                 ? 'badge-warning'
                                 : 'badge-info'));
-                    
+
                     // Logika Warna Baris
                     $isTop = $index < 3;
                     $isBottom = ($count - 1 - $index) < 3 && $index >= 3;
