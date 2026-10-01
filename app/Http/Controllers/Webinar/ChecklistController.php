@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Webinar;
 use App\Http\Controllers\Controller;
 use App\Models\EventTodo;
 use App\Models\Todo;
+use App\Models\YearMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // Tambahkan facade Auth
 
@@ -18,7 +19,27 @@ class ChecklistController extends Controller
         if ($count === 0) {
             // Cek permission langsung via database/Spatie
             if ($user && $user->can('update-checklist')) {
-                $masterTodos = Todo::where('is_active', true)->orderBy('sort_order')->get();
+
+                // 1. Ambil data pemetaan event untuk tahu Tahun & Kuartalnya
+                $mapping = YearMapping::findOrFail($mappingId);
+
+                // 2. Inisialisasi Query Todo Master
+                $todoQuery = Todo::where('is_active', true);
+
+                // 3. Logika Filter Berdasarkan Periode Waktu
+                if ($mapping->year > 2026 || ($mapping->year == 2026 && $mapping->quarter >= 4)) {
+                    // KONDISI BARU (Mulai Q4 2026 ke atas)
+                    // Abaikan kategori lama 'Perintilan'
+                    $todoQuery->where('category', '!=', 'Perintilan');
+                } else {
+                    // KONDISI LAMA (Sebelum Q4 2026)
+                    // Abaikan task/kategori baru agar history kuartal sebelumnya tidak error
+                    $todoQuery->where('category', '!=', 'Aktivitas Setelah Webinar')
+                              ->where('task_name', '!=', 'Voucher webinar');
+                }
+
+                $masterTodos = $todoQuery->orderBy('sort_order')->get();
+
                 $newChecklists = [];
                 foreach ($masterTodos as $todo) {
                     $newChecklists[] = [
