@@ -56,12 +56,16 @@ class MateriController extends Controller
         // dd($request->all());
         // dd($jabatan);
         $validatedData = $this->validate($request, [
-            'nama_materi' => 'required',
-            'kode_materi' => 'nullable',
+            'nama_materi'    => 'required',
+            'kode_materi'    => 'nullable',
             'kategori_materi' => 'nullable',
-            'vendor' => 'nullable',
-            'durasi' => 'nullable',
-            'silabus' => 'nullable|file|mimes:pdf|max:2048' // tambahkan validasi untuk file PDF
+            'vendor'         => 'nullable',
+            'durasi'         => 'nullable',
+            'silabus'        => 'nullable|file|mimes:pdf|max:2048' // tambahkan validasi untuk file PDF
+        ], [
+            'nama_materi.required' => 'Nama materi wajib diisi.',
+            'silabus.mimes'        => 'Silabus harus berupa file PDF.',
+            'silabus.max'          => 'Silabus tidak boleh lebih dari 2MB.',
         ]);
         if ($jabatan == 'Education Manager') {
             $status = 'Aktif';

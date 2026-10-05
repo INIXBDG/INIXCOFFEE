@@ -34,7 +34,7 @@
                     ← Kembali ke Dashboard
                 </a>
                 <button type="button" class="btn btn-primary px-4 py-2 fw-semibold rounded-pill shadow-sm btn-save-action">
-                    💾 Simpan Urutan
+                    Simpan Urutan
                 </button>
             </div>
         </div>

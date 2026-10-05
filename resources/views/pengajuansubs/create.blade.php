@@ -16,6 +16,11 @@
                         @csrf
                         <input type="hidden" name="kode_karyawan" value="{{ $karyawan->kode_karyawan }}">
 
+                        @if ($errors->has('error'))
+                            <div class="alert alert-danger">{{ $errors->first('error') }}</div>
+                        @endif
+
+
                         <div class="row mb-3">
                             <label class="col-md-4 col-form-label text-md-start">Nama Karyawan</label>
                             <div class="col-md-6">
@@ -33,17 +38,20 @@
                         <hr class="my-4">
 
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Pilih RKM</label>
+                            <label class="col-md-4 col-form-label text-md-start">Pilih RKM <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select id="id_rkm" name="id_rkm" class="form-select" required>
+                                <select id="id_rkm" name="id_rkm" class="form-select @error('id_rkm') is-invalid @enderror" required>
                                     <option value="">-- Pilih Jadwal Kelas --</option>
                                     @foreach($rkms as $rkm)
-                                        <option value="{{ $rkm->id }}">
+                                        <option value="{{ $rkm->id }}" {{ old('id_rkm') == $rkm->id ? 'selected' : '' }}>
                                             {{ $rkm->perusahaan->nama_perusahaan ?? '-' }}
                                             ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('d M Y') }})
                                         </option>
                                     @endforeach
                                 </select>
+                                @error('id_rkm')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
