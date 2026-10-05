@@ -40,7 +40,8 @@ class ReportSalesProjectController extends Controller
         // Berdasarkan tahun_periode LeadProject
         // ==========================================
 
-        $projects = Project::with([
+        // $projects = Project::with([
+        $projectsQuery = Project::with([
             'client',
             'administration.projectManager',
             'lead',

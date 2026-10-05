@@ -18,6 +18,10 @@
                         <h5 class="card-title text-center mb-4">{{ __('Ajukan Klaim Modul') }}</h5>
                         <form method="POST" action="{{ route('pengajuanklaimmodul.store') }}">
                             @csrf
+
+                            @if ($errors->has('error'))
+                                <div class="alert alert-danger">{{ $errors->first('error') }}</div>
+                            @endif
                             <div class="row mb-3">
                                 <label for="nama_karyawan"
                                     class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
@@ -36,17 +40,18 @@
                             </div>
                             <div class="row mb-3">
                                 <label for="title"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Judul Modul') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Judul Modul') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input id="title" type="text" class="form-control @error('title') is-invalid @enderror"
                                         name="title" value="{{ old('title') }}" required autofocus>
-                                    @error('title') <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                    @error('title')
+                                        <div class="text-danger">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <label for="category"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Kategori Materi') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Kategori Materi') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select id="category" name="category"
                                         class="form-select @error('category') is-invalid @enderror" required>
@@ -58,7 +63,8 @@
                                             @endif
                                         @endforeach
                                     </select>
-                                    @error('category') <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                    @error('category')
+                                        <div class="text-danger">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -76,8 +82,9 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('instructors') <span
-                                    class="invalid-feedback"><strong>{{ $message }}</strong></span> @enderror
+                                    @error('instructors')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -87,8 +94,9 @@
                                     <textarea id="description"
                                         class="form-control @error('description') is-invalid @enderror" name="description"
                                         rows="4">{{ old('description') }}</textarea>
-                                    @error('description') <span
-                                    class="invalid-feedback"><strong>{{ $message }}</strong></span> @enderror
+                                    @error('description')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -97,7 +105,8 @@
                                 <div class="col-md-6">
                                     <input id="link" type="url" class="form-control @error('link') is-invalid @enderror"
                                         name="link" value="{{ old('link') }}" placeholder="https://..." required>
-                                    @error('link') <span class="invalid-feedback"><strong>{{ $message }}</strong></span>
+                                    @error('link')
+                                        <div class="text-danger">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
