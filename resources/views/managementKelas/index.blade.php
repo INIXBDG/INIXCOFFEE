@@ -197,8 +197,8 @@
 
     @push('js')
         {{-- DIPERBAIKI: Hapus spasi berlebih di URL script --}}
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+        <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+        <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
         <script>
             let kelolaModal;
             let containerFilters = {};

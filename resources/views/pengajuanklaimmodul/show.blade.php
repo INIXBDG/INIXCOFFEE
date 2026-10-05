@@ -215,8 +215,8 @@
     </style>
 
     @push('js')
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+        <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
         <script>
             function openApproveModal(id) {
                 $('#approveForm').attr('action', "{{ url('/klaimmodul') }}/" + id + "/approve");

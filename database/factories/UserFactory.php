@@ -2,47 +2,39 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Faker\Generator as Faker;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
 class UserFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = User::class;
+
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'role' => fake()->role(),
-            'nip' => fake()->randomNumber(),
-            'alamat' => fake()->address(),
-            'jabatan' => fake()->jobTitle(),
-            'divisi' => 'education',
-            'tempat_lahir' => fake()->city(),
-            'tanggal_lahir' => fake()->date(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+            'username'       => fake()->unique()->userName(),
+            'jabatan'        => fake()->jobTitle(),
+            'status_akun'    => '1',
+            'password'       => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+            'karyawan_id'    => null,
+            'id_instruktur'  => null,
+            'id_sales'       => null,
             'remember_token' => Str::random(10),
+            'role'           => null,
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     *
-     * @return $this
-     */
-    public function unverified(): static
+    public function nonaktif(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(fn () => ['status_akun' => '0']);
+    }
+
+    public function denganKolomRole(string $role): static
+    {
+        return $this->state(fn () => ['role' => $role]);
     }
 }

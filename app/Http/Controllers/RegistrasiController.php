@@ -9,6 +9,7 @@ use App\Models\Nilaifeedback;
 use App\Models\Peserta;
 use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\souvenir;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

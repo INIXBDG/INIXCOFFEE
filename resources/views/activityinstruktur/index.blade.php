@@ -106,7 +106,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 <script>
     // URL API dari route Laravel
     const API_DATA_URL = "{{ route('api.activities') }}";

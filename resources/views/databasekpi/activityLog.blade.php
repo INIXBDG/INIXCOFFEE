@@ -1,7 +1,7 @@
 @extends('layouts_kpi.app')
 
 @section('kpi_contents')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
 <style>
     .custom-scroll {
         overflow-x: auto;

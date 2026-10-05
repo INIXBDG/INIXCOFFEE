@@ -263,13 +263,13 @@
     
 </style>
 {{-- @push('js') --}}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
     <!-- JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
 <script>
     $(document).ready(function(){
         var userRole = '{{ auth()->user()->jabatan}}';

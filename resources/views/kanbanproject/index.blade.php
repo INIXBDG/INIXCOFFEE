@@ -17,7 +17,7 @@
 @endphp
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="{{ asset('assets/vendor/css/select2.min.css') }}" rel="stylesheet" />
 <div class="container-fluid mx-auto py-8 px-4">
     {{-- Modal Kelola Tim --}}
     <div id="teamModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center hidden z-[60]">
@@ -233,10 +233,10 @@
 
 
 {{-- Script CDN --}}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
 <script>
     const AppConfig = {
         storageBaseUrl: "{{ asset('storage/posts/') }}/",

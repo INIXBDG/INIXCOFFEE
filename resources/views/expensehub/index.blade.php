@@ -2,7 +2,7 @@
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="{{ asset('assets/vendor/vendorStyle/jquery/jquery.dataTables.min.css') }}">
 
 @section('content')
 <div class="container-fluid">
@@ -168,10 +168,10 @@
 </style>
 
 @push('js')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+<script type="text/javascript" src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
 <script>
     $(document).ready(function() {
         loadData();

@@ -393,12 +393,12 @@
     </div>
 
     {{-- DataTables CSS (Bootstrap 5 styling) --}}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
 
     {{-- Scripts --}}
     
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
 
     <script>
         $(document).ready(function() {

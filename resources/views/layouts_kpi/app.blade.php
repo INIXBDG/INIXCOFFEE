@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+        href="{{ asset('assets/vendor/css/public-sans.css') }}"
         rel="stylesheet" />
 
     <!-- Vendor CSS -->
@@ -36,11 +36,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font/css/materialdesignicons.min.css">
 
     <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
 
     <!-- CSS bawaan Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+    <link href="{{ asset('assets/vendor/css/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}"
         rel="stylesheet" />
 
     <!-- Page CSS -->
@@ -56,7 +56,7 @@
 </head>
 
 <body>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 
     @if (app()->environment('staging'))
         <div aria-hidden="true" style="position: fixed; top: 50%; left: 50%; z-index: 999998; color: rgba(220, 38, 38, 0.18); font-size: clamp(4rem, 12vw, 10rem); font-weight: 800; letter-spacing: 0.2em; pointer-events: none; transform: translate(-50%, -50%) rotate(-25deg); user-select: none; white-space: nowrap;">STAGING</div>
@@ -184,12 +184,12 @@
     </div>
 
     <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
     <!-- DataTables JS -->
-    <script defer src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script defer src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script defer src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script defer src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
 
     <!-- Bootstrap JS -->
     <script defer src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
@@ -210,7 +210,7 @@
     <!-- GitHub button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
     <script defer src="{{ asset('js/global-validator.js') }}"></script>
 
     <!-- User Profile Ajax -->

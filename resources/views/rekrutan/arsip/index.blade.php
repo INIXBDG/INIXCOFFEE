@@ -751,7 +751,7 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script>
         // ===== STATE MANAGEMENT =====
         let arsipFolders = [];

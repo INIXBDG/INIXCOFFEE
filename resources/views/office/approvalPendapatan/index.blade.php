@@ -2035,8 +2035,8 @@
     </style>
 
     
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
     <script>
         let manualTotalKotor = false;
         let manualTotalBersih = false;

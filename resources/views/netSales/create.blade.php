@@ -300,7 +300,7 @@
     </style>
 
     {{-- SCRIPT CLEAN & TERINTEGRASI --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script>
         $(document).ready(function() {
             // 1. Array ID semua input biaya yang harus dihitung

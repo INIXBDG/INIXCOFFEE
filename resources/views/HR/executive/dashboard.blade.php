@@ -441,7 +441,7 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let chartTrend = null;

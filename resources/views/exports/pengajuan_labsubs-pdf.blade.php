@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Form Pengajuan Lab / Subscription</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ asset('assets/vendor/css/core.css') }}" rel="stylesheet">
     <style>
         body { font-size: 14px; }
         .table-borderless td, .table-borderless th { border: none !important; }
@@ -172,7 +172,7 @@
 </div>
 
 <script src="https://kit.fontawesome.com/85b3409c34.js" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 <script>
     $('#printBtn').on('click', () => window.print());
 </script>

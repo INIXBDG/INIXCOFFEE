@@ -200,12 +200,12 @@
 
     </div>
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
 
     
-    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
     
 
     <script>

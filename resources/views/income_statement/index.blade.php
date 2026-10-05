@@ -376,7 +376,7 @@
         .income-modal-header { background: var(--pastel-primary); color: #fff; border: none; }
     </style>
     @push('js')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script>
         let incomeFailAttempts = 0;
         const INCOME_MAX_FAILS = 3;

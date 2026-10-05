@@ -2,9 +2,9 @@
 
 @section('content')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
+<link href="{{ asset('assets/vendor/css/select2.min.css') }}" rel="stylesheet" />
+<link href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}" rel="stylesheet" />
 
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -309,10 +309,10 @@
 </div>
 
 {{-- Script Javascript --}}
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
 
 <script>
     $(document).ready(function() {

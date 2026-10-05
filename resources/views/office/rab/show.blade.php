@@ -749,10 +749,10 @@
     </div>
 
     
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/id.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/datatables.bootstrap5.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/js/moment-id.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             loadPengajuanTable();

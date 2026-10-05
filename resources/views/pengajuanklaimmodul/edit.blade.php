@@ -1,8 +1,8 @@
 @extends('layouts.app')
 
 @push('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+    <link href="{{ asset('assets/vendor/css/select2.min.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}"
         rel="stylesheet" />
 @endpush
 
@@ -121,7 +121,7 @@
 @endsection
 
 @push('js')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
     <script>
         $(document).ready(function () {
             $('#instructors').select2({ theme: 'bootstrap-5', placeholder: 'Pilih Instruktur', allowClear: true, width: '100%' });

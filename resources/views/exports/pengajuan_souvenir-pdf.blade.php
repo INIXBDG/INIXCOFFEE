@@ -6,7 +6,7 @@
     <title>Form Permintaan Souvenir</title>
 
     {{-- Ambil asset untuk PDF --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ asset('assets/vendor/css/core.css') }}" rel="stylesheet">
     <style>
         body { font-family: 'Arial', sans-serif; }
         .container { width: 90%; margin: 0 auto; }
@@ -142,7 +142,7 @@
             </div>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script>
         $(document).ready(function() {
             $('#printInvoiceBTN').on('click', function() {

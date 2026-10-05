@@ -2,7 +2,7 @@
 
 @section('content_HR')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    
     <style>
         /* =====================================================
         CREATE OVERLAY - UNIQUE FULLSCREEN EXPERIENCE
@@ -993,7 +993,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://unpkg.com/docx-preview@0.3.0/dist/docx-preview.min.js"></script>
 

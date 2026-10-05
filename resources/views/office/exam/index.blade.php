@@ -310,7 +310,7 @@
     </style>
 
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}"></script>
     <script>
         $(document).ready(function() {
             getDataExam();

@@ -28,7 +28,7 @@
     function ensureChartJs() {
         if (chartJsLoaded) return Promise.resolve();
         if (!chartJsPromise) {
-            chartJsPromise = loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+            chartJsPromise = loadScript('/assets/vendor/libs/chartjs/chart.umd.min.js')
                 .then(() => { chartJsLoaded = true; });
         }
         return chartJsPromise;
@@ -37,7 +37,7 @@
     function ensureSweetAlert() {
         if (sweetalertLoaded) return Promise.resolve();
         if (!sweetalertPromise) {
-            sweetalertPromise = loadScript('https://cdn.jsdelivr.net/npm/sweetalert2@11')
+            sweetalertPromise = loadScript('/assets/vendor/libs/sweetalert2/sweetalert2@11.js')
                 .then(() => { sweetalertLoaded = true; });
         }
         return sweetalertPromise;

@@ -1,7 +1,7 @@
 @extends('layouts_kpi.app')
 
 @section('kpi_contents')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/jquery/jquery.dataTables.min.css') }}">
 
     <div class="container content-wrapper mt-4">
         <div class="content-card position-relative">

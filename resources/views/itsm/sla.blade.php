@@ -629,7 +629,7 @@
 @endsection
 
 @push('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/chartjs/chart.umd.min.js') }}"></script>
 <script src="{{ asset('js/sla-management.js') }}"></script>
 @endpush
