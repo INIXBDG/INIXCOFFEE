@@ -97,7 +97,7 @@
                                     @method('PUT')
                                     <div class="modal-body">
                                         <div class="mb-3">
-                                            <label for="Sales{{ $activity->id }}" class="form-label">Sales</label>
+                                            <label for="Sales{{ $activity->id }}" class="form-label">Sales <span class="text-danger">*</span></label>
                                             <select name="id_sales" id="Sales{{ $activity->id }}" class="form-control"
                                                 required>
                                                 <option value="" disabled>-- Pilih Sales --</option>
@@ -114,63 +114,63 @@
                                             <input type="date" class="form-control" id="deadline" name="deadline" required>
                                         </div> --}}
                                         <div class="mb-3">
-                                            <label for="Contact{{ $activity->id }}" class="form-label">DB</label>
+                                            <label for="Contact{{ $activity->id }}" class="form-label">DB <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Contact{{ $activity->id }}"
                                                 name="DB" value="{{ $activity->DB }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Contact{{ $activity->id }}" class="form-label">Contact</label>
+                                            <label for="Contact{{ $activity->id }}" class="form-label">Contact <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Contact{{ $activity->id }}"
                                                 name="Contact" value="{{ $activity->Contact }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Call{{ $activity->id }}" class="form-label">Call</label>
+                                            <label for="Call{{ $activity->id }}" class="form-label">Call <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Call{{ $activity->id }}"
                                                 name="Call" value="{{ $activity->Call }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Visit{{ $activity->id }}" class="form-label">Visit</label>
+                                            <label for="Visit{{ $activity->id }}" class="form-label">Visit <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Visit{{ $activity->id }}"
                                                 name="Visit" value="{{ $activity->Visit }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Email{{ $activity->id }}" class="form-label">Email</label>
+                                            <label for="Email{{ $activity->id }}" class="form-label">Email <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Email{{ $activity->id }}"
                                                 name="Email" value="{{ $activity->Email }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Meet{{ $activity->id }}" class="form-label">Meet</label>
+                                            <label for="Meet{{ $activity->id }}" class="form-label">Meet <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Meet{{ $activity->id }}"
                                                 name="Meet" value="{{ $activity->Meet }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="Incharge{{ $activity->id }}"
                                                 name="Incharge" value="{{ $activity->Incharge }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="PA{{ $activity->id }}"
                                                 name="PA" value="{{ $activity->PA }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="PI{{ $activity->id }}"
                                                 name="PI" value="{{ $activity->PI }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control"
                                                 id="Telemarketing{{ $activity->id }}" name="Telemarketing"
                                                 value="{{ $activity->Telemarketing }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="FormM{{ $activity->id }}"
                                                 name="FormM" value="{{ $activity->FormM }}" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge</label>
+                                            <label for="Incharge{{ $activity->id }}" class="form-label">Incharge <span class="text-danger">*</span></label>
                                             <input type="number" class="form-control" id="FormK{{ $activity->id }}"
                                                 name="FormK" value="{{ $activity->FormK }}" required>
                                         </div>
@@ -200,8 +200,8 @@
                         @csrf
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="id_sales" class="form-label">Sales</label>
-                                <select name="id_sales" id="id_sales" class="form-control">
+                                        <label for="id_sales" class="form-label">Sales <span class="text-danger">*</span></label>
+                                        <select name="id_sales" id="id_sales" class="form-control" required>
                                     <option value="" disabled selected>-- Pilih Sales --</option>
                                     @foreach ($user as $item)
                                         <option value="{{ $item->id_sales }}">{{ $item->id_sales }}</option>
@@ -215,52 +215,52 @@
                             </div> --}}
 
                             <div class="mb-3">
-                                <label for="Contact" class="form-label">DB</label>
+                                <label for="Contact" class="form-label">DB <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="DB" name="DB" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Contact" class="form-label">Contact</label>
+                                <label for="Contact" class="form-label">Contact <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Contact" name="Contact" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Call" class="form-label">Call</label>
+                                <label for="Call" class="form-label">Call <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Call" name="Call" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Visit" class="form-label">Visit</label>
+                                <label for="Visit" class="form-label">Visit <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Visit" name="Visit" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Email" class="form-label">Email</label>
+                                <label for="Email" class="form-label">Email <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Email" name="Email" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Meet" class="form-label">Meet</label>
+                                <label for="Meet" class="form-label">Meet <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Meet" name="Meet" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Incharge</label>
+                                <label for="Incharge" class="form-label">Incharge <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Incharge" name="Incharge" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Penawaran Awal</label>
+                                <label for="Incharge" class="form-label">Penawaran Awal <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="PA" name="PA" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Penawaran Internal</label>
+                                <label for="Incharge" class="form-label">Penawaran Internal <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="PI" name="PI" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Telemarketing</label>
+                                <label for="Incharge" class="form-label">Telemarketing <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="Telemarketing" name="Telemarketing"
                                     required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Form Masuk</label>
+                                <label for="Incharge" class="form-label">Form Masuk <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="FormM" name="FormM" required>
                             </div>
                             <div class="mb-3">
-                                <label for="Incharge" class="form-label">Form Keluar</label>
+                                <label for="Incharge" class="form-label">Form Keluar <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="FormK" name="FormK" required>
                             </div>
                         </div>

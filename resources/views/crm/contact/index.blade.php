@@ -93,13 +93,13 @@
                                 <input type="hidden" name="id" id="edit_contact_id">
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan</label>
+                                    <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="edit_nama_perusahaan"
                                         name="nama_perusahaan" required maxlength="255">
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_kategori_perusahaan">Kategori Perusahaan</label>
+                                    <label class="form-label" for="edit_kategori_perusahaan">Kategori Perusahaan <span class="text-danger">*</span></label>
                                     <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
                                         name="kategori_perusahaan" id="edit_kategori_perusahaan"
                                         autocomplete="kategori_perusahaan" required>
@@ -120,13 +120,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_email">Email</label>
+                                    <label class="form-label" for="edit_email">Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" id="edit_email" name="email"
-                                        maxlength="255">
+                                        maxlength="255" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_lokasi">Lokasi</label>
+                                    <label class="form-label" for="edit_lokasi">Lokasi <span class="text-danger">*</span></label>
                                     <select class="form-select" id="edit_lokasi" name="lokasi" required>
                                         <option value="">Pilih Lokasi</option>
                                         <option value="Aceh">Aceh</option>
@@ -171,7 +171,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_status">Status</label>
+                                    <label class="form-label" for="edit_status">Status <span class="text-danger">*</span></label>
                                     <select class="form-select @error('status') is-invalid @enderror" id="edit_status"
                                         name="status" autocomplete="status" required>
                                         <option value="" selected>Pilih Status</option>
@@ -224,7 +224,7 @@
                                 @csrf
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="nama_perusahaan">Nama Perusahaan</label>
+                                    <label class="form-label" for="nama_perusahaan">Nama Perusahaan <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="nama_perusahaan" name="nama_perusahaan" required>
                                 </div>
 
@@ -263,7 +263,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="status">Status</label>
+                                    <label class="form-label" for="status">Status <span class="text-danger">*</span></label>
                                     <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" autocomplete="status" required>
                                         <option value="" selected>Pilih Status</option>
                                         <option value="Q1">Q1</option>

@@ -13,9 +13,9 @@
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
-                            <label for="nama_souvenir" class="col-md-4 col-form-label text-md-start">{{ __('Nama Souvenir') }}</label>
+                            <label for="nama_souvenir" class="col-md-4 col-form-label text-md-start">{{ __('Nama Souvenir') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="nama_souvenir" type="text" placeholder="Masukan Nama Souvenir" class="form-control @error('nama_souvenir') is-invalid @enderror" name="nama_souvenir" value="{{ old('nama_souvenir', $souvenir->nama_souvenir) }}" autocomplete="nama_souvenir" autofocus>
+                                <input id="nama_souvenir" type="text" placeholder="Masukan Nama Souvenir" class="form-control @error('nama_souvenir') is-invalid @enderror" name="nama_souvenir" value="{{ old('nama_souvenir', $souvenir->nama_souvenir) }}" autocomplete="nama_souvenir" autofocus required>
                                 @error('nama_souvenir')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -25,9 +25,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga Souvenir') }}</label>
+                            <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga Souvenir') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="harga" type="text" placeholder="Masukan Harga Souvenir" class="form-control @error('harga') is-invalid @enderror" name="harga" value="{{ old('harga', $souvenir->harga) }}" autocomplete="harga" autofocus>
+                                <input id="harga" type="text" placeholder="Masukan Harga Souvenir" class="form-control @error('harga') is-invalid @enderror" name="harga" value="{{ old('harga', $souvenir->harga) }}" autocomplete="harga" autofocus required>
                                 @error('harga')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -37,7 +37,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="harga_pelatihan" class="col-md-4 col-form-label text-md-start">{{ __('Range Harga Pelatihan') }}</label>
+                            <label for="harga_pelatihan" class="col-md-4 col-form-label text-md-start">{{ __('Range Harga Pelatihan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-3">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
@@ -63,9 +63,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="stok" class="col-md-4 col-form-label text-md-start">{{ __('Stok Saat ini') }}</label>
+                            <label for="stok" class="col-md-4 col-form-label text-md-start">{{ __('Stok Saat ini') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="stok" type="text" placeholder="Masukan Stok Souvenir" class="form-control @error('stok') is-invalid @enderror" name="stok" value="{{ old('stok', $souvenir->stok) }}" autocomplete="stok" autofocus>
+                                <input id="stok" type="text" placeholder="Masukan Stok Souvenir" class="form-control @error('stok') is-invalid @enderror" name="stok" value="{{ old('stok', $souvenir->stok) }}" autocomplete="stok" autofocus required>
                                 @error('stok')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>

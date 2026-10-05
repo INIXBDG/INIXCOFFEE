@@ -57,7 +57,7 @@
                 <table class="invoice-table">
                     <tbody>
                         <tr>
-                            <td colspan="3" class="fw-bold">Nomor Invoice:</td>
+                            <td colspan="3" class="fw-bold">Nomor Invoice: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 @php
                                 $idRkm = $rkm->id;
@@ -72,12 +72,12 @@
                                 $invoiceNumber = $idRkm . '/' . $kodeInvoice . '/' . $bulanRomawiNow . '/' . $tahun;
                                 @endphp
                                 <input type="text" class="form-control" name="invoice_number"
-                                    value="{{ old('invoice_number', $invoiceNumber) }}">
+                                    value="{{ old('invoice_number', $invoiceNumber) }}" required>
                             </td>
                         </tr>
 
                         <tr>
-                            <td colspan="3" class="fw-bold">Tanggal Invoice:</td>
+                            <td colspan="3" class="fw-bold">Tanggal Invoice: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 <input type="date" class="form-control" name="tanggal_invoice" id="tanggal_invoice"
                                     value="{{ old('tanggal_invoice', date('Y-m-d')) }}" required>
@@ -141,17 +141,17 @@
                             <th style="width: 5%;">No</th>
                             <th style="width: 45%;">Deskripsi</th>
                             <th style="width: 10%;">Pax</th>
-                            <th style="width: 20%;">Harga Unit</th>
+                            <th style="width: 20%;">Harga Unit <span class="text-danger">*</span></th>
                             <th style="width: 20%;">Jumlah</th>
                         </tr>
                         <tr>
                             <td>1</td>
                             <td>
-                                Materi: <input type="text" class="form-control" name="materi"
-                                    value="{{ $rkm->materi->nama_materi ?? '-' }}"><br>
-                                Tanggal: <input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal"
+                                Materi: <span class="text-danger">*</span><input type="text" class="form-control" name="materi"
+                                    value="{{ $rkm->materi->nama_materi ?? '-' }}" required><br>
+                                Tanggal: <span class="text-danger">*</span><input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal"
                                     value="{{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('Y-m-d') }}" required><br>
-                                Sampai Dengan: <input type="date" class="form-control" id="tanggal_akhir"
+                                Sampai Dengan: <span class="text-danger">*</span><input type="date" class="form-control" id="tanggal_akhir"
                                     name="tanggal_akhir"
                                     value="{{ \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d') }}" required><br>
                                 Peserta:

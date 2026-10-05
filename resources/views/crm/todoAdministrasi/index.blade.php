@@ -236,7 +236,7 @@
                                     <textarea name="solusi" id="editSolusi" class="form-control" rows="3"></textarea>
                                 </div>
                                 <div class="col-md-12 mb-3">
-                                    <label class="form-label">Status</label>
+                                    <label class="form-label">Status <span class="text-danger">*</span></label>
                                     <select name="status" id="editStatus" class="form-control" required>
                                         <option value="progres">Progres</option>
                                         <option value="selesai">Selesai</option>

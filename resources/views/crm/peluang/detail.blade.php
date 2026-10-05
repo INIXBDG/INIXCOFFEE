@@ -391,7 +391,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="aktivitas" class="form-label">Jenis Aktivitas</label>
+                                <label for="aktivitas" class="form-label">Jenis Aktivitas <span class="text-danger">*</span></label>
                                 <select class="form-select" name="aktivitas" id="aktivitas" required>
                                     <option value="">-- Pilih Aktivitas --</option>
                                     <option value="Call">Call</option>
@@ -406,17 +406,17 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="subject" class="form-label">Subjek</label>
+                                <label for="subject" class="form-label">Subjek <span class="text-danger">*</span></label>
                                 <input type="text" name="subject" id="subject" class="form-control" required>
                             </div>
 
                             <div class="mb-3">
-                                <label for="deskripsi" class="form-label">Deskripsi</label>
+                                <label for="deskripsi" class="form-label">Deskripsi <span class="text-danger">*</span></label>
                                 <textarea name="deskripsi" id="deskripsi" class="form-control" rows="3" required></textarea>
                             </div>
 
                             <div class="mb-3">
-                                <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
+                                <label for="waktu_aktivitas" class="form-label">Waktu Aktivitas <span class="text-danger">*</span></label>
                                 <input type="date" name="waktu_aktivitas" id="waktu_aktivitas" class="form-control"
                                     required>
                             </div>
@@ -492,7 +492,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="edit_id_materi" class="form-label">Materi</label>
+                                <label for="edit_id_materi" class="form-label">Materi <span class="text-danger">*</span></label>
 
                                 <select class="form-select" id="edit_id_materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
@@ -519,7 +519,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="harga" class="form-label">Harga Penawaran</label>
+                                <label for="harga" class="form-label">Harga Penawaran <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control editLead" id="harga" name="harga"
                                     value="{{ old('harga', 'Rp ' . number_format($peluang->harga, 0, ',', '.')) }}"
                                     required>
@@ -529,7 +529,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="final" class="form-label">Harga Final</label>
+                                <label for="final" class="form-label">Harga Final <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control editLead" id="final" name="final"
                                     value="{{ old('final', 'Rp ' . number_format($peluang->final, 0, ',', '.')) }}"
                                     required>
@@ -539,7 +539,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                <label for="pax" class="form-label">Jumlah Peserta (Pax) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="pax" name="pax" min="1"
                                     value="{{ old('pax', $peluang->pax) }}" required>
                                 @error('pax')
@@ -548,7 +548,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="periode_mulai" class="form-label">Periode Mulai</label>
+                                <label for="periode_mulai" class="form-label">Periode Mulai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="periode_mulai" name="periode_mulai"
                                     value="{{ old('periode_mulai', $peluang->periode_mulai) }}" required>
                                 @error('periode_mulai')
@@ -557,7 +557,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="periode_selesai" class="form-label">Periode Selesai</label>
+                                <label for="periode_selesai" class="form-label">Periode Selesai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="periode_selesai" name="periode_selesai"
                                     value="{{ old('periode_selesai', $peluang->periode_selesai) }}" required>
                                 @error('periode_selesai')
@@ -565,7 +565,7 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
-                                <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                <label class="form-label" for="metode_kelas">Metode Kelas <span class="text-danger">*</span></label>
                                 <select class="form-select @error('metode_kelas') is-invalid @enderror"
                                     name="metode_kelas" required autocomplete="metode_kelas">
 
@@ -593,7 +593,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="event">Event</label>
+                                <label class="form-label" for="event">Event <span class="text-danger">*</span></label>
                                 <select class="form-select @error('event') is-invalid @enderror"
                                     name="event" required autocomplete="event">
 
@@ -755,7 +755,7 @@
                                 <p class="text-muted">Tahap sudah berada di posisi akhir.</p>
                             @else
                                 <div class="mb-3">
-                                    <label for="tahap" class="form-label">Pilih Tahap Baru</label>
+                                    <label for="tahap" class="form-label">Pilih Tahap Baru <span class="text-danger">*</span></label>
                                     <select class="form-select" name="tahap" id="tahap" required>
                                         <option value="">-- PILIH TAHAP --</option>
                                         @foreach ($opsiTahap as $tahap)
@@ -767,7 +767,7 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan penawaran dikali dengan pax dan ppn)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan penawaran dikali dengan pax dan ppn) <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
@@ -777,7 +777,7 @@
 
                             <!-- Input Deskripsi Lost hanya muncul jika tahap = Lost -->
                             <div class="mb-3 d-none" id="input-desc-lost">
-                                <label for="desc_lost" class="form-label">Deskripsi Lost</label>
+                                <label for="desc_lost" class="form-label">Deskripsi Lost <span class="text-danger">*</span></label>
                                 <textarea class="form-control" name="desc_lost" id="desc_lost" rows="3"
                                     placeholder="Masukkan alasan kehilangan peluang"></textarea>
                             </div>
@@ -874,8 +874,8 @@
 
                             {{-- Tanggal Payment --}}
                             <div class="mb-3">
-                                <label class="form-label">Tanggal Payment</label>
-                                <input type="date" class="form-control" name="tgl_pa">
+                                <label class="form-label">Tanggal Payment <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="tgl_pa" required>
                             </div>
 
                             <!-- DESKRIPSI TAMBAHAN -->
@@ -886,8 +886,8 @@
 
                             <!-- PEMBAYARAN -->
                             <div class="mb-3">
-                                <label class="form-label">Pembayaran</label>
-                                <select class="form-select" name="tipe_pembayaran">
+                                <label class="form-label">Pembayaran <span class="text-danger">*</span></label>
+                                <select class="form-select" name="tipe_pembayaran" required>
                                     <option selected disabled>Pilih Tipe Pembayaran</option>
                                     <option value="cash">Cash</option>
                                     <option value="transfer">Transfer</option>
@@ -896,7 +896,7 @@
 
                             <!-- Bukti -->
                             <div class="mb-3">
-                                <label class="form-label">Bukti Pembayaran</label>
+                                <label class="form-label">Bukti Pembayaran <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" name="bukti" required accept=".jpg,.jpeg,.png,.pdf">
                                 <small class="form-text text-muted">Format file: JPG, PNG, PDF (Max 2MB)</small>
                             </div>
@@ -1140,7 +1140,7 @@
 
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="pdfFile" class="form-label">Pilih File PDF</label>
+                                <label for="pdfFile" class="form-label">Pilih File PDF <span class="text-danger">*</span></label>
                                 <input type="file" name="pdf" id="pdfFile" class="form-control" accept="application/pdf"
                                     required>
                                 @error('pdf')
@@ -1149,7 +1149,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="harga" class="form-label">Harga per pax (Rp)</label>
+                                <label for="harga" class="form-label">Harga per pax (Rp) <span class="text-danger">*</span></label>
                                 <input type="number" name="harga" id="harga" class="form-control" min="0" required>
                                 @error('harga')
                                     <div class="text-danger small mt-1">{{ $message }}</div>
@@ -1157,7 +1157,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                <label for="pax" class="form-label">Jumlah Peserta (Pax) <span class="text-danger">*</span></label>
                                 <input type="number" name="pax" id="pax" class="form-control" min="1" required>
                                 @error('pax')
                                     <div class="text-danger small mt-1">{{ $message }}</div>

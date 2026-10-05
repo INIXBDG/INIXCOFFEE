@@ -38,7 +38,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label>Sales Tujuan</label>
+                                <label>Sales Tujuan <span class="text-danger">*</span></label>
                                 <select name="sales_baru" id="selectSalesBaru" class="form-select" required></select>
                             </div>
 

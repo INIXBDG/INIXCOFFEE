@@ -17,7 +17,7 @@
 
             <div id="incomeUnlockForm" class="d-none">
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">Password Approval</label>
+                    <label class="form-label fw-semibold small">Password Approval <span class="text-danger">*</span></label>
                     <input type="password" id="incomeUnlockPassword" class="form-control form-control-lg text-center" placeholder="Masukkan password" autofocus>
                     <div id="incomeUnlockError" class="text-danger small mt-1 d-none"></div>
                 </div>
@@ -30,7 +30,7 @@
 
             <div id="incomeFallbackForm" class="d-none">
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small">Password Login</label>
+                    <label class="form-label fw-semibold small">Password Login <span class="text-danger">*</span></label>
                     <input type="password" id="incomeFallbackPassword" class="form-control form-control-lg text-center" placeholder="Masukkan password login">
                     <div id="incomeFallbackError" class="text-danger small mt-1 d-none"></div>
                 </div>
@@ -53,13 +53,13 @@
                 <div class="modal-header income-modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-shield-lock me-2"></i>Pengaturan Password Approval</h5></div>
                 <div class="modal-body p-4">
                     <p class="text-muted small mb-3">Hanya user dengan jabatan <b>Finance &amp; Accounting</b> yang dapat membuat password approval. Masukkan password login untuk konfirmasi identitas.</p>
-                    <label class="form-label fw-semibold small">Password Login Sistem</label>
+                    <label class="form-label fw-semibold small">Password Login Sistem <span class="text-danger">*</span></label>
                     <input type="password" id="incomeSetupLoginPass" class="form-control" placeholder="Masukkan password login">
                     <div id="incomeSetupLoginError" class="text-danger small mt-1 d-none"></div>
                     <hr class="my-4">
-                    <label class="form-label fw-semibold small">Buat Password Approval Baru</label>
+                    <label class="form-label fw-semibold small">Buat Password Approval Baru <span class="text-danger">*</span></label>
                     <input type="password" id="incomeSetupNewPass" class="form-control mb-3" placeholder="Minimal 4 karakter">
-                    <label class="form-label fw-semibold small">Konfirmasi Password Approval Baru</label>
+                    <label class="form-label fw-semibold small">Konfirmasi Password Approval Baru <span class="text-danger">*</span></label>
                     <input type="password" id="incomeSetupConfirmPass" class="form-control">
                     <div id="incomeSetupNewError" class="text-danger small mt-1 d-none"></div>
                 </div>
@@ -75,13 +75,13 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-warning small">Password fitur sudah ada, tetapi Password Accounting belum diatur. Isi terlebih dahulu untuk melanjutkan.</div>
                     <p class="text-muted small">Masukkan password login user Finance &amp; Accounting, lalu buat Password Accounting.</p>
-                    <label class="form-label fw-semibold small">Password Login Sistem</label>
+                    <label class="form-label fw-semibold small">Password Login Sistem <span class="text-danger">*</span></label>
                     <input type="password" id="incomeAccSetupLoginPass" class="form-control">
                     <div id="incomeAccSetupLoginError" class="text-danger small mt-1 d-none"></div>
                     <hr class="my-4">
-                    <label class="form-label fw-semibold small">Buat Password Accounting Baru</label>
+                    <label class="form-label fw-semibold small">Buat Password Accounting Baru <span class="text-danger">*</span></label>
                     <input type="password" id="incomeAccSetupNewPass" class="form-control mb-3" placeholder="Minimal 4 karakter">
-                    <label class="form-label fw-semibold small">Konfirmasi Password Accounting</label>
+                    <label class="form-label fw-semibold small">Konfirmasi Password Accounting <span class="text-danger">*</span></label>
                     <input type="password" id="incomeAccSetupConfirmPass" class="form-control">
                     <div id="incomeAccSetupNewError" class="text-danger small mt-1 d-none"></div>
                 </div>

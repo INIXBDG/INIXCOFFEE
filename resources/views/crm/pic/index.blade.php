@@ -146,7 +146,7 @@
                             @csrf
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label for="id_perusahaan" class="form-label">Perusahaan</label>
+                                    <label for="id_perusahaan" class="form-label">Perusahaan <span class="text-danger">*</span></label>
                                     <select name="id_perusahaan" id="id_perusahaan" class="form-select" required>
                                         <option value="" disabled selected>Pilih Perusahaan</option>
                                         @foreach ($perusahaans as $perusahaan)
@@ -175,7 +175,7 @@
                                 @endif
 
                                 <div class="mb-3">
-                                    <label for="nama" class="form-label">Nama Contact</label>
+                                    <label for="nama" class="form-label">Nama Contact <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="nama" name="nama" required>
                                 </div>
 
@@ -186,13 +186,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="cp" class="form-label">Phone CP</label>
+                                    <label for="cp" class="form-label">Phone CP <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="cp" name="cp" required>
                                     <div class="form-text">Nomor kontak.</div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="divisi" class="form-label">Divisi</label>
+                                    <label for="divisi" class="form-label">Divisi <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="divisi" name="divisi" required>
                                     <div class="form-text">Misal: Marketing, Finance, HR.</div>
                                 </div>
@@ -223,7 +223,7 @@
                             <input type="hidden" name="contact_id" id="edit_contact_id">
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label for="edit_id_perusahaan" class="form-label">Perusahaan</label>
+                                    <label for="edit_id_perusahaan" class="form-label">Perusahaan <span class="text-danger">*</span></label>
                                     <select name="id_perusahaan" id="edit_id_perusahaan" class="form-select" required>
                                         <option value="" disabled>Pilih Perusahaan</option>
                                         @foreach ($perusahaans as $perusahaan)
@@ -236,7 +236,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="edit_nama" class="form-label">Nama Contact</label>
+                                    <label for="edit_nama" class="form-label">Nama Contact <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="edit_nama" name="nama" required>
                                 </div>
 
@@ -247,13 +247,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="edit_cp" class="form-label">Phone CP</label>
+                                    <label for="edit_cp" class="form-label">Phone CP <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="edit_cp" name="cp" required>
                                     <div class="form-text">Nomor kontak.</div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="edit_divisi" class="form-label">Divisi</label>
+                                    <label for="edit_divisi" class="form-label">Divisi <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="edit_divisi" name="divisi" required>
                                     <div class="form-text">Misal: Marketing, Finance, HR.</div>
                                 </div>

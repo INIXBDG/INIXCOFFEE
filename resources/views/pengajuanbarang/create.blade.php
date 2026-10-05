@@ -36,9 +36,9 @@
                             </div>
                         </div>
 
-                        <!-- Tipe -->
+                        <!-- {{ __('Tipe') }} -->
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="tipe" id="tipe" class="form-select">
                                     <option value="-">Pilih Jenis Barang</option>
@@ -60,19 +60,19 @@
                         <div id="itemContainer">  
                             <div class="item mb-3">   
                                 <div class="row">  
-                                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Barang</label>  
+                                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Barang <span class="text-danger">*</span></label>  
                                     <div class="col-md-6">  
                                         <input type="text" class="form-control" name="barang[nama_barang][]" required>  
                                     </div>  
                                 </div>  
                                 <div class="row">  
-                                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah</label>  
+                                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah <span class="text-danger">*</span></label>  
                                     <div class="col-md-6">  
                                         <input type="number" class="form-control" name="barang[qty][]" required>  
                                     </div>  
                                 </div>  
                                 <div class="row">  
-                                    <label for="barang[harga_barang][]" class="col-md-4 col-form-label text-md-start">Harga Barang (dalam Rp.)</label>  
+                                    <label for="barang[harga_barang][]" class="col-md-4 col-form-label text-md-start">Harga Barang (dalam Rp.) <span class="text-danger">*</span></label>  
                                     <div class="col-md-6">  
                                         <div class="input-group mb-3">  
                                             <span class="input-group-text">Rp.</span>  
@@ -163,7 +163,7 @@
     function addItem() {  
         const newItem = `  
             <div class="row">  
-                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Barang</label>  
+                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">{{ __('Nama Barang') }} <span class="text-danger">*</span></label>  
                     <div class="col-md-6">  
                         <input type="text" class="form-control" name="barang[nama_barang][]" required>  
                     </div>
@@ -172,13 +172,13 @@
                     </div>
                 </div>
                 <div class="row">  
-                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Qty</label>  
+                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Qty <span class="text-danger">*</span></label>  
                     <div class="col-md-6">  
                         <input type="number" class="form-control" name="barang[qty][]" required>  
                     </div>
                 </div>
                 <div class="row">  
-                    <label for="barang[harga][]" class="col-md-4 col-form-label text-md-start">Besarnya (Rp.)</label>  
+                    <label for="barang[harga][]" class="col-md-4 col-form-label text-md-start">Besarnya (Rp.) <span class="text-danger">*</span></label>  
                     <div class="col-md-6">  
                         <div class="input-group mb-3">  
                             <span class="input-group-text">Rp.</span>  

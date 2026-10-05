@@ -155,7 +155,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Nama Kriteria <span class="formkategori-text-required">*</span></label>
-                                <input type="text" name="kriteria[0][nama_penilaian]" class="form-control formkategori-nama-penilaian" placeholder="Masukan nama kriteria..." maxlength="250" title="Hanya huruf dan spasi, maksimal 250 karakter">
+                                <input type="text" name="kriteria[0][nama_penilaian]" class="form-control formkategori-nama-penilaian" placeholder="Masukan nama kriteria..." maxlength="250" title="Hanya huruf dan spasi, maksimal 250 karakter" required>
                                 <small class="form-text text-muted">Maksimal 250 karakter.</small>
                             </div>
 

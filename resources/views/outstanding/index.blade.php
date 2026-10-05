@@ -51,11 +51,11 @@
                             </div>
                             <hr class="my-3">
                             <div class="form-group mb-3">
-                                <label class="form-label fw-bold">Nama PIC</label>
+                                <label class="form-label fw-bold">Nama PIC <span class="text-danger">*</span></label>
                                 <input type="text" name="pic" id="input_pic" class="form-control" placeholder="Input manual" required>
                             </div>
                             <div class="form-group mb-3">
-                                <label class="form-label fw-bold">Telepon PIC</label>
+                                <label class="form-label fw-bold">Telepon PIC <span class="text-danger">*</span></label>
                                 <input type="text" name="telepon" id="input_telepon" class="form-control" placeholder="Input manual" required>
                             </div>
                         </div>

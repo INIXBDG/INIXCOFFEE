@@ -49,7 +49,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal-row">
-                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }}</label>
+                            <label for="tanggal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Izin') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input id="tanggal" type="date" name="tanggal"
                                     class="form-control @error('tanggal') is-invalid @enderror"
@@ -65,7 +65,7 @@
                         </div>
 
                         <div class="row mb-3" id="jam_mulai-row">
-                            <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Mulai') }}</label>
+                            <label for="jam_mulai" class="col-md-4 col-form-label text-md-start">{{ __('Jam Mulai') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input id="jam_mulai" type="time" class="form-control @error('jam_mulai') is-invalid @enderror" name="jam_mulai" required autocomplete="jam_mulai" autofocus min="">
                                 @error('jam_mulai')
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="row mb-3" id="alasan-row">
-                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan mengajukan cuti') }}</label>
+                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan mengajukan cuti') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <textarea name="alasan" class="form-control" id="alasan" cols="51" rows="5" required></textarea>
                                 @error('alasan')

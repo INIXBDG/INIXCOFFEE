@@ -539,25 +539,25 @@
         <h3>Tanda Tangan</h3>
         <div id="signature-list">
             <div class="signature-row">
-                <label>Nama Penandatangan 1:</label>
+                <label>Nama Penandatangan 1: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Nama Penandatangan 1" class="signature-name" required>
-                <label>Jabatan Penandatangan 1:</label>
+                <label>Jabatan Penandatangan 1: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Jabatan Penandatangan 1" class="signature-position" required
                     value="Pendaftar">
             </div>
             <div class="signature-row">
-                <label>Nama Penandatangan 2:</label>
+                <label>Nama Penandatangan 2: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Nama Penandatangan 2" class="signature-name" required
                     value="{{ $sales->nama_lengkap }}">
-                <label>Jabatan Penandatangan 2:</label>
+                <label>Jabatan Penandatangan 2: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Jabatan Penandatangan 2" class="signature-position" required
                     value="Account Executive">
             </div>
             <div class="signature-row">
-                <label>Nama Penandatangan 3:</label>
+                <label>Nama Penandatangan 3: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Nama Penandatangan 3" class="signature-name" required
                     value="Aryani Meitasari">
-                <label>Jabatan Penandatangan 3:</label>
+                <label>Jabatan Penandatangan 3: <span class="text-danger">*</span></label>
                 <input type="text" placeholder="Jabatan Penandatangan 3" class="signature-position" required
                     value="SPV Marketing Manager">
             </div>
@@ -599,8 +599,8 @@
             const row = document.createElement('div');
             row.className = 'peserta-row';
             row.innerHTML = `
-                <input type="text" placeholder="Nama Peserta" class="nama-peserta" required>
-                <input type="text" placeholder="Kontak HP & Email" class="kontak-peserta" required>
+                <input type="text" placeholder="Nama Peserta" class="nama-peserta" required><span class="text-danger">*</span>
+                <input type="text" placeholder="Kontak HP & Email" class="kontak-peserta" required><span class="text-danger">*</span>
                 <input type="text" placeholder="Harga (Rp)" class="harga-peserta">
                 <button type="button" onclick="this.parentElement.remove()">Hapus</button>
             `;

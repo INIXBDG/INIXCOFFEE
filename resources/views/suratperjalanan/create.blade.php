@@ -36,7 +36,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="jenis_travel" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Dinas') }}</label>
+                            <label for="jenis_travel" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Dinas') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="jenis_dinas" id="jenis_dinas" class="form-select" required>
                                     <option value="" selected disabled>Pilih Jenis Dinas</option>
@@ -51,7 +51,7 @@
                             </div>
                         </div>
                         <div id="jadwal_rkm_section" class="row mb-3">
-                            <label for="jadwal_rkm" class="col-md-4 col-form-label text-md-start">{{ __('Jadwal RKM') }}</label>
+                            <label for="jadwal_rkm" class="col-md-4 col-form-label text-md-start">{{ __('Jadwal RKM') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="jadwal_RKM" id="jadwal_rkm" class="form-select">
                                     <option></option> 
@@ -74,7 +74,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Travel') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Travel') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="tipe" id="tipe" class="form-select">
                                     <option value="-">Pilih Jenis Travel</option>
@@ -90,7 +90,7 @@
                         </div>
 
                         <div class="row mb-3" id="kontak-row">
-                            <label for="tujuan" class="col-md-4 col-form-label text-md-start">{{ __('Tujuan') }}</label>
+                            <label for="tujuan" class="col-md-4 col-form-label text-md-start">{{ __('Tujuan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input id="tujuan" type="text" placeholder="Kota yang dituju" class="form-control @error('tujuan') is-invalid @enderror" name="tujuan">
                                 @error('tujuan')
@@ -102,7 +102,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_berangkat-row">
-                            <label for="tanggal_berangkat" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berangkat') }}</label>
+                            <label for="tanggal_berangkat" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berangkat') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input type="datetime-local" class="form-control" name="tanggal_berangkat" id="tanggal_berangkat">
                                 @error('tanggal_berangkat')
@@ -114,7 +114,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_pulang-row">
-                            <label for="tanggal_pulang" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Kedatangan') }}</label>
+                            <label for="tanggal_pulang" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Kedatangan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input type="datetime-local" class="form-control" name="tanggal_pulang" id="tanggal_pulang">
                                 @error('tanggal_pulang')
@@ -138,7 +138,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan Perjalanan') }}</label>
+                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan Perjalanan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <textarea id="alasan" type="text" placeholder="Alasan" class="form-control @error('alasan') is-invalid @enderror" name="alasan" autocomplete="alasan" autofocus></textarea>
                                 @error('alasan')

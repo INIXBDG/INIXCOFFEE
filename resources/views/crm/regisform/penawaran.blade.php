@@ -423,7 +423,7 @@
     <h2>Input Data Surat Penawaran</h2>
     <form id="penawaran-form">
         <h3>Data Surat</h3>
-        <label>No Surat:</label>
+        <label>No Surat: <span class="text-danger">*</span></label>
         <input type="text" id="no-surat" value="{{ $no }}" required>
         <label>Hal:</label>
         <input type="text" id="hal" value="Surat Penawaran Pelatihan">
@@ -431,7 +431,7 @@
         <input type="text" id="lampiran" value="" placeholder="Silabus, dll">
 
         <h3>Data Penerima (Klien)</h3>
-        <label>Pilih Perusahaan:</label>
+        <label>Pilih Perusahaan: <span class="text-danger">*</span></label>
         <select id="perusahaan" class="select2-init" required>
             <option value="">Pilih Perusahaan</option>
             @if ($isAdmin)
@@ -457,7 +457,7 @@
         <textarea id="deskripsi" placeholder="Masukkan deskripsi penawaran"></textarea>
 
         <h3>Data Pelatihan</h3>
-        <label>PPN (%):</label>
+        <label>PPN (%): <span class="text-danger">*</span></label>
         <input type="number" id="ppn-rate" value="11" min="0" max="100" step="0.1" required>
         <label><input type="checkbox" id="include-ppn" checked> Termasuk PPN</label>
         <div id="pelatihan-list"></div>
@@ -500,7 +500,7 @@
         @endphp
 
         @if ($isAdmin)
-            <label>Email:</label>
+            <label>Email: <span class="text-danger">*</span></label>
             <select id="email-sales" required>
                 <option value="">-- Pilih Email --</option>
                 @foreach ($users as $user)
@@ -518,10 +518,10 @@
             <label>Jabatan:</label>
             <input type="text" id="jabatan-sales" class="readonly" readonly>
 
-            <label>Whatsapp:</label>
+            <label>Whatsapp: <span class="text-danger">*</span></label>
             <input type="text" id="wa-sales" required>
 
-            <label>Telepon:</label>
+            <label>Telepon: <span class="text-danger">*</span></label>
             <input type="text" id="telp-sales" required>
         @else
             <label>Nama Sales:</label>
@@ -531,10 +531,10 @@
             <input type="text" id="jabatan-sales" class="readonly"
                 value="{{ $sales->jabatan ?? 'Account Executive' }}" readonly>
 
-            <label>Whatsapp:</label>
+            <label>Whatsapp: <span class="text-danger">*</span></label>
             <input type="text" id="wa-sales" value="{{ $sales->whatsapp }}" required>
 
-            <label>Telepon:</label>
+            <label>Telepon: <span class="text-danger">*</span></label>
             <input type="text" id="telp-sales" value="{{ $sales->telepon }}" required>
 
             <label>Email:</label>
@@ -715,7 +715,7 @@
                         <option value="">-- Template Materi --</option>
                         ${materiData.map(m => `<option value="${m.id}" data-nama="${m.nama_materi}" data-durasi="${m.durasi}">${m.nama_materi}</option>`).join('')}
                     </select>
-                    <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;">
+                    <input type="text" class="materi-text" placeholder="Nama Materi" required style="width: 70%;"><span class="text-danger">*</span>
                 </div>
 
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
@@ -732,17 +732,17 @@
                         <option value="Online">Online</option>
                         <option value="Offline">Offline</option>
                         <option value="Inhouse">Inhouse</option>
-                    </select>
-                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 80px;">
+                    </select><span class="text-danger">*</span>
+                    <input type="number" class="durasi-pelatihan" placeholder="Durasi" min="1" required style="width: 80px;"><span class="text-danger">*</span>
                     <label style="font-size: 12px; display: flex; align-items: center; gap: 2px; cursor: pointer;">
                         <input type="checkbox" class="use-pax" checked> Pax
                     </label>
-                    <input type="number" class="pax-pelatihan" placeholder="Jml" min="1" value="" required style="width: 50px;">
-                    <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;">
+                    <input type="number" class="pax-pelatihan" placeholder="Jml" min="1" value="" required style="width: 50px;"><span class="text-danger">*</span>
+                    <input type="date" class="tanggal-awal-pelatihan" required style="flex: 1;"><span class="text-danger">*</span>
                 </div>
 
                 <input type="text" class="tanggal-pelatihan" readonly placeholder="Tanggal Akhir Otomatis" style="margin-top: 5px;">
-                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;">
+                <input type="text" class="harga-pelatihan" placeholder="Harga (Rp)" required style="margin-top: 5px;"><span class="text-danger">*</span>
                 <input type="text" class="ppn-amount" readonly placeholder="PPN Amount" style="margin-top: 5px;">
                 <button type="button" onclick="this.parentElement.remove(); updateGrandTotal();" style="background: #ff4d4d; color: white; border: none; cursor: pointer;">Hapus Baris</button>
             `;
@@ -888,7 +888,7 @@
             const row = document.createElement('div');
             row.className = 'fasilitas-row';
             row.innerHTML = `
-                <input type="text" class="fasilitas-item" placeholder="Masukkan fasilitas" value="${value}" required>
+                <input type="text" class="fasilitas-item" placeholder="Masukkan fasilitas" value="${value}" required><span class="text-danger">*</span>
                 <button type="button" onclick="this.parentElement.remove()">Hapus</button>
             `;
             document.getElementById('fasilitas-list').appendChild(row);
@@ -899,7 +899,7 @@
             const row = document.createElement('div');
             row.className = 'keuntungan-row';
             row.innerHTML = `
-                <input type="text" class="keuntungan-item" placeholder="Masukkan keuntungan" value="${value}" required>
+                <input type="text" class="keuntungan-item" placeholder="Masukkan keuntungan" value="${value}" required><span class="text-danger">*</span>
                 <button type="button" onclick="this.parentElement.remove()">Hapus</button>
             `;
             document.getElementById('keuntungan-list').appendChild(row);

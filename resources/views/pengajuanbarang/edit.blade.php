@@ -39,7 +39,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Travel') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Travel') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select disabled name="tipe" id="tipe" class="form-select">
                                     <option value="-">Pilih Jenis Travel</option>
@@ -55,7 +55,7 @@
                         </div>
 
                         <div class="row mb-3" id="kontak-row">
-                            <label for="tujuan" class="col-md-4 col-form-label text-md-start">{{ __('Tujuan') }}</label>
+                            <label for="tujuan" class="col-md-4 col-form-label text-md-start">{{ __('Tujuan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input disabled id="tujuan" type="text" placeholder="Kota yang dituju" class="form-control @error('tujuan') is-invalid @enderror" name="tujuan" value="{{ $suratperjalanan->tujuan }}" >
                                 @error('tujuan')
@@ -67,7 +67,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_berangkat-row">
-                            <label for="tanggal_berangkat" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berangkat') }}</label>
+                            <label for="tanggal_berangkat" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Berangkat') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input disabled type="datetime-local" class="form-control" name="tanggal_berangkat" id="tanggal_berangkat" value="{{ $suratperjalanan->tanggal_berangkat }}">
                                 @error('tanggal_berangkat')
@@ -79,7 +79,7 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_pulang-row">
-                            <label for="tanggal_pulang" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Kedatangan') }}</label>
+                            <label for="tanggal_pulang" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Kedatangan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input disabled type="datetime-local" class="form-control" name="tanggal_pulang" id="tanggal_pulang" value="{{ $suratperjalanan->tanggal_pulang }}">
                                 @error('tanggal_pulang')
@@ -103,7 +103,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan Perjalanan') }}</label>
+                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan Perjalanan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input disabled id="alasan" type="text" placeholder="Alasan" class="form-control @error('alasan') is-invalid @enderror" name="alasan" value="{{ $suratperjalanan->alasan }}">
                                 @error('alasan')
@@ -158,7 +158,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="total" class="col-md-4 col-form-label text-md-start">{{ __('Total') }}</label>
+                            <label for="total" class="col-md-4 col-form-label text-md-start">{{ __('Total') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>

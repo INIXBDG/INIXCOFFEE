@@ -24,7 +24,7 @@
                         <form id="approveForm" method="POST">
                             @csrf
                             @method('PUT')
-                            <p>Apakah Disetujui?</p>
+                            <p>Apakah Disetujui? <span class="text-danger">*</span></p>
                             <div class="btn-group" role="group" aria-label="Approval Options">
                                 <input type="radio" class="btn-check" name="approval" id="approveYes" value="1"
                                     autocomplete="off" checked>
@@ -37,13 +37,13 @@
                             </div>
 
                             <div class="mt-3" id="priceInput">
-                                <label for="price" class="form-label">Harga Modul (Rp)</label>
+                                <label for="price" class="form-label">Harga Modul (Rp) <span class="text-danger" id="priceRequired">*</span></label>
                                 <input type="text" class="form-control format-currency" id="price" name="price"
                                     inputmode="numeric" autocomplete="off">
                             </div>
 
                             <div class="mt-3" id="alasanInput" style="display: none;">
-                                <label for="alasan" class="form-label">Alasan Penolakan</label>
+                                <label for="alasan" class="form-label">Alasan Penolakan <span class="text-danger" id="alasanRequired">*</span></label>
                                 <textarea class="form-control" id="alasan" name="alasan" rows="3"></textarea>
                             </div>
                         </form>
@@ -413,9 +413,13 @@
                 if (show) {
                     $('#price').attr('required', true);
                     $('#alasan').removeAttr('required');
+                    $('#priceRequired').show();
+                    $('#alasanRequired').hide();
                 } else {
                     $('#price').removeAttr('required');
                     $('#alasan').attr('required', true);
+                    $('#priceRequired').hide();
+                    $('#alasanRequired').show();
                 }
             }
         </script>

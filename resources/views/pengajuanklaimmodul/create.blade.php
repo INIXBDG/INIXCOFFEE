@@ -36,7 +36,7 @@
                             </div>
                             <div class="row mb-3">
                                 <label for="title"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Judul Modul') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Judul Modul') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input id="title" type="text" class="form-control @error('title') is-invalid @enderror"
                                         name="title" value="{{ old('title') }}" required autofocus>
@@ -46,7 +46,7 @@
                             </div>
                             <div class="row mb-3">
                                 <label for="category"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Kategori Materi') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Kategori Materi') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select id="category" name="category"
                                         class="form-select @error('category') is-invalid @enderror" required>

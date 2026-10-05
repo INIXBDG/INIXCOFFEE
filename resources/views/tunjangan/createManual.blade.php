@@ -11,7 +11,7 @@
                     <form method="POST" action="{{ route('tunjangan.storekelompok') }}">
                         @csrf
                         <div class="row mb-3">
-                            <label for="karyawan_id" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
+                            <label for="karyawan_id" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="karyawan_id" class="form-select @error('karyawan_id') is-invalid @enderror" name="karyawan_id[]" required autocomplete="karyawan_id" autofocus multiple>
                                     @foreach ($karyawan as $item)
@@ -27,7 +27,7 @@
                         </div>
                         
                         <div class="row mb-3">
-                            <label for="id_tunjangan" class="col-md-4 col-form-label text-md-start">{{ __('Tunjangan') }}</label>
+                            <label for="id_tunjangan" class="col-md-4 col-form-label text-md-start">{{ __('Tunjangan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="id_tunjangan" class="form-select @error('id_tunjangan') is-invalid @enderror" name="id_tunjangan" required autocomplete="id_tunjangan" autofocus>
                                     <option value="" selected>Pilih Jenis</option>
@@ -43,7 +43,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="nilai" class="col-md-4 col-form-label text-md-start">{{ __('Nilai') }}</label>
+                            <label for="nilai" class="col-md-4 col-form-label text-md-start">{{ __('Nilai') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
@@ -68,7 +68,7 @@
                             </div>
                         </div>                             
                         <div class="row mb-3">
-                            <label for="hitung" class="col-md-4 col-form-label text-md-start">{{ __('Penghitungan') }}</label>
+                            <label for="hitung" class="col-md-4 col-form-label text-md-start">{{ __('Penghitungan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="hitung" class="form-select @error('hitung') is-invalid @enderror" name="hitung" required autocomplete="hitung" autofocus>
                                     <option value="" selected>Pilih Hitungan</option>

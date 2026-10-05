@@ -11,9 +11,9 @@
                     <form method="POST" action="{{ route('peserta.store') }}">
                         @csrf
                         <div class="row mb-3">
-                            <label for="nama" class="col-md-4 col-form-label text-md-start">{{ __('Nama Peserta') }}</label>
+                            <label for="nama" class="col-md-4 col-form-label text-md-start">{{ __('Nama Peserta') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="nama" type="text" placeholder="Masukan Nama Peserta" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama') }}" autocomplete="nama" autofocus>
+                                <input id="nama" type="text" placeholder="Masukan Nama Peserta" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama') }}" autocomplete="nama" autofocus required>
                                 @error('nama')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -23,7 +23,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="jenis_kelamin" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Kelamin') }}</label>
+                            <label for="jenis_kelamin" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Kelamin') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select class="form-select @error('jenis_kelamin') is-invalid @enderror" name="jenis_kelamin" value="{{ old('jenis_kelamin' ) }}" required autocomplete="jenis_kelamin">
                                     <option selected>Pilih Jenis Kelamin</option>
@@ -39,9 +39,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-start">{{ __('Email') }}</label>
+                            <label for="email" class="col-md-4 col-form-label text-md-start">{{ __('Email') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="email" type="text" placeholder="Masukan Email Peserta" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus>
+                                <input id="email" type="text" placeholder="Masukan Email Peserta" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" autocomplete="email" autofocus required>
                                 @error('email')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -51,9 +51,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="no_hp" class="col-md-4 col-form-label text-md-start">{{ __('Nomor Handphone') }}</label>
+                            <label for="no_hp" class="col-md-4 col-form-label text-md-start">{{ __('Nomor Handphone') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="no_hp" type="text" placeholder="Masukan Nomor Handphone" class="form-control @error('no_hp') is-invalid @enderror" name="no_hp" value="{{ old('no_hp') }}" autocomplete="no_hp" autofocus>
+                                <input id="no_hp" type="text" placeholder="Masukan Nomor Handphone" class="form-control @error('no_hp') is-invalid @enderror" name="no_hp" value="{{ old('no_hp') }}" autocomplete="no_hp" autofocus required>
                                 @error('no_hp')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -75,9 +75,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Perusahaan / Instansi') }}</label>
+                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Perusahaan / Instansi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select style="height: 30px" class="form-select @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key">
+                                <select style="height: 30px" class="form-select @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key" required>
                                 </select>
                                 @error('perusahaan_key')
                                     <span class="invalid-feedback" role="alert">

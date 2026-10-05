@@ -354,7 +354,7 @@
                                 <th rowspan='2'>Jumlah Jam Lembur</th>
                                 <th rowspan='2'>Nilai Lembur per Jam</th>
                                 <th rowspan='2'>Total Nilai Lembur</th>
-                                <th rowspan='2'>Approve</th>
+                                <th rowspan='2'>Approve <span class='text-danger'>*</span></th>
                                 <th rowspan='2'>Alasan</th>
                             </tr>
                             <tr>
@@ -467,7 +467,7 @@
                                 <th colspan='2'>Waktu Lembur</th>
                                 <th colspan='2'>Absen Lembur</th>
                                 <th rowspan='2'>Jumlah Jam Lembur</th>
-                                <th rowspan='2'>Nilai Lembur per Jam</th>
+                                <th rowspan='2'>Nilai Lembur per Jam <span class='text-danger'>*</span></th>
                                 <th rowspan='2'>Total Nilai Lembur</th>
                                 <th rowspan='2'>Approval GM</th>
                             </tr>
@@ -529,7 +529,7 @@
                                     <td class="jam-lembur">${jamLemburDisplay}</td> <!-- Add this class -->
                                     <td>
                                         <input type='hidden' name='id_lembur[${index}]' value='${item.id}'>
-                                        <input class='hitungtable form-control' id='hitung_${index}' ${isCheckedYes} value='${nilaiLembur}' name='nilai_lembur[${index}]' type='text' oninput="calculateTotalNilai(this)">
+                                        <input class='hitungtable form-control' id='hitung_${index}' ${isCheckedYes} value='${nilaiLembur}' name='nilai_lembur[${index}]' type='text' required oninput="calculateTotalNilai(this)">
                                     </td>
                                     <td class="total-nilai">${kalkulasi.toFixed(2)}</td>
                                     <td>${approve}</td>
