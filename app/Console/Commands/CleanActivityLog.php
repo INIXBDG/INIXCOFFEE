@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ActivityLog;
+use App\Models\activityLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log; // Sesuaikan dengan namespace model Anda
 
@@ -31,7 +31,7 @@ class CleanActivityLog extends Command
 
         try {
             // Gunakan nama model yang sesuai (ActivityLog atau activityLog)
-            $deleted = ActivityLog::query()
+            $deleted = activityLog::query()
                 ->whereIn('status', [
                     'visit',
                     'login',
@@ -55,3 +55,4 @@ class CleanActivityLog extends Command
         }
     }
 }
+

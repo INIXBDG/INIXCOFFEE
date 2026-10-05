@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\KategoriDaftarTugas;
 use App\Models\KontrolTugas;
 use Illuminate\Http\Request;
@@ -46,8 +46,8 @@ class DaftarTugasController extends Controller
             $dataKategori = KategoriDaftarTugas::with('karyawan')->where('id_user', $user->id)->orWhereNull('id_user')->orderBy('urutan')->get();
         }
 
-        $karyawan = Karyawan::select('id', 'nama_lengkap')->get();
-        $officeBoy = Karyawan::where('jabatan', 'Office Boy')->get();
+        $karyawan = karyawan::select('id', 'nama_lengkap')->get();
+        $officeBoy = karyawan::where('jabatan', 'Office Boy')->get();
 
         return view('office.daftarTugas.index', compact('dataKategori', 'karyawan', 'officeBoy'));
     }
@@ -877,7 +877,7 @@ class DaftarTugasController extends Controller
         $user = auth()->user();
 
         $targetUserId = $request->filled('karyawan_id') ? $request->karyawan_id : $user->id;
-        $jabatanPembuat = Karyawan::find($targetUserId)?->jabatan;
+        $jabatanPembuat = karyawan::find($targetUserId)?->jabatan;
 
         try {
             $import = new DaftarTugasImport($targetUserId, $jabatanPembuat);
@@ -947,7 +947,7 @@ class DaftarTugasController extends Controller
 
     public function perbaikanData()
     {
-        $officeBoy = Karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
+        $officeBoy = karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
         $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')->orderBy('Tipe')->orderBy('judul_kategori')->get();
 
         return view('office.daftarTugas.perbaikanData', compact('officeBoy', 'kategori'));
@@ -1230,3 +1230,5 @@ class DaftarTugasController extends Controller
         return response()->json(['pending' => false]);
     }
 }
+
+

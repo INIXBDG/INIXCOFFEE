@@ -204,7 +204,7 @@ class ExpenseHubController extends Controller
             $usersToNotify = collect([$karyawanPemohon->user]);
 
             if ($statusInput === '1' && $newStatus == 1) {
-                $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+                $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
                 if ($finance?->user) {
                     $usersToNotify->push($finance->user);
                 }
@@ -244,7 +244,7 @@ class ExpenseHubController extends Controller
             }
         }
 
-        $expenseHub = ExpenseHub::create([
+        $expenseHub = expenseHub::create([
             'id_karyawan' => $request->id_karyawan,
             'tipe' => $request->tipe,
             'status' => '0',
@@ -266,10 +266,10 @@ class ExpenseHubController extends Controller
         }
 
         if (!empty($pengajuanData)) {
-            DetailExpenseHub::insert($pengajuanData);
+            detailExpenseHub::insert($pengajuanData);
         }
 
-        TrackingExpenseHub::create([
+        trackingExpenseHub::create([
             'id_expenseHub' => $expenseHub->id,
             'tracking' => 'Diajukan dan sedang ditinjau oleh SPV Sales',
             'tanggal' => now(),
@@ -277,12 +277,12 @@ class ExpenseHubController extends Controller
             'updated_at' => now(),
         ]);
 
-        $karyawan = Karyawan::findOrFail($request->id_karyawan);
+        $karyawan = karyawan::findOrFail($request->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
 
-        $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
-        $SPVSales = Karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
 
         $users = [];
 
@@ -495,3 +495,6 @@ class ExpenseHubController extends Controller
         return redirect()->route('expensehub.show', $id)->with('success', 'Data Berhasil diperbarui.');
     }
 }
+
+
+

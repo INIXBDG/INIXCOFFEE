@@ -11,7 +11,7 @@ use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
@@ -548,9 +548,9 @@ class CRMController extends Controller
 
     public function indexKoordinasi()
     {
-        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+        $latestPerKendaraan = perbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
 
-        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+        $kendaraan = perbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
             $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
         })
             ->where(function ($query) {
@@ -635,3 +635,4 @@ class CRMController extends Controller
         return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
     }
 }
+

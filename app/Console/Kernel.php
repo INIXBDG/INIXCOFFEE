@@ -4,7 +4,7 @@ namespace App\Console;
 
 use App\Models\ActivityInstruktur;
 use App\Models\activityLog;
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\RKM;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
@@ -26,7 +26,7 @@ class Kernel extends ConsoleKernel
 $schedule->call(function () {
     try {
         // Eager load relationships agar tidak terjadi N+1 query
-        $outstandings = Outstanding::with('rkm.perusahaan', 'rkm.materi')
+        $outstandings = outstanding::with('rkm.perusahaan', 'rkm.materi')
             ->where('status_pembayaran', '0')
             ->whereDate('due_date', '>=', now())
             ->get();
@@ -67,7 +67,7 @@ $schedule->call(function () {
         // 2. Update Status Read Notifikasi Outstanding
         $schedule->call(function () {
             try {
-                $outstandings = Outstanding::where('status_pembayaran', '1')->get();
+                $outstandings = outstanding::where('status_pembayaran', '1')->get();
 
                 foreach ($outstandings as $outstanding) {
                     $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
@@ -282,6 +282,8 @@ $schedule->call(function () {
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
+
+        $schedule->command('audit:code')->dailyAt('02:00')->withoutOverlapping();
     }
 
     protected function commands(): void

@@ -32,7 +32,7 @@ class LoginController extends Controller
 
     protected function authenticated(Request $request, $user)
     {
-        $karyawan = $user->karyawan ?? Karyawan::where('id', $user->id)->first();
+        $karyawan = $user->karyawan ?? karyawan::where('id', $user->id)->first();
 
         if ($karyawan && $karyawan->jabatan === 'Office Boy') {
             return $this->handleShiftAssignment($karyawan);
@@ -103,3 +103,4 @@ class LoginController extends Controller
     //     Notification::send($karyawan, new ShiftConfirmationNotification($shiftNumber, $date));
     // }
 }
+
