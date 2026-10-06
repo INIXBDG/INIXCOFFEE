@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
+use App\Models\DashboardLayout;
 use App\Models\notif;
 use App\Models\LeadProject;
 use App\Models\Registrasi;
@@ -74,8 +75,56 @@ class HomeController extends Controller
         $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
             ->where('tanggal', $sekarang)
             ->first();
+
+        // 1. Ambil urutan global dari Setting Dashboard (database)
+        $globalOrder = DashboardLayout::orderBy('sort_order', 'asc')->pluck('section_key')->toArray();
+        if (empty($globalOrder)) {
+            $globalOrder = [
+                'karyawan',
+                'peserta',
+                'itsm',
+                'rkm',
+                'finance',
+                'performance',
+                'education',
+                'office',
+                'crm',
+                'management',
+                'project',
+            ];
+        }
+
+        // 2. Mapping permission filter untuk 11 section
+        $user = auth()->user();
+        $sectionRules = [
+            'karyawan'    => true, // Fitur personal esensial seluruh karyawan
+            'peserta'     => $user ? $user->can('Fitur Menu Peserta') : false,
+            'itsm'        => $user ? $user->hasAnyPermission(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature', 'View ITSM Only']) : false,
+            'rkm'         => $user ? $user->can('Fitur Menu RKM') : false,
+            'finance'     => $user ? $user->can('Fitur Menu Finance') : false,
+            'performance' => $user ? ($user->can('View KPI Penilaian') || in_array($user->jabatan, ['Koordinator ITSM', 'HRD', 'Education Manager', 'GM', 'SPV Sales', 'Direktur', 'Direktur Utama', 'Komisaris'])) : false,
+            'education'   => $user ? $user->can('Fitur Menu Education') : false,
+            'office'      => $user ? $user->can('Fitur Menu Office') : false,
+            'crm'         => $user ? $user->can('Fitur CRM') : false,
+            'management'  => $user ? $user->can('Fitur Menu Manajemen') : false,
+            'project'     => $user ? $user->can('Fitur Menu Project') : false,
+        ];
+
+        // 3. Saring section yang diizinkan (urutan tetap mengikuti urutan global Admin)
+        $visibleSections = array_values(array_filter($globalOrder, function ($key) use ($sectionRules) {
+            return $sectionRules[$key] ?? false;
+        }));
+
+        // 4. Ambil pengaturan urutan card dari database
+        $savedCardOrders = DashboardLayout::pluck('card_order', 'section_key')->toArray();
+        foreach ($savedCardOrders as $k => $val) {
+            if (is_string($val)) {
+                $savedCardOrders[$k] = json_decode($val, true);
+            }
+        }
+
         // return $absenHariIni;
-        return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
+        return view('layouts.menus', compact('notifikasi', 'absenHariIni', 'visibleSections', 'savedCardOrders'));
 
     }
     private function getTotalSales($year)

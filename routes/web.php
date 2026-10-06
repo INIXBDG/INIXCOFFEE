@@ -187,6 +187,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
     Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
+    Route::post('/admin/layout-setting/reset', [DashboardLayoutController::class, 'reset'])->name('admin.layout-setting.reset');
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
