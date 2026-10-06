@@ -282,6 +282,11 @@ $schedule->call(function () {
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
+
+        $schedule->command('audit:sync --only=code');
+        $schedule->command('audit:sync --only=assets');
+        $schedule->command('audit:sync --only=js');
+        $schedule->command('audit:sync --only=features');
     }
 
     protected function commands(): void
