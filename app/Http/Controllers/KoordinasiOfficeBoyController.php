@@ -17,8 +17,8 @@ class KoordinasiOfficeBoyController extends Controller
 
     public function __construct()
     {
-        $this->botToken = '8637052174:AAFSALsROZZSHz-fr2PM0IWe-EsYatdYXvI';
-        $this->groupId = '-5410138806';
+        $this->botToken = config('services.telegram.bot_token');
+        $this->groupId = config('services.telegram.group_id');
 
         $this->middleware('permission:View KoordinasiOfficeBoy', ['only' => ['index', 'getData']]);
         $this->middleware('permission:Store KoordinasiOfficeBoy', ['only' => ['store']]);
@@ -461,7 +461,7 @@ class KoordinasiOfficeBoyController extends Controller
             ]);
         }
     }
-    
+
     public function webhook(Request $request)
     {
         $update = $request->all();

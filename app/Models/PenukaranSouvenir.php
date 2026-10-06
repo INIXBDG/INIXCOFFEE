@@ -10,7 +10,12 @@ class PenukaranSouvenir extends Model
     use HasFactory;
 
     protected $table = 'penukaran_souvenirs';
-    protected $guarded = [];
+    protected $guarded = [
+        'id_rkm',
+        'id_regist',
+        'id_souvenir_lama',
+        'id_souvenir_baru',
+        'tanggal_tukar',];
     protected $fillable = [
         'id_rkm',
         'id_regist',

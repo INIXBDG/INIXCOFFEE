@@ -37,9 +37,7 @@ class CheckUptime extends Command
             $httpStatus = null;
 
             try {
-                $response = Http::withOptions(['verify' => false])
-                    ->timeout(10)
-                    ->get($url);
+                $response = Http::timeout(10)->get($url);
 
                 $isUp = $response->successful();
                 $httpStatus = $response->status();

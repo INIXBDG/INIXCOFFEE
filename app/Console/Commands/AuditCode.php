@@ -18,6 +18,11 @@ use Throwable;
 class AuditCode extends Command
 {
     protected $signature = 'audit:code {--skip-syntax : Lewati pengecekan php -l}';
+    protected $signature = 'audit:code
+        {--skip-syntax : Lewati pengecekan php -l}
+        {--file=* : Audit hanya file ini (relatif ke root project atau absolut). Bisa diulang}
+        {--skip-routes : Lewati cek route (lebih cepat)}
+        {--skip-controllers : Lewati cek method controller tanpa route}';
     protected $description = 'Cek route, nama class/model (huruf besar-kecil), dan controller; tampilkan file + baris kesalahan';
 
     private const BUILTIN = [
@@ -28,11 +33,42 @@ class AuditCode extends Command
     private array $issues = [];
     private array $classMap = [];      // fqcn lowercase => fqcn asli (sesuai nama file)
     private array $routedMethods = []; // "class::method" lowercase => true
+    private array $classMap = [];   
+    private array $routedMethods = []; 
     private array $seen = [];
 
     public function handle(): int
     {
         $this->buildClassMap();
+
+        $onlyFiles = $this->normalizeFiles((array) $this->option('file'));
+
+        $this->buildClassMap();
+
+        if ($onlyFiles) {
+            $audited = [];
+
+            foreach ($onlyFiles as $path) {
+                if (!is_file($path) || pathinfo($path, PATHINFO_EXTENSION) !== 'php') {
+                    $this->warn("Lewati (bukan file PHP): $path");
+                    continue;
+                }
+
+                $appRoot = realpath(app_path());
+                $real = realpath($path);
+                if ($appRoot === false || $real === false
+                    || !str_starts_with($real, $appRoot . DIRECTORY_SEPARATOR)) {
+                    $this->warn("Lewati (di luar app/): $path");
+                    continue;
+                }
+
+                $this->checkFile($path);
+                $audited[] = $path;
+            }
+
+            $this->reportPartial($audited);
+            return collect($this->issues)->contains('level', 'ERROR') ? self::FAILURE : self::SUCCESS;
+        }
 
         foreach (File::allFiles(app_path()) as $file) {
             if ($file->getExtension() === 'php') {
@@ -47,6 +83,110 @@ class AuditCode extends Command
         return collect($this->issues)->contains('level', 'ERROR') ? self::FAILURE : self::SUCCESS;
     }
 
+        if (!$this->option('skip-routes')) {
+            $this->checkRoutes();
+        }
+        if (!$this->option('skip-controllers')) {
+            $this->checkControllers();
+        }
+
+        $this->report();
+        return collect($this->issues)->contains('level', 'ERROR') ? self::FAILURE : self::SUCCESS;
+    }
+
+    private function normalizeFiles(array $files): array
+    {
+        $out = [];
+        foreach ($files as $f) {
+            foreach (preg_split('/\s*,\s*/', $f) as $one) {
+                if ($one === '') {
+                    continue;
+                }
+                $path = $one[0] === '/' ? $one : base_path($one);
+                $out[] = $path;
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    private function reportPartial(array $absoluteFiles): void
+    {
+        $touched = [];
+        foreach ($absoluteFiles as $path) {
+            $touched[$this->toRel($path)] = true;
+        }
+
+        foreach ($this->issues as &$i) {
+            $i['category'] = $this->categorize($i);
+        }
+        unset($i);
+
+        $dir = storage_path('logs/audit');
+        File::ensureDirectoryExists($dir);
+        $jsonPath = "$dir/code.json";
+
+        $prev = is_file($jsonPath)
+            ? (json_decode(File::get($jsonPath), true) ?: [])
+            : [];
+        $oldIssues = $prev['issues'] ?? [];
+
+        // buang issue milik file yang baru di-audit
+        $kept = array_values(array_filter(
+            $oldIssues,
+            fn ($i) => !isset($touched[$i['file'] ?? ''])
+        ));
+
+        $newIssues = array_map(fn ($i) => [
+            'level' => $i['level'],
+            'category' => $i['category'] ?? $this->categorize($i),
+            'type' => $i['type'],
+            'file' => $i['rel'],
+            'line' => $i['line'],
+            'message' => $i['message'],
+        ], $this->issues);
+
+        $merged = array_merge($kept, $newIssues);
+        usort($merged, fn ($a, $b) => [$a['file'], $a['line']] <=> [$b['file'], $b['line']]);
+
+        $errors = count(array_filter($merged, fn ($i) => $i['level'] === 'ERROR'));
+        $warnings = count($merged) - $errors;
+
+        File::put($jsonPath, json_encode([
+            'kind' => 'code',
+            'generated_at' => now()->toIso8601String(),
+            'summary' => ['errors' => $errors, 'warnings' => $warnings],
+            'issues' => $merged,
+            'partial' => true,
+            'touched' => array_keys($touched),
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+
+        // log singkat
+        $this->info(sprintf(
+            'Partial audit: %d file, %d issue baru/diperbarui → total %d error, %d warning',
+            count($touched),
+            count($newIssues),
+            $errors,
+            $warnings
+        ));
+
+        if ($this->issues) {
+            $this->table(
+                ['Level', 'Jenis', 'File:Baris', 'Pesan'],
+                array_map(fn ($i) => [$i['level'], $i['type'], $i['rel'] . ':' . $i['line'], $i['message']], $this->issues)
+            );
+        }
+    }
+
+    private function toRel(string $path): string
+    {
+        $base = rtrim(str_replace('\\', '/', base_path()), '/') . '/';
+        $path = str_replace('\\', '/', $path);
+        if (str_starts_with($path, $base)) {
+            return substr($path, strlen($base));
+        }
+        return ltrim($path, '/');
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Util                                                               */
     /* ------------------------------------------------------------------ */
@@ -54,6 +194,7 @@ class AuditCode extends Command
     private function add(string $level, string $type, string $path, int $line, string $message): void
     {
         $rel = str_replace([base_path() . DIRECTORY_SEPARATOR, '\\'], ['', '/'], $path);
+        $rel = $this->toRel($path);
         $key = "$level|$type|$rel|$line|$message";
         if (isset($this->seen[$key])) {
             return;
@@ -461,6 +602,21 @@ class AuditCode extends Command
     {
         usort($this->issues, fn ($a, $b) => [$a['rel'], $a['line']] <=> [$b['rel'], $b['line']]);
 
+        foreach ($this->issues as &$i) {
+            $i['category'] = $this->categorize($i);
+        }
+        unset($i);
+
+        $errors = count(array_filter($this->issues, fn ($i) => $i['level'] === 'ERROR'));
+        $warnings = count($this->issues) - $errors;
+        $this->writeJson($errors, $warnings);
+
+        $log = '[' . now()->toDateTimeString() . "] audit:code - $errors error, $warnings warning\n";
+        foreach ($this->issues as $i) {
+            $log .= sprintf("  [%s] (%s) %s | %s:%d | %s\n", $i['level'], $i['category'], $i['type'], $i['rel'], $i['line'], $i['message']);
+        }
+        File::put(storage_path('logs/audit-code-' . now()->format('Y-m-d') . '.log'), $log);
+
         if (!$this->issues) {
             $this->info('Tidak ada masalah ditemukan.');
             return;
@@ -481,8 +637,50 @@ class AuditCode extends Command
         }
         File::put(storage_path('logs/audit-code-' . now()->format('Y-m-d') . '.log'), $log);
 
+            ['Level', 'Kategori', 'Jenis', 'File:Baris', 'Pesan'],
+            array_map(fn ($i) => [$i['level'], $i['category'], $i['type'], $i['rel'] . ':' . $i['line'], $i['message']], $this->issues)
+        );
+        $this->error("Total: $errors error, $warnings warning");
+
         if ($errors > 0) {
             Log::error("audit:code menemukan $errors error. Lihat storage/logs/audit-code-" . now()->format('Y-m-d') . '.log');
         }
+    }
+
+    /** model | controller | other */
+    private function categorize(array $i): string
+    {
+        $rel = $i['rel'];
+        if (str_starts_with($rel, 'app/Models/') || stripos($i['message'], 'App\\Models\\') !== false) {
+            return 'model';
+        }
+        if (in_array($i['type'], ['Huruf berbeda', 'Class tidak ditemukan', 'Import'], true)
+            && preg_match_all("/'([A-Za-z_]\w*)'/", $i['message'], $m)) {
+            foreach ($m[1] as $name) {
+                if (isset($this->classMap['app\\models\\' . strtolower($name)])) {
+                    return 'model';
+                }
+            }
+        }
+        if (str_starts_with($rel, 'app/Http/Controllers/') || str_starts_with($rel, 'routes/')) {
+            return 'controller';
+        }
+        return 'other';
+    }
+
+    private function writeJson(int $errors, int $warnings): void
+    {
+        $dir = storage_path('logs/audit');
+        File::ensureDirectoryExists($dir);
+        File::put("$dir/code.json", json_encode([
+            'kind' => 'code',
+            'generated_at' => now()->toIso8601String(),
+            'summary' => ['errors' => $errors, 'warnings' => $warnings],
+            'issues' => array_map(fn ($i) => [
+                'level' => $i['level'], 'category' => $i['category'], 'type' => $i['type'],
+                'file' => $i['rel'], 'line' => $i['line'], 'message' => $i['message'],
+            ], $this->issues),
+            'partial' => false,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
     }
 }

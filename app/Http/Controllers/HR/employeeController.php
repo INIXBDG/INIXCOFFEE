@@ -697,13 +697,29 @@ class employeeController extends Controller
     {
         $query->where(function ($q) use ($period, $groupBy, $fields) {
             foreach ($fields as $field) {
+
+                if (!preg_match('/^[a-zA-Z0-9_\.]+$/', $field)) {
+                    continue;
+                }
+
                 $q->orWhere(function ($sub) use ($period, $groupBy, $field) {
                     if ($groupBy === 'year') {
-                        $sub->whereRaw("YEAR($field) = ?", [$period['value']]);
+                        $sub->whereYear($field, $period['value']);
+
                     } elseif ($groupBy === 'quarter') {
-                        $sub->whereRaw("CONCAT(YEAR($field), '-Q', QUARTER($field)) = ?", [$period['value']]);
+                        // Perbaikan: Ganti {$field} dengan penggabungan string ( . $field . )
+                        $sub->whereRaw("CONCAT(YEAR(" . $field . "), '-Q', QUARTER(" . $field . ")) = ?", [$period['value']]);
+
                     } else {
-                        $sub->whereRaw("DATE_FORMAT($field, '%Y-%m') = ?", [$period['value']]);
+                        $dateParts = explode('-', $period['value']);
+
+                        if (count($dateParts) === 2) {
+                            $sub->whereYear($field, $dateParts[0])
+                                ->whereMonth($field, $dateParts[1]);
+                        } else {
+                            // Perbaikan: Ganti {$field} dengan penggabungan string ( . $field . )
+                            $sub->whereRaw("DATE_FORMAT(" . $field . ", '%Y-%m') = ?", [$period['value']]);
+                        }
                     }
                 });
             }

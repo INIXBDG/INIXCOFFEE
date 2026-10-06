@@ -153,7 +153,7 @@ class TicketController extends Controller
                 ."Kendala: {$ticket->detail_kendala}\n\n"
                 ."Silahkan klik tombol di bawah atau balas dengan `/terima {$ticket->ticket_id}`";
 
-            Http::withoutVerifying()->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id' => $groupId,
                 'text' => $telegramMessage,
                 'parse_mode' => 'Markdown',
@@ -206,7 +206,7 @@ class TicketController extends Controller
                       .'Status: Dibatalkan / Terkendala';
             }
 
-            Http::withoutVerifying()->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id' => $groupId,
                 'text' => $text,
                 'parse_mode' => 'Markdown',

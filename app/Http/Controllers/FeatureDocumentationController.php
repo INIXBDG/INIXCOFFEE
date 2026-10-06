@@ -42,6 +42,14 @@ class FeatureDocumentationController extends Controller
             ->with('codeDocumentations')
             ->findOrFail($id);
 
+        if (function_exists('clean')) {
+            $feature->short_description = clean($feature->short_description);
+            $feature->purpose           = clean($feature->purpose);
+            $feature->problem_solved    = clean($feature->problem_solved);
+            $feature->how_it_works      = clean($feature->how_it_works);
+            $feature->user_access       = clean($feature->user_access);
+        }
+
         $ancestors = collect();
         $current = $feature->parentFeature()->first();
         while ($current) {

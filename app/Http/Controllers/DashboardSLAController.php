@@ -172,10 +172,6 @@ class DashboardSLAController extends Controller
         ];
     }
 
-    // =========================================================================
-    // FUNGSI UTAMA 1: DASHBOARD TIM (GABUNGAN)
-    // =========================================================================
-    // Terima $team dari rute (misal: 'programmer' atau 'tech-support')
     public function dashboardTim(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
@@ -735,11 +731,15 @@ class DashboardSLAController extends Controller
             }
 
             // Hitung Target Proporsional
-            $dynamicTarget = (int) round((3 / 5) * $activeWorkingDays);
-            if ($dynamicTarget < 1 && $activeWorkingDays > 0) {
-                $dynamicTarget = 1;
+            if ($activeWorkingDays >= 4) {
+                $dynamicTarget = 3;
+            } else {
+                $dynamicTarget = (int) round((3 / 5) * $activeWorkingDays);
+
+                if ($dynamicTarget < 1 && $activeWorkingDays > 0) {
+                    $dynamicTarget = 1;
+                }
             }
-            // ----------------------------------------------------------------
 
             // PERBAIKAN: Gunakan format jam 00:00:00 s/d 23:59:59 untuk akurasi Datetime
             $startDateString = $startOfWeek->copy()->startOfDay()->format('Y-m-d H:i:s');
