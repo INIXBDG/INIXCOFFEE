@@ -535,8 +535,12 @@ class registexamController extends Controller
         return redirect()->route('registexam.invoice', ['id' => $id])->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
-    public function generateAbsensi(Request $request)
+public function generateAbsensi(Request $request)
     {
+        // Meningkatkan batas waktu eksekusi dan memori
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
+
         $validated = $request->validate([
             'materi_id'       => 'required',
             'tgl_exam'        => 'required|date',
@@ -556,13 +560,19 @@ class registexamController extends Controller
             ];
         });
 
+        // Menambahkan opsi isHtml5ParserEnabled dan isRemoteEnabled
         $pdf = Pdf::loadView('registexam.absensi', [
             'pesertas' => $pesertas,
             'materi'   => $materi,
             'tgl_exam' => $tgl_exam
         ])
             ->setPaper('a4', 'landscape')
-            ->setWarnings(false);
+            ->setWarnings(false)
+            ->setOptions([
+                'isHtml5ParserEnabled' => true, 
+                'isRemoteEnabled' => true,
+                'chroot' => public_path(),
+            ]);
 
         $filename = 'sertifikat-exam-' . Str::slug($materi->nama_materi) . '-' . now()->format('Ymd-His') . '.pdf';
 
