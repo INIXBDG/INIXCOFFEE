@@ -620,7 +620,7 @@ class feedbackController extends Controller
         $data = $this->getFeedbackData($id);
         // return $post;
         // Generate PDF dari tampilan dengan data yang diperoleh
-        $pdf = PDF::loadView('exports.feedback-pdf', compact('data'));
+        $pdf = Pdf::loadView('exports.feedback-pdf', compact('data'));
 
         return $pdf->download('Feedback_Data.pdf');
     }

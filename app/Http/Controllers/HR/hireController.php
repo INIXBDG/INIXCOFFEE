@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Tcpdf\Fpdi;
 
 class HireController extends Controller
 {
@@ -701,19 +702,19 @@ class HireController extends Controller
         return response()->json(['success' => true, 'message' => $msg]);
     }
 
-    public function talentPool(Request $request)
-    {
-        $pelamars = Pelamar::talentPool()
-            ->filter($request->only(['search', 'divisi', 'jabatan']))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+    // public function talentPool(Request $request)
+    // {
+    //     $pelamars = Pelamar::talentPool()
+    //         ->filter($request->only(['search', 'divisi', 'jabatan']))
+    //         ->latest()
+    //         ->paginate(15)
+    //         ->withQueryString();
 
-        $dataJabatan = Karyawan::distinct()->pluck('jabatan');
-        $dataDivisi = Karyawan::distinct()->pluck('divisi');
+    //     $dataJabatan = Karyawan::distinct()->pluck('jabatan');
+    //     $dataDivisi = Karyawan::distinct()->pluck('divisi');
 
-        return view('HR/hire/talent_pool', compact('pelamars', 'dataJabatan', 'dataDivisi'));
-    }
+    //     return view('HR/hire/talent_pool', compact('pelamars', 'dataJabatan', 'dataDivisi'));
+    // }
 
     public function riwayat(Pelamar $pelamar)
     {

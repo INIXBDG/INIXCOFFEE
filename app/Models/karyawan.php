@@ -45,12 +45,12 @@ class karyawan extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class, 'karyawan_key', 'id');
+        return $this->hasMany(comment::class, 'karyawan_key', 'id');
     }
 
     public function rkmsSales()
     {
-        return $this->hasMany(Rkm::class, 'sales_key', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'sales_key', 'kode_karyawan');
     }
 
     public function rkmsInstruktur()
@@ -60,12 +60,12 @@ class karyawan extends Model
 
     public function rkmsInstruktur2()
     {
-        return $this->hasMany(Rkm::class, 'instruktur_key2', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'instruktur_key2', 'kode_karyawan');
     }
 
     public function rkmsAsisten()
     {
-        return $this->hasMany(Rkm::class, 'asisten_key', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'asisten_key', 'kode_karyawan');
     }
     protected function image(): Attribute
     {

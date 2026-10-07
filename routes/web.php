@@ -1986,4 +1986,6 @@ Route::prefix('audit')->name('audit.')->group(function () {
     Route::post('/sync', [AuditController::class, 'sync'])->name('sync');
     Route::post('/sync-file', [AuditController::class, 'syncFile'])->name('sync-file');
     Route::post('/sync-feature', [AuditController::class, 'syncFeature'])->name('sync-feature');
+    Route::post('/sync-files', [AuditController::class, 'syncFiles'])->name('sync-files');
+    Route::post('/sync-features', [AuditController::class, 'syncFeatures'])->name('sync-features');
 });

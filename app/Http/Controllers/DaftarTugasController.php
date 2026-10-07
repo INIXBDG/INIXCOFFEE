@@ -945,13 +945,13 @@ class DaftarTugasController extends Controller
         }
     }
 
-    public function perbaikanData()
-    {
-        $officeBoy = Karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
-        $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')->orderBy('Tipe')->orderBy('judul_kategori')->get();
+    // public function perbaikanData()
+    // {
+    //     $officeBoy = Karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
+    //     $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')->orderBy('Tipe')->orderBy('judul_kategori')->get();
 
-        return view('office.daftarTugas.perbaikanData', compact('officeBoy', 'kategori'));
-    }
+    //     return view('office.daftarTugas.perbaikanData', compact('officeBoy', 'kategori'));
+    // }
 
     public function getForPerbaikan(Request $request)
     {

@@ -34,7 +34,7 @@ class TunjanganKaryawan extends Model
 
     public function jenistunjangan()
     {
-        return $this->belongsTo(jenistunjangan::class, 'jenis_tunjangan');
+        return $this->belongsTo(JenisTunjangan::class, 'jenis_tunjangan');
     }
 
     public function approvedBy()

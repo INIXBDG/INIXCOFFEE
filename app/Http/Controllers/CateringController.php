@@ -11,7 +11,7 @@ use App\Models\User;
 use App\Models\vendor;
 use App\Models\vendorCoffeeBreak;
 use App\Models\vendorMakansiang;
-use App\Notifications\cateringNotification;
+use App\Notifications\CateringNotification;
 use App\Notifications\updateCateringNotification;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;

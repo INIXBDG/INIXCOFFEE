@@ -92,12 +92,12 @@ class Pelamar extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'karyawan_id');
+        return $this->belongsTo(karyawan::class, 'karyawan_id');
     }
 
     public function riwayatTahap()
     {
-        return $this->hasMany(PelamarRiwayat::class, 'pelamar_id')->orderBy('created_at', 'asc');
+        return $this->hasMany(Pelamarriwayat::class, 'pelamar_id')->orderBy('created_at', 'asc');
     }
 
     public function scopeAktif($query)

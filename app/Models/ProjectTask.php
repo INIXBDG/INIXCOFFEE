@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Karyawan; // Pastikan model Karyawan diimpor
+use App\Models\karyawan; // Pastikan model Karyawan diimpor
 
 class ProjectTask extends Model
 {
@@ -31,6 +31,6 @@ class ProjectTask extends Model
      */
     public function assignee()
     {
-        return $this->belongsTo(Karyawan::class, 'assignee_id', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'assignee_id', 'kode_karyawan');
     }
 }

@@ -45,7 +45,7 @@ class Certificate extends Model
     // Relasi ke TTD (Karyawan ID 4)
     public function penandatangan()
     {
-        return $this->belongsTo(Karyawan::class, 'ttd_id');
+        return $this->belongsTo(karyawan::class, 'ttd_id');
     }
 
     // // Generate nomor sertifikat otomatis

@@ -793,11 +793,11 @@ class InvoiceRKMController extends Controller
      * @param  \App\Models\Invoice  $invoice
      * @return \Illuminate\View\View
      */
-    public function edit(Invoice $invoice): View
-    {
-        $invoice->load('rkm.perusahaan', 'rkm.materi');
-        return view('invoice.edit', compact('invoice'));
-    }
+    // public function edit(Invoice $invoice): View
+    // {
+    //     $invoice->load('rkm.perusahaan', 'rkm.materi');
+    //     return view('invoice.edit', compact('invoice'));
+    // }
 
     /**
      * Memperbarui invoice yang sudah ada.

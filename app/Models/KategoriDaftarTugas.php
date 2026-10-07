@@ -13,7 +13,7 @@ class KategoriDaftarTugas extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'id_user', 'id');
+        return $this->belongsTo(karyawan::class, 'id_user', 'id');
     }
 
     public function kontrolTugas()

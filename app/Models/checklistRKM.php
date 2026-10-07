@@ -13,6 +13,6 @@ class checklistRKM extends Model
 
     public function rkm()
     {
-        return $this->belongsTo(Rkm::class, 'id_rkm');
+        return $this->belongsTo(RKM::class, 'id_rkm');
     }
 }

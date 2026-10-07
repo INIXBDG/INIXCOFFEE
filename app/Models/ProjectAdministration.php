@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Karyawan; // Pastikan model Karyawan diimpor
+use App\Models\karyawan; // Pastikan model Karyawan diimpor
 use Illuminate\Database\Eloquent\SoftDeletes;
 class ProjectAdministration extends Model
 {
@@ -45,7 +45,7 @@ class ProjectAdministration extends Model
      */
     public function projectManager()
     {
-        return $this->belongsTo(Karyawan::class, 'pm_id', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'pm_id', 'kode_karyawan');
     }
 
     public function project_handover()
@@ -62,6 +62,6 @@ class ProjectAdministration extends Model
         if (empty($this->assignee_id)) {
             return collect(); // Mengembalikan koleksi kosong jika tidak ada data
         }
-        return Karyawan::whereIn('kode_karyawan', $this->assignee_id)->get();
+        return karyawan::whereIn('kode_karyawan', $this->assignee_id)->get();
     }
 }
