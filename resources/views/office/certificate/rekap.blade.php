@@ -138,11 +138,9 @@
         <div class="tab-content" id="rekap-tabs-content"></div>
     </div>
 
-    
-    
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
+
     <script>
         const URL_REKAP = "{{ route('office.certificate.certificateSummaryJson') }}";
         const STORE_URL = "{{ route('office.certificate.storeSummary') }}";
@@ -177,9 +175,12 @@
             { key: 'webinar', label: 'Webinar', color: '#d63384', actions: true },
         ];
 
-        // State per kategori: baris raw dari API + halaman aktif
+        // State per kategori: baris raw dari API + halaman aktif + kata kunci pencarian
         const tableState = {};
-        CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1 }; });
+        CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1, query: '' }; });
+
+        // Timer debounce per tab untuk search bar
+        const searchTimers = {};
 
         let summaryChart = null;
         let formMode = 'create'; // 'create' | 'edit'
@@ -259,7 +260,8 @@
             $('#selectMateri').val(null).trigger('change');
         }
 
-        // Buka modal dalam mode edit, isi form dari data row yang sudah ada di tableState
+        // Buka modal dalam mode edit, isi form dari data row yang sudah ada di tableState.
+        // Mencari dari rows asli (bukan hasil filter search), jadi aman.
         function editSertifikat(key, id) {
             const row = (tableState[key].rows || []).find(r => r.id === id);
             if (!row) return;
@@ -479,6 +481,16 @@
                     <div class="tab-pane fade ${active ? 'show active' : ''}" id="tab-${cat.key}" role="tabpanel">
                         <div class="card border-0 shadow-sm rounded-4">
                             <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4 ms-auto">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                            <input type="text" class="form-control" id="search-${cat.key}"
+                                                placeholder="Cari nama, materi, info, periode..."
+                                                oninput="onSearchInput('${cat.key}', this.value)">
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
@@ -560,6 +572,30 @@
             el.innerHTML = html;
         }
 
+        function onSearchInput(key, value) {
+            clearTimeout(searchTimers[key]);
+            searchTimers[key] = setTimeout(() => {
+                tableState[key].query = value;
+                tableState[key].page = 1;
+                renderTable(key);
+            }, 250);
+        }
+
+        function getFilteredRows(key) {
+            const state = tableState[key];
+            const q = (state.query || '').trim().toLowerCase();
+            if (!q) return state.rows;
+
+            return state.rows.filter((row) => {
+                const d = extractDisplay(row);
+                const haystack = [d.nama, d.materi, d.info, formatPeriode(row), row.no_sertifikat, row.perusahaan]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return haystack.includes(q);
+            });
+        }
+
         function renderTable(key) {
             const state = tableState[key];
             const tbody = document.getElementById(`tbody-${key}`);
@@ -567,17 +603,20 @@
             const catConfig = CATEGORIES.find(c => c.key === key) || {};
             const totalCols = catConfig.actions ? 6 : 5;
 
-            if (state.rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-muted text-center py-4">Tidak ada data</td></tr>`;
+            const rows = getFilteredRows(key);
+
+            if (rows.length === 0) {
+                const msg = state.query ? 'Tidak ada data yang cocok' : 'Tidak ada data';
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-muted text-center py-4">${msg}</td></tr>`;
                 pager.innerHTML = '';
                 return;
             }
 
-            const totalPages = Math.ceil(state.rows.length / PER_PAGE);
+            const totalPages = Math.ceil(rows.length / PER_PAGE);
             state.page = Math.min(Math.max(state.page, 1), totalPages);
 
             const start = (state.page - 1) * PER_PAGE;
-            const pageRows = state.rows.slice(start, start + PER_PAGE);
+            const pageRows = rows.slice(start, start + PER_PAGE);
 
             tbody.innerHTML = pageRows.map((row, idx) => {
                 const d = extractDisplay(row);
@@ -720,7 +759,9 @@
         }
 
         function resetAll() {
-            CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1 }; });
+            CATEGORIES.forEach(c => {
+                tableState[c.key] = { rows: [], page: 1, query: tableState[c.key].query || '' };
+            });
             const counts = {};
             CATEGORIES.forEach(c => { counts[c.key] = 0; });
             buildSummaryCards(counts);
@@ -750,7 +791,11 @@
                     CATEGORIES.forEach((cat) => {
                         const section = data[cat.key] || { count: 0, data: [] };
                         counts[cat.key] = section.count || 0;
-                        tableState[cat.key] = { rows: section.data || [], page: 1 };
+                        tableState[cat.key] = {
+                            rows: section.data || [],
+                            page: 1,
+                            query: tableState[cat.key].query || '',
+                        };
                         document.getElementById(`badge-${cat.key}`).textContent = section.count || 0;
                         renderTable(cat.key);
                     });

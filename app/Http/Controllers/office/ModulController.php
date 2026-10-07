@@ -66,6 +66,7 @@ class ModulController extends Controller
     {
         $nomor = NomorModul::findOrFail($id);
         $modul = Modul::with('materi')->where('no_modul', $id)->get();
+        // dd($id, $nomor->toArray(), $modul->count(), $modul->toArray() ?? null);
         $materi = Materi::all();
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();

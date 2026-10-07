@@ -12,6 +12,7 @@ class DokumentasiExam extends Model
     protected $fillable = [
         'id_registrasi',
         'nama_exam',
+        'kategori_exam',
         'tanggal_pelaksanaan',
         'jam_pelaksanaan',
         'skor',
