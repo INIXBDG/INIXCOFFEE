@@ -38,7 +38,7 @@ class KaryawanController extends Controller
             abort(404);
 
         $realId = $decoded[0];
-        $users = Karyawan::with('educations')->findOrFail($realId);
+        $users = karyawan::with('educations')->findOrFail($realId);
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
@@ -46,7 +46,7 @@ class KaryawanController extends Controller
             abort(403);
         }
 
-        $jabatan = Jabatan::all();
+        $jabatan = jabatan::all();
         return view('user.edit', compact('users', 'jabatan'));
     }   
 
@@ -58,7 +58,7 @@ class KaryawanController extends Controller
 
         $realId = $decoded[0];
 
-        $karyawan = Karyawan::findOrFail($realId);
+        $karyawan = karyawan::findOrFail($realId);
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
         // Cek Otorisasi
@@ -209,7 +209,7 @@ class KaryawanController extends Controller
             'ttd' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
-        $post = Karyawan::findOrFail($id);
+        $post = karyawan::findOrFail($id);
 
         // Proses foto
         if ($request->hasFile('foto')) {
@@ -330,7 +330,7 @@ class KaryawanController extends Controller
 
         if ($isPeriodeBerjalan) {
             $gajiPokok        = (float) $user->karyawan->gaji;
-            $tunjanganJabatan = (float) ($user->karyawan->tunjangan_jabatan ?? 0);
+            $tunjanganj = (float) ($user->karyawan->tunjangan_jabatan ?? 0);
         } else {
             $logGaji = LogGaji::where('id_karyawan', Auth::id())
                 ->where('bulan', $bulan)
@@ -339,14 +339,14 @@ class KaryawanController extends Controller
                 ->first();
 
             $gajiPokok        = $logGaji ? (float) $logGaji->gaji : 0;
-            $tunjanganJabatan = $logGaji ? (float) $logGaji->tunjangan_jabatan : 0;
+            $tunjanganj = $logGaji ? (float) $logGaji->tunjangan_jabatan : 0;
         }
 
-        $tunjanganJabatanFormatted = $tunjanganJabatan > 0
-            ? $this->formatRupiah($tunjanganJabatan)
+        $tunjanganjFormatted = $tunjanganj > 0
+            ? $this->formatRupiah($tunjanganj)
             : '-';
 
-        $totalPendapatan = $gajiPokok + $tunjanganJabatan + $tunjanganItems->sum('total');
+        $totalPendapatan = $gajiPokok + $tunjanganj + $tunjanganItems->sum('total');
         $totalPotongan   = $potonganItems->sum(fn($i) => abs($i->total));
         $totalBersih     = $totalPendapatan - $totalPotongan;
 
@@ -354,8 +354,8 @@ class KaryawanController extends Controller
         $pendapatanRows = [];
         $pendapatanRows[] = ['nama' => 'Gaji Pokok', 'jumlah' => $this->formatRupiah($gajiPokok)];
 
-        if ($tunjanganJabatan > 0) {
-            $pendapatanRows[] = ['nama' => 'Tunjangan Jabatan', 'jumlah' => $this->formatRupiah($tunjanganJabatan)];
+        if ($tunjanganj > 0) {
+            $pendapatanRows[] = ['nama' => 'Tunjangan j', 'jumlah' => $this->formatRupiah($tunjanganj)];
         }
 
         foreach ($tunjanganItems as $item) {
@@ -405,7 +405,7 @@ class KaryawanController extends Controller
             'bulan' => $bulan,
             'tahun' => $tahun,
             'namaBulanText' => $namaBulan[$bulan] ?? '-',
-            'tunjanganJabatanFormatted' => $tunjanganJabatanFormatted,
+            'tunjanganjFormatted' => $tunjanganjFormatted,
             'rows' => $rows,
             'totalBersih' => $totalBersih,
             'totalBersihFormatted' => $this->formatRupiah($totalBersih),

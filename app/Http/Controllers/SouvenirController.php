@@ -31,7 +31,7 @@ class SouvenirController extends Controller
     }
     public function getSouvenir()
     {
-        $souvenirs = Souvenir::orderBy('id', 'desc')->get();
+        $souvenirs = souvenir::orderBy('id', 'desc')->get();
 
         // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
         $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
@@ -56,7 +56,7 @@ class SouvenirController extends Controller
 
     public function getSouvenirInactive()
     {
-        $souvenirs = Souvenir::onlyTrashed()->orderBy('id', 'desc')->get();
+        $souvenirs = souvenir::onlyTrashed()->orderBy('id', 'desc')->get();
 
         // Iterasi melalui setiap souvenir dan ubah blob_foto menjadi base64
         $souvenirsWithBase64 = $souvenirs->map(function ($souvenir) {
@@ -158,7 +158,7 @@ class SouvenirController extends Controller
         }
 
         // Save to database
-        Souvenir::create([
+        souvenir::create([
             'nama_souvenir' => $request->nama_souvenir,
             'harga' => $harga,
             'stok' => $request->stok,
@@ -316,7 +316,7 @@ class SouvenirController extends Controller
      */
     public function inactive($id): RedirectResponse
     {
-        $post = Souvenir::findOrFail($id);
+        $post = souvenir::findOrFail($id);
 
         $post->deleted_by = auth()->id();
         $post->save();
@@ -332,7 +332,7 @@ class SouvenirController extends Controller
 
     public function active($id): RedirectResponse
     {
-        $post = Souvenir::onlyTrashed()->findOrFail($id);
+        $post = souvenir::onlyTrashed()->findOrFail($id);
 
         $post->restore();
 

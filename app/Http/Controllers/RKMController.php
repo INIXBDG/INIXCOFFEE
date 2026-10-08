@@ -6,7 +6,6 @@ use App\Exports\RKMExcelAdmsales;
 use App\Models\AbsensiPDF;
 use App\Models\comment;
 use App\Models\eksam;
-use App\Models\exam;
 use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
@@ -27,7 +26,7 @@ use App\Notifications\rkmnewNotification;
 use App\Notifications\RKMUpdateNotification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\RKMExport;
+use App\Exports\RkmExport;
 use App\Models\Peluang;
 use App\Models\ChecklistKeperluan;
 use App\Models\outstanding;
@@ -62,7 +61,7 @@ class RKMController extends Controller
 
         $filename = 'rkm-' . $bulan . '-' . $tahun . '.xlsx';
 
-        return Excel::download(new RKMExport($tahun, $bulan), $filename);
+        return Excel::download(new RkmExport($tahun, $bulan), $filename);
     }
 
     public function excelDownloadAdmSales(Request $request)
@@ -121,11 +120,11 @@ class RKMController extends Controller
     }
     public function create(): View
     {
-        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
+        $sales = karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
             ->get();
 
-        $instruktur = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
+        $instruktur = karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('status_aktif', '1')
             ->get();
 
@@ -413,11 +412,11 @@ class RKMController extends Controller
     public function edit(string $id)
     {
         $post = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan'])->findOrFail($id);
-        $sales = Karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
+        $sales = karyawan::whereIn('jabatan', ['Sales', 'SPV Sales', 'Adm Sales', 'Tim Digital'])
             ->where('status_aktif', '1')
             ->get();
 
-        $instruktur = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
+        $instruktur = karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('status_aktif', '1')
             ->get();
         $materi = Materi::get();
@@ -435,7 +434,7 @@ class RKMController extends Controller
         //get post by ID
         $rkm = RKM::with('materi')->get();
         $sales = karyawan::where('jabatan', 'sales')->get();
-        $instruktur = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])->get();
+        $instruktur = karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager'])->get();
         $materi = Materi::get();
         $perusahaan = Perusahaan::get();
 
@@ -446,7 +445,7 @@ class RKMController extends Controller
     public function editInstruktur($id)
     {
         // return $id;
-        $karyawan = Karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Outsource'])
+        $karyawan = karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Outsource'])
             ->where('status_aktif', '1')
             ->get();
         $array = explode('ixb', $id);
@@ -1110,7 +1109,7 @@ class RKMController extends Controller
 
     public function uploadPage()
     {
-        $materi = materi::where('vendor', 'EC-Council')->get();
+        $materi = Materi::where('vendor', 'EC-Council')->get();
         return view('rkm.uploadPage', compact('materi'));
     }
 

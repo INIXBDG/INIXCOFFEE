@@ -21,7 +21,7 @@ class colaboratorController extends Controller
      */
     public function getData(Request $request)
     {
-        $query = Colaborator::with('perusahaan');
+        $query = colaborator::with('perusahaan');
 
         $quarter = $request->input('quarter'); 
         $year = $request->input('year'); 
@@ -55,7 +55,7 @@ class colaboratorController extends Controller
     /**
      * Menampilkan formulir pembaruan data kolaborasi.
      */
-    public function edit(Colaborator $colaborator)
+    public function edit(colaborator $colaborator)
     {
         return view('colaborator.edit', compact('colaborator'));
     }
@@ -80,7 +80,7 @@ class colaboratorController extends Controller
             $validated['document_mou'] = $request->file('document_mou')->store('documents/mou', 'public');
         }
 
-        Colaborator::create($validated);
+        colaborator::create($validated);
 
         return redirect()->route('colaborator.index')
                          ->with('success', 'Data kolaborasi berhasil disimpan.');
@@ -89,7 +89,7 @@ class colaboratorController extends Controller
     /**
      * Memperbarui data kolaborasi.
      */
-    public function update(Request $request, Colaborator $colaborator)
+    public function update(Request $request, colaborator $colaborator)
     {
         $validated = $request->validate([
             'nama_partner'  => 'required|string|max:255',

@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 // 1. Tambahkan use statement yang dibutuhkan
 use App\Models\AbsensiKaryawan;
-use App\Models\NamaModelRekap; // <-- Ganti dengan model rekap yang benar
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue; // <-- Penting
@@ -64,20 +63,6 @@ class GenerateAbsensiReportJob implements ShouldQueue
                     }
                 }
             }
-
-            // Contoh penyimpanan (uncomment kalau sudah punya model rekap)
-            /*
-            foreach ($rekapData as $id => $data) {
-                NamaModelRekap::updateOrCreate(
-                    ['id_karyawan' => $id, 'periode_awal' => $this->tanggalAwal, 'periode_akhir' => $this->tanggalAkhir],
-                    [
-                        'nama_karyawan' => $data['nama_karyawan'],
-                        'total_hari_masuk' => $data['total_hari_masuk'],
-                        'total_keterlambatan_detik' => $data['total_keterlambatan_detik'],
-                    ]
-                );
-            }
-            */
 
             Log::info("Job GenerateAbsensiReportJob ({$this->jenisRekap}) selesai.");
         } catch (\Exception $e) {

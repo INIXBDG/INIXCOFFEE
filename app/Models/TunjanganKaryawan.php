@@ -15,7 +15,7 @@ class TunjanganKaryawan extends Model
         'tahun',
         'jenis_tunjangan',
         'keterangan',
-        'jumlah_absensi',
+        // 'jumlah_absensi',
         'total',
         'status_approval',
         'approved_by',

@@ -262,7 +262,7 @@ class feedbackController extends Controller
                 'text' => 'Anda belum mengisi souvenir, silahkan coba kembali!',
             ], 200);
         }
-        $souvenir = Souvenir::where('nama_souvenir', $souveniran)->first();
+        $souvenir = souvenir::where('nama_souvenir', $souveniran)->first();
         $souvenir->decrement('stok');
 
         souvenirpeserta::create([

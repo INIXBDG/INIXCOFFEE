@@ -28,7 +28,7 @@ class OvertimeController extends Controller
     public function getOvertimeLembur($month, $year) 
     {
         // Get total lembur for each karyawan
-        $lembur = Lembur::with('karyawan')
+        $lembur = lembur::with('karyawan')
                         ->select('id_karyawan', DB::raw('COUNT(id) as total_lembur'))
                         ->whereMonth('tanggal_lembur', $month)
                         ->whereYear('tanggal_lembur', $year)
@@ -37,10 +37,10 @@ class OvertimeController extends Controller
 
         // Fetch id_hitung_lembur for each karyawan
         foreach ($lembur as $item) {
-            $item->karyawan = Karyawan::find($item->id_karyawan);
+            $item->karyawan = karyawan::find($item->id_karyawan);
             
             // Get the latest id_hitung_lembur for the karyawan
-            $latestLembur = Lembur::where('id_karyawan', $item->id_karyawan)
+            $latestLembur = lembur::where('id_karyawan', $item->id_karyawan)
                                 ->whereMonth('tanggal_lembur', $month)
                                 ->whereYear('tanggal_lembur', $year)
                                 ->orderBy('id', 'desc') // Assuming id is auto-incrementing
@@ -59,7 +59,7 @@ class OvertimeController extends Controller
 
     public function getOvertimeLemburByKaryawan($id, $month, $year)  
     {
-        $lembur = Lembur::with('karyawan', 'hitunglembur')
+        $lembur = lembur::with('karyawan', 'hitunglembur')
         ->where('id_karyawan', $id)
         ->whereMonth('tanggal_lembur', $month)
         ->whereYear('tanggal_lembur', $year)
@@ -113,7 +113,7 @@ class OvertimeController extends Controller
 
             // Iterate over the arrays and insert data into the Hitunglembur model
             foreach ($request->id_lembur as $index => $idLembur) {
-                $hitung = Hitunglembur::where('id_lembur', $idLembur)->first();
+                $hitung = hitunglembur::where('id_lembur', $idLembur)->first();
 
                 if ($hitung) {
                     // Update the existing record
@@ -122,14 +122,14 @@ class OvertimeController extends Controller
                     ]);
                 } else {
                     // Create a new Hitunglembur record
-                    $hitung = Hitunglembur::create([
+                    $hitung = hitunglembur::create([
                         'id_lembur' => $idLembur,
                         'nilai_lembur' => $request->nilai_lembur[$index],
                     ]);
                 }
 
                 // Find the corresponding lembur record and update it
-                $data = Lembur::findOrFail($idLembur); // Use the correct model name
+                $data = lembur::findOrFail($idLembur); // Use the correct model name
                 $data->update([
                     'id_hitung_lembur' => $hitung->id,
                 ]);
@@ -166,21 +166,21 @@ class OvertimeController extends Controller
      * @param  mixed $id
      * @return View
      */
-    public function show(string $id)
-    {
-        $data = lembur::findOrFail($id);
-        $gm = karyawan::where('jabatan', 'GM')->first();
-        $hrd = karyawan::where('jabatan', 'HRD')->first();
-        if($data->karyawan->divisi == 'Education'){
-            $atasan = karyawan::where('jabatan', 'Education Manager')->first();
-        }elseif($data->karyawan->divisi == 'Sales'){
-            $atasan = karyawan::where('jabatan', 'SPV Sales')->first();
-        }else{
-            $atasan = karyawan::where('jabatan', 'GM')->first();
-        }
+    // public function show(string $id)
+    // {
+    //     $data = lembur::findOrFail($id);
+    //     $gm = karyawan::where('jabatan', 'GM')->first();
+    //     $hrd = karyawan::where('jabatan', 'HRD')->first();
+    //     if($data->karyawan->divisi == 'Education'){
+    //         $atasan = karyawan::where('jabatan', 'Education Manager')->first();
+    //     }elseif($data->karyawan->divisi == 'Sales'){
+    //         $atasan = karyawan::where('jabatan', 'SPV Sales')->first();
+    //     }else{
+    //         $atasan = karyawan::where('jabatan', 'GM')->first();
+    //     }
 
-        return view('overtime.pdf', compact('data', 'atasan', 'hrd', 'gm'));
-    }
+    //     return view('overtime.pdf', compact('data', 'atasan', 'hrd', 'gm'));
+    // }
 
     /**
      * edit
@@ -292,15 +292,15 @@ class OvertimeController extends Controller
         return redirect()->route('overtime.index')->with(['success' => 'Data Berhasil Dihapus!']);
     }
 
-    public function editKaryawan(string $id)
-    {
-        $data = lembur::findOrFail($id);
-        $user = auth()->user()->karyawan_id;
-        $karyawan = karyawan::findOrFail($user);
-        $karyawanall = karyawan::where('divisi', '!=', 'Direksi')->where('divisi', $karyawan->divisi)->get();
+    // public function editKaryawan(string $id)
+    // {
+    //     $data = lembur::findOrFail($id);
+    //     $user = auth()->user()->karyawan_id;
+    //     $karyawan = karyawan::findOrFail($user);
+    //     $karyawanall = karyawan::where('divisi', '!=', 'Direksi')->where('divisi', $karyawan->divisi)->get();
 
-        return view('overtime.editKaryawan', compact('data', 'karyawan', 'karyawanall'));
-    }
+    //     return view('overtime.editKaryawan', compact('data', 'karyawan', 'karyawanall'));
+    // }
 
     /**
      * update

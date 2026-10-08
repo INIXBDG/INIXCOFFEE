@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +40,7 @@ class OutstandingReportExport implements
 
     protected function baseQuery()
     {
-        $query = Outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
+        $query = outstanding::with(['rkm.perusahaan', 'rkm.materi', 'rkm.sales', 'rkm.invoice']);
 
         if ($this->filters->get('start_date') && $this->filters->get('end_date')) {
             return $query->whereBetween('created_at', [

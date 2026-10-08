@@ -416,13 +416,13 @@ class KoordinasiOfficeBoyController extends Controller
         }
     }
 
-    public function telegramDetail($id)
-    {
-        $koordinasi = KoordinasiOfficeBoy::with('tracking', 'karyawan', 'pembuat')
-                        ->findOrFail($id);
+    // public function telegramDetail($id)
+    // {
+    //     $koordinasi = KoordinasiOfficeBoy::with('tracking', 'karyawan', 'pembuat')
+    //                     ->findOrFail($id);
 
-        return view('office.koordinasiOfficeBoy.detail', compact('koordinasi'));
-    }
+    //     return view('office.koordinasiOfficeBoy.detail', compact('koordinasi'));
+    // }
 
     private function sendDetailToTelegram(int $id)
     {
