@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class activityLog extends Model
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class activityLog extends Model
 {
     use HasFactory;
 
@@ -27,7 +35,7 @@ class activityLog extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'user_id', 'id');
+        return $this->belongsTo(karyawan::class, 'user_id', 'id');
     }
 
     protected static function booted()

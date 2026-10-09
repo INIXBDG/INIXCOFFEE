@@ -302,7 +302,7 @@ class payrollController extends Controller
         $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $periodEnd = Carbon::createFromDate($tahun, $bulan, 1)->endOfMonth();
 
-        $baseQuery = Karyawan::query()
+        $baseQuery = karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotIn('jabatan', ['Outsource', 'Outsourcing'])
             ->whereNot('divisi', 'Pilih Divisi')
@@ -568,7 +568,7 @@ class payrollController extends Controller
 
     private function calculateMonthlyTrend($tahun)
     {
-        $allKaryawan = Karyawan::query()
+        $allKaryawan = karyawan::query()
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotIn('jabatan', ['Outsource', 'Outsourcing'])
             ->whereNot('divisi', 'Pilih Divisi')
@@ -657,7 +657,7 @@ class payrollController extends Controller
 
     public function indexPerhitungan(Request $request)
     {
-        $karyawans = Karyawan::with('divisi')
+        $karyawans = karyawan::with('divisi')
             ->where('status_aktif', '1')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNot('jabatan', 'Outsource')
@@ -1821,7 +1821,7 @@ class payrollController extends Controller
 
     public function getPphData()
     {
-        $karyawans = Karyawan::with('pph21')
+        $karyawans = karyawan::with('pph21')
             ->where('status_aktif', '1')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNot('jabatan', 'Outsource')

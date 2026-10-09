@@ -13,7 +13,7 @@ use App\Models\RKM;
 use App\Http\Controllers\JurnalAkuntansiController;
 use App\Models\JurnalAkuntansi;
 use App\Notifications\ApprovalSPJNotification;
-use App\Notifications\PengajuanSPJNotification;
+// use App\Notifications\PengajuanSPJNotification;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Exports\SuratPerjalananExport;
@@ -108,7 +108,7 @@ class SuratPerjalananController extends Controller
         }
 
         $userId = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($userId);
+        $karyawan = karyawan::findOrFail($userId);
         $divisi = $karyawan->divisi;
 
         $data = SuratPerjalanan::with('karyawan', 'RKM')
@@ -134,7 +134,7 @@ class SuratPerjalananController extends Controller
         }
 
         $userId = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($userId);
+        $karyawan = karyawan::findOrFail($userId);
         $divisi = $karyawan->divisi;
 
         $data = SuratPerjalanan::with('karyawan', 'RKM')
@@ -154,7 +154,7 @@ class SuratPerjalananController extends Controller
     {
         $month = $request->input('bulan');
         $user = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($user);
+        $karyawan = karyawan::findOrFail($user);
         $divisi = $karyawan->divisi;
 
         if (!is_numeric($month) || $month < 1 || $month > 12) {
@@ -178,7 +178,7 @@ class SuratPerjalananController extends Controller
     {
         $Year = $request->input('tahun');
         $user = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($user);
+        $karyawan = karyawan::findOrFail($user);
         $divisi = $karyawan->divisi;
 
         if (!is_numeric($Year) || $Year < 2024 || $Year > now('Y')) {
@@ -203,7 +203,7 @@ class SuratPerjalananController extends Controller
     public function create()
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($user);
+        $karyawan = karyawan::findOrFail($user);
 
         $today = now()->startOfWeek();
         $twoWeeksFromNow = $today->copy()->addDays(14)->endOfDay();

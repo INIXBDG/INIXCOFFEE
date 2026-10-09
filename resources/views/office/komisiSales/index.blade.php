@@ -215,6 +215,9 @@
                     </div>
                 </div>
                 <div class="modal-footer px-4 pb-4 border-0">
+                    <button class="btn btn-outline-danger me-auto d-none" id="rdDeleteBtn" onclick="deleteRowModal()">
+                        <i class="bi bi-trash me-1"></i> Hapus
+                    </button>
                     <button class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                     <button class="btn btn-primary fw-semibold" id="rdSaveBtn" onclick="saveRowModal()">
                         <i class="bi bi-save me-1"></i> Simpan Perubahan
@@ -3047,11 +3050,21 @@
 
         let rowModalId = null;
 
+        const EXTRA_COLS = {
+            harga_pax: {
+                key: 'harga_pax',
+                label: 'Harga per Pax',
+                type: 'currency',
+                dataProp: 'harga_pax',
+                backendField: 'harga_net'
+            }
+        };
+
         const ROW_MODAL_GROUPS = [
-            { title: 'Penjualan', keys: ['pax', 'penjualan'] },
+            { title: 'Penjualan', keys: ['pax', 'harga_pax', 'penjualan'] },
             { title: 'Potongan & Biaya', keys: ['discount', 'pa', 'cashback', 'uang_saku', 'akomodasi', 'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam'] }
         ];
-        const ROW_MODAL_NON_DEDUCTION = ['pax', 'penjualan'];
+        const ROW_MODAL_NON_DEDUCTION = ['pax', 'harga_pax', 'penjualan'];
 
         $(document).on('click', '.ks-company-link', function(e) {
             e.preventDefault();
@@ -3073,7 +3086,7 @@
             ROW_MODAL_GROUPS.forEach(group => {
                 html += `<div class="rd-group-title">${group.title}</div>`;
                 group.keys.forEach(key => {
-                    const col = COLUMN_DEFS.find(c => c.key === key);
+                    const col = COLUMN_DEFS.find(c => c.key === key) || EXTRA_COLS[key];
                     if (!col) return;
 
                     const label = col.label.replace(/<br\s*\/?>/gi, ' ');
@@ -3094,6 +3107,7 @@
 
             $('#rdFields').html(html);
             recalcRowModalNett();
+            $('#rdDeleteBtn').toggleClass('d-none', editMode !== 'edit');
             new bootstrap.Modal(document.getElementById('rowDetailModal')).show();
         }
 
@@ -3114,6 +3128,12 @@
         $(document).on('input', '.rd-input', function() {
             const digits = this.value.replace(/[^0-9]/g, '');
             this.value = digits ? parseInt(digits, 10).toLocaleString('id-ID') : '';
+
+            if (this.id === 'rd_pax' || this.id === 'rd_harga_pax') {
+                const total = rdNumber('pax') * rdNumber('harga_pax');
+                $('#rd_penjualan').val(total ? total.toLocaleString('id-ID') : '');
+            }
+
             recalcRowModalNett();
         });
 
@@ -3152,6 +3172,44 @@
                         background: '#FAF1DE', color: '#2A3A4D', confirmButtonColor: '#E5C17A'
                     });
                 }
+            });
+        }
+
+        function deleteRowModal() {
+            if (!rowModalId) return;
+
+            Swal.fire({
+                title: 'Hapus data ini?',
+                text: 'Data penjualan ini akan dihapus dari rekap komisi.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6B7C93',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: `/office/komisi-sales/delete-row/${rowModalId}`,
+                    type: 'POST',
+                    data: { _token: '{{ csrf_token() }}', _method: 'DELETE' },
+                    success: function(res) {
+                        bootstrap.Modal.getInstance(document.getElementById('rowDetailModal')).hide();
+                        originalRowsData = [];
+                        loadKomisi();
+                        Swal.fire({
+                            icon: 'success', title: 'Terhapus!', text: res.message,
+                            timer: 1500, showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'warning', title: 'Gagal Menghapus',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                });
             });
         }
 

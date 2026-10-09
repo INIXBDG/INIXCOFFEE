@@ -87,7 +87,7 @@ class InventarisController extends Controller
             'kondisi' => $validated['kondisi']
         ]);
 
-        Checkbarang::create($validated);
+        checkbarang::create($validated);
         return back()->with('success', 'Berhasil menambahkan data pemeriksaan.');
     }
 
@@ -103,7 +103,7 @@ class InventarisController extends Controller
         $validated['idbarang'] = $inventaris->idbarang;
         $validated['user'] = Auth::user()->username;
 
-        Service::create($validated);
+        service::create($validated);
         return back()->with('success', 'Berhasil menambahkan data service.');
     }
 
@@ -113,8 +113,8 @@ class InventarisController extends Controller
         $idbarang = $inventaris->idbarang;
 
         // Delete related records first
-        Service::where('idbarang', $idbarang)->delete();
-        Checkbarang::where('idbarang', $idbarang)->delete();
+        service::where('idbarang', $idbarang)->delete();
+        checkbarang::where('idbarang', $idbarang)->delete();
 
         $inventaris->delete();
         return back()->with('success', 'Berhasil menghapus semua data terkait');

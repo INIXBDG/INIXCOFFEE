@@ -14,7 +14,7 @@ class rekapInstrukturController extends Controller
 {
     protected $feedbackController;
 
-    public function __construct(FeedbackController $feedbackController)
+    public function __construct(feedbackController $feedbackController)
     {
         $this->feedbackController = $feedbackController; // Menginisialisasi controller
     }

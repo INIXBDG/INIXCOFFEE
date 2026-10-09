@@ -604,7 +604,7 @@ class HRController extends Controller
 
             $excludedJabatan = ['Direktur', 'Direktur Utama'];
 
-            $baseQuery = Karyawan::query()
+            $baseQuery = karyawan::query()
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
@@ -902,19 +902,19 @@ class HRController extends Controller
             $periodStart = Carbon::createFromDate($tahun, $m, 1)->startOfMonth();
             $periodEnd = Carbon::createFromDate($tahun, $m, 1)->endOfMonth();
 
-            $newHires = Karyawan::whereNotNull('awal_probation')
+            $newHires = karyawan::whereNotNull('awal_probation')
                 ->whereBetween('awal_probation', [$periodStart, $periodEnd])
                 ->where('status_aktif', '1')
                 ->count();
 
-            $actives = Karyawan::where('status_aktif', '1')
+            $actives = karyawan::where('status_aktif', '1')
                 ->where(function ($q) use ($periodStart) {
                     $q->whereNull('awal_probation')
                         ->orWhere('awal_probation', '<', $periodStart->copy()->subMonth());
                 })
                 ->count();
 
-            $resigns = Karyawan::where('status_aktif', '0')
+            $resigns = karyawan::where('status_aktif', '0')
                 ->whereBetween('resigned_at', [$periodStart, $periodEnd])
                 ->count();
 

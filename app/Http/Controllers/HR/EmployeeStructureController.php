@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\OrgStructure;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Http\Request;
 
 class EmployeeStructureController extends Controller
@@ -26,7 +26,7 @@ class EmployeeStructureController extends Controller
                 ->map(function ($node) use (&$buildTree, &$allNodes) {
                     $karyawans = collect();
                     if (!empty($node->karyawan_ids)) {
-                        $karyawans = Karyawan::whereIn('id', $node->karyawan_ids)->get()->map(
+                        $karyawans = karyawan::whereIn('id', $node->karyawan_ids)->get()->map(
                             fn($k) => [
                                 'id' => $k->id,
                                 'nama_lengkap' => $k->nama_lengkap,

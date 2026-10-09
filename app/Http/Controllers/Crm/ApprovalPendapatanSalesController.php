@@ -8,7 +8,7 @@ use App\Models\ApprovalPendapatanSales;
 use App\Models\Materi;
 use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
-use App\Models\Rkm;
+use App\Models\RKM;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -210,7 +210,7 @@ class ApprovalPendapatanSalesController extends Controller
 
             $manualRkms = collect();
             if ($idRkmManualOnly->isNotEmpty()) {
-                $manualRkms = Rkm::with(['materi', 'perusahaan', 'sales', 'instruktur'])
+                $manualRkms = RKM::with(['materi', 'perusahaan', 'sales', 'instruktur'])
                     ->whereIn('id', $idRkmManualOnly)
                     ->get()
                     ->keyBy('id');
@@ -458,7 +458,7 @@ class ApprovalPendapatanSalesController extends Controller
 
         $usedIds = ApprovalPendapatanSales::pluck('id_rkm');
 
-        $query = Rkm::with(['materi', 'perusahaan', 'sales', 'instruktur']) 
+        $query = RKM::with(['materi', 'perusahaan', 'sales', 'instruktur']) 
             ->whereNotIn('id', $usedIds);
 
         if ($start && $end) {
@@ -501,7 +501,7 @@ class ApprovalPendapatanSalesController extends Controller
         DB::beginTransaction();
 
         try {
-            $rkm = Rkm::with(['materi', 'perusahaan', 'sales', 'instruktur'])->findOrFail($validated['id_rkm']);
+            $rkm = RKM::with(['materi', 'perusahaan', 'sales', 'instruktur'])->findOrFail($validated['id_rkm']);
 
             // Ambil data perhitungan net sales jika ada (untuk nilai default)
             $netSales = perhitunganNetSales::where('id_rkm', $rkm->id)->first();

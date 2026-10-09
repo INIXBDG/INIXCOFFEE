@@ -179,8 +179,9 @@ class DaftarPesertaExamController extends Controller
     {
         $validated = $request->validate([
             'nama_exam' => 'required|string|max:255',
+            'kategori_exam' => 'nullable|in:BNSP,Internasional,Inixcert,Authorize',
             'tanggal_pelaksanaan' => 'required|date',
-            'jam_pelaksanaan' => 'required|date_format:H:i',
+            'jam_pelaksanaan' => 'required',
             'skor' => 'nullable|numeric',
             'dokumentasi' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'invoice' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',

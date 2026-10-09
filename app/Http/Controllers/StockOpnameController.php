@@ -31,7 +31,7 @@ class StockOpnameController extends Controller
     public function index()
     {
         $barang = StockOpname::latest()->get();
-        $karyawan = Karyawan::whereIn('jabatan', ['HRD', 'Office Boy'])
+        $karyawan = karyawan::whereIn('jabatan', ['HRD', 'Office Boy'])
             ->whereNotNull('NIP')
             ->where('status_aktif', '1')
             ->get();

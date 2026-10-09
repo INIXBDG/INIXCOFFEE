@@ -22,38 +22,38 @@
     <button class="btn btn-sm btn-primary" onclick="loadData()">Tampilkan</button>
   </div>
 
-  {{-- Cards --}}
+  {{-- Cards (klik untuk lihat detail) --}}
   <div class="row g-2 mb-4">
       <div class="col">
-          <div class="card border-0 p-3 h-100">
+          <div class="card border-0 p-3 h-100 card-clickable" onclick="openCardModal('semua','Semua data exam')">
               <div class="text-muted small">Total exam</div>
               <div class="fs-4 fw-medium" id="v-exam">—</div>
           </div>
       </div>
 
       <div class="col">
-          <div class="card border-0 p-3 h-100">
+          <div class="card border-0 p-3 h-100 card-clickable" onclick="openCardModal('semua','Semua peserta')">
               <div class="text-muted small">Total peserta</div>
               <div class="fs-4 fw-medium" id="v-peserta">—</div>
           </div>
       </div>
 
       <div class="col">
-          <div class="card border-0 p-3 h-100">
+          <div class="card border-0 p-3 h-100 card-clickable" onclick="openCardModal('lulus','Peserta lulus')">
               <div class="text-muted small">Peserta lulus</div>
               <div class="fs-4 fw-medium text-success" id="v-lulus">—</div>
           </div>
       </div>
 
       <div class="col">
-          <div class="card border-0 p-3 h-100">
+          <div class="card border-0 p-3 h-100 card-clickable" onclick="openCardModal('tidak_lulus','Peserta tidak lulus')">
               <div class="text-muted small">Tidak lulus</div>
               <div class="fs-4 fw-medium text-danger" id="v-tidak">—</div>
           </div>
       </div>
 
       <div class="col">
-          <div class="card border-0 p-3 h-100">
+          <div class="card border-0 p-3 h-100 card-clickable" onclick="openCardModal('tidak_exam','Peserta tidak exam')">
               <div class="text-muted small">Tidak Exam</div>
               <div class="fs-4 fw-medium text-danger" id="v-tidak-exam">—</div>
           </div>
@@ -86,7 +86,6 @@
     border-radius:8px;
     background:#fff;
   ">
-    {{-- Sumbu X tetap di atas (sticky) --}}
     <div id="x-axis-sticky" style="
       position:sticky;
       top:0;
@@ -99,13 +98,11 @@
       <canvas id="xAxisChart" style="display:block;"></canvas>
     </div>
 
-    {{-- Canvas chart utama --}}
     <div id="chart-wrap" style="position:relative; width:100%;">
       <canvas id="mainChart"></canvas>
     </div>
   </div>
 
-  {{-- Hint scroll --}}
   <div id="scroll-hint" class="text-muted text-center mt-1" style="font-size:11px; display:none;">
     ↕ Scroll untuk melihat semua data
   </div>
@@ -129,33 +126,47 @@
     font-size:13px; color:#333; min-width:180px; z-index:9999;
   "></div>
 
-  {{-- Modal detail kategori --}}
-  <div class="modal fade" id="modalKategoriDetail" tabindex="-1" aria-hidden="true">
+  {{-- Modal detail (dipakai oleh card & chart semua tab) --}}
+  <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header">
-          <h6 class="modal-title mb-0" id="modalKategoriTitle">Detail Kategori</h6>
+          <h6 class="modal-title mb-0" id="modalDetailTitle">Detail</h6>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <label class="small text-muted mb-0" for="modalStatusFilter">Status</label>
+            <select id="modalStatusFilter" class="form-select form-select-sm" style="width:150px;" onchange="applyModalFilter()">
+              <option value="">Semua</option>
+              <option value="Lulus">Lulus</option>
+              <option value="Tidak Lulus">Tidak Lulus</option>
+              <option value="Tidak Exam">Tidak Exam</option>
+            </select>
+          </div>
+
           <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-3">
               <thead>
                 <tr>
-                  <th style="width:130px;">Pengajuan</th>
-                  <th style="width:130px;">Periode</th>
-                  <th>Materi</th>
+                  <th style="width:50px;">No</th>
+                  <th style="width:120px;">Tgl Pelaksanaan</th>
+                  <th>Peserta</th>
+                  <th style="width:90px;">ID RKM</th>
+                  <th>Materi (RKM)</th>
+                  <th>Kategori</th>
                   <th>Instansi</th>
                   <th>Instruktur</th>
+                  <th style="width:110px;">Status</th>
                 </tr>
               </thead>
-              <tbody id="modalKategoriBody"></tbody>
+              <tbody id="modalDetailBody"></tbody>
             </table>
           </div>
           <div class="d-flex align-items-center justify-content-between">
-            <div class="text-muted" style="font-size:12px;" id="modalKategoriInfo"></div>
+            <div class="text-muted" style="font-size:12px;" id="modalDetailInfo"></div>
             <nav>
-              <ul class="pagination pagination-sm mb-0" id="modalKategoriPagination"></ul>
+              <ul class="pagination pagination-sm mb-0" id="modalDetailPagination"></ul>
             </nav>
           </div>
         </div>
@@ -164,40 +175,60 @@
   </div>
 </div>
 
+<style>
+  .card-clickable { cursor: pointer; transition: box-shadow .15s; }
+  .card-clickable:hover { box-shadow: 0 2px 10px rgba(0,0,0,.10); }
+</style>
+
 <script>
-const URL_REKAP  = "{{ route('office.exam.rekap.json') }}";
-const ROW_H      = 44;    // tinggi per baris chart
-const MAX_VISIBLE = 10;   // batas sebelum scroll aktif
-const MAX_H      = MAX_VISIBLE * ROW_H + 60; // ~520px
+const URL_REKAP   = "{{ route('office.exam.rekap.json') }}";
+const ROW_H       = 44;    // tinggi per baris chart
+const MAX_VISIBLE = 10;    // batas sebelum scroll aktif
+const MAX_H       = MAX_VISIBLE * ROW_H + 60;
 
-let chartInst        = null;
-let currentTab        = 'materi_exam';
-let lastData          = null;
-let mouseX            = 0;
-let mouseY            = 0;
-let currentActiveSeries = null; // series yg sedang dipakai chart aktif (SERIES atau SIMPLE_SERIES)
+let chartInst = null;
+let currentTab = 'materi_exam';
+let lastData = null;
+let mouseX = 0;
+let mouseY = 0;
 
-// Series lengkap: dipakai untuk tab yang datanya berupa objek
-// {total_exam, total_peserta, total_lulus, total_tidak_lulus, total_tidak_exam}
+// Semua tab sekarang berbentuk objek ringkasan + data[]
+// status = filter awal modal saat bar series tsb diklik
 const SERIES = [
-  { label: 'Jumlah exam',  key: 'total_exam',        color: '#2a78d6' },
-  { label: 'Peserta',      key: 'total_peserta',      color: '#1baf7a' },
-  { label: 'Lulus',        key: 'total_lulus',        color: '#008300' },
-  { label: 'Tidak lulus',  key: 'total_tidak_lulus',  color: '#e34948' },
-  { label: 'Tidak Exam',   key: 'total_tidak_exam',   color: '#ffc107' },
+  { label: 'Jumlah exam',  key: 'total_exam',        color: '#2a78d6', status: ''            },
+  { label: 'Peserta',      key: 'total_peserta',     color: '#1baf7a', status: ''            },
+  { label: 'Lulus',        key: 'total_lulus',       color: '#008300', status: 'Lulus'       },
+  { label: 'Tidak lulus',  key: 'total_tidak_lulus', color: '#e34948', status: 'Tidak Lulus' },
+  { label: 'Tidak Exam',   key: 'total_tidak_exam',  color: '#ffc107', status: 'Tidak Exam'  },
 ];
 
-// Series simpel: dipakai untuk tab yang datanya cuma angka polos (mis. kategori)
-const SIMPLE_SERIES = [
-  { label: 'Jumlah exam', key: null, color: '#2a78d6' },
-];
+// ── State modal ───────────────────────────────────────────────
+let modalSource      = [];   // semua baris (belum difilter status)
+let modalRows        = [];   // baris setelah filter status
+let modalCurrentPage = 1;
+const MODAL_PAGE_SIZE = 10;
+let bsModal = null;
 
-// ── Data detail per kategori (utk modal) ───────────────────────
-let kategoriDetailData = {};
-let modalRows          = [];
-let modalCurrentPage   = 1;
-const MODAL_PAGE_SIZE  = 10;
-let bsModalKategori     = null;
+// ── Helper ────────────────────────────────────────────────────
+function esc(v) {
+  return String(v ?? '-').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// registrasi -> peserta -> nama
+function pesertaName(r) {
+  return r.peserta?.nama ?? '-';
+}
+
+function statusBadge(status) {
+  const cls = {
+    'Lulus':       'bg-success',
+    'Tidak Lulus': 'bg-danger',
+    'Tidak Exam':  'bg-warning text-dark',
+  }[status] ?? 'bg-secondary';
+  return `<span class="badge ${cls}">${esc(status)}</span>`;
+}
 
 // ── Track mouse ───────────────────────────────────────────────
 document.addEventListener('mousemove', function (e) {
@@ -246,8 +277,7 @@ function loadData() {
   fetch(`${URL_REKAP}?${params}`)
     .then(r => r.json())
     .then(data => {
-      lastData            = data;
-      kategoriDetailData  = data.kategori_data || {};
+      lastData = data;
       document.getElementById('v-exam').textContent       = data.total_exam;
       document.getElementById('v-peserta').textContent    = data.total_peserta;
       document.getElementById('v-lulus').textContent      = data.total_lulus;
@@ -306,29 +336,16 @@ function renderChart(tab, data) {
 
   emptyEl.style.display = 'none';
 
-  // Deteksi bentuk data: kalau value-nya bukan objek (mis. tab "kategori"
-  // yang cuma berisi angka per label), pakai SIMPLE_SERIES (1 series saja).
-  const isSimple = typeof src[labels[0]] !== 'object' || src[labels[0]] === null;
-  const activeSeries = isSimple ? SIMPLE_SERIES : SERIES;
-  currentActiveSeries = activeSeries; // simpan referensi utk dipakai toggleSeries()
-
   const needsScroll = labels.length > MAX_VISIBLE;
   const fullH       = labels.length * ROW_H + 60;
 
-  // Outer container: fixed max-height kalau data banyak
   chartOuter.style.display   = '';
   chartOuter.style.maxHeight = needsScroll ? MAX_H + 'px' : 'none';
   chartOuter.scrollTop       = 0;
-
-  // Inner canvas height = full selalu (supaya tidak terpotong)
-  chartWrap.style.height = fullH + 'px';
-
-  // Hint scroll
-  hintEl.style.display = needsScroll ? '' : 'none';
-
-  // Info jumlah item
-  infoEl.style.display   = '';
-  infoEl.textContent     = `Menampilkan ${labels.length} item`;
+  chartWrap.style.height     = fullH + 'px';
+  hintEl.style.display       = needsScroll ? '' : 'none';
+  infoEl.style.display       = '';
+  infoEl.textContent         = `Menampilkan ${labels.length} item`;
 
   if (chartInst) { chartInst.destroy(); }
 
@@ -336,9 +353,9 @@ function renderChart(tab, data) {
     type: 'bar',
     data: {
       labels,
-      datasets: activeSeries.map(s => ({
+      datasets: SERIES.map(s => ({
         label:           s.label,
-        data:            labels.map(k => isSimple ? src[k] : src[k][s.key]),
+        data:            labels.map(k => src[k]?.[s.key] ?? 0),
         backgroundColor: s.color,
         borderRadius:    4,
       })),
@@ -347,15 +364,18 @@ function renderChart(tab, data) {
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+
+      // Klik bar (tab mana pun) -> modal detail, status awal ikut series yang diklik
       onClick: (evt, elements) => {
-        if (currentTab !== 'kategori' || !elements.length) return;
-        const idx   = elements[0].index;
-        const label = chartInst.data.labels[idx];
-        openKategoriModal(label);
+        if (!elements.length) return;
+        const { index, datasetIndex } = elements[0];
+        const label  = chartInst.data.labels[index];
+        const series = SERIES[datasetIndex];
+        openDetailModal(label, src[label]?.data ?? [], series.status);
       },
       onHover: (evt, elements) => {
         if (evt.native?.target) {
-          evt.native.target.style.cursor = (currentTab === 'kategori' && elements.length) ? 'pointer' : 'default';
+          evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
         }
       },
       plugins: {
@@ -370,9 +390,9 @@ function renderChart(tab, data) {
             const rowData = src[label];
 
             tooltip.innerHTML =
-              `<div style="font-weight:500;font-size:13px;margin-bottom:8px;color:#111;border-bottom:1px solid #eee;padding-bottom:6px;">${label}</div>` +
-              activeSeries.map(s => {
-                const val = isSimple ? (rowData ?? 0) : (rowData?.[s.key] ?? 0);
+              `<div style="font-weight:500;font-size:13px;margin-bottom:8px;color:#111;border-bottom:1px solid #eee;padding-bottom:6px;">${esc(label)}</div>` +
+              SERIES.map(s => {
+                const val = rowData?.[s.key] ?? 0;
                 return `<div style="display:flex;justify-content:space-between;gap:24px;padding:2px 0;">
                   <span style="display:flex;align-items:center;gap:6px;">
                     <span style="width:10px;height:10px;border-radius:2px;background:${s.color};flex-shrink:0;display:inline-block;"></span>
@@ -381,9 +401,7 @@ function renderChart(tab, data) {
                   <span style="font-weight:500;color:#111;">${val}</span>
                 </div>`;
               }).join('') +
-              (currentTab === 'kategori'
-                ? `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #eee;font-size:11px;color:#999;">Klik bar untuk lihat detail</div>`
-                : '');
+              `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #eee;font-size:11px;color:#999;">Klik bar untuk lihat detail</div>`;
 
             tooltip.style.display = 'block';
             requestAnimationFrame(() => positionTooltip(tooltip));
@@ -392,7 +410,7 @@ function renderChart(tab, data) {
       },
       scales: {
         x: {
-          position: 'top',  // sumbu X di atas supaya selalu kelihatan saat scroll
+          position: 'top',
           grid:   { color: 'rgba(0,0,0,0.06)' },
           ticks:  { color: '#898781' },
           border: { display: false },
@@ -407,7 +425,7 @@ function renderChart(tab, data) {
   });
 
   // ── Legend clickable ──────────────────────────────────────
-  legendEl.innerHTML = activeSeries.map((s, i) =>
+  legendEl.innerHTML = SERIES.map((s, i) =>
     `<span class="legend-item" data-idx="${i}" onclick="toggleSeries(this,${i})"
       style="display:flex;align-items:center;gap:6px;cursor:pointer;
              background:#f5f5f5;border-radius:6px;padding:4px 10px;
@@ -425,44 +443,64 @@ function toggleSeries(el, idx) {
   meta.hidden = !meta.hidden;
   chartInst.update();
   const dot = el.querySelector('.legend-dot');
-  const series = currentActiveSeries || SERIES;
   if (meta.hidden) {
     el.style.opacity     = '0.4';
     dot.style.background = '#ccc';
   } else {
     el.style.opacity     = '1';
-    dot.style.background = series[idx].color;
+    dot.style.background = SERIES[idx].color;
   }
 }
 
-// ── Modal detail kategori ───────────────────────────────────────
-function openKategoriModal(label) {
-  if (!bsModalKategori) {
-    bsModalKategori = new bootstrap.Modal(document.getElementById('modalKategoriDetail'));
+// ── Modal detail ──────────────────────────────────────────────
+
+// Klik card: ambil dari data.data.{semua|lulus|tidak_lulus|tidak_exam}
+function openCardModal(key, title) {
+  if (!lastData) return;
+  openDetailModal(title, lastData.data?.[key] ?? [], '');
+}
+
+function openDetailModal(title, rows, status = '') {
+  if (!bsModal) {
+    bsModal = new bootstrap.Modal(document.getElementById('modalDetail'));
   }
-  modalRows        = kategoriDetailData[label] || [];
+  modalSource = rows || [];
+  document.getElementById('modalDetailTitle').textContent = `Detail - ${title}`;
+  document.getElementById('modalStatusFilter').value = status;
+  applyModalFilter();
+  bsModal.show();
+}
+
+function applyModalFilter() {
+  const st = document.getElementById('modalStatusFilter').value;
+  modalRows        = st ? modalSource.filter(r => r.status === st) : modalSource;
   modalCurrentPage = 1;
-  document.getElementById('modalKategoriTitle').textContent = `Detail Kategori - ${label}`;
   renderModalPage();
-  bsModalKategori.show();
 }
 
 function renderModalPage() {
-  const tbody   = document.getElementById('modalKategoriBody');
-  const infoEl  = document.getElementById('modalKategoriInfo');
-  const start   = (modalCurrentPage - 1) * MODAL_PAGE_SIZE;
+  const tbody    = document.getElementById('modalDetailBody');
+  const infoEl   = document.getElementById('modalDetailInfo');
+  const start    = (modalCurrentPage - 1) * MODAL_PAGE_SIZE;
   const pageRows = modalRows.slice(start, start + MODAL_PAGE_SIZE);
 
   tbody.innerHTML = pageRows.length
-    ? pageRows.map(r => `
+    ? pageRows.map((r, i) => `
         <tr>
-          <td>${r.tanggal_pengajuan ?? '-'}</td>
-          <td>${r.tanggal_mulai && r.tanggal_selesai ? `${r.tanggal_mulai}/${r.tanggal_selesai}` : '-' }</td>
-          <td>${r.materi ?? '-'}</td>
-          <td>${r.perusahaan ?? '-'}</td>
-          <td>${r.instruktur ?? '-'}</td>
+          <td>${start + i + 1}</td>
+          <td>${esc(r.tanggal_pelaksanaan)}</td>
+          <td>${esc(pesertaName(r))}</td>
+          <td>${r.rkm?.id ?? ''}</td>
+          <td>
+            ${esc(r.rkm?.materi ?? r.exam?.materi)}
+            ${r.rkm?.deleted ? '<span class="badge bg-secondary ms-1">RKM dihapus</span>' : ''}
+          </td>
+          <td>${esc(r.rkm?.kategori)}</td>
+          <td>${esc(r.exam?.perusahaan)}</td>
+          <td>${esc(r.rkm?.instruktur)}</td>
+          <td>${statusBadge(r.status)}</td>
         </tr>`).join('')
-    : `<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada data</td></tr>`;
+    : `<tr><td colspan="9" class="text-center text-muted py-3">Tidak ada data</td></tr>`;
 
   infoEl.textContent = modalRows.length
     ? `Menampilkan ${start + 1}-${Math.min(start + MODAL_PAGE_SIZE, modalRows.length)} dari ${modalRows.length} data`
@@ -472,7 +510,7 @@ function renderModalPage() {
 }
 
 function renderModalPagination() {
-  const pagEl = document.getElementById('modalKategoriPagination');
+  const pagEl = document.getElementById('modalDetailPagination');
   const totalPages = Math.ceil(modalRows.length / MODAL_PAGE_SIZE);
   if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Office;
+namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -8,9 +8,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Models\RKM;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Perusahaan;
-use App\Models\Eksam;
+use App\Models\eksam;
 use App\Models\BundlingExam;
 use App\Http\Resources\PostResource;
 use App\Models\DokumentasiExam;
@@ -78,11 +78,11 @@ class OfficeExamController extends Controller
                     $allInstructorIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->instruktur_all ?? '')))->unique();
                     $allRkmIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->id ?? '')))->unique();
 
-                    $salesByCode = Karyawan::whereIn('kode_karyawan', $allSalesIds)->get()->keyBy('kode_karyawan');
-                    $instructorsByCode = Karyawan::whereIn('kode_karyawan', $allInstructorIds)->get()->keyBy('kode_karyawan');
+                    $salesByCode = karyawan::whereIn('kode_karyawan', $allSalesIds)->get()->keyBy('kode_karyawan');
+                    $instructorsByCode = karyawan::whereIn('kode_karyawan', $allInstructorIds)->get()->keyBy('kode_karyawan');
                     $companiesById = Perusahaan::whereIn('id', $allCompanyIds)->get()->keyBy('id');
                     $bundlingByRkm = BundlingExam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
-                    $examByRkm = Eksam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
+                    $examByRkm = eksam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
 
                     foreach ($rows as $row) {
                         $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
@@ -238,7 +238,7 @@ class OfficeExamController extends Controller
         }
         
         $perusahaanMap = Perusahaan::whereIn('id', array_unique($allPerusahaanIds))->pluck('nama_perusahaan', 'id');
-        $karyawanMap = Karyawan::whereIn('kode_karyawan', array_unique($allKaryawanIds))->pluck('nama_lengkap', 'kode_karyawan');
+        $karyawanMap = karyawan::whereIn('kode_karyawan', array_unique($allKaryawanIds))->pluck('nama_lengkap', 'kode_karyawan');
         
         $details = [];
         foreach ($rkms as $rkm) {
@@ -448,6 +448,7 @@ class OfficeExamController extends Controller
     {
         $query = DokumentasiExam::with([
             'registrasi',
+            'registrasi.peserta',
             'registrasi.exam',
             'registrasi.exam.rkm' => function ($q) {
                 $q->withTrashed();
@@ -483,7 +484,58 @@ class OfficeExamController extends Controller
 
         $isTidakExam = fn ($d) => is_null($d->keterangan_lulus);
 
-        // ── Grand total ───────────────────────────────────────────
+        $statusLabel = function ($d) use ($isLulus, $isTidakLulus, $isTidakExam) {
+            if ($isLulus($d))      return 'Lulus';
+            if ($isTidakLulus($d)) return 'Tidak Lulus';
+            if ($isTidakExam($d))  return 'Tidak Exam';
+            return 'Lainnya';
+        };
+
+        // ── Helper detail (1 baris dokumentasi → data lengkap) ────
+
+        $detail = function ($d) use ($statusLabel) {
+            $registrasi = $d->registrasi;
+            $exam       = $registrasi?->exam;
+            $rkm        = $exam?->rkm;
+
+            return [
+                'dokumentasi_id'      => $d->id,
+                'tanggal_pelaksanaan' => $d->tanggal_pelaksanaan
+                    ? \Carbon\Carbon::parse($d->tanggal_pelaksanaan)->format('d M Y')
+                    : '-',
+
+                // status dari dokumentasi exam
+                'status'              => $statusLabel($d),
+                'keterangan_lulus'    => $d->keterangan_lulus ?? '-',
+
+                'rkm' => $rkm ? [
+                    'id'         => $rkm->id,
+                    'materi'     => $rkm->materi?->alias_exam ?? $exam?->materi ?? '-',
+                    'kategori'   => $rkm->materi?->kategori_exam ?? '-',
+                    'instruktur' => $rkm->instruktur?->nama_lengkap ?? '-',
+                    'deleted'    => $rkm->trashed(), // karena pakai withTrashed
+                ] : null,
+
+                'exam' => $exam ? [
+                    'id'         => $exam->id,
+                    'materi'     => $exam->materi ?? '-',
+                    'perusahaan' => $exam->perusahaan ?? '-',
+                ] : null,
+
+                // peserta (registrasi -> peserta)
+                'peserta' => $registrasi?->peserta ? [
+                    'id'   => $registrasi->peserta->id,
+                    'nama' => $registrasi->peserta->nama ?? '-',
+                ] : null,
+
+                // semua kolom registrasi tanpa relasi nested (biar JSON tidak berat)
+                'registrasi' => $registrasi?->withoutRelations()->toArray(),
+            ];
+        };
+
+        $detailList = fn ($collection) => $collection->values()->map($detail);
+
+        // ── Grand total + list per status ─────────────────────────
 
         $totalExam = $dokumentasi
             ->pluck('registrasi.exam.id')
@@ -497,35 +549,31 @@ class OfficeExamController extends Controller
             ->unique('id')
             ->count();
 
-        $totalLulus = $dokumentasi->filter($isLulus)->count();
+        $listLulus      = $dokumentasi->filter($isLulus);
+        $listTidakLulus = $dokumentasi->filter($isTidakLulus);
+        $listTidakExam  = $dokumentasi->filter($isTidakExam);
 
-        $totalTidakLulus = $dokumentasi->filter($isTidakLulus)->count();
+        // ── Helper ringkasan (total + data) ───────────────────────
 
-        $totalTidakExam = $dokumentasi->filter($isTidakExam)->count();
-
-        // ── Helper ringkasan ──────────────────────────────────────
-
-        $ringkasan = function ($group) use ($isLulus, $isTidakLulus, $isTidakExam) {
-            $totalPeserta = $group
-                ->pluck('registrasi.id')
-                ->filter()
-                ->unique()
-                ->count();
-
+        $ringkasan = function ($group) use ($isLulus, $isTidakLulus, $isTidakExam, $detailList) {
             return [
-                'total_exam'        => $group
+                'total_exam' => $group
                     ->pluck('registrasi.exam.id')
                     ->filter()
                     ->unique()
                     ->count(),
 
-                'total_peserta'     => $totalPeserta,
+                'total_peserta' => $group
+                    ->pluck('registrasi.id')
+                    ->filter()
+                    ->unique()
+                    ->count(),
 
                 'total_lulus'       => $group->filter($isLulus)->count(),
-
                 'total_tidak_lulus' => $group->filter($isTidakLulus)->count(),
-
                 'total_tidak_exam'  => $group->filter($isTidakExam)->count(),
+
+                'data' => $detailList($group),
             ];
         };
 
@@ -533,7 +581,7 @@ class OfficeExamController extends Controller
 
         $materiExam = $dokumentasi
             ->groupBy(function ($d) {
-                $exam = $d->registrasi?->exam;
+                $exam   = $d->registrasi?->exam;
                 $materi = $exam?->rkm?->materi;
 
                 return ($materi?->alias_exam ?? $exam?->materi ?? '-')
@@ -542,61 +590,23 @@ class OfficeExamController extends Controller
             })
             ->map($ringkasan);
 
-        // ── Group by perusahaan ──────────────────────────────────
+        // ── Group by perusahaan ───────────────────────────────────
 
         $instansi = $dokumentasi
-            ->groupBy(function ($d) {
-                return $d->registrasi?->exam?->perusahaan ?? 'Unknown';
-            })
+            ->groupBy(fn ($d) => $d->registrasi?->exam?->perusahaan ?? 'Unknown')
             ->map($ringkasan);
 
         // ── Group by instruktur ───────────────────────────────────
 
         $keberhasilanMengajar = $dokumentasi
-            ->groupBy(function ($d) {
-                return $d->registrasi?->exam?->rkm?->instruktur?->nama_lengkap
-                    ?? 'Unknown';
-            })
+            ->groupBy(fn ($d) => $d->registrasi?->exam?->rkm?->instruktur?->nama_lengkap ?? 'Unknown')
             ->map($ringkasan);
 
         // ── Group by kategori exam ────────────────────────────────
 
         $kategori = $dokumentasi
-            ->groupBy(function ($d) {
-                return $d->registrasi?->exam?->rkm?->materi?->kategori_exam
-                    ?? 'Unknown';
-            })
-            ->map(fn ($group) => $group->count());
-
-        // ── Detail kategori ───────────────────────────────────────
-
-        $kategoriData = $dokumentasi
-            ->groupBy(function ($d) {
-                return $d->registrasi?->exam?->rkm?->materi?->kategori_exam
-                    ?? 'Unknown';
-            })
-            ->map(function ($group) {
-                return $group->values()->map(function ($d) {
-                    $exam = $d->registrasi?->exam;
-                    $rkm = $exam?->rkm;
-
-                    return [
-                        'tanggal_pelaksanaan' => $d->tanggal_pelaksanaan
-                            ? \Carbon\Carbon::parse($d->tanggal_pelaksanaan)->format('d M Y')
-                            : '-',
-
-                        'materi' => $rkm?->materi?->alias_exam
-                            ?? $exam?->materi
-                            ?? '-',
-
-                        'perusahaan' => $exam?->perusahaan ?? '-',
-
-                        'instruktur' => $rkm?->instruktur?->nama_lengkap ?? '-',
-
-                        'keterangan_lulus' => $d->keterangan_lulus ?? '-',
-                    ];
-                });
-            });
+            ->groupBy(fn ($d) => $d-> kategori_exam ?? $d->registrasi?->exam?->rkm?->materi?->kategori_exam ?? 'Unknown')
+            ->map($ringkasan);
 
         // ── Response JSON ─────────────────────────────────────────
 
@@ -609,15 +619,22 @@ class OfficeExamController extends Controller
 
             'total_exam'        => $totalExam,
             'total_peserta'     => $totalPeserta,
-            'total_lulus'       => $totalLulus,
-            'total_tidak_lulus' => $totalTidakLulus,
-            'total_tidak_exam'  => $totalTidakExam,
+            'total_lulus'       => $listLulus->count(),
+            'total_tidak_lulus' => $listTidakLulus->count(),
+            'total_tidak_exam'  => $listTidakExam->count(),
 
-            'materi_exam'       => $materiExam,
-            'instansi'          => $instansi,
-            'instruktur'        => $keberhasilanMengajar,
-            'kategori'          => $kategori,
-            'kategori_data'     => $kategoriData,
+            // detail untuk tiap total
+            'data' => [
+                'semua'       => $detailList($dokumentasi),
+                'lulus'       => $detailList($listLulus),
+                'tidak_lulus' => $detailList($listTidakLulus),
+                'tidak_exam'  => $detailList($listTidakExam),
+            ],
+
+            'materi_exam' => $materiExam,
+            'instansi'    => $instansi,
+            'instruktur'  => $keberhasilanMengajar,
+            'kategori'    => $kategori,
         ]);
     }
 }

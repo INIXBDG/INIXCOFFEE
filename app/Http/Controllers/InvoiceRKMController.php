@@ -72,100 +72,146 @@ class InvoiceRKMController extends Controller
      * @return \Illuminate\View\View
      */
 
-public function __construct()
-{
-    $this->middleware('permission:View Invoice', ['only' => ['index']]);
-    $this->middleware('auth');
-}
-public function index(): View
-{
-    // Ambil semua ID RKM yang sudah ada di tabel invoices
-    $existingRKMs = Invoice::pluck('id_rkm')->toArray();
+    public function __construct()
+    {
+        $this->middleware('permission:View Invoice', ['only' => ['index']]);
+        $this->middleware('auth');
+    }
+    public function index(): View
+    {
+        // Ambil semua ID RKM yang sudah ada di tabel invoices
+        $existingRKMs = Invoice::pluck('id_rkm')->toArray();
 
-    // Ambil semua ID RKM yang sudah ada di tabel kwitansi
-    $receiptedRKMs = Kwitansi::pluck('id_rkm')->toArray();
+        // Ambil semua ID RKM yang sudah ada di tabel kwitansi
+        $receiptedRKMs = Kwitansi::pluck('id_rkm')->toArray();
 
-    $notInvoicedRkms = RKM::with([
-            'sales',
-            'materi',
-            'instruktur',
-            'perusahaan',
-            'registrasi',
-        ])
-        ->whereNotIn('id', $existingRKMs)
-        ->whereNull('deleted_at')
-        ->where('status', '0')
-        ->orderBy('tanggal_awal', 'desc')
-        ->get();
+        $notInvoicedRkms = RKM::with([
+                'sales',
+                'materi',
+                'instruktur',
+                'perusahaan',
+                'registrasi',
+            ])
+            ->whereNotIn('id', $existingRKMs)
+            ->whereNull('deleted_at')
+            ->where('status', '0')
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
 
-    $duplicateRkms = collect();
+        $duplicateRkms = collect();
 
-    $notInvoicedRkms = $notInvoicedRkms
-        ->groupBy(function ($rkm) {
-            return implode('|', [
-                $rkm->materi_key,
-                $rkm->perusahaan_key,
-                $rkm->harga_jual,
-                $rkm->tanggal_awal,
-                $rkm->tanggal_akhir,
-                $rkm->sales_key,
-            ]);
-        })
-        ->map(function ($group) use (&$duplicateRkms) {
+        $notInvoicedRkms = $notInvoicedRkms
+            ->groupBy(function ($rkm) {
+                return implode('|', [
+                    $rkm->materi_key,
+                    $rkm->perusahaan_key,
+                    $rkm->harga_jual,
+                    $rkm->tanggal_awal,
+                    $rkm->tanggal_akhir,
+                    $rkm->sales_key,
+                ]);
+            })
+            ->map(function ($group) use (&$duplicateRkms) {
 
-            if ($group->count() <= 1) {
-                return $group;
-            }
+                if ($group->count() <= 1) {
+                    return $group;
+                }
 
-            $usedRkm = $group->first(function ($rkm) {
-                return $rkm->isi_pax == 0
-                    && $rkm->registrasi->count() > 0;
-            });
-
-            if ($usedRkm) {
-                $sisaKembaran = $group->reject(function ($rkm) use ($usedRkm) {
-                    return $rkm->id === $usedRkm->id;
+                $usedRkm = $group->first(function ($rkm) {
+                    return $rkm->isi_pax == 0
+                        && $rkm->registrasi->count() > 0;
                 });
 
-                $duplicateRkms = $duplicateRkms->merge($sisaKembaran);
+                if ($usedRkm) {
+                    $sisaKembaran = $group->reject(function ($rkm) use ($usedRkm) {
+                        return $rkm->id === $usedRkm->id;
+                    });
 
-                return collect([$usedRkm]);
-            }
+                    $duplicateRkms = $duplicateRkms->merge($sisaKembaran);
 
-            return $group;
-        })
-        ->flatten(1)
-        ->values();
+                    return collect([$usedRkm]);
+                }
 
-    $duplicateRkms = $duplicateRkms->values();
+                return $group;
+            })
+            ->flatten(1)
+            ->values();
 
-    // Data untuk tabel 'Sudah di-Invoice'
-    $invoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'registrasi.peserta'])
-        ->whereIn('id', $existingRKMs)
-        ->orderBy('tanggal_awal', 'desc')
-        ->get();
+        $duplicateRkms = $duplicateRkms->values();
 
-    // Data untuk tabel 'Sudah Invoice tapi Belum Kwitansi'
-    $notReceiptedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice'])
-        ->whereIn('id', $existingRKMs)
-        ->whereNotIn('id', $receiptedRKMs)
-        ->orderBy('tanggal_awal', 'desc')
-        ->get();
+        // Data untuk tabel 'Sudah di-Invoice'
+        $invoicedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'registrasi.peserta'])
+            ->whereIn('id', $existingRKMs)
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
 
-    // Data untuk tabel 'Sudah ada Kwitansi'
-    $receiptedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'kwitansi'])
-        ->whereIn('id', $receiptedRKMs)
-        ->orderBy('tanggal_awal', 'desc')
-        ->get();
+        // Data untuk tabel 'Sudah Invoice tapi Belum Kwitansi'
+        $notReceiptedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice'])
+            ->whereIn('id', $existingRKMs)
+            ->whereNotIn('id', $receiptedRKMs)
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
 
-    return view('invoice.index', compact(
-        'notInvoicedRkms',
-        'invoicedRkms',
-        'notReceiptedRkms',
-        'receiptedRkms',
-        'duplicateRkms'
-    ));
-}
+        // Data untuk tabel 'Sudah ada Kwitansi'
+        $receiptedRkms = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'invoice', 'kwitansi'])
+            ->whereIn('id', $receiptedRKMs)
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
+
+        // ===== Data tab Nomor Invoice =====
+        $allInvoices = Invoice::with(['rkm.materi', 'rkm.perusahaan', 'rkm.sales'])
+            ->orderByDesc('id')
+            ->get();
+
+        $normalize = fn ($n) => strtoupper(preg_replace('/\s+/', '', (string) $n));
+
+        $dupGroups = $allInvoices
+            ->groupBy(fn ($i) => $normalize($i->invoice_number))
+            ->filter(fn ($g) => $g->count() > 1)
+            ->map(function ($g) {
+                $sameRkm = $g->pluck('id_rkm')->unique()->count() === 1;
+                $sameData = $g->map(fn ($i) => implode('|', [
+                    $i->rkm?->materi_key,
+                    $i->rkm?->perusahaan_key,
+                    $i->rkm?->tanggal_awal,
+                    $i->rkm?->tanggal_akhir,
+                ]))->unique()->count() === 1;
+
+                return [
+                    'number' => $g->first()->invoice_number,
+                    'items'  => $g->values(),
+                    'hint'   => $sameRkm
+                        ? 'Semua entry mengarah ke RKM yang sama'
+                        : ($sameData
+                            ? 'RKM berbeda tetapi data kelas identik (kemungkinan RKM kembar)'
+                            : 'RKM berbeda, hanya nomornya yang bentrok'),
+                ];
+            })
+            ->values();
+
+        $dupIds = $dupGroups->pluck('items')->flatten()->pluck('id')->all();
+
+        $invoiceStats = [
+            'total'       => $allInvoices->count(),
+            'last'        => $allInvoices->first(),
+            'dup_groups'  => $dupGroups->count(),
+            'dup_entries' => count($dupIds),
+            'this_month'  => $allInvoices->filter(fn ($i) => $i->tanggal_invoice
+                && \Carbon\Carbon::parse($i->tanggal_invoice)->isCurrentMonth())->count(),
+        ];
+
+        return view('invoice.index', compact(
+            'notInvoicedRkms',
+            'invoicedRkms',
+            'notReceiptedRkms',
+            'receiptedRkms',
+            'duplicateRkms',
+            'allInvoices',
+            'dupGroups',
+            'dupIds',
+            'invoiceStats'
+        ));
+    }
 
         
     /**
@@ -183,411 +229,562 @@ public function index(): View
     // public function downloadPDF($id){
 
     // }
-// app/Http/Controllers/InvoiceRKMController.php
+    // app/Http/Controllers/InvoiceRKMController.php
 
-public function createKwitansi($invoiceId)
-{
-    // Ambil data invoice
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])->findOrFail($invoiceId);
+    public function createKwitansi($invoiceId)
+    {
+        // Ambil data invoice
+        $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])->findOrFail($invoiceId);
 
-    // Ambil data karyawan untuk penandatangan
-    $karyawan = Karyawan::find(22); // Sesuaikan dengan id karyawan yang benar
+        // Ambil data karyawan untuk penandatangan
+        $karyawan = karyawan::find(22); // Sesuaikan dengan id karyawan yang benar
 
-    // Tampilkan view form tanpa membuat record kwitansi
-    return view('kwitansi.create', compact('invoice', 'karyawan'));
-}
+        // Tampilkan view form tanpa membuat record kwitansi
+        return view('kwitansi.create', compact('invoice', 'karyawan'));
+    }
     /**
      * Menyimpan invoice baru ke database.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-public function store(Request $request)
-{
-    $request->validate([
-        'invoice_number' => 'required|string|max:255',
-        'tanggal_invoice' => 'required|date',
-        'due_date' => 'nullable|date',
-        'purchase_order' => 'nullable|string|max:255',
-        'id_rkm' => 'required|exists:r_k_m_s,id',
-        'amount' => 'required|numeric',
-        'unit_price' => 'nullable|numeric',
-        'pax' => 'nullable|integer',
-        'jumlah' => 'nullable|numeric',
-        'subtotal' => 'nullable|numeric',
-        'ppn' => 'nullable|numeric',
-        'pph' => 'nullable|numeric',
-        'total' => 'nullable|numeric',
-        'bank_name' => 'nullable|string|max:255',
-        'account_number' => 'nullable|string|max:50',
-        'terbilang' => 'nullable|string',
-        'peserta' => 'nullable|array',
-        'peserta.*' => 'nullable|string|max:255',
-        'is_peserta' => 'required|in:true,false',
-        'is_ttd' => 'required|in:true,false',
-        'materi' => 'required',
-    ]);
-
-    // Cek apakah sudah ada invoice dengan id_rkm yang sama
-    $existingInvoice = Invoice::where('id_rkm', $request->input('id_rkm'))->first();
-    $isUpdate = $existingInvoice !== null;
-
-    // Validasi unique invoice_number hanya saat create,
-    // atau saat update tapi invoice_number berubah
-    if (!$isUpdate) {
+    public function store(Request $request)
+    {
         $request->validate([
-            'invoice_number' => 'unique:invoices,invoice_number',
+            'invoice_number' => 'required|string|max:255',
+            'tanggal_invoice' => 'required|date',
+            'due_date' => 'nullable|date',
+            'purchase_order' => 'nullable|string|max:255',
+            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'amount' => 'required|numeric',
+            'unit_price' => 'nullable|numeric',
+            'pax' => 'nullable|integer',
+            'jumlah' => 'nullable|numeric',
+            'subtotal' => 'nullable|numeric',
+            'ppn' => 'nullable|numeric',
+            'pph' => 'nullable|numeric',
+            'total' => 'nullable|numeric',
+            'bank_name' => 'nullable|string|max:255',
+            'account_number' => 'nullable|string|max:50',
+            'terbilang' => 'nullable|string',
+            'peserta' => 'nullable|array',
+            'peserta.*' => 'nullable|string|max:255',
+            'is_peserta' => 'required|in:true,false',
+            'is_ttd' => 'required|in:true,false',
+            'materi' => 'required',
         ]);
-    } elseif ($existingInvoice->invoice_number !== $request->input('invoice_number')) {
-        $request->validate([
-            'invoice_number' => 'unique:invoices,invoice_number,' . $existingInvoice->id,
-        ]);
-    }
 
-    $pesertaList    = $request->input('peserta', []);
-    $isPeserta      = $request->input('is_peserta') === 'true';
-    $isTtd          = $request->input('is_ttd') === 'true';
-    $materi         = $request->input('materi');
-    $pax            = $request->input('pax');
-    $isPPh          = $request->input('pph23');
-    $unit_price     = $request->input('unit_price');
-    $nama_perusahaan = $request->input('perusahaan');
-    $tanggal_awal   = $request->input('tanggal_awal');
-    $tanggal_akhir  = $request->input('tanggal_akhir');
-    $dueDateManual  = $request->input('due_date_manual');
-    $jumlah         = $request->input('jumlah');
-    $subtotal       = $request->input('subtotal');
-    $ppn            = $request->input('ppn');
-    $pph            = $request->input('pph');
-    $total          = $request->input('total');
+        // Cek apakah sudah ada invoice dengan id_rkm yang sama
+        $existingInvoice = Invoice::where('id_rkm', $request->input('id_rkm'))->first();
+        $isUpdate = $existingInvoice !== null;
 
-    $rkm     = RKM::where('id', $request->id_rkm)->firstOrFail();
-    $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
-
-    $invoiceData = [
-        'invoice_number' => $request->input('invoice_number'),
-        'tanggal_invoice' => $request->input('tanggal_invoice'),
-        'due_date'        => $duedate,
-        'purchase_order'  => $request->input('purchase_order'),
-        'id_rkm'          => $request->input('id_rkm'),
-        'amount'          => $request->input('pax') * $request->input('unit_price') + $ppn,
-        'unit_price'      => $request->input('unit_price'),
-        'pax'             => $request->input('pax'),
-        'jumlah'          => $jumlah,
-        'subtotal'        => $subtotal,
-        'ppn'             => $ppn,
-        'pph'             => $pph,
-        'total'           => $total,
-        'bank_name'       => $request->input('bank_name'),
-        'account_number'  => $request->input('account_number'),
-        'terbilang'       => $request->input('terbilang'),
-    ];
-
-    if ($isUpdate) {
-        $existingInvoice->update($invoiceData);
-        $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->firstOrFail();
-        $approvalPendapatan->id_rkm = $existingInvoice->id_rkm;
-        $approvalPendapatan->no_invoice = $existingInvoice->invoice_number;
-        $approvalPendapatan->PPN = $existingInvoice->ppn;
-        $approvalPendapatan->PPH = $existingInvoice->pph;
-        $approvalPendapatan->pax = $existingInvoice->pax;
-        $approvalPendapatan->harga_net = $existingInvoice->unit_price;
-        $approvalPendapatan->total_penjualan_kotor = $existingInvoice->unit_price * $existingInvoice->pax;
-        $approvalPendapatan->materi = $rkm->materi_key;
-        $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
-        $approvalPendapatan->tanggal_mulai = $tanggal_awal;
-        $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
-        $approvalPendapatan->save();
-        $invoice = $existingInvoice;
-    } else {
-        // dd($invoiceData);
-        $approvalPendapatan = new ApprovalPendapatan();
-        $approvalPendapatan->id_rkm = $rkm->id;
-        $approvalPendapatan->no_invoice = $request->input('invoice_number');
-        $approvalPendapatan->PPN = $invoiceData['ppn'];
-        $approvalPendapatan->PPH = $invoiceData['pph'];
-        $approvalPendapatan->pax = $invoiceData['pax'];
-        $approvalPendapatan->harga_net = $invoiceData['unit_price'];
-        $approvalPendapatan->total_penjualan_kotor = $invoiceData['unit_price'] * $invoiceData['pax'];
-        $approvalPendapatan->materi = $rkm->materi_key;
-        $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
-        $approvalPendapatan->tanggal_mulai = $tanggal_awal;
-        $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
-        $approvalPendapatan->save();
-        $invoice = Invoice::create($invoiceData);
-    }
-
-    // Outstanding update — sama untuk keduanya
-    $outstanding = outstanding::where('id_rkm', $request->input('id_rkm'))->first();
-
-    if ($outstanding) {
-        trackingOutstanding::where('id_outstanding', $outstanding->id)
-            ->update(['invoice' => 1]);
-
-        $outstanding->no_invoice = $request->input('invoice_number');
-        $outstanding->update();
-    }
-
-    $this->storeKwitansi(new Request([
-        'invoice_id' => $invoice->id,
-        'nomor_kwitansi' => 'KW-' . $invoice->invoice_number,
-        'tanggal' => now()->toDateString(),
-        'tanggal_ttd' => now()->toDateString(),
-        'nama_penandatangan' => karyawan::where('status_aktif', '1')->where('jabatan','Finance & Accounting')->first()->nama_karyawan,
-        'keterangan' => $materi,
-        'nama_penerima' => $nama_perusahaan,
-        'tanggal_awal' => $tanggal_awal,
-        'tanggal_akhir' => $tanggal_akhir,
-        'jumlah_uang' => $total,
-        'jumlah_peserta' => $pax,
-    ]));
-
-    return $this->downloadPdf(
-        $invoice->id,
-        $pesertaList,
-        $isPeserta,
-        $isTtd,
-        $nama_perusahaan,
-        $tanggal_awal,
-        $tanggal_akhir,
-        $materi,
-        $unit_price,
-        $pax,
-        $isPPh,
-        $jumlah,
-        $subtotal,
-        $ppn,
-        $pph,
-        $total,
-        $dueDateManual,
-        $isUpdate,
-    );
-}
-
-public function bulkStore(Request $request)
-{
-    $data = $request->validate([
-        'items'                    => 'required|array|min:1',
-        'items.*.id_rkm'           => 'required|exists:r_k_m_s,id',
-        'items.*.invoice_number'   => 'required|string|max:255',
-        'items.*.pph23'            => 'required|boolean',
-        'items.*.purchase_order'   => 'nullable|string|max:255',
-        'items.*.bank_name'        => 'required|string|max:255',
-        'items.*.account_number'   => 'required|string|max:50',
-        'items.*.is_peserta'       => 'required|boolean',
-        'items.*.is_ttd'           => 'required|boolean',
-    ]);
-
-    // Nomor invoice tidak boleh kembar di dalam satu batch
-    $numbers = array_column($data['items'], 'invoice_number');
-    if (count($numbers) !== count(array_unique($numbers))) {
-        return response()->json(['message' => 'Ada nomor invoice yang kembar di dalam pilihan.'], 422);
-    }
-
-    $results = [];
-    foreach ($data['items'] as $item) {
-        try {
-            // Satu transaksi per invoice: satu gagal tidak membatalkan yang lain
-            $results[] = DB::transaction(fn () => $this->createInvoiceFromBulkItem($item));
-        } catch (\Throwable $e) {
-            $results[] = [
-                'id_rkm'         => $item['id_rkm'],
-                'invoice_number' => $item['invoice_number'],
-                'ok'             => false,
-                'message'        => $e->getMessage(),
-            ];
+        // Validasi unique invoice_number hanya saat create,
+        // atau saat update tapi invoice_number berubah
+        if (!$isUpdate) {
+            $request->validate([
+                'invoice_number' => 'unique:invoices,invoice_number',
+            ]);
+        } elseif ($existingInvoice->invoice_number !== $request->input('invoice_number')) {
+            $request->validate([
+                'invoice_number' => 'unique:invoices,invoice_number,' . $existingInvoice->id,
+            ]);
         }
+
+        $pesertaList    = $request->input('peserta', []);
+        $isPeserta      = $request->input('is_peserta') === 'true';
+        $isTtd          = $request->input('is_ttd') === 'true';
+        $materi         = $request->input('materi');
+        $pax            = $request->input('pax');
+        $isPPh          = $request->input('pph23');
+        $unit_price     = $request->input('unit_price');
+        $nama_perusahaan = $request->input('perusahaan');
+        $tanggal_awal   = $request->input('tanggal_awal');
+        $tanggal_akhir  = $request->input('tanggal_akhir');
+        $dueDateManual  = $request->input('due_date_manual');
+        $jumlah         = $request->input('jumlah');
+        $subtotal       = $request->input('subtotal');
+        $ppn            = $request->input('ppn');
+        $pph            = $request->input('pph');
+        $total          = $request->input('total');
+
+        $rkm     = RKM::where('id', $request->id_rkm)->firstOrFail();
+        $duedate = $rkm->tanggal_akhir->addMonths(6)->toDateString();
+
+        $invoiceData = [
+            'invoice_number' => $request->input('invoice_number'),
+            'tanggal_invoice' => $request->input('tanggal_invoice'),
+            'due_date'        => $duedate,
+            'purchase_order'  => $request->input('purchase_order'),
+            'id_rkm'          => $request->input('id_rkm'),
+            'amount'          => $request->input('pax') * $request->input('unit_price') + $ppn,
+            'unit_price'      => $request->input('unit_price'),
+            'pax'             => $request->input('pax'),
+            'jumlah'          => $jumlah,
+            'subtotal'        => $subtotal,
+            'ppn'             => $ppn,
+            'pph'             => $pph,
+            'total'           => $total,
+            'bank_name'       => $request->input('bank_name'),
+            'account_number'  => $request->input('account_number'),
+            'terbilang'       => $request->input('terbilang'),
+        ];
+
+        if ($isUpdate) {
+            $existingInvoice->update($invoiceData);
+            $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->firstOrFail();
+            $approvalPendapatan->id_rkm = $existingInvoice->id_rkm;
+            $approvalPendapatan->no_invoice = $existingInvoice->invoice_number;
+            $approvalPendapatan->PPN = $existingInvoice->ppn;
+            $approvalPendapatan->PPH = $existingInvoice->pph;
+            $approvalPendapatan->pax = $existingInvoice->pax;
+            $approvalPendapatan->harga_net = $existingInvoice->unit_price;
+            $approvalPendapatan->total_penjualan_kotor = $existingInvoice->unit_price * $existingInvoice->pax;
+            $approvalPendapatan->materi = $rkm->materi_key;
+            $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
+            $approvalPendapatan->tanggal_mulai = $tanggal_awal;
+            $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
+            $approvalPendapatan->save();
+            $invoice = $existingInvoice;
+        } else {
+            // dd($invoiceData);
+            $approvalPendapatan = new ApprovalPendapatan();
+            $approvalPendapatan->id_rkm = $rkm->id;
+            $approvalPendapatan->no_invoice = $request->input('invoice_number');
+            $approvalPendapatan->PPN = $invoiceData['ppn'];
+            $approvalPendapatan->PPH = $invoiceData['pph'];
+            $approvalPendapatan->pax = $invoiceData['pax'];
+            $approvalPendapatan->harga_net = $invoiceData['unit_price'];
+            $approvalPendapatan->total_penjualan_kotor = $invoiceData['unit_price'] * $invoiceData['pax'];
+            $approvalPendapatan->materi = $rkm->materi_key;
+            $approvalPendapatan->perusahaan = $rkm->perusahaan_key;
+            $approvalPendapatan->tanggal_mulai = $tanggal_awal;
+            $approvalPendapatan->tanggal_selesai = $tanggal_akhir;
+            $approvalPendapatan->save();
+            $invoice = Invoice::create($invoiceData);
+        }
+
+        // Outstanding update — sama untuk keduanya
+        $outstanding = outstanding::where('id_rkm', $request->input('id_rkm'))->first();
+
+        if ($outstanding) {
+            trackingOutstanding::where('id_outstanding', $outstanding->id)
+                ->update(['invoice' => 1]);
+
+            $outstanding->no_invoice = $request->input('invoice_number');
+            $outstanding->update();
+        }
+
+        $this->storeKwitansi(new Request([
+            'invoice_id' => $invoice->id,
+            'nomor_kwitansi' => 'KW-' . $invoice->invoice_number,
+            'tanggal' => now()->toDateString(),
+            'tanggal_ttd' => now()->toDateString(),
+            'nama_penandatangan' => karyawan::where('status_aktif', '1')->where('jabatan','Finance & Accounting')->first()->nama_karyawan,
+            'keterangan' => $materi,
+            'nama_penerima' => $nama_perusahaan,
+            'tanggal_awal' => $tanggal_awal,
+            'tanggal_akhir' => $tanggal_akhir,
+            'jumlah_uang' => $total,
+            'jumlah_peserta' => $pax,
+        ]));
+
+        // return $this->downloadPdf(
+        //     $invoice->id,
+        //     $pesertaList,
+        //     $isPeserta,
+        //     $isTtd,
+        //     $nama_perusahaan,
+        //     $tanggal_awal,
+        //     $tanggal_akhir,
+        //     $materi,
+        //     $unit_price,
+        //     $pax,
+        //     $isPPh,
+        //     $jumlah,
+        //     $subtotal,
+        //     $ppn,
+        //     $pph,
+        //     $total,
+        //     $dueDateManual,
+        //     $isUpdate,
+        // );
+
+        return redirect()
+            ->route('invoice.index')
+            ->with('success', 'Invoice berhasil disimpan!');
     }
 
-    return response()->json(['results' => $results]);
-}
+    public function bulkStore(Request $request)
+    {
+        $data = $request->validate([
+            'items'                    => 'required|array|min:1',
+            'items.*.id_rkm'           => 'required|exists:r_k_m_s,id',
+            'items.*.invoice_number'   => 'required|string|max:255',
+            'items.*.pph23'            => 'required|boolean',
+            'items.*.purchase_order'   => 'nullable|string|max:255',
+            'items.*.bank_name'        => 'required|string|max:255',
+            'items.*.account_number'   => 'required|string|max:50',
+            'items.*.is_peserta'       => 'required|boolean',
+            'items.*.is_ttd'           => 'required|boolean',
+        ]);
 
-private function createInvoiceFromBulkItem(array $item): array
-{
-    $rkm = RKM::with(['materi', 'perusahaan', 'registrasi.peserta'])->findOrFail($item['id_rkm']);
+        // Nomor invoice tidak boleh kembar di dalam satu batch
+        $numbers = array_column($data['items'], 'invoice_number');
+        if (count($numbers) !== count(array_unique($numbers))) {
+            return response()->json(['message' => 'Ada nomor invoice yang kembar di dalam pilihan.'], 422);
+        }
 
-    if (Invoice::where('id_rkm', $rkm->id)->exists()) {
-        throw new \RuntimeException('RKM ini sudah punya invoice.');
-    }
-    if (Invoice::where('invoice_number', $item['invoice_number'])->exists()) {
-        throw new \RuntimeException('Nomor invoice sudah dipakai.');
-    }
+        $results = [];
+        foreach ($data['items'] as $item) {
+            try {
+                // Satu transaksi per invoice: satu gagal tidak membatalkan yang lain
+                $results[] = DB::transaction(fn () => $this->createInvoiceFromBulkItem($item));
+            } catch (\Throwable $e) {
+                $results[] = [
+                    'id_rkm'         => $item['id_rkm'],
+                    'invoice_number' => $item['invoice_number'],
+                    'ok'             => false,
+                    'message'        => $e->getMessage(),
+                ];
+            }
+        }
 
-    $penandatangan = karyawan::where('status_aktif', '1')
-        ->where('jabatan', 'Finance & Accounting')->first();
-    if (!$penandatangan) {
-        throw new \RuntimeException('Karyawan aktif Finance & Accounting tidak ditemukan.');
-    }
-
-    // ---- Semua yang "aman" digenerate otomatis ----
-    $unitPrice = (float) ($rkm->harga_jual ?? 0);
-    $pax       = (int) ($rkm->pax ?? 0);
-    $subtotal  = $unitPrice * $pax;
-    $ppn       = round($subtotal * 0.11);
-    $pph       = $item['pph23'] ? round($subtotal * 0.02) : 0;
-    $total     = $subtotal + $ppn - $pph;
-
-    $tglAwal   = $rkm->tanggal_awal->toDateString();
-    $tglAkhir  = $rkm->tanggal_akhir->toDateString();
-    $terbilang = ucfirst($this->terbilang((int) $total)) . ' Rupiah';
-
-    $invoice = Invoice::create([
-        'invoice_number'  => $item['invoice_number'],
-        'tanggal_invoice' => now()->toDateString(),
-        'due_date'        => $rkm->tanggal_akhir->copy()->addMonths(6)->toDateString(),
-        'purchase_order'  => $item['purchase_order'] ?? null,
-        'id_rkm'          => $rkm->id,
-        'amount'          => $pax * $unitPrice + $ppn,   // rumus sama dengan store() lama
-        'unit_price'      => $unitPrice,
-        'pax'             => $pax,
-        'jumlah'          => $subtotal,
-        'subtotal'        => $subtotal,
-        'ppn'             => $ppn,
-        'pph'             => $pph,
-        'total'           => $total,
-        'bank_name'       => $item['bank_name'],
-        'account_number'  => $item['account_number'],
-        'terbilang'       => $terbilang,
-    ]);
-
-    $ap = new ApprovalPendapatan();
-    $ap->id_rkm                = $rkm->id;
-    $ap->no_invoice            = $invoice->invoice_number;
-    $ap->PPN                   = $ppn;
-    $ap->PPH                   = $pph;
-    $ap->pax                   = $pax;
-    $ap->harga_net             = $unitPrice;
-    $ap->total_penjualan_kotor = $unitPrice * $pax;
-    $ap->materi                = $rkm->materi_key;
-    $ap->perusahaan            = $rkm->perusahaan_key;
-    $ap->tanggal_mulai         = $tglAwal;
-    $ap->tanggal_selesai       = $tglAkhir;
-    $ap->save();
-
-    $outstanding = outstanding::where('id_rkm', $rkm->id)->first();
-    if ($outstanding) {
-        trackingOutstanding::where('id_outstanding', $outstanding->id)->update(['invoice' => 1]);
-        $outstanding->no_invoice = $invoice->invoice_number;
-        $outstanding->update();
+        return response()->json(['results' => $results]);
     }
 
-    $namaMateri = $rkm->materi->nama_materi ?? '-';
-    $this->storeKwitansi(new Request([
-        'invoice_id'         => $invoice->id,
-        'nomor_kwitansi'     => 'KW-' . $invoice->invoice_number,
-        'tanggal'            => now()->toDateString(),
-        'tanggal_ttd'        => now()->toDateString(),
-        'nama_penandatangan' => $penandatangan->nama_karyawan,
-        'keterangan'         => $namaMateri,
-        'nama_penerima'      => $rkm->perusahaan->nama_perusahaan ?? '-',
-        'tanggal_awal'       => $tglAwal,
-        'tanggal_akhir'      => $tglAkhir,
-        'jumlah_uang'        => $total,
-        'jumlah_peserta'     => $pax,
-    ]));
+    private function pesertaPayload(Request $request, Invoice $invoice): array
+    {
+        $data = $request->validate([
+            'invoice_number'  => 'required|string|max:255',
+            'peserta'         => 'required|array|min:1',
+            'peserta.*'       => 'required|string|max:255',
+            'pph23'           => 'required|boolean',
+            'purchase_order'  => 'nullable|string|max:255',
+            'bank_name'       => 'nullable|string|max:255',
+            'account_number'  => 'nullable|string|max:50',
+            'is_peserta'      => 'required|boolean',
+            'is_ttd'          => 'required|boolean',
+        ]);
 
-    $pesertaList = $rkm->registrasi->pluck('peserta.nama')->filter()->values()->all();
-    $pdfUrl = route('download.pdf', [
-        'id'         => $invoice->id,
-        'peserta'    => $pesertaList,
-        'is_peserta' => $item['is_peserta'] ? 'true' : 'false',
-        'is_ttd'     => $item['is_ttd'] ? 'true' : 'false',
-        'pph23'      => $item['pph23'] ? 'true' : '0',
-    ]);
+        $invoice->load(['rkm.perusahaan', 'rkm.materi']);
+        $rkm = $invoice->rkm;
 
-    return [
-        'id_rkm'         => $rkm->id,
-        'invoice_number' => $invoice->invoice_number,
-        'ok'             => true,
-        'pdf_url'        => $pdfUrl,
-    ];
-}
+        $pesertaList = array_values($data['peserta']);
+        $pax       = count($pesertaList);
+        $unitPrice = (float) ($invoice->unit_price ?: ($rkm->harga_jual ?? 0));
+        $subtotal  = $unitPrice * $pax;
+        $ppn       = round($subtotal * 0.11);
+        $pph       = $data['pph23'] ? round($subtotal * 0.02) : 0;
+        $total     = $subtotal + $ppn - $pph;
+        $terbilang = $this->terbilang((int) $total);
 
-public function storeKwitansi(Request $request)
-{
-    $request->validate([
-        'invoice_id'            => 'required|exists:invoices,id',
-        'nomor_kwitansi'        => 'required|string|max:255',
-        'tanggal'               => 'nullable|date',
-        'tanggal_ttd'           => 'nullable|date',
-        'nama_penerima'         => 'nullable|string|max:255',
-        'keterangan'            => 'nullable|string',
-        'nama_penandatangan'    => 'nullable|string|max:255',
-        'tanggal_awal'          => 'nullable|date',
-        'tanggal_akhir'         => 'nullable|date',
-        'jumlah_uang'           => 'nullable|numeric',
-        'jumlah_peserta'        => 'nullable|integer',
-    ]);
+        // Salinan di memori saja, TIDAK disimpan ke database
+        $inv = clone $invoice;
+        $inv->invoice_number = $data['invoice_number'];
+        $inv->purchase_order = $data['purchase_order'] ?? null;
+        $inv->bank_name      = $data['bank_name'] ?? null;
+        $inv->account_number = $data['account_number'] ?? null;
+        $inv->pax        = $pax;
+        $inv->unit_price = $unitPrice;
+        $inv->jumlah     = $subtotal;
+        $inv->subtotal   = $subtotal;
+        $inv->ppn        = $ppn;
+        $inv->pph        = $pph;
+        $inv->total      = $total;
+        $inv->amount     = $subtotal + $ppn;
+        $inv->terbilang  = $terbilang;
 
-    $invoice = Invoice::findOrFail($request->invoice_id);
-
-    $existingKwitansi = Kwitansi::where('invoice_id', $request->invoice_id)->first();
-    $isUpdate = $existingKwitansi !== null;
-
-    $kwitansiData = [
-        'id_rkm'        => $invoice->id_rkm,
-        'invoice_id'    => $request->invoice_id,
-        'tanggal_cetak' => $request->tanggal,
-        'dicetak_oleh'  => $request->nama_penandatangan,
-    ];
-
-    if ($isUpdate) {
-        $existingKwitansi->update($kwitansiData);
-        $kwitansi = $existingKwitansi;
-    } else {
-        $kwitansi = Kwitansi::create($kwitansiData);
+        return [
+            'data'            => $data,
+            'inv'             => $inv,
+            'rkm'             => $rkm,
+            'pesertaList'     => $pesertaList,
+            'pax'             => $pax,
+            'unitPrice'       => $unitPrice,
+            'subtotal'        => $subtotal,
+            'ppn'             => $ppn,
+            'pph'             => $pph,
+            'total'           => $total,
+            'terbilang'       => $terbilang,
+            'namaPerusahaan'  => $rkm->perusahaan->nama_perusahaan ?? '-',
+            'namaMateri'      => $rkm->materi->nama_materi ?? '-',
+            'tanggalAwal'     => $rkm->tanggal_awal->toDateString(),
+            'tanggalAkhir'    => $rkm->tanggal_akhir->toDateString(),
+        ];
     }
 
-    return $this->downloadPdfKwitansi(
-        $kwitansi->id,
-        $isUpdate,
-        $request->nomor_kwitansi,
-        $request->tanggal,
-        $request->tanggal_ttd,
-        $request->nama_penerima,
-        $request->keterangan,
-        $request->nama_penandatangan,
-        $request->tanggal_awal,
-        $request->tanggal_akhir,
-        $request->jumlah_uang,
-        $request->jumlah_peserta,
-    );
-}
+    private function pdfOptions(): array
+    {
+        return [
+            'isRemoteEnabled'      => true,
+            'isHtml5ParserEnabled' => true,
+            'enable_css_float'     => true,
+            'enable_html5'         => true,
+            'chroot'               => public_path(),
+            'dpi'                  => 96,
+        ];
+    }
 
+    public function pesertaPdf(Request $request, Invoice $invoice)
+    {
+        $p = $this->pesertaPayload($request, $invoice);
 
-   /**
- * Menampilkan detail satu invoice.
- *
- * @param  \App\Models\Invoice  $invoice
- * @return \Illuminate\View\View
- */
-public function show(string $id): View
-{
-    // Mengambil data Invoice dan memuat relasi RKM, Perusahaan, dan Materi
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])->findOrFail($id);
-    
-    // Menghitung total terbilang dan mengirimkannya ke view
-    $terbilang = format_terbilang($invoice->amount);
-    
+        $pdf = Pdf::loadView('invoice.pdf', [
+            'invoice'         => $p['inv'],
+            'terbilang'       => $p['terbilang'],
+            'karyawan'        => karyawan::findOrFail(22),
+            'pesertaList'     => $p['pesertaList'],
+            'isPeserta'       => $p['data']['is_peserta'],
+            'isTtd'           => $p['data']['is_ttd'],
+            'nama_perusahaan' => $p['namaPerusahaan'],
+            'tanggal_awal'    => $p['tanggalAwal'],
+            'tanggal_akhir'   => $p['tanggalAkhir'],
+            'materi'          => $p['namaMateri'],
+            'kelas'           => $p['rkm']->metode_kelas ?? null,
+            'unit_price'      => $p['unitPrice'],
+            'pax'             => $p['pax'],
+            'isPPh'           => $p['data']['pph23'],
+            'jumlah'          => $p['subtotal'],
+            'subtotal'        => $p['subtotal'],
+            'ppn'             => $p['ppn'],
+            'pph'             => $p['pph'],
+            'total'           => $p['total'],
+            'dueDateManual'   => null,
+        ])->setPaper('a4', 'portrait')->setOptions($this->pdfOptions());
 
-    $karyawan = karyawan::find(22);
-    
-    return view('invoice.show', compact('invoice', 'terbilang', 'karyawan'));
-}
+        $fileName = preg_replace('/[\/\\\\]/', '-', $p['data']['invoice_number']) . '.pdf';
 
-public function showKwitansi($id)
-{
-    $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan')->findOrFail($id);
-    
-    // Perbaikan: Terbilang diambil dari data kwitansi, bukan invoice
-    $terbilang = format_terbilang($kwitansi->invoice->amount);
-    
-    // Data karyawan untuk penandatangan
-    $karyawan = karyawan::find(22); 
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+        ]);
+    }
 
-    // Menggunakan compact() yang lebih ringkas
-    return view('kwitansi.show', compact('kwitansi', 'terbilang', 'karyawan'));
-}
+    public function pesertaKwitansiPdf(Request $request, Invoice $invoice)
+    {
+        $p   = $this->pesertaPayload($request, $invoice);
+        $inv = $p['inv'];
+
+        $penandatangan = karyawan::where('status_aktif', '1')
+            ->where('jabatan', 'Finance & Accounting')->first();
+
+        $kwitansi = new Kwitansi([
+            'id_rkm'        => $invoice->id_rkm,
+            'invoice_id'    => $invoice->id,
+            'tanggal_cetak' => now()->toDateString(),
+            'dicetak_oleh'  => $penandatangan->nama_karyawan ?? null,
+        ]);
+        $kwitansi->setRelation('invoice', $inv);
+
+        $pdf = Pdf::loadView('kwitansi.pdf', [
+            'kwitansi'           => $kwitansi,
+            'terbilang'          => format_terbilang($p['total']),
+            'karyawan'           => karyawan::find(22),
+            'nomor_kwitansi'     => 'KW-' . $inv->invoice_number,
+            'tanggal'            => now()->toDateString(),
+            'tanggal_ttd'        => now()->toDateString(),
+            'nama_penerima'      => $p['namaPerusahaan'],
+            'keterangan'         => $p['namaMateri'],
+            'nama_penandatangan' => $penandatangan->nama_karyawan ?? '',
+            'tanggal_awal'       => $p['tanggalAwal'],
+            'tanggal_akhir'      => $p['tanggalAkhir'],
+            'jumlah_uang'        => $p['total'],
+            'jumlah_peserta'     => $p['pax'],
+        ])->setPaper('a4', 'portrait')->setOptions($this->pdfOptions());
+
+        $fileName = 'KW-' . preg_replace('/[\/\\\\]/', '-', $inv->invoice_number) . '.pdf';
+
+        return response($pdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+        ]);
+    }
+
+    private function createInvoiceFromBulkItem(array $item): array
+    {
+        $rkm = RKM::with(['materi', 'perusahaan', 'registrasi.peserta'])->findOrFail($item['id_rkm']);
+
+        if (Invoice::where('id_rkm', $rkm->id)->exists()) {
+            throw new \RuntimeException('RKM ini sudah punya invoice.');
+        }
+        if (Invoice::where('invoice_number', $item['invoice_number'])->exists()) {
+            throw new \RuntimeException('Nomor invoice sudah dipakai.');
+        }
+
+        $penandatangan = karyawan::where('status_aktif', '1')
+            ->where('jabatan', 'Finance & Accounting')->first();
+        if (!$penandatangan) {
+            throw new \RuntimeException('Karyawan aktif Finance & Accounting tidak ditemukan.');
+        }
+
+        // ---- Semua yang "aman" digenerate otomatis ----
+        $unitPrice = (float) ($rkm->harga_jual ?? 0);
+        $pax       = (int) ($rkm->pax ?? 0);
+        $subtotal  = $unitPrice * $pax;
+        $ppn       = round($subtotal * 0.11);
+        $pph       = $item['pph23'] ? round($subtotal * 0.02) : 0;
+        $total     = $subtotal + $ppn - $pph;
+
+        $tglAwal   = $rkm->tanggal_awal->toDateString();
+        $tglAkhir  = $rkm->tanggal_akhir->toDateString();
+        $terbilang = ucfirst($this->terbilang((int) $total)) . ' Rupiah';
+
+        $invoice = Invoice::create([
+            'invoice_number'  => $item['invoice_number'],
+            'tanggal_invoice' => now()->toDateString(),
+            'due_date'        => $rkm->tanggal_akhir->copy()->addMonths(6)->toDateString(),
+            'purchase_order'  => $item['purchase_order'] ?? null,
+            'id_rkm'          => $rkm->id,
+            'amount'          => $pax * $unitPrice + $ppn,   // rumus sama dengan store() lama
+            'unit_price'      => $unitPrice,
+            'pax'             => $pax,
+            'jumlah'          => $subtotal,
+            'subtotal'        => $subtotal,
+            'ppn'             => $ppn,
+            'pph'             => $pph,
+            'total'           => $total,
+            'bank_name'       => $item['bank_name'],
+            'account_number'  => $item['account_number'],
+            'terbilang'       => $terbilang,
+        ]);
+
+        $ap = new ApprovalPendapatan();
+        $ap->id_rkm                = $rkm->id;
+        $ap->no_invoice            = $invoice->invoice_number;
+        $ap->PPN                   = $ppn;
+        $ap->PPH                   = $pph;
+        $ap->pax                   = $pax;
+        $ap->harga_net             = $unitPrice;
+        $ap->total_penjualan_kotor = $unitPrice * $pax;
+        $ap->materi                = $rkm->materi_key;
+        $ap->perusahaan            = $rkm->perusahaan_key;
+        $ap->tanggal_mulai         = $tglAwal;
+        $ap->tanggal_selesai       = $tglAkhir;
+        $ap->save();
+
+        $outstanding = outstanding::where('id_rkm', $rkm->id)->first();
+        if ($outstanding) {
+            trackingOutstanding::where('id_outstanding', $outstanding->id)->update(['invoice' => 1]);
+            $outstanding->no_invoice = $invoice->invoice_number;
+            $outstanding->update();
+        }
+
+        $namaMateri = $rkm->materi->nama_materi ?? '-';
+        $this->storeKwitansi(new Request([
+            'invoice_id'         => $invoice->id,
+            'nomor_kwitansi'     => 'KW-' . $invoice->invoice_number,
+            'tanggal'            => now()->toDateString(),
+            'tanggal_ttd'        => now()->toDateString(),
+            'nama_penandatangan' => $penandatangan->nama_karyawan,
+            'keterangan'         => $namaMateri,
+            'nama_penerima'      => $rkm->perusahaan->nama_perusahaan ?? '-',
+            'tanggal_awal'       => $tglAwal,
+            'tanggal_akhir'      => $tglAkhir,
+            'jumlah_uang'        => $total,
+            'jumlah_peserta'     => $pax,
+        ]));
+
+        $pesertaList = $rkm->registrasi->pluck('peserta.nama')->filter()->values()->all();
+        $pdfUrl = route('download.pdf', [
+            'id'         => $invoice->id,
+            'peserta'    => $pesertaList,
+            'is_peserta' => $item['is_peserta'] ? 'true' : 'false',
+            'is_ttd'     => $item['is_ttd'] ? 'true' : 'false',
+            'pph23'      => $item['pph23'] ? 'true' : '0',
+        ]);
+
+        return [
+            'id_rkm'         => $rkm->id,
+            'invoice_number' => $invoice->invoice_number,
+            'ok'             => true,
+            'pdf_url'        => $pdfUrl,
+        ];
+    }
+
+    public function storeKwitansi(Request $request)
+    {
+        $request->validate([
+            'invoice_id'            => 'required|exists:invoices,id',
+            'nomor_kwitansi'        => 'required|string|max:255',
+            'tanggal'               => 'nullable|date',
+            'tanggal_ttd'           => 'nullable|date',
+            'nama_penerima'         => 'nullable|string|max:255',
+            'keterangan'            => 'nullable|string',
+            'nama_penandatangan'    => 'nullable|string|max:255',
+            'tanggal_awal'          => 'nullable|date',
+            'tanggal_akhir'         => 'nullable|date',
+            'jumlah_uang'           => 'nullable|numeric',
+            'jumlah_peserta'        => 'nullable|integer',
+        ]);
+
+        $invoice = Invoice::findOrFail($request->invoice_id);
+
+        $existingKwitansi = Kwitansi::where('invoice_id', $request->invoice_id)->first();
+        $isUpdate = $existingKwitansi !== null;
+
+        $kwitansiData = [
+            'id_rkm'        => $invoice->id_rkm,
+            'invoice_id'    => $request->invoice_id,
+            'tanggal_cetak' => $request->tanggal,
+            'dicetak_oleh'  => $request->nama_penandatangan,
+        ];
+
+        if ($isUpdate) {
+            $existingKwitansi->update($kwitansiData);
+            $kwitansi = $existingKwitansi;
+        } else {
+            $kwitansi = Kwitansi::create($kwitansiData);
+        }
+
+        return $this->downloadPdfKwitansi(
+            $kwitansi->id,
+            $isUpdate,
+            $request->nomor_kwitansi,
+            $request->tanggal,
+            $request->tanggal_ttd,
+            $request->nama_penerima,
+            $request->keterangan,
+            $request->nama_penandatangan,
+            $request->tanggal_awal,
+            $request->tanggal_akhir,
+            $request->jumlah_uang,
+            $request->jumlah_peserta,
+        );
+    }
+
+    /**
+     * Menampilkan detail satu invoice.
+     *
+     * @param  \App\Models\Invoice  $invoice
+     * @return \Illuminate\View\View
+     */
+    public function show(string $id): View
+    {
+        // Mengambil data Invoice dan memuat relasi RKM, Perusahaan, dan Materi
+        $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta'])->findOrFail($id);
+        
+        // Menghitung total terbilang dan mengirimkannya ke view
+        $terbilang = format_terbilang($invoice->amount);
+        
+
+        $karyawan = karyawan::find(22);
+        
+        return view('invoice.show', compact('invoice', 'terbilang', 'karyawan'));
+    }
+
+    public function showKwitansi($id)
+    {
+        $kwitansi = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan')->findOrFail($id);
+        
+        // Perbaikan: Terbilang diambil dari data kwitansi, bukan invoice
+        $terbilang = format_terbilang($kwitansi->invoice->amount);
+        
+        // Data karyawan untuk penandatangan
+        $karyawan = karyawan::find(22); 
+
+        // Menggunakan compact() yang lebih ringkas
+        return view('kwitansi.show', compact('kwitansi', 'terbilang', 'karyawan'));
+    }
 
 
     /**
@@ -596,45 +793,45 @@ public function showKwitansi($id)
      * @param  \App\Models\Invoice  $invoice
      * @return \Illuminate\View\View
      */
-    public function edit(Invoice $invoice): View
+    // public function edit(Invoice $invoice): View
+    // {
+    //     $invoice->load('rkm.perusahaan', 'rkm.materi');
+    //     return view('invoice.edit', compact('invoice'));
+    // }
+
+    /**
+     * Memperbarui invoice yang sudah ada.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Invoice  $invoice
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(Request $request, Invoice $invoice): RedirectResponse
     {
-        $invoice->load('rkm.perusahaan', 'rkm.materi');
-        return view('invoice.edit', compact('invoice'));
+        $request->validate([
+            'invoice_number' => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id,
+            'tanggal_invoice' => 'required|date',
+            'due_date' => 'nullable|date|after_or_equal:tanggal_invoice', 
+            'purchase_order' => 'nullable|string|max:255', 
+            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'amount' => 'required|numeric',
+            'bank_name' => 'nullable|string|max:255', // Tambahan untuk bank_name
+            'account_number' => 'nullable|string|max:50', // Tambahan untuk account_number
+        ]);
+
+        $invoice->update([
+            'invoice_number' => $request->input('invoice_number'),
+            'tanggal_invoice' => $request->input('tanggal_invoice'),
+            'due_date' => $request->input('due_date'), 
+            'purchase_order' => $request->input('purchase_order'),
+            'id_rkm' => $request->input('id_rkm'),
+            'amount' => $request->input('amount'),
+            'bank_name' => $request->input('bank_name'), // Perbarui bank_name
+            'account_number' => $request->input('account_number'), // Perbarui account_number
+        ]);
+
+        return redirect()->route('invoice.show', $invoice->id)->with('success', 'Invoice berhasil diperbarui!');
     }
-
-/**
- * Memperbarui invoice yang sudah ada.
- *
- * @param  \Illuminate\Http\Request  $request
- * @param  \App\Models\Invoice  $invoice
- * @return \Illuminate\Http\RedirectResponse
- */
-public function update(Request $request, Invoice $invoice): RedirectResponse
-{
-    $request->validate([
-        'invoice_number' => 'required|string|max:255|unique:invoices,invoice_number,' . $invoice->id,
-        'tanggal_invoice' => 'required|date',
-        'due_date' => 'nullable|date|after_or_equal:tanggal_invoice', 
-        'purchase_order' => 'nullable|string|max:255', 
-        'id_rkm' => 'required|exists:r_k_m_s,id',
-        'amount' => 'required|numeric',
-        'bank_name' => 'nullable|string|max:255', // Tambahan untuk bank_name
-        'account_number' => 'nullable|string|max:50', // Tambahan untuk account_number
-    ]);
-
-    $invoice->update([
-        'invoice_number' => $request->input('invoice_number'),
-        'tanggal_invoice' => $request->input('tanggal_invoice'),
-        'due_date' => $request->input('due_date'), 
-        'purchase_order' => $request->input('purchase_order'),
-        'id_rkm' => $request->input('id_rkm'),
-        'amount' => $request->input('amount'),
-        'bank_name' => $request->input('bank_name'), // Perbarui bank_name
-        'account_number' => $request->input('account_number'), // Perbarui account_number
-    ]);
-
-    return redirect()->route('invoice.show', $invoice->id)->with('success', 'Invoice berhasil diperbarui!');
-}
 
     /**
      * Menghapus invoice dari database.
@@ -647,342 +844,362 @@ public function update(Request $request, Invoice $invoice): RedirectResponse
         $invoice->delete();
         return redirect()->route('invoice.index')->with('success', 'Invoice berhasil dihapus!');
     }
-    // Tambahkan di dalam InvoiceRKMController
-// private function terbilang($angka)
-// {
-//     $angka = abs($angka);
-//     $baca = array("", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas");
-//     $hasil = "";
 
-//     if ($angka < 12) {
-//         $hasil = " " . $baca[$angka];
-//     } else if ($angka < 20) {
-//         $hasil = $this->terbilang($angka - 10) . " Belas";
-//     } else if ($angka < 100) {
-//         $hasil = $this->terbilang(intval($angka / 10)) . " Puluh" . $this->terbilang($angka % 10);
-//     } else if ($angka < 200) {
-//         $hasil = " Seratus" . $this->terbilang($angka - 100);
-//     } else if ($angka < 1000) {
-//         $hasil = $this->terbilang(intval($angka / 100)) . " Ratus" . $this->terbilang($angka % 100);
-//     } else if ($angka < 2000) {
-//         $hasil = " Seribu" . $this->terbilang($angka - 1000);
-//     } else if ($angka < 1000000) {
-//         $hasil = $this->terbilang(intval($angka / 1000)) . " Ribu" . $this->terbilang($angka % 1000);
-//     } else if ($angka < 1000000000) {
-//         $hasil = $this->terbilang(intval($angka / 1000000)) . " Juta" . $this->terbilang($angka % 1000000);
-//     }
-
-//     return trim($hasil);
-// }
-
-
-public function exportExcel($id)
-{
-    $invoice = Invoice::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
-
-    $spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-
-    // Logo (kalau mau tambahin bisa pakai drawing)
-    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
-    $drawing->setPath(public_path('icon/logoo.png'));
-    $drawing->setCoordinates('A1');
-    $drawing->setHeight(40);
-    $drawing->setWorksheet($sheet);
-
-    // Judul
-    $sheet->mergeCells('A1:E1');
-    $sheet->setCellValue('A1', 'Detail Invoice #' . $invoice->invoice_number);
-    $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-    $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
-
-    // Info invoice
-    $sheet->setCellValue('A3', 'Nomor Invoice:');
-    $sheet->setCellValue('B3', $invoice->invoice_number);
-
-    $sheet->setCellValue('A4', 'Tanggal Invoice:');
-    $sheet->setCellValue('B4', \Carbon\Carbon::parse($invoice->tanggal_invoice)->format('d F Y'));
-
-    $sheet->setCellValue('A5', 'Perusahaan:');
-    $sheet->setCellValue('B5', $invoice->rkm->perusahaan->nama_perusahaan ?? '-');
-
-    $sheet->setCellValue('A6', 'Materi:');
-    $sheet->setCellValue('B6', $invoice->rkm->materi->nama_materi ?? '-');
-
-    $sheet->setCellValue('A7', 'Tanggal:');
-    $sheet->setCellValue('B7', \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y')
-        . ' s/d ' . \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y'));
-
-    $sheet->setCellValue('A8', 'Peserta:');
-    $sheet->setCellValue('B8', $invoice->rkm->pax . ' orang');
-
-    // Header tabel
-    $sheet->setCellValue('A10', 'No');
-    $sheet->setCellValue('B10', 'Deskripsi');
-    $sheet->setCellValue('C10', 'Pax');
-    $sheet->setCellValue('D10', 'Harga Unit');
-    $sheet->setCellValue('E10', 'Jumlah');
-
-    $sheet->getStyle('A10:E10')->getFont()->setBold(true);
-    $sheet->getStyle('A10:E10')->getAlignment()->setHorizontal('center');
-    $sheet->getStyle('A10:E10')->getBorders()->getAllBorders()
-        ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-    // Data tabel
-    $hargaUnit = $invoice->rkm->harga_jual ?? 0;
-    $pax = $invoice->rkm->pax ?? 0;
-    $jumlah = $hargaUnit * $pax;
-
-    $sheet->setCellValue('A11', '1');
-    $sheet->setCellValue('B11', "Materi: {$invoice->rkm->materi->nama_materi}\nTanggal: "
-        . \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y')
-        . " s/d "
-        . \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y')
-        . "\nPeserta: {$pax} orang"
-    );
-    $sheet->getStyle('B11')->getAlignment()->setWrapText(true);
-
-    $sheet->setCellValue('C11', $pax);
-    $sheet->setCellValue('D11', $hargaUnit);
-    $sheet->setCellValue('E11', $jumlah);
-
-    $sheet->getStyle('A11:E11')->getBorders()->getAllBorders()
-        ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-
-    // Subtotal, PPN, Total
-    $ppn = $jumlah * 0.11;
-    $sheet->setCellValue('D13', 'SubTotal');
-    $sheet->setCellValue('E13', $jumlah);
-
-    $sheet->setCellValue('D14', 'PPN 11%');
-    $sheet->setCellValue('E14', $ppn);
-
-    $sheet->setCellValue('D15', 'TOTAL');
-    $sheet->setCellValue('E15', $jumlah + $ppn);
-
-    $sheet->getStyle('D13:E15')->getFont()->setBold(true);
-
-    // Terbilang
-    $sheet->mergeCells('A17:E17');
-    $sheet->setCellValue('A17', 'Terbilang: ' . $this->terbilang($jumlah + $ppn));
-
-    // Footer
-    $sheet->mergeCells('A20:E20');
-    $sheet->setCellValue('A20', 'Bandung, ' . \Carbon\Carbon::now()->format('d F Y'));
-    $sheet->mergeCells('A22:E22');
-    $sheet->setCellValue('A22', 'Hormat kami, PT. INIXINDO AMIETE MANDIRI');
-    $sheet->mergeCells('A26:E26');
-    $sheet->setCellValue('A26', 'Nama Penanggung Jawab - Accounting & Finance');
-
-    // Lebar kolom auto
-    foreach (range('A','E') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    // Export langsung
-    $writer = new Xlsx($spreadsheet);
-    $fileName = 'invoice_'.$invoice->id.'.xlsx';
-
-    return response()->streamDownload(function() use ($writer) {
-        $writer->save('php://output');
-    }, $fileName);
-}
-
-public function downloadPdf(
-    $id,
-    $pesertaList = [],
-    $isPeserta = false,
-    $isTtd = false,
-    $nama_perusahaan = null,
-    $tanggal_awal = null,
-    $tanggal_akhir = null,
-    $materi = null,
-    $unit_price = null,
-    $pax = null,
-    $isPPh = false,
-    $jumlah = null,
-    $subtotal = null,
-    $ppn = null,
-    $pph = null,
-    $total = null,
-    $dueDateManual = null,
-    $isUpdate = false
-) {
-    $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta', 'rkm'])
-        ->findOrFail($id);
-
-    $pax = $pax ?? $invoice->pax ?? $invoice->rkm->pax ?? 0;
-    $jumlah = $jumlah ?? $invoice->jumlah ?? (($unit_price ?? 0) * $pax);
-    $subtotal = $subtotal ?? $invoice->subtotal ?? $jumlah;
-    $ppn = $ppn ?? $invoice->ppn ?? 0;
-    $pph = $pph ?? $invoice->pph ?? 0;
-    $total = $total ?? $invoice->total ?? ($subtotal + $ppn - $pph);
-
-    $terbilang = $this->terbilang($total ?? 0);
-    $karyawan = Karyawan::findOrFail(22);
-
-    $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
-    $filePath = 'invoice/' . $fileName;
-
-    if ($isUpdate && !empty($invoice->file_path) &&
-        Storage::disk('local')->exists($invoice->file_path)) {
-        Storage::disk('local')->delete($invoice->file_path);
-        $invoice->file_path = null;
-    }
-
-    if (!$isUpdate && !empty($invoice->file_path) &&
-        Storage::disk('local')->exists($invoice->file_path)) {
-        return response()->download(
-            storage_path('app/' . $invoice->file_path)
-        );
-    }
-
-    $pdf = Pdf::loadView('invoice.pdf', compact(
-        'invoice',
-        'terbilang',
-        'karyawan',
-        'pesertaList',
-        'isPeserta',
-        'isTtd',
-        'nama_perusahaan',
-        'tanggal_awal',
-        'tanggal_akhir',
-        'materi',
-        'unit_price',
-        'pax',
-        'isPPh',
-        'jumlah',
-        'subtotal',
-        'ppn',
-        'pph',
-        'total',
-        'dueDateManual'
-    ))
-        ->setPaper('a4', 'portrait')
-        ->setOptions([
-            'isRemoteEnabled' => true,
-            'isHtml5ParserEnabled' => true,
-            'enable_css_float' => true,
-            'enable_html5' => true,
-            'debugCss' => false,
-            'debugLayout' => false,
-            'chroot' => public_path(),
-            'dpi' => 96,
+    public function updateNumber(Request $request, Invoice $invoice): JsonResponse
+    {
+        $data = $request->validate([
+            'invoice_number' => 'required|string|max:255',
         ]);
 
-    Storage::disk('local')->put($filePath, $pdf->output());
+        $new = trim($data['invoice_number']);
 
-    $invoice->file_path = $filePath;
-    $invoice->save(); // Simpan path file ke database
+        if ($new === $invoice->invoice_number) {
+            return response()->json(['success' => true, 'message' => 'Tidak ada perubahan.']);
+        }
 
-    return response()->download(
-        storage_path('app/' . $filePath)
-    );
-}
+        if (Invoice::where('invoice_number', $new)->where('id', '!=', $invoice->id)->exists()) {
+            return response()->json(['message' => 'Nomor invoice sudah dipakai invoice lain.'], 422);
+        }
 
-public function downloadPdfKwitansi(
-    $id,
-    $isUpdate          = false,
-    $nomor_kwitansi    = null,
-    $tanggal           = null,
-    $tanggal_ttd       = null,
-    $nama_penerima     = null,
-    $keterangan        = null,
-    $nama_penandatangan    = null,
-    $tanggal_awal    = null,
-    $tanggal_akhir    = null,
-    $jumlah_uang    = null,
-    $jumlah_peserta    = null,
+        DB::transaction(function () use ($invoice, $new) {
+            if (!empty($invoice->file_path) && Storage::disk('local')->exists($invoice->file_path)) {
+                Storage::disk('local')->delete($invoice->file_path);
+            }
+
+            $invoice->invoice_number = $new;
+            $invoice->file_path = null;
+            $invoice->save();
+
+            ApprovalPendapatan::where('id_rkm', $invoice->id_rkm)->update(['no_invoice' => $new]);
+            outstanding::where('id_rkm', $invoice->id_rkm)->update(['no_invoice' => $new]);
+        });
+
+        return response()->json(['success' => true, 'message' => 'Nomor invoice berhasil diubah.']);
+    }
+
+    public function exportExcel($id)
+    {
+        $invoice = Invoice::with('rkm.materi', 'rkm.perusahaan')->findOrFail($id);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Logo (kalau mau tambahin bisa pakai drawing)
+        $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+        $drawing->setPath(public_path('icon/logoo.png'));
+        $drawing->setCoordinates('A1');
+        $drawing->setHeight(40);
+        $drawing->setWorksheet($sheet);
+
+        // Judul
+        $sheet->mergeCells('A1:E1');
+        $sheet->setCellValue('A1', 'Detail Invoice #' . $invoice->invoice_number);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+        // Info invoice
+        $sheet->setCellValue('A3', 'Nomor Invoice:');
+        $sheet->setCellValue('B3', $invoice->invoice_number);
+
+        $sheet->setCellValue('A4', 'Tanggal Invoice:');
+        $sheet->setCellValue('B4', \Carbon\Carbon::parse($invoice->tanggal_invoice)->format('d F Y'));
+
+        $sheet->setCellValue('A5', 'Perusahaan:');
+        $sheet->setCellValue('B5', $invoice->rkm->perusahaan->nama_perusahaan ?? '-');
+
+        $sheet->setCellValue('A6', 'Materi:');
+        $sheet->setCellValue('B6', $invoice->rkm->materi->nama_materi ?? '-');
+
+        $sheet->setCellValue('A7', 'Tanggal:');
+        $sheet->setCellValue('B7', \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y')
+            . ' s/d ' . \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y'));
+
+        $sheet->setCellValue('A8', 'Peserta:');
+        $sheet->setCellValue('B8', $invoice->rkm->pax . ' orang');
+
+        // Header tabel
+        $sheet->setCellValue('A10', 'No');
+        $sheet->setCellValue('B10', 'Deskripsi');
+        $sheet->setCellValue('C10', 'Pax');
+        $sheet->setCellValue('D10', 'Harga Unit');
+        $sheet->setCellValue('E10', 'Jumlah');
+
+        $sheet->getStyle('A10:E10')->getFont()->setBold(true);
+        $sheet->getStyle('A10:E10')->getAlignment()->setHorizontal('center');
+        $sheet->getStyle('A10:E10')->getBorders()->getAllBorders()
+            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        // Data tabel
+        $hargaUnit = $invoice->rkm->harga_jual ?? 0;
+        $pax = $invoice->rkm->pax ?? 0;
+        $jumlah = $hargaUnit * $pax;
+
+        $sheet->setCellValue('A11', '1');
+        $sheet->setCellValue('B11', "Materi: {$invoice->rkm->materi->nama_materi}\nTanggal: "
+            . \Carbon\Carbon::parse($invoice->rkm->tanggal_awal)->format('d F Y')
+            . " s/d "
+            . \Carbon\Carbon::parse($invoice->rkm->tanggal_akhir)->format('d F Y')
+            . "\nPeserta: {$pax} orang"
+        );
+        $sheet->getStyle('B11')->getAlignment()->setWrapText(true);
+
+        $sheet->setCellValue('C11', $pax);
+        $sheet->setCellValue('D11', $hargaUnit);
+        $sheet->setCellValue('E11', $jumlah);
+
+        $sheet->getStyle('A11:E11')->getBorders()->getAllBorders()
+            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        // Subtotal, PPN, Total
+        $ppn = $jumlah * 0.11;
+        $sheet->setCellValue('D13', 'SubTotal');
+        $sheet->setCellValue('E13', $jumlah);
+
+        $sheet->setCellValue('D14', 'PPN 11%');
+        $sheet->setCellValue('E14', $ppn);
+
+        $sheet->setCellValue('D15', 'TOTAL');
+        $sheet->setCellValue('E15', $jumlah + $ppn);
+
+        $sheet->getStyle('D13:E15')->getFont()->setBold(true);
+
+        // Terbilang
+        $sheet->mergeCells('A17:E17');
+        $sheet->setCellValue('A17', 'Terbilang: ' . $this->terbilang($jumlah + $ppn));
+
+        // Footer
+        $sheet->mergeCells('A20:E20');
+        $sheet->setCellValue('A20', 'Bandung, ' . \Carbon\Carbon::now()->format('d F Y'));
+        $sheet->mergeCells('A22:E22');
+        $sheet->setCellValue('A22', 'Hormat kami, PT. INIXINDO AMIETE MANDIRI');
+        $sheet->mergeCells('A26:E26');
+        $sheet->setCellValue('A26', 'Nama Penanggung Jawab - Accounting & Finance');
+
+        // Lebar kolom auto
+        foreach (range('A','E') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Export langsung
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'invoice_'.$invoice->id.'.xlsx';
+
+        return response()->streamDownload(function() use ($writer) {
+            $writer->save('php://output');
+        }, $fileName);
+    }
+
+    public function downloadPdf(
+        $id,
+        $pesertaList = [],
+        $isPeserta = false,
+        $isTtd = false,
+        $nama_perusahaan = null,
+        $tanggal_awal = null,
+        $tanggal_akhir = null,
+        $materi = null,
+        $unit_price = null,
+        $pax = null,
+        $isPPh = false,
+        $jumlah = null,
+        $subtotal = null,
+        $ppn = null,
+        $pph = null,
+        $total = null,
+        $dueDateManual = null,
+        $isUpdate = false
     ) {
-    $kwitansi  = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
-    $terbilang = format_terbilang($jumlah_uang);
-    $karyawan  = Karyawan::find(22);
+        $isPreview = request()->boolean('preview');
 
-    $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
-    $filePath = 'kwitansi/' . $fileName;
+        $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi', 'rkm.registrasi.peserta', 'rkm'])
+            ->findOrFail($id);
 
-    if ($isUpdate && !empty($kwitansi->file_path) &&
-        Storage::disk('local')->exists($kwitansi->file_path)) {
-        Storage::disk('local')->delete($kwitansi->file_path);
-        $kwitansi->file_path = null;
+        $pax = $pax ?? $invoice->pax ?? $invoice->rkm->pax ?? 0;
+        $jumlah = $jumlah ?? $invoice->jumlah ?? (($unit_price ?? 0) * $pax);
+        $subtotal = $subtotal ?? $invoice->subtotal ?? $jumlah;
+        $ppn = $ppn ?? $invoice->ppn ?? 0;
+        $pph = $pph ?? $invoice->pph ?? 0;
+        $total = $total ?? $invoice->total ?? ($subtotal + $ppn - $pph);
+
+        $terbilang = $this->terbilang($total ?? 0);
+        $karyawan = karyawan::findOrFail(22);
+
+        $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
+        $filePath = 'invoice/' . $fileName;
+
+        if ($isUpdate && !empty($invoice->file_path) &&
+            Storage::disk('local')->exists($invoice->file_path)) {
+            Storage::disk('local')->delete($invoice->file_path);
+            $invoice->file_path = null;
+        }
+
+        if (!$isUpdate && !empty($invoice->file_path) &&
+            Storage::disk('local')->exists($invoice->file_path)) {
+            $fullPath = storage_path('app/' . $invoice->file_path);
+
+            if ($isPreview) {
+                return response()->file($fullPath, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+                ]);
+            }
+
+            return response()->download($fullPath);
+        }
+
+        $pdf = Pdf::loadView('invoice.pdf', compact(
+            'invoice',
+            'terbilang',
+            'karyawan',
+            'pesertaList',
+            'isPeserta',
+            'isTtd',
+            'nama_perusahaan',
+            'tanggal_awal',
+            'tanggal_akhir',
+            'materi',
+            'unit_price',
+            'pax',
+            'isPPh',
+            'jumlah',
+            'subtotal',
+            'ppn',
+            'pph',
+            'total',
+            'dueDateManual'
+        ))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true,
+                'enable_css_float' => true,
+                'enable_html5' => true,
+                'debugCss' => false,
+                'debugLayout' => false,
+                'chroot' => public_path(),
+                'dpi' => 96,
+            ]);
+
+        Storage::disk('local')->put($filePath, $pdf->output());
+
+        $invoice->file_path = $filePath;
+        $invoice->save();
+
+        $fullPath = storage_path('app/' . $filePath);
+
+        if ($isPreview) {
+            return response()->file($fullPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+            ]);
+        }
+
+        return response()->download($fullPath);
     }
 
-    if (!$isUpdate && !empty($kwitansi->file_path) &&
-        Storage::disk('local')->exists($kwitansi->file_path)) {
+    public function downloadPdfKwitansi(
+        $id,
+        $isUpdate          = false,
+        $nomor_kwitansi    = null,
+        $tanggal           = null,
+        $tanggal_ttd       = null,
+        $nama_penerima     = null,
+        $keterangan        = null,
+        $nama_penandatangan    = null,
+        $tanggal_awal    = null,
+        $tanggal_akhir    = null,
+        $jumlah_uang    = null,
+        $jumlah_peserta    = null,
+        ) {
+        $kwitansi  = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
+        $terbilang = format_terbilang($jumlah_uang);
+        $karyawan  = karyawan::find(22);
+
+        $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
+        $filePath = 'kwitansi/' . $fileName;
+
+        if ($isUpdate && !empty($kwitansi->file_path) &&
+            Storage::disk('local')->exists($kwitansi->file_path)) {
+            Storage::disk('local')->delete($kwitansi->file_path);
+            $kwitansi->file_path = null;
+        }
+
+        if (!$isUpdate && !empty($kwitansi->file_path) &&
+            Storage::disk('local')->exists($kwitansi->file_path)) {
+            return response()->download(
+                storage_path('app/' . $kwitansi->file_path)
+            );
+        }
+
+        $pdf = Pdf::loadView('kwitansi.pdf', compact(
+            'kwitansi',
+            'terbilang',
+            'karyawan',
+            'nomor_kwitansi',
+            'tanggal',
+            'tanggal_ttd',
+            'nama_penerima',
+            'keterangan',
+            'nama_penandatangan',
+            'tanggal_awal',
+            'tanggal_akhir',
+            'terbilang',
+            'jumlah_uang',
+            'jumlah_peserta',
+        ))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isRemoteEnabled'      => true,
+                'isHtml5ParserEnabled' => true,
+                'enable_css_float'     => true,
+                'enable_html5'         => true,
+                'debugCss'             => false,
+                'debugLayout'          => false,
+                'chroot'               => public_path(),
+                'dpi'                  => 96,
+            ]);
+
+        Storage::disk('local')->put($filePath, $pdf->output());
+
+        $kwitansi->file_path = $filePath;
+        $kwitansi->save();
+
         return response()->download(
-            storage_path('app/' . $kwitansi->file_path)
+            storage_path('app/' . $filePath)
         );
     }
+    private function formatTerbilang($amount)
+    {
+        $nilai = abs($amount);
+        $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
 
-    $pdf = Pdf::loadView('kwitansi.pdf', compact(
-        'kwitansi',
-        'terbilang',
-        'karyawan',
-        'nomor_kwitansi',
-        'tanggal',
-        'tanggal_ttd',
-        'nama_penerima',
-        'keterangan',
-        'nama_penandatangan',
-        'tanggal_awal',
-        'tanggal_akhir',
-        'terbilang',
-        'jumlah_uang',
-        'jumlah_peserta',
-    ))
-        ->setPaper('a4', 'portrait')
-        ->setOptions([
-            'isRemoteEnabled'      => true,
-            'isHtml5ParserEnabled' => true,
-            'enable_css_float'     => true,
-            'enable_html5'         => true,
-            'debugCss'             => false,
-            'debugLayout'          => false,
-            'chroot'               => public_path(),
-            'dpi'                  => 96,
-        ]);
+        if ($nilai < 12) {
+            return " " . $huruf[$nilai];
+        } elseif ($nilai < 20) {
+            return $this->formatTerbilang($nilai - 10) . " belas";
+        } elseif ($nilai < 100) {
+            return $this->formatTerbilang($nilai / 10) . " puluh" . $this->formatTerbilang($nilai % 10);
+        } elseif ($nilai < 200) {
+            return " seratus" . $this->formatTerbilang($nilai - 100);
+        } elseif ($nilai < 1000) {
+            return $this->formatTerbilang($nilai / 100) . " ratus" . $this->formatTerbilang($nilai % 100);
+        } elseif ($nilai < 2000) {
+            return " seribu" . $this->formatTerbilang($nilai - 1000);
+        } elseif ($nilai < 1000000) {
+            return $this->formatTerbilang($nilai / 1000) . " ribu" . $this->formatTerbilang($nilai % 1000);
+        } elseif ($nilai < 1000000000) {
+            return $this->formatTerbilang($nilai / 1000000) . " juta" . $this->formatTerbilang($nilai % 1000000);
+        }
 
-    Storage::disk('local')->put($filePath, $pdf->output());
-
-    $kwitansi->file_path = $filePath;
-    $kwitansi->save();
-
-    return response()->download(
-        storage_path('app/' . $filePath)
-    );
-}
-private function formatTerbilang($amount)
-{
-    $nilai = abs($amount);
-    $huruf = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
-
-    if ($nilai < 12) {
-        return " " . $huruf[$nilai];
-    } elseif ($nilai < 20) {
-        return $this->formatTerbilang($nilai - 10) . " belas";
-    } elseif ($nilai < 100) {
-        return $this->formatTerbilang($nilai / 10) . " puluh" . $this->formatTerbilang($nilai % 10);
-    } elseif ($nilai < 200) {
-        return " seratus" . $this->formatTerbilang($nilai - 100);
-    } elseif ($nilai < 1000) {
-        return $this->formatTerbilang($nilai / 100) . " ratus" . $this->formatTerbilang($nilai % 100);
-    } elseif ($nilai < 2000) {
-        return " seribu" . $this->formatTerbilang($nilai - 1000);
-    } elseif ($nilai < 1000000) {
-        return $this->formatTerbilang($nilai / 1000) . " ribu" . $this->formatTerbilang($nilai % 1000);
-    } elseif ($nilai < 1000000000) {
-        return $this->formatTerbilang($nilai / 1000000) . " juta" . $this->formatTerbilang($nilai % 1000000);
+        return "";
     }
 
-    return "";
-}
+    public function terbilang($nilai)
+    {
+        if ($nilai < 0) {
+            return "Minus " . trim($this->formatTerbilang($nilai)) . " Rupiah";
+        }
 
-public function terbilang($nilai)
-{
-    if ($nilai < 0) {
-        return "Minus " . trim($this->formatTerbilang($nilai)) . " Rupiah";
+        return ucwords(trim($this->formatTerbilang($nilai))) . " Rupiah";
     }
-
-    return ucwords(trim($this->formatTerbilang($nilai))) . " Rupiah";
-}
 }

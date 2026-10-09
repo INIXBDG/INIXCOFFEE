@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Office;
+namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
-use App\Models\certificate_summary;
 use App\Models\CertificateSummary;
 use App\Models\eksam as ModelsEksam;
 use App\Models\RKM;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
@@ -240,7 +239,7 @@ class CertificateController extends Controller
             'tanggal_pelatihan2' => $request->filled('tanggal_awal2') && $request->filled('tanggal_akhir2') ? $request->tanggal_awal2 . ' - ' . $request->tanggal_akhir2 : null,
         ]);
 
-        $penandatangan = Karyawan::find(4);
+        $penandatangan = karyawan::find(4);
 
         // Generate PDF
         $pdf = Pdf::loadView('office.certificate.pdf', compact('certificate', 'penandatangan'))
@@ -286,7 +285,7 @@ class CertificateController extends Controller
     public function show($id)
     {
         $certificate = Certificate::with(['rkm.materi', 'peserta'])->findOrFail($id);
-        $penandatangan = Karyawan::find(4);
+        $penandatangan = karyawan::find(4);
         // dd($certificate);
 
         return view('office.certificate.show', compact('certificate', 'penandatangan'));
@@ -363,7 +362,7 @@ class CertificateController extends Controller
     public function preview($id)
     {
         $certificate = Certificate::with(['rkm.materi'])->findOrFail($id);
-        $penandatangan = Karyawan::find(4);
+        $penandatangan = karyawan::find(4);
 
         $pdf = Pdf::loadView('office.certificate.pdf', compact('certificate', 'penandatangan'))
             ->setPaper('a4', 'landscape');

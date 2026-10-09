@@ -4,7 +4,6 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\JobDesk;
-use App\Models\Karyawan;
 use App\Models\OrgStructure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
