@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
 use App\Models\DashboardLayout;
+
 use App\Models\notif;
 use App\Models\LeadProject;
 use App\Models\Registrasi;
@@ -14,7 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\DashboardRoleLayout;
 class HomeController extends Controller
 {
     /**
@@ -77,24 +78,23 @@ class HomeController extends Controller
             ->first();
 
         // 1. Ambil urutan global dari Setting Dashboard (database)
-        $globalOrder = DashboardLayout::orderBy('sort_order', 'asc')->pluck('section_key')->toArray();
-        if (empty($globalOrder)) {
-            $globalOrder = [
-                'karyawan',
-                'peserta',
-                'itsm',
-                'rkm',
-                'finance',
-                'performance',
-                'education',
-                'office',
-                'crm',
-                'management',
-                'project',
-            ];
+        $globalLayouts = DashboardLayout::orderBy('sort_order', 'asc')->get();
+        $globalSections = $globalLayouts->pluck('section_key')->toArray();
+        
+        $globalCards = [];
+        foreach ($globalLayouts as $l) {
+            $c = $l->card_order;
+            if (is_string($c)) {
+                $c = json_decode($c, true);
+            }
+            $globalCards[$l->section_key] = is_array($c) ? $c : null;
         }
 
-        // 2. Mapping permission filter untuk 11 section
+        // 2. Ambil override layout KHUSUS untuk user yang sedang login
+        //    (berdasarkan role/jabatan - mengembalikan null jika tidak ada override)
+        $override = DashboardRoleLayout::forUser(auth()->user());
+
+        // 3. Mapping permission filter untuk 11 section
         $user = auth()->user();
         $sectionRules = [
             'karyawan'    => true, // Fitur personal esensial seluruh karyawan
@@ -102,7 +102,7 @@ class HomeController extends Controller
             'itsm'        => $user ? $user->hasAnyPermission(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature', 'View ITSM Only']) : false,
             'rkm'         => $user ? $user->can('Fitur Menu RKM') : false,
             'finance'     => $user ? $user->can('Fitur Menu Finance') : false,
-            'performance' => $user ? ($user->can('View KPI Penilaian') || in_array($user->jabatan, ['Koordinator ITSM', 'HRD', 'Education Manager', 'GM', 'SPV Sales', 'Direktur', 'Direktur Utama', 'Komisaris'])) : false,
+            'performance' => $user ? ($user->can('View KPI Penilaian') || in_array($user->jabatan ?? '', ['Koordinator ITSM', 'HRD', 'Education Manager', 'GM', 'SPV Sales', 'Direktur', 'Direktur Utama', 'Komisaris'])) : false,
             'education'   => $user ? $user->can('Fitur Menu Education') : false,
             'office'      => $user ? $user->can('Fitur Menu Office') : false,
             'crm'         => $user ? $user->can('Fitur CRM') : false,
@@ -110,18 +110,17 @@ class HomeController extends Controller
             'project'     => $user ? $user->can('Fitur Menu Project') : false,
         ];
 
-        // 3. Saring section yang diizinkan (urutan tetap mengikuti urutan global Admin)
-        $visibleSections = array_values(array_filter($globalOrder, function ($key) use ($sectionRules) {
+        // 4. Gabungkan layout Global + Override Role (inti sistem per role)
+        //    Hasilnya: array ['sections' => [...], 'cards' => [...]]
+        $mergedLayout = DashboardRoleLayout::merge($globalSections, $globalCards, $override, $sectionRules);
+
+        // 5. Saring section yang diizinkan (urutan mengikuti hasil merge)
+        $visibleSections = array_values(array_filter($mergedLayout['sections'], function ($key) use ($sectionRules) {
             return $sectionRules[$key] ?? false;
         }));
 
-        // 4. Ambil pengaturan urutan card dari database
-        $savedCardOrders = DashboardLayout::pluck('card_order', 'section_key')->toArray();
-        foreach ($savedCardOrders as $k => $val) {
-            if (is_string($val)) {
-                $savedCardOrders[$k] = json_decode($val, true);
-            }
-        }
+        // 6. Urutan card yang sudah disesuaikan per section
+        $savedCardOrders = $mergedLayout['cards'];
 
         // return $absenHariIni;
         return view('layouts.menus', compact('notifikasi', 'absenHariIni', 'visibleSections', 'savedCardOrders'));
