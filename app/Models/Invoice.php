@@ -16,7 +16,7 @@ class Invoice extends Model
         'purchase_order',
         'id_rkm',
         'amount',
-        'catatan_pembayaran',
+        // 'catatan_pembayaran',
         'bank_name',
         'account_number',
         'file_path'

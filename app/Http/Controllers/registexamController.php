@@ -202,12 +202,12 @@ class registexamController extends Controller
      * @param  mixed $id
      * @return View
      */
-    public function show(string $id): View
-    {
-        $post = registexam::findOrFail($id);
+    // public function show(string $id): View
+    // {
+    //     $post = registexam::findOrFail($id);
 
-        return view('registexam.show', compact('post'));
-    }
+    //     return view('registexam.show', compact('post'));
+    // }
 
     /**
      * edit
@@ -328,11 +328,11 @@ class registexamController extends Controller
     {
         // $post = hasilexam::findOrFail($id);
         // $id_peserta = $post->id_peserta;
-        // $peserta = peserta::where('id', $id_peserta)->first();
+        // $peserta = Peserta::where('id', $id_peserta)->first();
         // $registexam = registexam::findOrFail($post->id_registexam);
         $post = registexam::findOrFail($id);
         $id_peserta = $post->id_peserta;
-        $peserta = peserta::where('id', $id_peserta)->first();
+        $peserta = Peserta::where('id', $id_peserta)->first();
         $hasilexam = hasilexam::where('id_registexam', $post->id)->first();
 
         return view('hasilexam.create', compact('post', 'peserta', 'hasilexam'));
@@ -349,7 +349,7 @@ class registexamController extends Controller
         // return $registexam;
         $id_rkm = $registexam->exam->id_rkm;
         $rkm = RKM::where('id', $id_rkm)->first();
-        $peserta = peserta::with('perusahaan')->where('id', $id_peserta)->first();
+        $peserta = Peserta::with('perusahaan')->where('id', $id_peserta)->first();
         // dd($post, $peserta, $registexam, $rkm);
         return view('hasilexam.show', compact('post', 'peserta', 'registexam', 'rkm'));
     }
@@ -359,7 +359,7 @@ class registexamController extends Controller
         $post = registexam::findOrFail($id);
         $hasilexam = hasilexam::findOrFail($post->id);
         $id_peserta = $post->id_peserta;
-        $peserta = peserta::where('id', $id_peserta)->first();
+        $peserta = Peserta::where('id', $id_peserta)->first();
 
         return view('hasilexam.edit', compact('post', 'peserta', 'registexam'));
     }
@@ -482,7 +482,7 @@ class registexamController extends Controller
     {
         $post = registexam::findOrFail($id);
         $id_peserta = $post->id_peserta;
-        $peserta = peserta::where('id', $id_peserta)->first();
+        $peserta = Peserta::where('id', $id_peserta)->first();
         $ccs = cc::get();
         return view('registexam.cc', compact('post', 'peserta', 'ccs'));
     }

@@ -237,7 +237,7 @@ class InvoiceRKMController extends Controller
         $invoice = Invoice::with(['rkm.perusahaan', 'rkm.materi'])->findOrFail($invoiceId);
 
         // Ambil data karyawan untuk penandatangan
-        $karyawan = Karyawan::find(22); // Sesuaikan dengan id karyawan yang benar
+        $karyawan = karyawan::find(22); // Sesuaikan dengan id karyawan yang benar
 
         // Tampilkan view form tanpa membuat record kwitansi
         return view('kwitansi.create', compact('invoice', 'karyawan'));
@@ -532,7 +532,7 @@ class InvoiceRKMController extends Controller
         $pdf = Pdf::loadView('invoice.pdf', [
             'invoice'         => $p['inv'],
             'terbilang'       => $p['terbilang'],
-            'karyawan'        => Karyawan::findOrFail(22),
+            'karyawan'        => karyawan::findOrFail(22),
             'pesertaList'     => $p['pesertaList'],
             'isPeserta'       => $p['data']['is_peserta'],
             'isTtd'           => $p['data']['is_ttd'],
@@ -579,7 +579,7 @@ class InvoiceRKMController extends Controller
         $pdf = Pdf::loadView('kwitansi.pdf', [
             'kwitansi'           => $kwitansi,
             'terbilang'          => format_terbilang($p['total']),
-            'karyawan'           => Karyawan::find(22),
+            'karyawan'           => karyawan::find(22),
             'nomor_kwitansi'     => 'KW-' . $inv->invoice_number,
             'tanggal'            => now()->toDateString(),
             'tanggal_ttd'        => now()->toDateString(),
@@ -793,11 +793,11 @@ class InvoiceRKMController extends Controller
      * @param  \App\Models\Invoice  $invoice
      * @return \Illuminate\View\View
      */
-    public function edit(Invoice $invoice): View
-    {
-        $invoice->load('rkm.perusahaan', 'rkm.materi');
-        return view('invoice.edit', compact('invoice'));
-    }
+    // public function edit(Invoice $invoice): View
+    // {
+    //     $invoice->load('rkm.perusahaan', 'rkm.materi');
+    //     return view('invoice.edit', compact('invoice'));
+    // }
 
     /**
      * Memperbarui invoice yang sudah ada.
@@ -1022,7 +1022,7 @@ class InvoiceRKMController extends Controller
         $total = $total ?? $invoice->total ?? ($subtotal + $ppn - $pph);
 
         $terbilang = $this->terbilang($total ?? 0);
-        $karyawan = Karyawan::findOrFail(22);
+        $karyawan = karyawan::findOrFail(22);
 
         $fileName = preg_replace('/[\/\\\\]/', '-', $invoice->invoice_number) . '.pdf';
         $filePath = 'invoice/' . $fileName;
@@ -1113,7 +1113,7 @@ class InvoiceRKMController extends Controller
         ) {
         $kwitansi  = Kwitansi::with('invoice.rkm.perusahaan', 'invoice.rkm.materi', 'karyawan', 'invoice.rkm')->findOrFail($id);
         $terbilang = format_terbilang($jumlah_uang);
-        $karyawan  = Karyawan::find(22);
+        $karyawan  = karyawan::find(22);
 
         $fileName = preg_replace('/[\/\\\\]/', '-', $kwitansi->invoice->invoice_number) . '.pdf';
         $filePath = 'kwitansi/' . $fileName;

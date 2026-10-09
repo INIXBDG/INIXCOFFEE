@@ -103,7 +103,7 @@ class listexamController extends Controller
     {
         $provider = Cache::remember('master_provider_all', now()->addMinutes(60), fn() => provider::get());
         $vendor = Cache::remember('master_vendor_all', now()->addMinutes(60), fn() => vendor::get());
-        $exam = ListExam::findOrFail($id);
+        $exam = listexam::findOrFail($id);
         return view('listexams.edit', compact('exam', 'provider', 'vendor'));
     }
 
@@ -118,7 +118,7 @@ class listexamController extends Controller
             'estimasi_durasi_booking' => 'string|max:255',
         ]);
 
-        $exam = ListExam::findOrFail($id);
+        $exam = listexam::findOrFail($id);
 
         $harga            = $request->harga;
         // $kurs             = (float) str_replace('.', '', $request->kurs ?? 0);
@@ -162,7 +162,7 @@ class listexamController extends Controller
 
     public function destroy($id)
     {
-        $exam = ListExam::findOrFail($id);
+        $exam = listexam::findOrFail($id);
 
         $exam->delete();
 
@@ -175,14 +175,14 @@ class listexamController extends Controller
 
     public function storeProviders(Request $request)
     {
-        $provider = Provider::create(['nama' => $request->nama]);
+        $provider = provider::create(['nama' => $request->nama]);
         Cache::forget('master_provider_all');
         return response()->json($provider);
     }
 
     public function storeVendor(Request $request)
     {
-        $vendor = Vendor::create(['nama' => $request->nama]);
+        $vendor = vendor::create(['nama' => $request->nama]);
         Cache::forget('master_vendor_all');
         return response()->json($vendor);
     }

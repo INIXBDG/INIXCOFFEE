@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\RKM;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -28,7 +28,7 @@ class MarkOutstandingNotificationsAsReadJob implements ShouldQueue
         Log::info('Menjalankan Job: MarkOutstandingNotificationsAsReadJob...');
 
         try {
-            $outstandings = Outstanding::where('status_pembayaran', '1')->get();
+            $outstandings = outstanding::where('status_pembayaran', '1')->get();
 
             foreach ($outstandings as $outstanding) {
                 $rkm = RKM::where('id', $outstanding->id_rkm)

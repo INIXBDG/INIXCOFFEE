@@ -5,7 +5,7 @@ namespace App\Http\Controllers\HR;
 use App\Http\Controllers\Controller;
 use App\Models\JobDesk;
 use App\Models\JobProfile;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\OrgStructure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +18,7 @@ class EmployeeJobDeskController extends Controller
     {
         $user = Auth::user();
 
-        $karyawan = Karyawan::where('id', $user->id)->first();
+        $karyawan = karyawan::where('id', $user->id)->first();
 
         if (!$karyawan) {
             return redirect()->back()->with('error', 'Data karyawan tidak ditemukan');
@@ -46,7 +46,7 @@ class EmployeeJobDeskController extends Controller
     public function show($id)
     {
         $user = Auth::user();
-        $karyawan = Karyawan::where('id', $user->id)->first();
+        $karyawan = karyawan::where('id', $user->id)->first();
 
         $jobDesk = JobDesk::with('orgStructure.karyawans')
             ->where('id', $id)
@@ -65,7 +65,7 @@ class EmployeeJobDeskController extends Controller
     public function showProfile($karyawanId)
     {
         $user = Auth::user();
-        $currentKaryawan = Karyawan::where('id', $user->id)->first();
+        $currentKaryawan = karyawan::where('id', $user->id)->first();
 
         // Hanya bisa akses profile sendiri
         if ($currentKaryawan->id != $karyawanId) {
@@ -85,7 +85,7 @@ class EmployeeJobDeskController extends Controller
     {
         try {
             $user = Auth::user();
-            $karyawan = Karyawan::where('id', $user->id)->first();
+            $karyawan = karyawan::where('id', $user->id)->first();
 
             if (!$karyawan) {
                 return response()->json(['success' => false, 'message' => 'Data karyawan tidak ditemukan'], 403);
@@ -133,7 +133,7 @@ class EmployeeJobDeskController extends Controller
     {
         try {
             $user = Auth::user();
-            $currentKaryawan = Karyawan::where('id', $user->id)->first();
+            $currentKaryawan = karyawan::where('id', $user->id)->first();
 
             // Hanya bisa update profile sendiri
             if ($currentKaryawan->id != $karyawanId) {
@@ -188,7 +188,7 @@ class EmployeeJobDeskController extends Controller
     {
         try {
             $user = Auth::user();
-            $currentKaryawan = Karyawan::where('id', $user->id)->first();
+            $currentKaryawan = karyawan::where('id', $user->id)->first();
 
             // Hanya bisa delete profile sendiri
             if ($currentKaryawan->id != $karyawanId) {

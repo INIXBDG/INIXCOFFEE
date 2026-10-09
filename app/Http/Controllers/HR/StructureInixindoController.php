@@ -4,7 +4,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\OrgStructure;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +27,7 @@ class StructureInixindoController extends Controller
                 ->map(function ($node) use (&$buildTree, &$allNodes) {
                     $karyawans = collect();
                     if (!empty($node->karyawan_ids)) {
-                        $karyawans = Karyawan::whereIn('id', $node->karyawan_ids)->get()->map(
+                        $karyawans = karyawan::whereIn('id', $node->karyawan_ids)->get()->map(
                             fn($k) => [
                                 'id' => $k->id,
                                 'nama_lengkap' => $k->nama_lengkap,
@@ -64,13 +64,13 @@ class StructureInixindoController extends Controller
 
     public function getKaryawans()
     {
-        $karyawans = Karyawan::select('id', 'nama_lengkap', 'nip')->where('status_aktif', '1')->orderBy('nama_lengkap')->get();
+        $karyawans = karyawan::select('id', 'nama_lengkap', 'nip')->where('status_aktif', '1')->orderBy('nama_lengkap')->get();
         return response()->json($karyawans);
     }
 
     public function sync()
     {
-        $uniqueJabatans = Karyawan::query()
+        $uniqueJabatans = karyawan::query()
             ->where(function ($query) {
                 // Direktur & Direktur Utama (diperbolehkan meski divisi Direksi)
                 $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])
@@ -98,7 +98,7 @@ class StructureInixindoController extends Controller
             }
 
             // Query untuk mengambil karyawan_ids
-            $karyawanQuery = Karyawan::where('jabatan', $item->jabatan)
+            $karyawanQuery = karyawan::where('jabatan', $item->jabatan)
                 ->where('status_aktif', '1');
 
             // Filter tambahan hanya untuk jabatan selain Direktur & Direktur Utama

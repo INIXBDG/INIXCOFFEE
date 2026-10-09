@@ -4,7 +4,6 @@ namespace App\Imports;
 
 use App\Models\KategoriDaftarTugas;
 use App\Models\KontrolTugas;
-use App\Models\Karyawan;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;

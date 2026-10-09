@@ -23,6 +23,6 @@ class Pph21Karyawan extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'karyawan_id');
+        return $this->belongsTo(karyawan::class, 'karyawan_id');
     }
 }

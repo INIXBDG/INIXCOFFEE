@@ -40,7 +40,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\employeeController;
 use App\Http\Controllers\HR\EmployeeStructureController;
 use App\Http\Controllers\HR\FolderController;
-use App\Http\Controllers\HR\hireController;
+use App\Http\Controllers\HR\HireController;
 use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
@@ -251,7 +251,7 @@ Route::resource('/jabatan', \App\Http\Controllers\jabatanController::class);
 Route::resource('/nilaifeedback', \App\Http\Controllers\nilaifeedbackController::class);
 Route::resource('/notif', \App\Http\Controllers\notifController::class);
 Route::resource('/exam', examController::class);
-Route::resource('/listexams', App\Http\Controllers\ListexamController::class);
+Route::resource('/listexams', App\Http\Controllers\listexamController::class);
 Route::resource('/creditcard', \App\Http\Controllers\creditcardController::class);
 Route::resource('/registexam', \App\Http\Controllers\registexamController::class);
 Route::resource('/souvenir', SouvenirController::class);
@@ -326,7 +326,7 @@ Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exa
 Route::post('/exam/{id}/update-tanggal', [examController::class, 'updateTanggal'])->name('exam.updateTanggal');
 Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
 Route::get('getHistoriExam', [App\Http\Controllers\examController::class, 'getHistoriExam'])->name('getHistoriExam');
-Route::get('getListExam', [App\Http\Controllers\ListexamController::class, 'getListExam'])->name('getListExam');
+Route::get('getListExam', [App\Http\Controllers\listexamController::class, 'getListExam'])->name('getListExam');
 Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])->name('getCC');
 Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
 Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
@@ -467,7 +467,7 @@ Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaE
 Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
 Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
 Route::post('/daftar-peserta-exam/store-peserta-ajax', [App\Http\Controllers\DaftarPesertaExamController::class, 'storePesertaAjax'])->name('daftar-peserta-exam.storeAjax');
-Route::post('/listexam/delete/{id}', [App\Http\Controllers\ListexamController::class, 'destroy']);
+Route::post('/listexam/delete/{id}', [App\Http\Controllers\listexamController::class, 'destroy']);
 
 Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
 Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
@@ -510,8 +510,8 @@ Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouv
 Route::post('/rkm/storesouvenir', [App\Http\Controllers\SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
 Route::put('/rkm/{id}/updatesouvenir', [App\Http\Controllers\SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
 
-Route::post('/providers', [App\Http\Controllers\ListexamController::class, 'storeProviders'])->name('providers.store');
-Route::post('/vendors', [App\Http\Controllers\ListexamController::class, 'storeVendor'])->name('vendors.store');
+Route::post('/providers', [App\Http\Controllers\listexamController::class, 'storeProviders'])->name('providers.store');
+Route::post('/vendors', [App\Http\Controllers\listexamController::class, 'storeVendor'])->name('vendors.store');
 
 Route::get('/detailfeedbacks', [App\Http\Controllers\feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
 Route::get('/paymantAdvance/edit/{id}', [App\Http\Controllers\netSalesController::class, 'edit'])->name('netSales.edit.index');
@@ -1736,7 +1736,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/{pelamar}/kirim-email',       [HireController::class, 'kirimEmail'])->name('kirimEmail');
         Route::post('/{pelamar}/catatan',           [HireController::class, 'tambahCatatan'])->name('catatan');
         Route::get('/{pelamar}/riwayat',            [HireController::class, 'riwayat'])->name('riwayat');
-        Route::get('/talent-pool/list',             [HireController::class, 'talentPool'])->name('talentPool');
+        // Route::get('/talent-pool/list',             [HireController::class, 'talentPool'])->name('talentPool');
         Route::post('/{pelamar}/talent-pool',       [HireController::class, 'toggleTalentPool'])->name('toggleTalentPool');
         Route::get('/export/data',                  [HireController::class, 'export'])->name('export');
         Route::get('/stats/funnel',                 [HireController::class, 'funnelStats'])->name('funnelStats');
@@ -1986,4 +1986,9 @@ Route::prefix('audit')->name('audit.')->group(function () {
     Route::post('/sync', [AuditController::class, 'sync'])->name('sync');
     Route::post('/sync-file', [AuditController::class, 'syncFile'])->name('sync-file');
     Route::post('/sync-feature', [AuditController::class, 'syncFeature'])->name('sync-feature');
+    Route::post('/sync-files', [AuditController::class, 'syncFiles'])->name('sync-files');
+    Route::post('/sync-features', [AuditController::class, 'syncFeatures'])->name('sync-features');
+    Route::post('/solution', [AuditController::class, 'solution'])->name('solution');
+    Route::post('/solution/feedback', [AuditController::class, 'solutionFeedback'])->name('solution-feedback');
+    Route::get('/export', [AuditController::class, 'export'])->name('export');
 });

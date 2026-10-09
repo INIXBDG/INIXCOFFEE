@@ -546,7 +546,7 @@ class ApprovalPendapatanController extends Controller
             if ($approval->PPH) $potonganData[] = ['jenis' => 'PPH', 'jumlah' => $approval->PPH];
             if ($approval->biaya_admin) $potonganData[] = ['jenis' => 'biaya_admin', 'jumlah' => $approval->biaya_admin];
 
-            Outstanding::updateOrCreate(
+            outstanding::updateOrCreate(
                 ['id_rkm' => $approval->id_rkm],
                 [
                     'net_sales' => $approval->harga_net,

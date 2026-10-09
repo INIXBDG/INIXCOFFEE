@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\AbsensiKaryawan;
 use App\Models\JenisTunjangan;
-use App\Models\Karyawan;
-use App\Models\Lembur;
-use App\Models\PengajuanCuti;
+use App\Models\karyawan;
+use App\Models\lembur;
+use App\Models\pengajuancuti;
 use App\Models\TunjanganKaryawan;
 use App\Models\User;
 use Carbon\Carbon;
@@ -120,7 +120,7 @@ class TunjanganController extends Controller
         $isPeriodeBerjalan = ($bulan == (int) date('n')) && ($tahun == (int) date('Y'));
 
         if ($isPeriodeBerjalan) {
-            $karyawan = Karyawan::findOrFail($id);
+            $karyawan = karyawan::findOrFail($id);
             $gaji = $karyawan->gaji;
             $tunjanganJabatan = $karyawan->tunjangan_jabatan ?? 0;
         } else {
@@ -143,12 +143,12 @@ class TunjanganController extends Controller
     }
 
     // Halaman approval untuk GM
-    public function indexApproval()
-    {
-        $month = Carbon::now()->format('m');
-        $year = Carbon::now()->format('Y');
-        return view('tunjangan.approval', compact('month', 'year'));
-    }
+    // public function indexApproval()
+    // {
+    //     $month = Carbon::now()->format('m');
+    //     $year = Carbon::now()->format('Y');
+    //     return view('tunjangan.approval', compact('month', 'year'));
+    // }
 
     public function getTunjanganPendingApproval($month, $year)
     {
@@ -456,9 +456,9 @@ class TunjanganController extends Controller
 
         $totalBersih = $totalTunjangan + $totalPotongan;
 
-        $hrd = Karyawan::where('jabatan', 'Koordinator Office')->first();
-        $direktur = Karyawan::where('jabatan', 'Direktur Utama')->first();
-        $me = Karyawan::where('id', $id)->first();
+        $hrd = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $direktur = karyawan::where('jabatan', 'Direktur Utama')->first();
+        $me = karyawan::where('id', $id)->first();
 
         $data = [
             'absensi' => $jumlahAbsensi,
@@ -580,7 +580,7 @@ class TunjanganController extends Controller
             $tahun = $year;
         }
 
-        $karyawanList = Karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
+        $karyawanList = karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
             ->whereNotIn('id', [1, 3])
             ->where('kode_karyawan', 'not like', '%OL%')
             ->where('status_aktif', '1')
@@ -638,7 +638,7 @@ class TunjanganController extends Controller
                 ->whereIn('nama_tunjangan', $includeTunjangan)
                 ->get();
 
-            $cuti = PengajuanCuti::where('id_karyawan', $karyawanId)
+            $cuti = pengajuancuti::where('id_karyawan', $karyawanId)
                 ->whereYear('tanggal_awal', $tahun)
                 ->whereMonth('tanggal_awal', $bulan)
                 ->get();
@@ -653,7 +653,7 @@ class TunjanganController extends Controller
 
             foreach ($jenisTunjangan as $tunjangan) {
                 if ($tunjangan->nama_tunjangan == 'Lembur') {
-                    $lembur = Lembur::with('karyawan', 'hitunglembur')
+                    $lembur = lembur::with('karyawan', 'hitunglembur')
                         ->where('id_karyawan', $karyawanId)
                         ->whereMonth('tanggal_spl', $bulan)
                         ->whereYear('tanggal_spl', $tahun)
@@ -753,7 +753,7 @@ class TunjanganController extends Controller
             $tahun = $year;
         }
 
-        $karyawan = Karyawan::where('status_aktif', '1')->get();
+        $karyawan = karyawan::where('status_aktif', '1')->get();
         $tunjangan = JenisTunjangan::all();
 
         return view('tunjangan.createManual', compact('karyawan', 'tunjangan', 'bulan', 'tahun'));

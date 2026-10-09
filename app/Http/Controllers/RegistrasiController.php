@@ -9,10 +9,13 @@ use App\Models\Nilaifeedback;
 use App\Models\Peserta;
 use App\Models\Registrasi;
 use App\Models\RKM;
+use App\Models\souvenir;
+use App\Models\souvenirpeserta;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
@@ -253,12 +256,12 @@ class RegistrasiController extends Controller
      *
      * @param mixed $id
      */
-    public function show(string $id): View
-    {
-        $post = Registrasi::findOrFail($id);
+    // public function show(string $id): View
+    // {
+    //     $post = Registrasi::findOrFail($id);
 
-        return view('registrasi.show', compact('post'));
-    }
+    //     return view('registrasi.show', compact('post'));
+    // }
 
     /**
      * edit.

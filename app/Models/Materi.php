@@ -27,7 +27,7 @@ class Materi extends Model
 
     public function rkms()
     {
-        return $this->hasMany(Rkm::class, 'materi_key', 'id');
+        return $this->hasMany(RKM::class, 'materi_key', 'id');
     }
 
     // Add the relationship to Peluang

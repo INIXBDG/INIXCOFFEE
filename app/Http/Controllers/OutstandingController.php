@@ -32,12 +32,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Tcpdf\Fpdi;
-use Mostafaznv\PdfOptimizer\Laravel\Facades\PdfOptimizer;
 use Mostafaznv\PdfOptimizer\Enums\PdfSettings;
 use Mostafaznv\PdfOptimizer\Enums\ColorConversionStrategy;
 use Mostafaznv\PdfOptimizer\Laravel\Facade\PdfOptimizer as FacadePdfOptimizer;
 use Mostafaznv\PdfOptimizer\PdfOptimizer as PdfOptimizerPdfOptimizer;
-use Spatie\Browsershot\Browsershot;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Cache;
 
@@ -111,7 +109,7 @@ class OutstandingController extends Controller
                 }
             }
 
-            $outstanding = Outstanding::create([
+            $outstanding = outstanding::create([
                 'id_rkm' => $rkm->id,
                 'due_date' => Carbon::parse($rkm->tanggal_akhir)->addMonths(6)->toDateString(),
                 'sales_key' => $rkm->sales_key,
@@ -178,9 +176,9 @@ class OutstandingController extends Controller
 
                 $sales = $rkmData->sales_key;
 
-                $Finance = Karyawan::where('jabatan', 'Finance & Accounting')->pluck('kode_karyawan')->toArray();
-                $Offman = Karyawan::where('jabatan', 'Office Manager')->first();
-                $kooroff = Karyawan::where('jabatan', 'Koordinator Office')->first();
+                $Finance = karyawan::where('jabatan', 'Finance & Accounting')->pluck('kode_karyawan')->toArray();
+                $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+                $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
 
                 $users = array_merge($Finance, [$Offman?->kode_karyawan], [$kooroff?->kode_karyawan], [$sales]);
 
@@ -265,7 +263,7 @@ class OutstandingController extends Controller
 
     public function getOutstandingRKM($year, $month)
     {
-        $existingRKMs = Outstanding::pluck('id_rkm')->toArray();
+        $existingRKMs = outstanding::pluck('id_rkm')->toArray();
         $user = auth()->user()->id_sales;
 
         $query = RKM::with(['perusahaan', 'materi', 'approvalPendapatan'])
@@ -356,7 +354,7 @@ class OutstandingController extends Controller
         ]);
 
         // Simpan data outstanding
-        $rkm = Rkm::find($request->id_rkm);
+        $rkm = RKM::find($request->id_rkm);
 
         $dueDate = Carbon::parse($rkm->tanggal_akhir)->addMonths(6);
 
@@ -443,10 +441,10 @@ class OutstandingController extends Controller
                 'sales_key' => $rkm->sales_key,
             ];
             $sales = $rkm->sales_key;
-            $Finance = Karyawan::where('jabatan', 'Finance & Accounting')->pluck('kode_karyawan')->toArray(); // Mengambil kode_karyawan dari semua karyawan Finance
-            $Offman = Karyawan::where('jabatan', 'Office Manager')->first();
+            $Finance = karyawan::where('jabatan', 'Finance & Accounting')->pluck('kode_karyawan')->toArray(); // Mengambil kode_karyawan dari semua karyawan Finance
+            $Offman = karyawan::where('jabatan', 'Office Manager')->first();
             $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            // $GM = Karyawan::where('jabatan', 'GM')->first();
+            // $GM = aryawan::where('jabatan', 'GM')->first();
 
             // Menggabungkan kode_karyawan dalam satu array, termasuk Office Manager dan GM
             $users = array_merge(
@@ -484,7 +482,7 @@ class OutstandingController extends Controller
 
     public function edit($id)
     {
-        $outstanding = Outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.approvalPendapatan')->findOrFail($id);
+        $outstanding = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.approvalPendapatan')->findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
         $approval = $outstanding->rkm->approvalPendapatan;
