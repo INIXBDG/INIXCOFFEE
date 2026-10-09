@@ -1035,7 +1035,7 @@ class RKMController extends Controller
             return back()->withErrors($jumlahRegistrasi . ' dari ' . $rkm->pax . ' peserta belum mendaftar');
         }
 
-        return view("rkm.uploadSertifikat", compact('rkm'));
+        return view("rkm.uploadsertifikat", compact('rkm'));
     }
 
     public function uploadNoResi(Request $request, string $id)
