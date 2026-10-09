@@ -6,7 +6,7 @@ use App\Models\activityLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log; // Sesuaikan dengan namespace model Anda
 
-class Cleana extends Command
+class CleanActivityLog extends Command
 {
     /**
      * The name and signature of the console command.
