@@ -14,7 +14,7 @@
                             @csrf
                             @method('PUT')
                             <div class="row mb-3">
-                                <label for="backup_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
+                                <label for="backup_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select name="id_karyawan" id="id_karyawan" class="form-select" disabled>
                                         <option value="-">Pilih Karyawan</option>
@@ -43,7 +43,7 @@
                             </div>
 
                             <div class="row mb-3" id="row_tanggal_spl">
-                                <label for="tanggal_spl" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Perintah Lembur') }}</label>
+                                <label for="tanggal_spl" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Perintah Lembur') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input type="date" readonly class="form-control" name="tanggal_spl" id="tanggal_spl" value="{{ $data->tanggal_spl }}">
                                     <span class="invalid-feedback d-block" role="alert" id="error-tanggal_spl"></span>
@@ -56,7 +56,7 @@
                             </div>
 
                             <div class="row mb-3" id="row_uraian_tugas">
-                                <label for="uraian_tugas" class="col-md-4 col-form-label text-md-start">{{ __('Uraian Tugas') }}</label>
+                                <label for="uraian_tugas" class="col-md-4 col-form-label text-md-start">{{ __('Uraian Tugas') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <textarea name="uraian_tugas" class="form-control" id="uraian_tugas" cols="51" rows="5">{{$data->uraian_tugas}}</textarea>
                                     <span class="invalid-feedback d-block" role="alert" id="error-uraian_tugas"></span>
@@ -69,7 +69,7 @@
                             </div>
 
                             <div class="row mb-3" id="row_waktu_lembur">
-                                <label for="waktu_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Waktu Lembur') }}</label>
+                                <label for="waktu_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Waktu Lembur') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <select name="waktu_lembur" id="waktu_lembur" class="form-select">
                                         <option value="-">Pilih Waktu Lembur</option>
@@ -86,7 +86,7 @@
                             </div>
 
                             <div class="row mb-3" id="row_tanggal_lembur">
-                                <label for="tanggal_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Lembur') }}</label>
+                                <label for="tanggal_lembur" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Lembur') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input type="date" class="form-control" name="tanggal_lembur" id="tanggal_lembur" value="{{$data->tanggal_lembur}}">
                                     <span class="invalid-feedback d-block" role="alert" id="error-tanggal_lembur"></span>

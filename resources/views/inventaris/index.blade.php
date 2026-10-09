@@ -27,11 +27,11 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="nama_barang" class="form-label">Nama Barang</label>
+                                <label for="nama_barang" class="form-label">Nama Barang <span class="text-danger">*</span></label>
                                 <input type="text" name="nama_barang" id="nama_barang" class="form-control" required>
                             </div>
                             <div class="mb-3">
-                                <label for="kode_barang" class="form-label">Kode Barang</label>
+                                <label for="kode_barang" class="form-label">Kode Barang <span class="text-danger">*</span></label>
                                 <input type="text" name="kode_barang" id="kode_barang" class="form-control" required>
                             </div>
                         </div>
@@ -58,12 +58,12 @@
                         <form id="addInventarisForm">
                             @csrf
                             <div class="mb-3">
-                                <label for="name" class="form-label">Nama Barang</label>
+                                <label for="name" class="form-label">Nama Barang <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="name" name="name" required>
                             </div>
                             <div class="mb-3">
-                                <label for="kodebarang" class="form-label">Kode Barang</label>
-                                <select class="form-control" id="kodebarang" name="kodebarang">
+                                <label for="kodebarang" class="form-label">Kode Barang <span class="text-danger">*</span></label>
+                                <select class="form-control" id="kodebarang" name="kodebarang" required>
                                     <option value="">-- Pilih Kode Barang --</option>
                                     @foreach ($kodeBarang as $item)
                                         <option value="{{ $item->kode_barang }}">{{ $item->kode_barang }} ({{ $item->nama_barang }})</option>
@@ -72,33 +72,33 @@
                             </div>
                             <div class="mb-3">
                                 <label for="merk_kode_seri_hardware" class="form-label">Merk / Kode Seri / Kode
-                                    Hardware</label>
+                                    Hardware <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="merk_kode_seri_hardware"
                                     name="merk_kode_seri_hardware" required>
                             </div>
                             <div class="mb-3">
-                                <label for="qty" class="form-label">Qty</label>
+                                <label for="qty" class="form-label">Qty <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="qty" name="qty" min="1"
                                     required>
                             </div>
                             <div class="mb-3">
-                                <label for="satuan" class="form-label">Satuan</label>
-                                <input type="text" class="form-control" id="satuan" name="satuan">
+                                <label for="satuan" class="form-label">Satuan <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="satuan" name="satuan" required>
                             </div>
                             <div class="mb-3">
-                                <label for="type" class="form-label">Tipe</label>
+                                <label for="type" class="form-label">Tipe <span class="text-danger">*</span></label>
                                 <select class="form-control" id="type" name="type" required>
                                     <option value="E">Elektronik</option>
                                     <option value="NE">Non-Elektronik</option>
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="harga_beli" class="form-label">Harga Beli (Rp)</label>
+                                <label for="harga_beli" class="form-label">Harga Beli (Rp) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="harga_beli" name="harga_beli"
                                     min="0" step="0.01" required>
                             </div>
                             <div class="mb-3">
-                                <label for="waktu_pembelian" class="form-label">Tanggal Pembelian</label>
+                                <label for="waktu_pembelian" class="form-label">Tanggal Pembelian <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="waktu_pembelian" name="waktu_pembelian"
                                     required>
                             </div>
@@ -116,7 +116,7 @@
                                 <input type="text" class="form-control" id="ruangan" name="ruangan">
                             </div>
                             <div class="mb-3">
-                                <label for="kondisi" class="form-label">Kondisi</label>
+                                <label for="kondisi" class="form-label">Kondisi <span class="text-danger">*</span></label>
                                 <select class="form-control" id="kondisi" name="kondisi" required>
                                     <option value="baik">Baik</option>
                                     <option value="rusak">Rusak</option>
@@ -150,7 +150,7 @@
                         <form id="importInventarisForm" enctype="multipart/form-data">
                             @csrf
                             <div class="mb-3">
-                                <label for="file" class="form-label">Pilih File Excel</label>
+                                <label for="file" class="form-label">Pilih File Excel <span class="text-danger">*</span></label>
                                 <input type="file" class="form-control" id="file" name="file"
                                     accept=".xlsx,.xls,.csv" required>
                             </div>

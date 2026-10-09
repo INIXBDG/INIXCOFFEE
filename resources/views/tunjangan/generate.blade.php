@@ -69,7 +69,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <textarea class="form-control" id="rejection_note" rows="4" placeholder="Masukkan alasan penolakan..."></textarea>
+                    <label class="form-label" for="rejection_note">Alasan Penolakan <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="rejection_note" rows="4" placeholder="Masukkan alasan penolakan..." required></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>

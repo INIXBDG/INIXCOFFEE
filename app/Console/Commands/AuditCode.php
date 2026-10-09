@@ -17,6 +17,7 @@ use Throwable;
  */
 class AuditCode extends Command
 {
+    protected $signature = 'audit:code {--skip-syntax : Lewati pengecekan php -l}';
     protected $signature = 'audit:code
         {--skip-syntax : Lewati pengecekan php -l}
         {--file=* : Audit hanya file ini (relatif ke root project atau absolut). Bisa diulang}
@@ -30,12 +31,16 @@ class AuditCode extends Command
     ];
 
     private array $issues = [];
+    private array $classMap = [];      // fqcn lowercase => fqcn asli (sesuai nama file)
+    private array $routedMethods = []; // "class::method" lowercase => true
     private array $classMap = [];   
     private array $routedMethods = []; 
     private array $seen = [];
 
     public function handle(): int
     {
+        $this->buildClassMap();
+
         $onlyFiles = $this->normalizeFiles((array) $this->option('file'));
 
         $this->buildClassMap();
@@ -70,6 +75,13 @@ class AuditCode extends Command
                 $this->checkFile($file->getPathname());
             }
         }
+
+        $this->checkRoutes();
+        $this->checkControllers();
+        $this->report();
+
+        return collect($this->issues)->contains('level', 'ERROR') ? self::FAILURE : self::SUCCESS;
+    }
 
         if (!$this->option('skip-routes')) {
             $this->checkRoutes();
@@ -181,6 +193,7 @@ class AuditCode extends Command
 
     private function add(string $level, string $type, string $path, int $line, string $message): void
     {
+        $rel = str_replace([base_path() . DIRECTORY_SEPARATOR, '\\'], ['', '/'], $path);
         $rel = $this->toRel($path);
         $key = "$level|$type|$rel|$line|$message";
         if (isset($this->seen[$key])) {
@@ -610,6 +623,20 @@ class AuditCode extends Command
         }
 
         $this->table(
+            ['Level', 'Jenis', 'File:Baris', 'Pesan'],
+            array_map(fn ($i) => [$i['level'], $i['type'], $i['rel'] . ':' . $i['line'], $i['message']], $this->issues)
+        );
+
+        $errors = count(array_filter($this->issues, fn ($i) => $i['level'] === 'ERROR'));
+        $warnings = count($this->issues) - $errors;
+        $this->error("Total: $errors error, $warnings warning");
+
+        $log = '[' . now()->toDateTimeString() . "] audit:code - $errors error, $warnings warning\n";
+        foreach ($this->issues as $i) {
+            $log .= sprintf("  [%s] %s | %s:%d | %s\n", $i['level'], $i['type'], $i['rel'], $i['line'], $i['message']);
+        }
+        File::put(storage_path('logs/audit-code-' . now()->format('Y-m-d') . '.log'), $log);
+
             ['Level', 'Kategori', 'Jenis', 'File:Baris', 'Pesan'],
             array_map(fn ($i) => [$i['level'], $i['category'], $i['type'], $i['rel'] . ':' . $i['line'], $i['message']], $this->issues)
         );

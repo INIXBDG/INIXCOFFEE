@@ -35,10 +35,10 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Cuti') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Cuti') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select name="tipe" id="tipe" class="form-select">
-                                    <option value="-">Pilih Jenis Cuti</option>
+                                <select name="tipe" id="tipe" class="form-select" required>
+                                    <option value="">Pilih Jenis Cuti</option>
                                     <option value="Cuti">Cuti</option>
                                     <option value="Sakit">Sakit</option>
                                     <option value="Izin">Izin</option>
@@ -55,9 +55,9 @@
                         </div>
 
                         <div class="row mb-3" id="kontak-row">
-                            <label for="kontak" class="col-md-4 col-form-label text-md-start">{{ __('Kontak yang bisa dihubungi') }}</label>
+                            <label for="kontak" class="col-md-4 col-form-label text-md-start">{{ __('Kontak yang bisa dihubungi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="kontak" type="text" placeholder="Kontak yang bisa dihubungi" class="form-control @error('kontak') is-invalid @enderror" name="kontak" autocomplete="kontak" autofocus>
+                                <input id="kontak" type="text" placeholder="Kontak yang bisa dihubungi" class="form-control @error('kontak') is-invalid @enderror" name="kontak" autocomplete="kontak" autofocus required>
                                 @error('kontak')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -67,9 +67,9 @@
                         </div>
 
                         <div class="row mb-3" id="alasan-row">
-                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan mengajukan cuti') }}</label>
+                            <label for="alasan" class="col-md-4 col-form-label text-md-start">{{ __('Alasan mengajukan cuti') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <textarea name="alasan" class="form-control" id="alasan" cols="51" rows="5"></textarea>
+                                <textarea name="alasan" class="form-control" id="alasan" cols="51" rows="5" required></textarea>
                                 @error('alasan')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -79,16 +79,16 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="backup_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Di Backup Oleh ') }}</label>
+                            <label for="backup_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Di Backup Oleh ') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select name="backup_karyawan1" id="backup_karyawan1" class="form-select">
-                                    <option value="-">Pilih Karyawan</option>
+                                <select name="backup_karyawan1" id="backup_karyawan1" class="form-select" required>
+                                    <option value="">Pilih Karyawan</option>
                                     @foreach ($karyawanall as $item)
                                         <option value="{{$item->kode_karyawan}}">{{$item->nama_lengkap}}</option>
                                     @endforeach
                                 </select>    
                                 <select name="backup_karyawan2" id="backup_karyawan1" class="form-select">
-                                    <option value="-">Pilih Karyawan</option>
+                                    <option value="">Pilih Karyawan</option>
                                     @foreach ($karyawanall as $item)
                                         <option value="{{$item->kode_karyawan}}">{{$item->nama_lengkap}}</option>
                                     @endforeach
@@ -102,9 +102,9 @@
                         </div>
                         
                         <div class="row mb-3" id="tanggal_awal-row">
-                            <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Mulai Cuti') }}</label>
+                            <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Mulai Cuti') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input type="date" class="form-control" name="tanggal_awal" id="tanggal_awal">
+                                <input type="date" class="form-control" name="tanggal_awal" id="tanggal_awal" required>
                                 @error('tanggal_awal')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -114,9 +114,9 @@
                         </div>
 
                         <div class="row mb-3" id="tanggal_akhir-row">
-                            <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Selesai Cuti') }}</label>
+                            <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Selesai Cuti') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input type="date" class="form-control" name="tanggal_akhir" id="tanggal_akhir">
+                                <input type="date" class="form-control" name="tanggal_akhir" id="tanggal_akhir" required>
                                 @error('tanggal_akhir')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>

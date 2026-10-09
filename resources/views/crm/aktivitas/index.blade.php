@@ -168,7 +168,7 @@
 
                                 @if (auth()->user()->jabatan === 'Adm Sales' || auth()->user()->jabatan === 'SPV Sales')
                                     <div class="mb-3">
-                                        <label class="form-label" for="id_sales">Pilih Sales</label>
+                                        <label class="form-label" for="id_sales">Pilih Sales <span class="text-danger">*</span></label>
                                         <select class="form-select" id="id_sales" name="id_sales" required>
                                             <option value="">-- Pilih Sales --</option>
                                             <option value="HW">Hera</option>
@@ -193,8 +193,8 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="id_contact">Nama Kontak</label>
-                                    <select class="form-select" id="id_contact" name="id_contact">
+                                    <label class="form-label" for="id_contact">Nama Kontak <span class="text-danger" id="idContactRequired">*</span></label>
+                                    <select class="form-select" id="id_contact" name="id_contact" required>
                                     </select>
                                 </div>
 
@@ -230,8 +230,8 @@
 
                                 {{-- Jenis Aktivitas --}}
                                 <div class="mb-3">
-                                    <label class="form-label" for="aktivitas">Jenis Aktivitas</label>
-                                    <select class="form-select" id="aktivitas" name="aktivitas">
+                                    <label class="form-label" for="aktivitas">Jenis Aktivitas <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="aktivitas" name="aktivitas" required>
                                         <option value="" disabled selected>Pilih Jenis Aktivitas</option>
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
@@ -267,7 +267,7 @@
 
                                 {{-- Waktu Aktivitas --}}
                                 <div class="mb-3">
-                                    <label class="form-label" for="waktu_aktivitas">Waktu Aktivitas</label>
+                                    <label class="form-label" for="waktu_aktivitas">Waktu Aktivitas <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" id="waktu_aktivitas"
                                         name="waktu_aktivitas" required>
                                 </div>
@@ -350,7 +350,7 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label" for="edit_aktivitas">Jenis Aktivitas</label>
+                                    <label class="form-label" for="edit_aktivitas">Jenis Aktivitas <span class="text-danger">*</span></label>
                                     <select class="form-select" id="edit_aktivitas" name="aktivitas" required>
                                         <option value="Call">Call</option>
                                         <option value="Email">Email</option>
@@ -942,6 +942,14 @@
             const editHiddenContainer = document.getElementById("edit-hidden-container");
             const isAllowedUser = window.isAllowedUser || false;
 
+            function updateContactRequirement() {
+                const requiresContact = !['Visit', 'Form_Keluar', 'Form_Masuk'].includes(aktivitasOption.value);
+                contactSelect.required = requiresContact;
+                document.getElementById('idContactRequired').style.display = requiresContact ? 'inline' : 'none';
+            }
+
+            updateContactRequirement();
+
             // Modifikasi Tampilan Teks: Memastikan elemen opsi dengan nilai 'PI' ditampilkan sebagai 'Leads'
             if (aktivitasOption) {
                 Array.from(aktivitasOption.options).forEach(opt => {
@@ -1013,6 +1021,8 @@
             });
 
             aktivitasOption.addEventListener('change', function() {
+                updateContactRequirement();
+
                 if (this.value === 'Visit') {
                     $(cameraWrapper).show();
                     Webcam.set({

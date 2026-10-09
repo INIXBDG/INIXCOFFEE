@@ -150,7 +150,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Apakah Disetujui?</p>
+                        <p>Apakah Disetujui? <span class="text-danger">*</span></p>
                         <div class="btn-group">
                             <input type="radio" class="btn-check" name="approval" id="approveYes" value="1"
                                 autocomplete="off" checked>
@@ -162,11 +162,11 @@
                                 onclick="togglePriceField(false)">Tidak</label>
                         </div>
                         <div class="mt-3" id="priceInput">
-                            <label>Harga Modul (Rp)</label>
+                            <label>Harga Modul (Rp) <span class="text-danger" id="priceRequired">*</span></label>
                             <input type="number" class="form-control" id="price" name="price" step="0.01" min="0">
                         </div>
                         <div class="mt-3" id="alasanInput" style="display: none;">
-                            <label>Alasan Penolakan</label>
+                            <label>Alasan Penolakan <span class="text-danger" id="alasanRequired">*</span></label>
                             <textarea class="form-control" id="alasan" name="alasan" rows="3"></textarea>
                         </div>
                     </div>
@@ -225,8 +225,17 @@
             function togglePriceField(show) {
                 document.getElementById('priceInput').style.display = show ? 'block' : 'none';
                 document.getElementById('alasanInput').style.display = show ? 'none' : 'block';
-                if (show) document.getElementById('price').setAttribute('required', 'required');
-                else document.getElementById('price').removeAttribute('required');
+                if (show) {
+                    document.getElementById('price').setAttribute('required', 'required');
+                    document.getElementById('alasan').removeAttribute('required');
+                    document.getElementById('priceRequired').style.display = 'inline';
+                    document.getElementById('alasanRequired').style.display = 'none';
+                } else {
+                    document.getElementById('price').removeAttribute('required');
+                    document.getElementById('alasan').setAttribute('required', 'required');
+                    document.getElementById('priceRequired').style.display = 'none';
+                    document.getElementById('alasanRequired').style.display = 'inline';
+                }
             }
             $('#approveForm').on('submit', function (e) {
                 e.preventDefault();

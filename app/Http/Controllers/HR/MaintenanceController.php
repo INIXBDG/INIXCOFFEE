@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Maintenance;
 use App\Models\Inventaris;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -89,7 +89,7 @@ class MaintenanceController extends Controller
         $divisis = Maintenance::select('divisi')->distinct()->whereNotNull('divisi')->pluck('divisi');
         
         $inventaris = Inventaris::select('idbarang', 'name', 'kodebarang')->get();
-        $teknisis = Karyawan::where('status_aktif', '1')->orderBy('nama_lengkap', 'asc')->get();
+        $teknisis = karyawan::where('status_aktif', '1')->orderBy('nama_lengkap', 'asc')->get();
 
         return view('HR.Maintenance.index', compact('mendatang', 'sedangDikerjakan', 'riwayat', 'statistik', 'statistikDivisi', 'statistikBulan', 'inventaris', 'teknisis', 'kategoris', 'divisis'));
     }
@@ -466,3 +466,4 @@ class MaintenanceController extends Controller
         }
     }
 }
+

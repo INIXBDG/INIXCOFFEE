@@ -72,9 +72,9 @@
 
                             <div class="row mb-3">
                                 <label for="id_rkm"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('RKM') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('RKM') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
-                                    <select name="id_rkm" id="id_rkm" class="form-select"></select>
+                                    <select name="id_rkm" id="id_rkm" class="form-select" required></select>
                                     @error('id_rkm')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -125,7 +125,7 @@
 
                             <div class="row mb-3">
                                 <label for="net_sales"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Total Net Sales') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Total Net Sales') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">Rp.</span>
@@ -141,7 +141,7 @@
                             </div>
                             <div class="row mb-3">
                                 <label for="status_pembayaran"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Status Pembayaran') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Status Pembayaran') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-4">
                                     <div class="btn-group" role="group" aria-label="Approval Options">
                                         <input type="radio" class="btn-check" name="status_pembayaran" id="approveYes"
@@ -162,9 +162,9 @@
 
                             <div class="row mb-3">
                                 <label for="due_date"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
-                                    <input type="date" name="due_date" id="due_date" class="form-control">
+                                    <input type="date" name="due_date" id="due_date" class="form-control" required>
                                 </div>
                             </div>
 

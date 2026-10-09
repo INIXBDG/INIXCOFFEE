@@ -21,7 +21,7 @@
                             <input type="hidden" id="restore_id_peluang">
 
                             <div class="mb-3">
-                                <label class="form-label">Ubah ke Tahap</label>
+                                <label class="form-label">Ubah ke Tahap <span class="text-danger">*</span></label>
                                 <select class="form-select" id="restore_tahap" required>
                                     <option value="biru">Biru</option>
                                     <option value="merah">Merah</option>
@@ -29,22 +29,22 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Harga (Rp)</label>
+                                <label class="form-label">Harga (Rp) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="restore_harga" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Pax</label>
+                                <label class="form-label">Pax <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="restore_pax" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Periode Mulai</label>
+                                <label class="form-label">Periode Mulai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="restore_periode_mulai" required>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Periode Selesai</label>
+                                <label class="form-label">Periode Selesai <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="restore_periode_selesai" required>
                             </div>
 
@@ -82,7 +82,7 @@
 
                             @if(in_array(Auth::user()->jabatan, ['Adm Sales', 'SPV Sales']))
                             <div class="mb-3">
-                                <label class="form-label" for="id_sales">Sales Penanggung Jawab</label>
+                                <label class="form-label" for="id_sales">Sales Penanggung Jawab <span class="text-danger">*</span></label>
                                 <select class="form-select" id="id_sales" name="id_sales" required>
                                     <option value="" disabled selected>Pilih Sales</option>
                                     @foreach ($salesList as $sales)
@@ -94,7 +94,7 @@
                             @endif
 
                             <div class="mb-3">
-                                <label class="form-label" for="id_perusahaan">Perusahaan</label>
+                                <label class="form-label" for="id_perusahaan">Perusahaan <span class="text-danger">*</span></label>
                                 <select class="form-select" id="id_perusahaan" name="id_contact" required>
                                     <option value="" disabled selected>Pilih Perusahaan</option>
                                     <!-- Opsi akan dimuat secara asinkron -->
@@ -108,7 +108,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="materi">Materi</label>
+                                <label class="form-label" for="materi">Materi <span class="text-danger">*</span></label>
                                 <select class="form-select" id="materi" name="materi" required>
                                     <option value="" disabled selected>Pilih Materi</option>
                                     <!-- Opsi akan dimuat secara asinkron -->
@@ -122,13 +122,13 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="harga">Harga Penawaran (Rp)</label>
+                                <label class="form-label" for="harga">Harga Penawaran (Rp) <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="harga" name="harga" value="{{ old('harga') }}" required>
                                 <div class="invalid-feedback">Masukkan harga.</div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="pax">Jumlah Peserta (Pax)</label>
+                                <label class="form-label" for="pax">Jumlah Peserta (Pax) <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="pax" name="pax" min="1"
                                     value="{{ old('pax') }}" required>
                                 <div class="invalid-feedback">Masukkan jumlah peserta.</div>
@@ -148,7 +148,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                <label class="form-label" for="metode_kelas">Metode Kelas <span class="text-danger">*</span></label>
                                 <select class="form-select" id="metode_kelas" name="metode_kelas" required>
                                     <option value="" disabled selected>Pilih Metode Kelas</option>
                                     <option value="Inhouse Bandung" {{ old('metode_kelas') == 'Inhouse Bandung' ? 'selected' : '' }}>Inhouse Bandung</option>
@@ -160,7 +160,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label" for="event">Event</label>
+                                <label class="form-label" for="event">Event <span class="text-danger">*</span></label>
                                 <select class="form-select" id="event" name="event" required>
                                     <option value="" disabled selected>Pilih Event</option>
                                     <option value="Kelas" {{ old('event') == 'Kelas' ? 'selected' : '' }}>Kelas</option>

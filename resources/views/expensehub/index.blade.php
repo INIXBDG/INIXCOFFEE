@@ -84,6 +84,7 @@
                         </select>
                     </div>
                     @endif
+                    <div class="mb-2">Status Persetujuan <span class="text-danger">*</span></div>
                     <div class="btn-group mb-3" role="group" aria-label="Pilihan Status">
                         <button type="button" class="btn btn-outline-primary" data-status="1">Ya</button>
                         <button type="button" class="btn btn-outline-danger" data-status="0">Tidak</button>

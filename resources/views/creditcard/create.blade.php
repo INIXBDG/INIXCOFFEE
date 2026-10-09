@@ -11,9 +11,9 @@
                     <form method="POST" action="{{ route('creditcard.store') }}">
                         @csrf
                         <div class="row mb-3">
-                            <label for="nama_pemilik" class="col-md-4 col-form-label text-md-start">{{ __('Nama Pemilik') }}</label>
+                            <label for="nama_pemilik" class="col-md-4 col-form-label text-md-start">{{ __('Nama Pemilik') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="nama_pemilik" type="text" placeholder="Masukan Nama Pemilik" class="form-control @error('nama_pemilik') is-invalid @enderror" name="nama_pemilik" value="{{ old('nama_pemilik') }}" autocomplete="nama_pemilik" autofocus>
+                                <input id="nama_pemilik" type="text" placeholder="Masukan Nama Pemilik" class="form-control @error('nama_pemilik') is-invalid @enderror" name="nama_pemilik" value="{{ old('nama_pemilik') }}" autocomplete="nama_pemilik" autofocus required>
                                 @error('nama_pemilik')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -33,9 +33,9 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="bank" class="col-md-4 col-form-label text-md-start">{{ __('Nama Bank') }}</label>
+                            <label for="bank" class="col-md-4 col-form-label text-md-start">{{ __('Nama Bank') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="bank" type="text" placeholder="Masukan Nama Bank" class="form-control @error('bank') is-invalid @enderror" name="bank" value="{{ old('bank') }}" autocomplete="bank" autofocus>
+                                <input id="bank" type="text" placeholder="Masukan Nama Bank" class="form-control @error('bank') is-invalid @enderror" name="bank" value="{{ old('bank') }}" autocomplete="bank" autofocus required>
                                 @error('bank')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -44,9 +44,9 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="tipe_kartu" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Kartu') }}</label>
+                            <label for="tipe_kartu" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Kartu') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select name="tipe_kartu" class="form-select" id="tipe_kartu">
+                                <select name="tipe_kartu" class="form-select" id="tipe_kartu" required>
                                     <option value="" selected>Pilih Kartu</option>
                                     <option value="Visa">Visa</option>
                                     <option value="Mastercard">Mastercard</option>

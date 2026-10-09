@@ -29,7 +29,7 @@
                                 @method('PUT')
                             @endif
                             <div class="mb-3">
-                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi</label>
+                                <label for="deskripsi" class="form-label fw-semibold">Deskripsi <span class="text-danger">*</span></label>
                                 <textarea class="form-control @error('deskripsi') is-invalid @enderror" id="deskripsi" name="deskripsi" rows="5" required>{{ old('deskripsi', $deskripsiData ? $deskripsiData->deskripsi : '') }}</textarea>
                                 @error('deskripsi')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -51,7 +51,7 @@
                         <form action="{{ route('crm.store.ketentuan') }}" method="POST" id="createKetentuanForm">
                             @csrf
                             <div class="mb-3">
-                                <label for="ketentuan" class="form-label fw-semibold">Ketentuan</label>
+                                <label for="ketentuan" class="form-label fw-semibold">Ketentuan <span class="text-danger">*</span></label>
                                 <textarea class="form-control @error('ketentuan') is-invalid @enderror" id="ketentuan" name="ketentuan" rows="5" required></textarea>
                                 @error('ketentuan')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -108,7 +108,7 @@
                                                             @csrf
                                                             @method('PUT')
                                                             <div class="mb-3">
-                                                                <label for="ketentuan{{ $ketentuan->id }}" class="form-label fw-semibold">Ketentuan</label>
+                                                                <label for="ketentuan{{ $ketentuan->id }}" class="form-label fw-semibold">Ketentuan <span class="text-danger">*</span></label>
                                                                 <textarea class="form-control @error('ketentuan') is-invalid @enderror" id="ketentuan{{ $ketentuan->id }}" name="ketentuan" rows="5" required>{{ old('ketentuan', $ketentuan->ketentuan) }}</textarea>
                                                                 @error('ketentuan')
                                                                     <div class="invalid-feedback">{{ $message }}</div>

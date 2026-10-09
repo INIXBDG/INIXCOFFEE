@@ -142,7 +142,7 @@
                                     <input type="hidden" name="id" id="edit_contact_id">
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan</label>
+                                        <label class="form-label" for="edit_nama_perusahaan">Nama Perusahaan <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="edit_nama_perusahaan"
                                             name="nama_perusahaan" value="{{ $data->nama_perusahaan }}" required
                                             maxlength="255">
@@ -150,7 +150,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label" for="edit_kategori_perusahaan">Kategori
-                                            Perusahaan</label>
+                                            Perusahaan <span class="text-danger">*</span></label>
                                         <select class="form-select @error('kategori_perusahaan') is-invalid @enderror"
                                             name="kategori_perusahaan" id="edit_kategori_perusahaan" required>
                                             <option value="" selected>Pilih Kategori Perusahaan</option>
@@ -195,19 +195,19 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_cp">PIC</label>
+                                        <label class="form-label" for="edit_cp">PIC <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="edit_cp" name="cp"
                                             value="{{ $data->cp }}" maxlength="100" required>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_email">Email</label>
+                                        <label class="form-label" for="edit_email">Email <span class="text-danger">*</span></label>
                                         <input type="email" class="form-control" id="edit_email" name="email"
                                             value="{{ $data->email }}" required maxlength="255" required>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_lokasi">Lokasi</label>
+                                        <label class="form-label" for="edit_lokasi">Lokasi <span class="text-danger">*</span></label>
                                         <select class="form-select" id="edit_lokasi" name="lokasi" required>
                                             <option value="">Pilih Lokasi</option>
                                             <option value="Aceh" {{ $data->lokasi == 'Aceh' ? 'selected' : '' }}>Aceh
@@ -313,7 +313,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_status">Status</label>
+                                        <label class="form-label" for="edit_status">Status <span class="text-danger">*</span></label>
                                         <select class="form-select @error('status') is-invalid @enderror" id="edit_status"
                                             name="status" required>
                                             <option value="" selected>Pilih Status</option>
@@ -346,7 +346,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="edit_no_telp">No Telepon</label>
+                                        <label class="form-label" for="edit_no_telp">No Telepon <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="edit_no_telp" name="no_telp"
                                             value="{{ $data->no_telp }}" maxlength="20" required>
                                     </div>
@@ -380,7 +380,7 @@
                                     @csrf
                                     <input type="hidden" name="id_contact" value="{{ $data->id }}">
                                     <div class="mb-3">
-                                        <label for="materi" class="form-label">Materi</label>
+                                        <label for="materi" class="form-label">Materi <span class="text-danger">*</span></label>
                                         <select class="form-select" id="materi" name="materi" required>
                                             <option value="" disabled selected>-- Pilih Materi --</option>
                                             @foreach ($materi as $item)
@@ -393,11 +393,11 @@
                                         <textarea class="form-control" id="catatan" name="catatan"></textarea>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="harga" class="form-label">Harga Penawaran</label>
+                                        <label for="harga" class="form-label">Harga Penawaran <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="harga" name="harga" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                        <label for="pax" class="form-label">Jumlah Peserta (Pax) <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control" id="pax" name="pax"
                                             min="1" required>
                                     </div>
@@ -417,7 +417,7 @@
                                             name="periode_selesai">
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label" for="metode_kelas">Metode Kelas</label>
+                                        <label class="form-label" for="metode_kelas">Metode Kelas <span class="text-danger">*</span></label>
                                         <select class="form-select" id="metode_kelas" name="metode_kelas" required>
                                             <option value="" disabled selected>Pilih Metode Kelas</option>
                                             <option value="Inhouse Bandung">Inhouse Bandung</option>
@@ -429,7 +429,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="event">Event</label>
+                                        <label class="form-label" for="event">Event <span class="text-danger">*</span></label>
                                         <select class="form-select" id="event" name="event" required>
                                             <option value="" disabled selected>Pilih Event</option>
                                             <option value="Kelas">Kelas</option>
@@ -749,7 +749,7 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="edit_subject" class="form-label">Subject</label>
+                                <label for="edit_subject" class="form-label">Subject <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="edit_subject" name="subject" required>
                             </div>
                             <div class="mb-3">
@@ -757,7 +757,7 @@
                                 <textarea class="form-control" id="edit_deskripsi" name="deskripsi"></textarea>
                             </div>
                             <div class="mb-3">
-                                <label for="edit_waktu_aktivitas" class="form-label">Waktu Aktivitas</label>
+                                <label for="edit_waktu_aktivitas" class="form-label">Waktu Aktivitas <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="edit_waktu_aktivitas"
                                     name="waktu_aktivitas" required>
                             </div>

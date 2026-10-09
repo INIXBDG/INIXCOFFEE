@@ -12,7 +12,7 @@
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
-                            <label for="nama_tunjangan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Tunjangan') }}</label>
+                            <label for="nama_tunjangan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Tunjangan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input type="text" class="form-control" name="nama_tunjangan" placeholder="Masukan Nama Tunjangan" value="{{$tunjangan->nama_tunjangan}}" required>
                                 @error('nama_tunjangan')
@@ -23,7 +23,7 @@
                             </div>
                         </div> 
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Tunjangan') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe Tunjangan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="tipe" class="form-select @error('tipe') is-invalid @enderror" name="tipe" required autocomplete="tipe" autofocus>
                                     <option value="">Pilih Jenis</option>
@@ -38,7 +38,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="nilai" class="col-md-4 col-form-label text-md-start">{{ __('Nilai') }}</label>
+                            <label for="nilai" class="col-md-4 col-form-label text-md-start">{{ __('Nilai') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <div class="input-group mb-3">
                                     <span class="input-group-text">Rp.</span>
@@ -52,7 +52,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="hitung" class="col-md-4 col-form-label text-md-start">{{ __('Penghitungan') }}</label>
+                            <label for="hitung" class="col-md-4 col-form-label text-md-start">{{ __('Penghitungan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="hitung" class="form-select @error('hitung') is-invalid @enderror" name="hitung" required autocomplete="hitung" autofocus>
                                     <option value="">Pilih hitung</option>
@@ -67,7 +67,7 @@
                             </div>
                         </div>          
                         <div class="row mb-3">
-                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Divisi') }}</label>
+                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Divisi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="divisi" class="form-select @error('divisi') is-invalid @enderror" name="divisi" required autocomplete="divisi" autofocus>
                                     <option value="">Pilih Divisi</option>

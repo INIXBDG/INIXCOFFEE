@@ -115,7 +115,7 @@
                         @endif
 
                         <div class="form-group mb-3">
-                            <label class="form-label fw-semibold">Nama Sales</label>
+                            <label class="form-label fw-semibold">Nama Sales <span class="text-danger">*</span></label>
                             <select name="id_sales" class="form-select" required>
                                 <option value="">-- Pilih Sales --</option>
                                 @foreach($daftarSales as $sales)
@@ -126,7 +126,7 @@
 
 
                         <div class="form-group mb-3">
-                            <label class="form-label fw-semibold">Nilai Target (Rp)</label>
+                            <label class="form-label fw-semibold">Nilai Target (Rp) <span class="text-danger">*</span></label>
                             <input type="number" name="nilai_target" class="form-control" required min="0" placeholder="Contoh: 450000000">
                             <small class="text-muted">Masukkan angka tanpa titik atau koma.</small>
                         </div>

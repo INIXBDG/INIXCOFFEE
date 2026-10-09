@@ -44,7 +44,7 @@
 
 
                         <div class="row mb-3">
-                            <label for="id_rkm" class="col-md-4 col-form-label text-md-start">{{ __('ID RKM') }}</label>
+                            <label for="id_rkm" class="col-md-4 col-form-label text-md-start">{{ __('ID RKM') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="id_rkm" id="id_rkm" class="form-select select2-single" required>
                                     <option selected disabled>pilih RKM</option>
@@ -67,7 +67,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe') }}</label>
+                            <label for="tipe" class="col-md-4 col-form-label text-md-start">{{ __('Tipe') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select name="tipe" id="tipe" class="form-select" required>
                                     <option selected disabled>Pilih Jenis Barang</option>
@@ -86,19 +86,19 @@
                         <div id="itemContainer">
                             <div class="item mb-3">
                                 <div class="row">
-                                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Pengajuan</label>
+                                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Pengajuan <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <input type="text" class="form-control" name="barang[nama_pengajuan][]" required>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah</label>
+                                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <input type="number" class="form-control" name="barang[qty][]" required>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <label for="barang[harga_barang][]" class="col-md-4 col-form-label text-md-start">Harga Pengajuan (Rp.)</label>
+                                    <label for="barang[harga_barang][]" class="col-md-4 col-form-label text-md-start">Harga Pengajuan (Rp.) <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <div class="input-group mb-3">
                                             <span class="input-group-text">Rp.</span>
@@ -217,7 +217,7 @@
         const newItem = `
         <div class="item mb-3">
             <div class="row">
-                <label for="barang[nama_pengajuan][]" class="col-md-4 col-form-label text-md-start">Nama ${tipe}</label>
+                <label for="barang[nama_pengajuan][]" class="col-md-4 col-form-label text-md-start">Nama ${tipe} <span class="text-danger">*</span></label>
                 <div class="col-md-6">
                     <input type="text" class="form-control" name="barang[nama_pengajuan][]" required>
                 </div>
@@ -226,13 +226,13 @@
                 </div>
             </div>
             <div class="row">
-                <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah</label>
+                <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Jumlah <span class="text-danger">*</span></label>
                 <div class="col-md-6">
                     <input type="number" class="form-control" name="barang[qty][]" required>
                 </div>
             </div>
             <div class="row">
-                <label for="barang[harga_pengajuan][]" class="col-md-4 col-form-label text-md-start">Harga ${tipe} (Rp.)</label>
+                <label for="barang[harga_pengajuan][]" class="col-md-4 col-form-label text-md-start">Harga ${tipe} (Rp.) <span class="text-danger">*</span></label>
                 <div class="col-md-6">
                     <div class="input-group mb-3">
                         <span class="input-group-text">Rp.</span>

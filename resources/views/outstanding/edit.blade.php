@@ -58,16 +58,16 @@
 
                             <div class="row mb-3">
                                 <label for="pic"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('PIC') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('PIC') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input type="text" name="pic" id="pic" class="form-control"
-                                        value="{{ old('pic', $outstanding->pic) }}">
+                                        value="{{ old('pic', $outstanding->pic) }}" required>
                                 </div>
                             </div>
 
                             <div class="row mb-3">
                                 <label for="net_sales"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Net Sales') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Net Sales') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">Rp.</span>
@@ -86,7 +86,7 @@
 
                             <div class="row mb-3">
                                 <label for="status_pembayaran"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Status Pembayaran') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Status Pembayaran') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <div class="btn-group" role="group" aria-label="Approval Options">
                                         <input type="radio" class="btn-check" name="status_pembayaran" id="approveYes"
@@ -158,10 +158,10 @@
 
                             <div class="row mb-3">
                                 <label for="due_date"
-                                    class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }}</label>
+                                    class="col-md-4 col-form-label text-md-start">{{ __('Tenggat Waktu') }} <span class="text-danger">*</span></label>
                                 <div class="col-md-6">
                                     <input type="date" name="due_date" id="due_date" class="form-control"
-                                        value="{{ old('due_date', $outstanding->due_date) }}">
+                                        value="{{ old('due_date', $outstanding->due_date) }}" required>
                                 </div>
                             </div>
 

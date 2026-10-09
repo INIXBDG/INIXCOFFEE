@@ -1017,15 +1017,19 @@
                 const isDefault = String(o.bank_sel || '').startsWith('default:');
 
                 return `<div data-scope="${scope}">
-                    <select class="form-select form-select-sm" data-bank="sel">
+                    <label class="form-label small mb-1">Bank <span class="text-danger">*</span></label>
+                    <select class="form-select form-select-sm" data-bank="sel" required>
                         ${bankOptionsHtml(o.bank_sel)}
                     </select>
 
                     ${o.bank_sel === 'new'
-                        ? `<input class="form-control form-control-sm mt-2" data-bank="name" placeholder="Nama bank" value="${esc(o.bank_name)}">
-                        <input class="form-control form-control-sm mt-2" data-bank="acc" placeholder="Nomor rekening" value="${esc(o.account_number)}">`
+                        ? `<label class="form-label small mt-2 mb-1">Nama Bank <span class="text-danger">*</span></label>
+                        <input class="form-control form-control-sm" data-bank="name" placeholder="Nama bank" value="${esc(o.bank_name)}" required>
+                        <label class="form-label small mt-2 mb-1">Nomor Rekening <span class="text-danger">*</span></label>
+                        <input class="form-control form-control-sm" data-bank="acc" placeholder="Nomor rekening" value="${esc(o.account_number)}" required>`
                         : isDefault
-                            ? `<input class="form-control form-control-sm mt-2" data-bank="acc" placeholder="Nomor rekening" value="${esc(o.account_number)}">
+                            ? `<label class="form-label small mt-2 mb-1">Nomor Rekening <span class="text-danger">*</span></label>
+                            <input class="form-control form-control-sm" data-bank="acc" placeholder="Nomor rekening" value="${esc(o.account_number)}" required>
                             <div class="small text-muted mt-1">Bank default dipilih. Silakan isi nomor rekening secara manual.</div>`
                             : o.bank_sel !== ''
                                 ? `<div class="small text-muted mt-1">Rek: ${esc(o.account_number)}</div>`
@@ -1056,7 +1060,8 @@
                     okText: 'Semua nomor sudah benar',
                     global: () => '',
                     row: r =>
-                        `<input class="form-control form-control-sm" data-k="invoice_number" value="${esc(r.invoice_number)}">`,
+                        `<label class="form-label small">Nomor Invoice <span class="text-danger">*</span></label>
+                         <input class="form-control form-control-sm" data-k="invoice_number" value="${esc(r.invoice_number)}" required>`,
                     validate: () => {
                         if (items.some(r => !r.invoice_number.trim())) return 'Ada nomor invoice yang kosong.';
                         const nums = items.map(r => r.invoice_number.trim());
@@ -1089,7 +1094,7 @@
                             bank_name: '',
                             account_number: ''
                         };
-                        return `<div class="mb-3"><label class="form-label fw-semibold">Bank untuk semua invoice</label>${bankControl(gBank, 'global')}</div>`;
+                        return `<div class="mb-3"><label class="form-label fw-semibold">Bank untuk semua invoice <span class="text-danger">*</span></label>${bankControl(gBank, 'global')}</div>`;
                     },
                     row: r => bankControl(r, r.id_rkm),
                     validate: () => {

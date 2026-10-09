@@ -167,11 +167,11 @@ class CateringController extends Controller
             'tanggal' => now(),
         ]);
 
-        $karyawanPengaju = Karyawan::findOrFail($request->id_karyawan);
+        $karyawanPengaju = karyawan::findOrFail($request->id_karyawan);
         $userPengaju = $karyawanPengaju->user ?? null;
 
-        $spvSales = Karyawan::where('jabatan', 'SPV Sales')->first();
-        $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+        $spvSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
 
         $penerimaUsers = collect();
 
@@ -201,7 +201,7 @@ class CateringController extends Controller
         $senderNama = $currentUser?->karyawan?->nama_lengkap ?? 'Sistem';
 
         foreach ($penerimaUsers as $user) {
-            NotificationFacade::send($user, new CateringNotification($notifData, '/catering/index', 'Pengajuan catering', $user->id, $senderUsername, $senderNama));
+            NotificationFacade::send($user, new cateringNotification($notifData, '/catering/index', 'Pengajuan catering', $user->id, $senderUsername, $senderNama));
         }
         
         Cache::forget('office_catering_getdata_rencana');
@@ -313,10 +313,10 @@ class CateringController extends Controller
         }
 
         if ($tipeDetail === 'Coffee Break') {
-            $vendor = VendorCoffeeBreak::find($vendorId);
+            $vendor = vendorCoffeeBreak::find($vendorId);
             return $vendor?->nama ?? "Vendor CB #{$vendorId}";
         } elseif ($tipeDetail === 'Makan Siang') {
-            $vendor = VendorMakanSiang::find($vendorId);
+            $vendor = vendorMakansiang::find($vendorId);
             return $vendor?->nama ?? "Vendor MS #{$vendorId}";
         }
 
@@ -430,8 +430,8 @@ class CateringController extends Controller
         $karyawanPemohon = $catering->karyawan;
         $userPemohon = $karyawanPemohon->user ?? null;
 
-        $spvSales = Karyawan::where('jabatan', 'SPV Sales')->first();
-        $finance = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+        $spvSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
 
         $usersToNotify = collect();
 
@@ -463,7 +463,7 @@ class CateringController extends Controller
 
         foreach ($usersToNotify as $user) {
             if ($user) {
-                NotificationFacade::send($user, new CateringNotification($data, '/catering/index', 'Pengajuan catering', $user->id, $senderUsername, $senderNama));
+                NotificationFacade::send($user, new cateringNotification($data, '/catering/index', 'Pengajuan catering', $user->id, $senderUsername, $senderNama));
             }
         }
 
@@ -540,9 +540,9 @@ class CateringController extends Controller
         $tipe = $request->get('tipe');
 
         if ($tipe === 'Coffee Break') {
-            $vendors = VendorCoffeeBreak::where('is_active', '1')->get();
+            $vendors = vendorCoffeeBreak::where('is_active', '1')->get();
         } elseif ($tipe === 'Makan Siang') {
-            $vendors = VendorMakanSiang::where('is_active', '1')->get();
+            $vendors = vendorMakansiang::where('is_active', '1')->get();
         } else {
             return response()->json([]);
         }
@@ -605,3 +605,5 @@ class CateringController extends Controller
         return response()->json($data);
     }
 }
+
+

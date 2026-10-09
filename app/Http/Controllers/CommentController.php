@@ -23,7 +23,7 @@ class CommentController extends Controller
         ]);
         // return $request->path;
         // Menyimpan komentar
-        $comment = Comment::create($validatedData);
+        $comment = comment::create($validatedData);
 
         // Mendapatkan data RKM
         $rkm = RKM::findOrFail($request->rkm_key);
@@ -113,7 +113,7 @@ class CommentController extends Controller
             'rkm_key' => 'required|exists:rkms,id',
         ]);
 
-        $comment = Comment::findOrFail($id);
+        $comment = comment::findOrFail($id);
         $comment->update($validatedData);
 
         return redirect()->back()->with('success', 'Komentar berhasil diperbarui');
@@ -121,9 +121,10 @@ class CommentController extends Controller
 
     public function destroy($id)
     {
-        $comment = Comment::findOrFail($id);
+        $comment = comment::findOrFail($id);
         $comment->delete();
 
         return redirect()->back()->with('success', 'Komentar berhasil dihapus');
     }
 }
+

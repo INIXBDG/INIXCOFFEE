@@ -12,9 +12,9 @@
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
-                            <label for="nama" class="col-md-4 col-form-label text-md-start">{{ __('Nama') }}</label>
+                            <label for="nama" class="col-md-4 col-form-label text-md-start">{{ __('Nama') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="nama" type="text" placeholder="Masukan Nama Perusaaan" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama', $peserta->nama) }}" autocomplete="nama" autofocus>
+                                <input id="nama" type="text" placeholder="Masukan Nama Perusaaan" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama', $peserta->nama) }}" autocomplete="nama" autofocus required>
                                 @error('nama')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -24,9 +24,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="email" class="col-md-4 col-form-label text-md-start">{{ __('Email') }}</label>
+                            <label for="email" class="col-md-4 col-form-label text-md-start">{{ __('Email') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="email" type="text" placeholder="Masukan Kategori Perusahaan" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $peserta->email) }}" autocomplete="email" autofocus>
+                                <input id="email" type="text" placeholder="Masukan Kategori Perusahaan" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $peserta->email) }}" autocomplete="email" autofocus required>
                                 @error('email')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -36,9 +36,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="alamat" class="col-md-4 col-form-label text-md-start">{{ __('Alamat') }}</label>
+                            <label for="alamat" class="col-md-4 col-form-label text-md-start">{{ __('Alamat') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="alamat" type="text" placeholder="Masukan alamat Perusahaan" class="form-control @error('alamat') is-invalid @enderror" name="alamat" value="{{ old('alamat', $peserta->alamat) }}" autocomplete="alamat" autofocus>
+                                <input id="alamat" type="text" placeholder="Masukan alamat Perusahaan" class="form-control @error('alamat') is-invalid @enderror" name="alamat" value="{{ old('alamat', $peserta->alamat) }}" autocomplete="alamat" autofocus required>
                                 @error('alamat')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -48,7 +48,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="jenis_kelamin" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Kelamin') }}</label>
+                            <label for="jenis_kelamin" class="col-md-4 col-form-label text-md-start">{{ __('Jenis Kelamin') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select class="form-select @error('jenis_kelamin') is-invalid @enderror" name="jenis_kelamin" required autocomplete="jenis_kelamin">
                                     <option disabled {{ old('jenis_kelamin', $peserta->jenis_kelamin) == null ? 'selected' : '' }}>Pilih Jenis Kelamin</option>
@@ -64,9 +64,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tanggal_lahir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Lahir') }}</label>
+                            <label for="tanggal_lahir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Lahir') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="tanggal_lahir" type="date" placeholder="Masukan tanggal_lahir" class="form-control @error('tanggal_lahir') is-invalid @enderror" name="tanggal_lahir" value="{{ old('tanggal_lahir', $peserta->tanggal_lahir) }}" autocomplete="tanggal_lahir" autofocus>
+                                <input id="tanggal_lahir" type="date" placeholder="Masukan tanggal_lahir" class="form-control @error('tanggal_lahir') is-invalid @enderror" name="tanggal_lahir" value="{{ old('tanggal_lahir', $peserta->tanggal_lahir) }}" autocomplete="tanggal_lahir" autofocus required>
                                 @error('tanggal_lahir')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -76,9 +76,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="no_hp" class="col-md-4 col-form-label text-md-start">{{ __('Nomor Handphone') }}</label>
+                            <label for="no_hp" class="col-md-4 col-form-label text-md-start">{{ __('Nomor Handphone') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="no_hp" type="text" placeholder="Masukan no_hp Perusahaan" class="form-control @error('no_hp') is-invalid @enderror" name="no_hp" value="{{ old('no_hp', $peserta->no_hp) }}" autocomplete="no_hp" autofocus>
+                                <input id="no_hp" type="text" placeholder="Masukan no_hp Perusahaan" class="form-control @error('no_hp') is-invalid @enderror" name="no_hp" value="{{ old('no_hp', $peserta->no_hp) }}" autocomplete="no_hp" autofocus required>
                                 @error('no_hp')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -100,9 +100,9 @@
                         </div> --}}
 
                         <div class="row mb-3">
-                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Perusahaan / Instansi') }}</label>
+                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Perusahaan / Instansi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select style="height: 30px" class="form-select @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key">
+                                <select style="height: 30px" class="form-select @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key" required>
                                     <!-- Set the pre-selected option if $peserta->perusahaan exists -->
                                     @if($peserta->perusahaan)
                                         <option value="{{ $peserta->perusahaan->id }}" selected>{{ $peserta->perusahaan->nama_perusahaan }}</option>

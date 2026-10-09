@@ -118,9 +118,9 @@
                                 <div class="col-12 d-none" id="rkm-picker-wrapper">
                                     <div class="section-label-bar">
                                         <i class="bi bi-list-check me-2 text-primary"></i>
-                                        <span>Pilih Training (RKM)</span>
+                                        <span>Pilih Training (RKM) <span class="text-danger">*</span></span>
                                     </div>
-                                    <select class="form-select" id="rkm_select">
+                                    <select class="form-select" id="rkm_select" required>
                                         <option value="">-- Pilih RKM --</option>
                                     </select>
                                     <small class="text-muted">Hanya menampilkan RKM yang belum punya data penjualan di minggu ini. Begitu dipilih, data langsung tersimpan otomatis.</small>

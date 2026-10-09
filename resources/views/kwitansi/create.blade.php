@@ -53,7 +53,7 @@
 
                         {{-- Nomor Kwitansi --}}
                         <tr>
-                            <td colspan="3" class="fw-bold">Nomor Kwitansi:</td>
+                            <td colspan="3" class="fw-bold">Nomor Kwitansi: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 @php
                                     $kodeKwitansi   = "INXBDG-KWIT";
@@ -69,7 +69,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3" class="fw-bold">Tanggal Kwitansi:</td>
+                            <td colspan="3" class="fw-bold">Tanggal Kwitansi: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 <input type="date" class="form-control" name="tanggal"
                                     value="{{ old('tanggal', now()->toDateString()) }}" required>
@@ -82,7 +82,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3" class="fw-bold">Sudah terima dari:</td>
+                            <td colspan="3" class="fw-bold">Sudah terima dari: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 <input type="text" class="form-control" name="nama_penerima"
                                     value="{{ old('nama_penerima', $invoice->rkm->perusahaan->nama_perusahaan ?? '') }}"
@@ -112,7 +112,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3" class="fw-bold">Untuk Pembayaran:</td>
+                            <td colspan="3" class="fw-bold">Untuk Pembayaran: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 <textarea name="keterangan" class="form-control" rows="3" required>{{ old('keterangan', $invoice->rkm->materi->nama_materi ?? '') }}</textarea>
                             </td>
@@ -149,7 +149,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3" class="fw-bold">Jabatan Penandatangan:</td>
+                            <td colspan="3" class="fw-bold">Jabatan Penandatangan: <span class="text-danger">*</span></td>
                             <td colspan="2">
                                 <input type="text" class="form-control" name="jabatan_penandatangan"
                                     value="{{ old('jabatan_penandatangan', 'Accounting Finance') }}" required>

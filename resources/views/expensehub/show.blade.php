@@ -17,7 +17,7 @@
                             @foreach ($data['detail'] as $index => $detail)
                             <div class="item-section mb-4 p-3 border rounded">
                                 <div class="row mb-3">
-                                    <label for="nama_barang_{{ $detail['id'] }}" class="col-md-4 col-form-label">Nama Barang</label>
+                                    <label for="nama_barang_{{ $detail['id'] }}" class="col-md-4 col-form-label">Nama Barang <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <input type="hidden" name="id_detail_pengajuan[]" value="{{ $detail['id'] }}">
                                         <input id="nama_barang_{{ $detail['id'] }}" type="text" class="form-control" name="nama_barang[]" value="{{ old('nama_barang.'.$index, $detail['nama_pengajuan']) }}" required>
@@ -27,13 +27,13 @@
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <label for="qty_{{ $detail['id'] }}" class="col-md-4 col-form-label">Qty</label>
+                                    <label for="qty_{{ $detail['id'] }}" class="col-md-4 col-form-label">Qty <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <input id="qty_{{ $detail['id'] }}" type="number" class="form-control" name="qty[]" value="{{ old('qty.'.$index, $detail['jumlah']) }}" min="1" required>
                                     </div>
                                 </div>
                                 <div class="row mb-3">
-                                    <label for="harga_{{ $detail['id'] }}" class="col-md-4 col-form-label">Besarnya (Rp.)</label>
+                                    <label for="harga_{{ $detail['id'] }}" class="col-md-4 col-form-label">Besarnya (Rp.) <span class="text-danger">*</span></label>
                                     <div class="col-md-6">
                                         <input id="harga_{{ $detail['id'] }}" type="number" class="form-control" name="harga[]" value="{{ old('harga.'.$index, $detail['harga_pengajuan']) }}" min="0" required>
                                     </div>

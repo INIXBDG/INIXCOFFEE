@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exports\RKMExport;
+use App\Exports\RkmExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
@@ -182,7 +182,7 @@ class RKMController extends Controller
 
         $path = 'exports/'.$filename;
 
-        Excel::store(new RKMExport($data, $bulan), $path, 'local');
+        Excel::store(new RkmExport($data, $bulan), $path, 'local');
 
         return response()->json(['filename' => $path]);
     }

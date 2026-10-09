@@ -77,7 +77,7 @@ class RegisterController extends Controller
     ]);
 
     // Membuat data karyawan terkait
-    Karyawan::create([
+    karyawan::create([
         'nama_lengkap' => $data['nama_lengkap'],
         'status_aktif' => '1',
     ]);
@@ -85,3 +85,4 @@ class RegisterController extends Controller
     return $user;
 }
 }
+

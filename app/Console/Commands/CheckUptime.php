@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ActivityLog;
+use App\Models\activityLog;
 use App\Models\karyawan;
-use App\Models\UptimeCheck;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Jenssegers\Agent\Agent;
@@ -48,7 +47,7 @@ class CheckUptime extends Command
                 $httpStatus = 0;
             }
 
-            ActivityLog::create([
+            activityLog::create([
                 'user_id' => (string) $koorITSM->id,
                 'status' => (string) $httpStatus,
                 'url' => $url,
@@ -69,3 +68,4 @@ class CheckUptime extends Command
         }
     }
 }
+

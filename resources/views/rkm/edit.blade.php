@@ -12,7 +12,7 @@
                         @csrf
                         @method('PUT')
                         <div class="row mb-3">
-                            <label for="sales_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Sales') }}</label>
+                            <label for="sales_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Sales') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="sales_key" disabled class="form-select @error('sales_key') is-invalid @enderror" name="sales_key" required autocomplete="sales_key">
                                     <option>Pilih Sales</option>
@@ -32,7 +32,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="materi_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Materi') }}</label>
+                            <label for="materi_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Materi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="materi_key" class="form-select select2 @error('materi_key') is-invalid @enderror" name="materi_key" required autocomplete="materi_key">
                                     <option selected>Pilih Materi</option>
@@ -50,7 +50,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Perusahaan') }}</label>
+                            <label for="perusahaan_key" class="col-md-4 col-form-label text-md-start">{{ __('Nama Perusahaan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select class="form-select select2 @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" required autocomplete="perusahaan_key" id="perusahaan_key">
                                     <option selected>Pilih Perusahaan</option>
@@ -102,9 +102,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Awal') }}</label>
+                            <label for="tanggal_awal" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Awal') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="tanggal_awal" type="date" placeholder="tanggal_awal" class="form-control @error('tanggal_awal') is-invalid @enderror" name="tanggal_awal" value="{{ old('tanggal_awal', $post->tanggal_awal) }}" autocomplete="tanggal_awal" autofocus>
+                                <input id="tanggal_awal" type="date" placeholder="tanggal_awal" class="form-control @error('tanggal_awal') is-invalid @enderror" name="tanggal_awal" value="{{ old('tanggal_awal', $post->tanggal_awal) }}" autocomplete="tanggal_awal" autofocus required>
                                 @error('tanggal_awal')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -114,9 +114,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }}</label>
+                            <label for="tanggal_akhir" class="col-md-4 col-form-label text-md-start">{{ __('Tanggal Akhir') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir" value="{{ old('tanggal_akhir', $post->tanggal_akhir) }}" autocomplete="tanggal_akhir" autofocus>
+                                <input id="tanggal_akhir" type="date" placeholder="tanggal_akhir" class="form-control @error('tanggal_akhir') is-invalid @enderror" name="tanggal_akhir" value="{{ old('tanggal_akhir', $post->tanggal_akhir) }}" autocomplete="tanggal_akhir" autofocus required>
                                 @error('tanggal_akhir')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -163,7 +163,7 @@
 
 
                         <div class="row mb-3">
-                            <label for="metode_kelas" class="col-md-4 col-form-label text-md-start">{{ __('Metode Kelas') }}</label>
+                            <label for="metode_kelas" class="col-md-4 col-form-label text-md-start">{{ __('Metode Kelas') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select class="form-select @error('metode_kelas') is-invalid @enderror" name="metode_kelas" value="{{ old('metode_kelas', $post->metode_kelas ) }}" required autocomplete="metode_kelas">
                                     <option value="Inhouse Bandung" @if ($post->metode_kelas == "Inhouse Bandung") selected @endif>Inhouse Bandung</option>
@@ -180,7 +180,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="event" class="col-md-4 col-form-label text-md-start">{{ __('Event') }}</label>
+                            <label for="event" class="col-md-4 col-form-label text-md-start">{{ __('Event') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select class="form-select @error('event') is-invalid @enderror" name="event" value="{{ old('event', ) }}" required autocomplete="event">
                                     <option value="Kelas" @if ($post->metode_kelas == "Kelas") selected @endif>Kelas</option>
@@ -197,7 +197,7 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="status" class="col-md-4 col-form-label text-md-start">{{ __('Status') }}</label>
+                            <label for="status" class="col-md-4 col-form-label text-md-start">{{ __('Status') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 @if (auth()->user()->jabatan == 'Customer Care' || auth()->user()->jabatan == 'Customer Service' || auth()->user()->jabatan == 'Admin Holding' || auth()->user()->jabatan == 'Technical Support')
                                 <select disabled class="form-select @error('status') is-invalid @enderror" name="status" required autocomplete="status">

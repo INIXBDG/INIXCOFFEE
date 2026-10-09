@@ -11,10 +11,10 @@
                     <form id="form-ticketing" method="POST" action="{{ route('tickets.store') }}">
                         @csrf
                         <div class="row mb-3">
-                            <label for="nama_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
+                            <label for="nama_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 @if (auth()->user()->karyawan->divisi == 'IT Service Management')
-                                    <select name="nama_karyawan" id="nama_karyawan" class="form-select">
+                                    <select name="nama_karyawan" id="nama_karyawan" class="form-select" required>
                                         <option value="" selected>Pilih Karyawan</option>
                                         @foreach ($karyawan as $item)
                                             <option value="{{ $item->nama_lengkap }}" data-divisi="{{ $item->divisi }}">{{ $item->nama_lengkap }}</option>
@@ -33,7 +33,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Divisi') }}</label>
+                            <label for="divisi" class="col-md-4 col-form-label text-md-start">{{ __('Divisi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input type="text" id="divisi" class="form-control" name="divisi" value="{{auth()->user()->karyawan->divisi}}" readonly required>
                                 @error('divisi')
@@ -44,7 +44,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="keperluan" class="col-md-4 col-form-label text-md-start">{{ __('Keperluan') }}</label>
+                            <label for="keperluan" class="col-md-4 col-form-label text-md-start">{{ __('Keperluan') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input type="hidden" name="datetime" value="{{ now() }}">
                                 <select id="keperluan" class="form-select @error('keperluan') is-invalid @enderror" name="keperluan" required autocomplete="keperluan" autofocus>
@@ -61,7 +61,7 @@
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label for="kategori" class="col-md-4 col-form-label text-md-start">{{ __('Kategori') }}</label>
+                            <label for="kategori" class="col-md-4 col-form-label text-md-start">{{ __('Kategori') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <select id="kategori" class="form-select @error('kategori') is-invalid @enderror" name="kategori" required autocomplete="kategori" autofocus>
                                     <option value="" selected>Pilih Kategori</option>
@@ -75,9 +75,9 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="detail_kendala" class="col-md-4 col-form-label text-md-start">{{ __('Detail Kendala') }}</label>
+                            <label for="detail_kendala" class="col-md-4 col-form-label text-md-start">{{ __('Detail Kendala') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <textarea name="detail_kendala" class="form-control" id="detail_kendala" cols="50" rows="5"></textarea>
+                                <textarea name="detail_kendala" class="form-control" id="detail_kendala" cols="50" rows="5" required></textarea>
                                 @error('detail_kendala')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
