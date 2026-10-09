@@ -27,6 +27,7 @@ class AuditCode extends Command
     private const BUILTIN = [
         'int', 'float', 'string', 'bool', 'array', 'callable', 'iterable', 'object',
         'mixed', 'void', 'null', 'never', 'self', 'static', 'parent', 'false', 'true',
+        'class',
     ];
 
     private array $issues = [];
@@ -60,6 +61,19 @@ class AuditCode extends Command
                 $this->checkFile($path);
                 $audited[] = $path;
             }
+
+            $rels = array_map(fn ($p) => $this->toRel($p), $audited);
+
+            if (!$this->option('skip-routes')) {
+                $this->checkRoutes();            
+            }
+            $this->checkControllers($rels);      
+
+            $touched = array_flip($rels);
+            $this->issues = array_values(array_filter(
+                $this->issues,
+                fn ($i) => isset($touched[$i['rel']])  
+            ));
 
             $this->reportPartial($audited);
             return collect($this->issues)->contains('level', 'ERROR') ? self::FAILURE : self::SUCCESS;
@@ -175,6 +189,52 @@ class AuditCode extends Command
         return ltrim($path, '/');
     }
 
+    private function topLevelUses(string $raw): array
+    {
+        $tokens = token_get_all($raw);
+        $n = count($tokens);
+        $declTokens = [T_CLASS, T_TRAIT, T_INTERFACE];
+        if (defined('T_ENUM')) {
+            $declTokens[] = T_ENUM;
+        }
+
+        $uses = [];
+        for ($i = 0; $i < $n; $i++) {
+            $t = $tokens[$i];
+            if (!is_array($t)) {
+                continue;
+            }
+            if (in_array($t[0], $declTokens, true)) {
+                break; // masuk ke badan class
+            }
+            if ($t[0] !== T_USE) {
+                continue;
+            }
+
+            $line = $t[2];
+            $spec = '';
+            for ($j = $i + 1; $j < $n; $j++) {
+                $x = $tokens[$j];
+                if ($x === ';') {
+                    break;
+                }
+                if (is_array($x)) {
+                    if (in_array($x[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+                        $spec .= ' ';
+                        continue;
+                    }
+                    $spec .= $x[1];
+                } else {
+                    $spec .= $x;
+                }
+            }
+            $uses[] = [trim($spec), $line];
+            $i = $j;
+        }
+
+        return $uses;
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Util                                                               */
     /* ------------------------------------------------------------------ */
@@ -260,26 +320,21 @@ class AuditCode extends Command
         }
 
         $raw = file_get_contents($path);
-        $code = $this->clean($raw, true);          // tanpa komentar & isi string
-        $noComment = $this->clean($raw, false);    // tanpa komentar saja (untuk view/route)
+        $code = $this->clean($raw, true);
+        $noComment = $this->clean($raw, false);
 
         $ns = preg_match('/^\s*namespace\s+([^;{\s]+)/m', $code, $m) ? $m[1] : '';
         $classPos = preg_match('/\b(?:class|trait|interface|enum)\s+\w+/', $code, $m, PREG_OFFSET_CAPTURE)
             ? $m[0][1] : strlen($code);
 
-        // ---- import (use ...;) ----
-        $imports = []; // alias lowercase => [alias, fqcn]
-        $head = substr($code, 0, $classPos);
-        preg_match_all('/^\s*use\s+([^;]+);/m', $head, $uses, PREG_OFFSET_CAPTURE);
-        foreach ($uses[1] as [$text, $off]) {
-            $spec = trim($text);
-            $line = $this->lineAt($code, $off);
+        $imports = [];
+        foreach ($this->topLevelUses($raw) as [$spec, $line]) {
             if (preg_match('/^(function|const)\s/i', $spec)) {
                 continue;
             }
-            if (preg_match('/^(.+?)\\\\\{(.+)\}$/s', $spec, $g)) {
+            if (preg_match('/^(.+?)\\\\\s*\{(.+)\}$/s', $spec, $g)) {
                 foreach (explode(',', $g[2]) as $item) {
-                    $this->registerImport(trim($g[1]) . '\\' . trim($item), $path, $line, $imports);
+                    $this->registerImport(rtrim(trim($g[1]), '\\') . '\\' . trim($item), $path, $line, $imports);
                 }
             } else {
                 foreach (explode(',', $spec) as $item) {
@@ -288,7 +343,6 @@ class AuditCode extends Command
             }
         }
 
-        // ---- kumpulkan nama class yang dipakai: [nama, offset] ----
         $refs = [];
         $collect = function (string $regex, int $group = 1) use ($code, &$refs) {
             preg_match_all($regex, $code, $mm, PREG_OFFSET_CAPTURE);
@@ -297,25 +351,32 @@ class AuditCode extends Command
             }
         };
 
-        $collect('/(?<![\w\\\\$>])([A-Za-z_]\w*)::/');                 // User::find, user::find
-        $collect('/\bnew\s+([A-Za-z_]\w*)/');                           // new User
+        $collect('/(?<![\w\\\\$>])([A-Za-z_]\w*)::/');
+        $collect('/\bnew\s+([A-Za-z_]\w*)/');
         $collect('/\binstanceof\s+([A-Za-z_]\w*)/');
         $collect('/\bpublic\s+(?:static\s+|readonly\s+)*\??([A-Za-z_]\w*)\s+\$/');
         $collect('/\bprotected\s+(?:static\s+|readonly\s+)*\??([A-Za-z_]\w*)\s+\$/');
         $collect('/\bprivate\s+(?:static\s+|readonly\s+)*\??([A-Za-z_]\w*)\s+\$/');
 
-        // extends / implements
-        preg_match_all('/\b(?:extends|implements)\s+([A-Za-z_\\\\][\w\\\\,\s]*?)\s*\{/s', $code, $mm, PREG_OFFSET_CAPTURE);
+        preg_match_all(
+            '/(?<![\w:$>])(?:class|interface|enum)\s+\w+\s*(?::\s*\w+\s*)?((?:\b(?:extends|implements)\b[^{]*)?)\{/s',
+            $code,
+            $mm,
+            PREG_OFFSET_CAPTURE
+        );
         foreach ($mm[1] as [$text, $off]) {
-            foreach (explode(',', $text) as $n) {
-                $n = trim($n);
-                if ($n !== '' && !str_contains($n, '\\')) {
-                    $refs[] = [$n, $off];
+            if (trim($text) === '') {
+                continue;
+            }
+            preg_match_all('/[\\\\\w]+/', $text, $tokens, PREG_OFFSET_CAPTURE);
+            foreach ($tokens[0] as [$n, $o]) {
+                if (in_array(strtolower($n), ['extends', 'implements'], true) || str_contains($n, '\\')) {
+                    continue;
                 }
+                $refs[] = [$n, $off + $o];
             }
         }
 
-        // catch (A | B $e)
         preg_match_all('/\bcatch\s*\(\s*([A-Za-z_\\\\|\s]+?)\s*(?:\$\w+)?\s*\)/', $code, $mm, PREG_OFFSET_CAPTURE);
         foreach ($mm[1] as [$text, $off]) {
             foreach (explode('|', $text) as $n) {
@@ -326,7 +387,6 @@ class AuditCode extends Command
             }
         }
 
-        // parameter & return type function / fn
         preg_match_all('/\b(?:function\s*&?\s*\w*|fn)\s*\(([^)]*)\)\s*(?::\s*\??([A-Za-z_]\w*))?/', $code, $mm, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
         foreach ($mm as $set) {
             $off = $set[0][1];
@@ -342,7 +402,6 @@ class AuditCode extends Command
             }
         }
 
-        // trait: use TraitA, TraitB;  (di dalam class)
         $body = substr($code, $classPos);
         preg_match_all('/^\s*use\s+([^;{(]+)[;{]/m', $body, $mm, PREG_OFFSET_CAPTURE);
         foreach ($mm[1] as [$text, $off]) {
@@ -358,12 +417,17 @@ class AuditCode extends Command
             $this->resolveShort($name, $ns, $imports, $path, $this->lineAt($code, $off));
         }
 
-        // ---- view('...') & route('...') ----
         preg_match_all('/\bview\(\s*[\'"]([^\'"$\{:]+)[\'"]/', $noComment, $mm, PREG_OFFSET_CAPTURE);
         foreach ($mm[1] as [$name, $off]) {
             try {
                 if (!view()->exists($name)) {
                     $this->add('ERROR', 'View', $path, $this->lineAt($noComment, $off), "View '$name' tidak ditemukan");
+                } else {
+                    $all = $this->exactViewNames();
+                    if (!in_array($name, $all, true) && in_array(strtolower($name), array_map('strtolower', $all), true)) {
+                        $this->add('ERROR', 'View', $path, $this->lineAt($noComment, $off),
+                            "View '$name' tidak ditemukan (huruf berbeda dengan nama file, gagal di Linux)");
+                    }
                 }
             } catch (Throwable $e) {
             }
@@ -527,7 +591,7 @@ class AuditCode extends Command
     /*  3. Cek controller                                                  */
     /* ------------------------------------------------------------------ */
 
-    private function checkControllers(): void
+    private function checkControllers(?array $onlyRel = null): void
     {
         $dir = app_path('Http/Controllers');
         if (!is_dir($dir)) {
@@ -538,6 +602,11 @@ class AuditCode extends Command
             if ($file->getExtension() !== 'php') {
                 continue;
             }
+            $path = $file->getPathname();
+            if ($onlyRel !== null && !in_array($this->toRel($path), $onlyRel, true)) {
+                continue;
+            }
+
             $path = $file->getPathname();
             $code = $this->clean(file_get_contents($path), true);
             $base = $file->getBasename('.php');
@@ -655,5 +724,23 @@ class AuditCode extends Command
             ], $this->issues),
             'partial' => false,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+    }
+
+    private ?array $exactViews = null;
+
+    private function exactViewNames(): array
+    {
+        if ($this->exactViews === null) {
+            $this->exactViews = [];
+            $dir = resource_path('views');
+            if (is_dir($dir)) {
+                foreach (File::allFiles($dir) as $f) {
+                    if (str_ends_with($f->getFilename(), '.blade.php')) {
+                        $this->exactViews[] = str_replace(['/', DIRECTORY_SEPARATOR], '.', substr($f->getRelativePathname(), 0, -10));
+                    }
+                }
+            }
+        }
+        return $this->exactViews;
     }
 }

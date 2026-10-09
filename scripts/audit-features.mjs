@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 
-const BASE = (process.env.AUDIT_BASE_URL || 'http://192.168.95.98:8000').replace(/\/$/, '');
+const BASE = (process.env.AUDIT_BASE_URL || 'http://127.0.0.1:8000/').replace(/\/$/, '');
 const ONLY = (process.env.AUDIT_FEATURE_ONLY || '').split(',').map((s) => s.trim()).filter(Boolean);
 const ONLY_ROUTE = (process.env.AUDIT_FEATURE_ROUTE || '').trim();
 const SKIP = /^(_|telescope|horizon|livewire|storage|sanctum|up$)|logout|signout|delete|destroy|download|export|print/i;
