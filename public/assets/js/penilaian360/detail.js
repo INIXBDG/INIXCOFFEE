@@ -68,11 +68,38 @@ function loadData() {
             let jenisHTML = `<a class="modern-tab-btn active-tab" data-jenis="all"><i class="fa-solid fa-layer-group me-1"></i> Semua</a>`;
             const routePreview = window.PENILAIAN_DETAIL_CONFIG.pdfPreviewRoute; 
 
+            const buildPdfUrl = (tipe, mode) =>
+                `${routePreview}?kodeForm=${encodeURIComponent(kodeForm)}&id_karyawan=${encodeURIComponent(id_karyawan)}&tipe=${tipe}&mode=${mode}`;
+
             let emailSend = `
-                <div class="d-flex flex-wrap gap-2">
-                    <button id="kirimEmail" class="btn-action success" data-kodeform="${kodeForm}" data-id="${id_karyawan}"><i class="fa-solid fa-paper-plane"></i> Kirim Email</button>
-                    <a href="${routePreview}?kodeForm=${kodeForm}&id_karyawan=${id_karyawan}&tipe=office" target="_blank" class="btn-action danger"><i class="fa-solid fa-file-pdf"></i> Preview & Print Office</a>
-                    <a href="${routePreview}?kodeForm=${kodeForm}&id_karyawan=${id_karyawan}&tipe=non_office" target="_blank" class="btn-action danger"><i class="fa-solid fa-file-pdf"></i> Preview & Print Non-Office</a>
+                <div class="d-flex flex-wrap gap-2 align-items-start">
+                    <button id="kirimEmail" class="btn-action success" data-kodeform="${kodeForm}" data-id="${id_karyawan}">
+                        <i class="fa-solid fa-paper-plane"></i> Kirim Email
+                    </button>
+
+                    <div class="pdf-dropdown">
+                        <button type="button" id="pdfDropdownToggle" class="btn-action danger">
+                            <i class="fa-solid fa-file-pdf"></i> Print / Download
+                            <i class="fa-solid fa-chevron-down ms-1" style="font-size:.7rem;"></i>
+                        </button>
+                        <div class="pdf-dropdown-menu" id="pdfDropdownMenu">
+                            <div class="pdf-dropdown-title">Print (Preview)</div>
+                            <a href="${buildPdfUrl('office', 'print')}" target="_blank" class="pdf-dropdown-item">
+                                <i class="fa-solid fa-print"></i> Print Office
+                            </a>
+                            <a href="${buildPdfUrl('non_office', 'print')}" target="_blank" class="pdf-dropdown-item">
+                                <i class="fa-solid fa-print"></i> Print Non-Office
+                            </a>
+                            <div class="pdf-dropdown-divider"></div>
+                            <div class="pdf-dropdown-title">Download PDF</div>
+                            <a href="${buildPdfUrl('office', 'download')}" class="pdf-dropdown-item">
+                                <i class="fa-solid fa-download"></i> Download Office
+                            </a>
+                            <a href="${buildPdfUrl('non_office', 'download')}" class="pdf-dropdown-item">
+                                <i class="fa-solid fa-download"></i> Download Non-Office
+                            </a>
+                        </div>
+                    </div>
                 </div>`;
 
             const iconMap = {
@@ -272,6 +299,21 @@ $(document).on('click', '#kirimEmail', function(e) {
             Swal.fire({ icon: 'error', title: 'Gagal!', text: `Gagal mengirim email: ${xhr.responseText}`, confirmButtonColor: '#ef4444' });
         }
     });
+});
+
+$(document).on('click', '#pdfDropdownToggle', function(e) {
+    e.stopPropagation();
+    $('#pdfDropdownMenu').toggleClass('show');
+});
+
+$(document).on('click', '.pdf-dropdown-item', function() {
+    $('#pdfDropdownMenu').removeClass('show');
+});
+
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('.pdf-dropdown').length) {
+        $('#pdfDropdownMenu').removeClass('show');
+    }
 });
 
 function loadChartData() {
