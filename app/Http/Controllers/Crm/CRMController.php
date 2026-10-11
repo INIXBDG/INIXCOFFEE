@@ -576,7 +576,7 @@ class CRMController extends Controller
         $extends = 'layouts_crm.app';
         $section = 'crm_contents';
 
-        return view('office.pickupdriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
     }
 
     public function createKoordinasi()
@@ -632,6 +632,6 @@ class CRMController extends Controller
         $extends = 'layouts_crm.app';
         $section = 'crm_contents';
 
-        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
     }
 }

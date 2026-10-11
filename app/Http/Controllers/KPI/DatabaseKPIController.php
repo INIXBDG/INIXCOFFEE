@@ -396,7 +396,8 @@ class DatabaseKPIController extends Controller
         $request->validate([
             'id_karyawan' => 'required',
             'kodeForm'    => 'required|string',
-            'tipe'        => 'required'
+            'tipe'        => 'required|in:office,non_office',
+            'mode'        => 'nullable|in:print,download',
         ]);
 
         $tipe_button = $request->input('tipe');
@@ -514,6 +515,7 @@ class DatabaseKPIController extends Controller
         $evaluatorList = collect($evaluatorList)->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])->values();
 
         $data = [
+            'mode' => $request->input('mode', 'print'),
             'data' => [[
                 'evaluated' => $evaluated,
                 'dataAbsen' => $dataAbsen,
@@ -524,6 +526,19 @@ class DatabaseKPIController extends Controller
                 'tipe_pdf' => $tipe_button
             ]]
         ];
+
+        if ($request->input('mode') === 'download') {
+            $filename = sprintf(
+                'Rekap-Penilaian-%s-%s-%s.pdf',
+                Str::slug($karyawan->nama_lengkap),
+                $tipe_button,
+                $form->tahun
+            );
+
+            return Pdf::loadView('pdf.rekapPenilaian', $data)
+                ->setPaper('a4', 'portrait')
+                ->download($filename);
+        }
 
         return view('pdf.rekapPenilaian', $data);
     }
