@@ -93,6 +93,15 @@
                 </a>
             </li>
 
+            @can('View CRM PaymentAdvance')
+                <li class="menu-item {{ request()->routeIs('crm.paymentAdvance.index')? 'active open' : '' }}">
+                    <a href="{{ route('crm.paymentAdvance.index')}}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-task"></i>
+                        <div class="text-truncate" data-i18n="Dashboards">Payment Advance</div>
+                    </a>
+                </li>
+            @endcan
+            
             <!-- Closed Win -->
             <li class="menu-item {{ request()->routeIs('index.ringkasanPeluang') ? 'active open' : '' }}">
                 <a href="{{ route('index.ringkasanPeluang') }}" class="menu-link">
