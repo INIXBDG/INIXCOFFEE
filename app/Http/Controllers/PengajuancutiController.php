@@ -38,7 +38,7 @@ class PengajuancutiController extends Controller
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
         if ($jabatan == 'Office Manager' || $jabatan == 'Education Manager' || $jabatan == 'SPV Sales' || $jabatan == 'Koordinator ITSM') {
-            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
+            $pengajuancuti = pengajuancuti::with('karyawan')->whereHas('karyawan', function ($query) use ($divisi) {
                 $query->where('divisi', $divisi);
             })->latest()->get();
         } elseif ($jabatan == 'GM') {
@@ -49,7 +49,7 @@ class PengajuancutiController extends Controller
         } elseif ($jabatan == 'HRD' || $jabatan == 'Koordinator Office') {
             $pengajuancuti = pengajuancuti::with('karyawan')->latest()->get();
         } else {
-            $pengajuancuti = PengajuanCuti::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
+            $pengajuancuti = pengajuancuti::with('karyawan')->whereHas('karyawan', function ($query) use ($user) {
                 $query->where('id', $user);
             })->latest()->get();
         }

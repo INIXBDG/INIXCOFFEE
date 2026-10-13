@@ -62,7 +62,7 @@ class eksam extends Model
     }
     public function registexam()
     {
-        return $this->hasMany(Registexam::class, 'id_exam', 'id');
+        return $this->hasMany(registexam::class, 'id_exam', 'id');
     }
     public function approvalexam()
     {

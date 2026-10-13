@@ -139,7 +139,7 @@ class RKM extends Model
 
     public function nilaifeedback()
     {
-        return $this->hasMany(nilaifeedback::class, 'id_rkm', 'id');
+        return $this->hasMany(Nilaifeedback::class, 'id_rkm', 'id');
     }
 
     public function sertifikatPDF()
@@ -149,7 +149,7 @@ class RKM extends Model
 
     public function absensiPDF()
     {
-        return $this->hasOne(absensiPDF::class, 'id_rkm', 'id');
+        return $this->hasOne(AbsensiPDF::class, 'id_rkm', 'id');
     }
 
     public function peluang()

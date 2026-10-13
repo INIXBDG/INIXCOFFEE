@@ -1175,7 +1175,7 @@ class OfficeController extends Controller
         $tahun = $request->tahun ?? now()->year;
         $bulan = $request->bulan;
 
-        $base = Karyawan::whereNot('jabatan', 'Outsource')
+        $base = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1218,7 +1218,7 @@ class OfficeController extends Controller
         $bulan = $request->bulan;
         $search = $request->search ?? '';
 
-        $query = Karyawan::whereNot('jabatan', 'Outsource')
+        $query = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1267,7 +1267,7 @@ class OfficeController extends Controller
         $labels = $kontrak = $tetap = $probation = [];
 
         // Base query yang sama untuk semua status aktif
-        $base = Karyawan::whereNot('jabatan', 'Outsource')
+        $base = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1325,7 +1325,7 @@ class OfficeController extends Controller
 
     public function detailMengajar($id, Request $request)
     {
-        $karyawan = Karyawan::findOrFail($id);
+        $karyawan = karyawan::findOrFail($id);
         $kodeKaryawan = $karyawan->kode_karyawan;
 
         Carbon::setLocale('id');

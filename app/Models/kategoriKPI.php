@@ -24,6 +24,6 @@ class kategoriKPI extends Model
 
     public function nilaiKPI()
     {
-        return $this->hasOne(NilaiKPI::class, 'id_kategori', 'id');
+        return $this->hasOne(nilaiKPI::class, 'id_kategori', 'id');
     }
 }

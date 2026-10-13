@@ -58,7 +58,7 @@ class LemburController extends Controller
 
 		if ($jabatan == 'GM') {
 			// GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
-			$lembur = Lembur::with('karyawan')
+			$lembur = lembur::with('karyawan')
 				->whereHas('karyawan', function ($query) {
 					$query->where('divisi', 'Office');
 				})
@@ -66,18 +66,18 @@ class LemburController extends Controller
 				->get();
 		} elseif ($jabatan == 'HRD') {
 			// GM hanya melihat semua lembur dari divisi Office (tanpa peduli jabatannya)
-			$lembur = Lembur::with('karyawan')
+			$lembur = lembur::with('karyawan')
 				->whereHas('karyawan', function ($query) {
 					$query->where('divisi', 'Office');
 				})
 				->latest()
 				->get();
 		}elseif (in_array($jabatan, ['Office Manager', 'Koordinator Office', 'Education Manager', 'SPV Sales', 'Koordinator ITSM'])) {
-			$lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
+			$lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($divisi) {
 				$query->where('divisi', $divisi);
 			})->latest()->get();
 		} else {
-			$lembur = Lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
+			$lembur = lembur::with('karyawan')->whereHas('karyawan', function($query) use ($user) {
 				$query->where('id', $user);
 			})->latest()->get();
 		}
@@ -98,17 +98,17 @@ class LemburController extends Controller
     public function create()
 	{
 		$userId = auth()->user()->karyawan_id;
-		$karyawan = Karyawan::findOrFail($userId);
+		$karyawan = karyawan::findOrFail($userId);
 
 		//if ($karyawan->jabatan === 'HRD') {
 			// HRD hanya boleh mengajukan Office Boy & Driver
-		//	$karyawanall = Karyawan::whereIn('jabatan', ['Office Boy', 'Driver'])
+		//	$karyawanall = karyawan::whereIn('jabatan', ['Office Boy', 'Driver'])
 
 		//		->where('divisi', '!=', 'Direksi')
 		//		->get();
 		//} else {
 			// Selain HRD (default sebelumnya)
-			$karyawanall = Karyawan::where('divisi', '!=', 'Direksi')
+			$karyawanall = karyawan::where('divisi', '!=', 'Direksi')
 				->where('divisi', $karyawan->divisi)
 				->get();
 		//}
@@ -269,7 +269,7 @@ class LemburController extends Controller
     {
         // return $request->all();
         // Validasi dasar
-        $post = Lembur::with('karyawan')->findOrFail($id);
+        $post = lembur::with('karyawan')->findOrFail($id);
 
         $rules = [
             'tanggal_spl' => 'required|date',
@@ -324,15 +324,15 @@ class LemburController extends Controller
         $post->save();
 
         // Proses notifikasi (tidak diubah)
-        $karyawan = Karyawan::findOrFail($post->id_karyawan);
+        $karyawan = karyawan::findOrFail($post->id_karyawan);
         $divisi = $karyawan->divisi;
         $jabatan = $karyawan->jabatan;
-        $Offman = Karyawan::where('jabatan', 'Office Manager')->first();
-        $kooroff = Karyawan::where('jabatan', 'Koordinator Office')->first();
-        $koorso = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
-        $Eduman = Karyawan::where('jabatan', 'Education Manager')->first();
-        $SPVSales = Karyawan::where('jabatan', 'SPV Sales')->first();
-        $GM = Karyawan::where('jabatan', 'GM')->first();
+        $Offman = karyawan::where('jabatan', 'Office Manager')->first();
+        $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
+        $koorso = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+        $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+        $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
+        $GM = karyawan::where('jabatan', 'GM')->first();
         $users = [];
 
         switch ($jabatan) {
@@ -402,7 +402,7 @@ class LemburController extends Controller
 
         Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
 
-        $lembur = Lembur::where('id_karyawan', $request->id_karyawan)
+        $lembur = lembur::where('id_karyawan', $request->id_karyawan)
             ->where('tanggal_lembur', $request->tanggal)
             ->first();
 
@@ -439,7 +439,7 @@ class LemburController extends Controller
         Storage::disk('public')->put('lembur/' . $imageName, base64_decode($image));
 
         // Cari data lembur hari ini
-        $lembur = Lembur::where('id_karyawan', $request->id_karyawan)
+        $lembur = lembur::where('id_karyawan', $request->id_karyawan)
             ->whereDate('tanggal_lembur', $request->tanggal)
             ->first();
 

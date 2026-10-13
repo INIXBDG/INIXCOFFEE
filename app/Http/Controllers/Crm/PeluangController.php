@@ -268,7 +268,7 @@ class PeluangController extends Controller
             ->where('id_rkm', $peluang->id_rkm)
             ->first();
 
-        $regis = Regisform::where('id_peluang', $id)->first();
+        $regis = RegisForm::where('id_peluang', $id)->first();
 
         $perusahaan = $peluang->perusahaan;
 

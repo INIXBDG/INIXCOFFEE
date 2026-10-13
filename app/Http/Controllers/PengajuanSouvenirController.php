@@ -122,7 +122,7 @@ class PengajuanSouvenirController extends Controller
         }
 
         $vendors = vendorSouvenir::where('is_active', 1)->get();
-        $souvenirs = Souvenir::all();
+        $souvenirs = souvenir::all();
 
         return view('pengajuansouvenir.create', compact('karyawan', 'vendors', 'souvenirs'));
     }
@@ -236,7 +236,7 @@ class PengajuanSouvenirController extends Controller
         $tracking = TrackingPengajuanSouvenir::where('id_pengajuan_souvenir', $id)
                         ->orderBy('created_at', 'asc')->get();
 
-        $souvenirs = Souvenir::all(); // Diperlukan untuk modal edit
+        $souvenirs = souvenir::all(); // Diperlukan untuk modal edit
 
         return view('pengajuansouvenir.show', compact('data', 'tracking', 'souvenirs'));
     }
@@ -244,29 +244,29 @@ class PengajuanSouvenirController extends Controller
     /**
      * Menampilkan form untuk mengedit Pengajuan Souvenir.
      */
-    public function edit($id)
-    {
-        $pengajuan = PengajuanSouvenir::with('detail')->findOrFail($id);
-        $karyawan = karyawan::findOrFail($pengajuan->id_karyawan);
-        $statusTerakhir = $pengajuan->tracking->tracking;
+    // public function edit($id)
+    // {
+    //     $pengajuan = PengajuanSouvenir::with('detail')->findOrFail($id);
+    //     $karyawan = karyawan::findOrFail($pengajuan->id_karyawan);
+    //     $statusTerakhir = $pengajuan->tracking->tracking;
 
-        // Otorisasi edit: Pemilik adalah Customer Care ATAU Admin Holding
-        $isOwnerOrAdmin = ($karyawan->jabatan === 'Customer Care' || $karyawan->jabatan === 'Admin Holding') && (auth()->user()->karyawan_id === $pengajuan->id_karyawan);
+    //     // Otorisasi edit: Pemilik adalah Customer Care ATAU Admin Holding
+    //     $isOwnerOrAdmin = ($karyawan->jabatan === 'Customer Care' || $karyawan->jabatan === 'Admin Holding') && (auth()->user()->karyawan_id === $pengajuan->id_karyawan);
 
-        if (!$isOwnerOrAdmin) {
-            return redirect()->route('pengajuansouvenir.index')->with('error', 'Anda tidak berhak mengedit pengajuan ini.');
-        }
+    //     if (!$isOwnerOrAdmin) {
+    //         return redirect()->route('pengajuansouvenir.index')->with('error', 'Anda tidak berhak mengedit pengajuan ini.');
+    //     }
 
-        // Logika batasan status edit tetap berlaku
-        if (!str_starts_with($statusTerakhir, 'Ditolak') && $statusTerakhir !== 'Diajukan dan Sedang Ditinjau oleh General Manager') {
-           return redirect()->route('pengajuansouvenir.show', $id)->with('error', 'Data tidak dapat diedit karena sedang diproses.');
-        }
+    //     // Logika batasan status edit tetap berlaku
+    //     if (!str_starts_with($statusTerakhir, 'Ditolak') && $statusTerakhir !== 'Diajukan dan Sedang Ditinjau oleh General Manager') {
+    //        return redirect()->route('pengajuansouvenir.show', $id)->with('error', 'Data tidak dapat diedit karena sedang diproses.');
+    //     }
 
-        $vendors = vendorSouvenir::where('is_active', 1)->get();
-        $souvenirs = souvenir::all();
+    //     $vendors = vendorSouvenir::where('is_active', 1)->get();
+    //     $souvenirs = souvenir::all();
 
-        return view('pengajuansouvenir.edit', compact('pengajuan', 'karyawan', 'vendors', 'souvenirs'));
-    }
+    //     return view('pengajuansouvenir.edit', compact('pengajuan', 'karyawan', 'vendors', 'souvenirs'));
+    // }
 
 
     /**

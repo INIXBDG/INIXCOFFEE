@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
 use App\Models\RKM;
-use App\Models\ChecklistRKM;
+use App\Models\checklistRKM;
 use App\Models\karyawan;
 use App\Models\Perusahaan;
 use Carbon\Carbon;
@@ -214,7 +214,7 @@ if ($request->filled('minggu') && $request->filled('bulan') && $request->filled(
             $field = $request->field;
             $checked = (bool) $request->checked;
 
-            $checklist = ChecklistRKM::firstOrCreate(
+            $checklist = checklistRKM::firstOrCreate(
                 ['id_rkm' => $id],
                 [
                     'registrasi_form' => false,
@@ -310,7 +310,7 @@ if ($request->filled('minggu') && $request->filled('bulan') && $request->filled(
             $field = $request->field;
             $checked = (bool) $request->checked;
 
-            $checklist = ChecklistRKM::firstOrCreate(
+            $checklist = checklistRKM::firstOrCreate(
                 ['id_rkm' => $request->rkm_id],
                 [
                     'registrasi_form' => false,
@@ -357,7 +357,7 @@ if ($request->filled('minggu') && $request->filled('bulan') && $request->filled(
         DB::beginTransaction();
 
         try {
-            $checklist = ChecklistRKM::firstOrNew(['id_rkm' => $id]);
+            $checklist = checklistRKM::firstOrNew(['id_rkm' => $id]);
             $changes = [];
 
             foreach ($request->checklists as $item) {

@@ -19,7 +19,7 @@ use App\Models\tracking_pengajuan_barang;
 use App\Models\User;
 use App\Notifications\ApprovalExamNotification;
 use App\Notifications\BayarExamNotification;
-use App\Notifications\pengajuanbarangNotification;
+use App\Notifications\PengajuanbarangNotification;
 use App\Notifications\PengajuanexamNotification;
 use App\Notifications\TicketNotification;
 use App\Notifications\updateExamNotification;
@@ -917,7 +917,7 @@ class examController extends Controller
             foreach ($financeUsers as $user) {
                 NotificationFacade::send(
                     $user,
-                    new pengajuanbarangNotification($dataNotif, $path, $type, $user->id)
+                    new PengajuanbarangNotification($dataNotif, $path, $type, $user->id)
                 );
             }
 

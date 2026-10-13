@@ -27,7 +27,7 @@ class activityLog extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'user_id', 'id');
+        return $this->belongsTo(karyawan::class, 'user_id', 'id');
     }
 
     protected static function booted()

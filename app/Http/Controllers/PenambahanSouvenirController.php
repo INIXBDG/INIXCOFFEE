@@ -99,7 +99,7 @@ class PenambahanSouvenirController extends Controller
                     ->orderBy('tanggal_awal', 'asc')
                     ->get();
 
-        $souvenirs = Souvenir::where('stok', '>', 0)->get();
+        $souvenirs = souvenir::where('stok', '>', 0)->get();
 
         return view('penambahansouvenir.create', compact('souvenirs', 'rkms', 'karyawan'));
     }
@@ -153,7 +153,7 @@ class PenambahanSouvenirController extends Controller
                 $qtyRequested = $quantities[$index];
 
                 // Lock baris data untuk mencegah pengurangan stok ganda bersamaan
-                $souvenir = Souvenir::lockForUpdate()->find($souvenirId);
+                $souvenir = souvenir::lockForUpdate()->find($souvenirId);
 
                 // Cek Stok Realtime
                 if (!$souvenir || $souvenir->stok < $qtyRequested) {
@@ -256,7 +256,7 @@ class PenambahanSouvenirController extends Controller
     {
         $penambahan = PenambahanSouvenir::with(['rkm', 'souvenir'])->findOrFail($id);
 
-        $souvenirs = Souvenir::where('stok', '>', 0)
+        $souvenirs = souvenir::where('stok', '>', 0)
                         ->orWhere('id', $penambahan->id_souvenir)
                         ->get();
 
@@ -300,13 +300,13 @@ class PenambahanSouvenirController extends Controller
 
             // A. KEMBALIKAN STOK LAMA
             // Kita kembalikan stok souvenir yang lama seolah-olah transaksi dibatalkan dulu.
-            $oldSouvenir = Souvenir::lockForUpdate()->find($penambahan->id_souvenir);
+            $oldSouvenir = souvenir::lockForUpdate()->find($penambahan->id_souvenir);
             if ($oldSouvenir) {
                 $oldSouvenir->increment('stok', $penambahan->qty);
             }
 
             // B. CEK & POTONG STOK BARU (Bisa jadi itemnya sama, tapi stok sudah updated di langkah A)
-            $newSouvenir = Souvenir::lockForUpdate()->find($request->id_souvenir);
+            $newSouvenir = souvenir::lockForUpdate()->find($request->id_souvenir);
 
             if (!$newSouvenir) {
                 throw new \Exception("Souvenir tidak ditemukan.");

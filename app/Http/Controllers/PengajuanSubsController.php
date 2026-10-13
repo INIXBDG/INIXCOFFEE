@@ -52,7 +52,7 @@ class PengajuanSubsController extends Controller
     public function getPengajuanSubs($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($user);
+        $karyawan = karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
 
@@ -424,7 +424,7 @@ class PengajuanSubsController extends Controller
                 case 'Education Manager':
                 case 'GM':
                     $status = "Telah disetujui oleh {$jabatan} dan sedang ditinjau oleh Koordinator ITSM";
-                    $nextUser = Karyawan::where('jabatan', 'Koordinator ITSM')->first();
+                    $nextUser = karyawan::where('jabatan', 'Koordinator ITSM')->first();
 
                     $e = TrackingPengajuanSubs::create([
                         'id_pengajuan_subs' => $id,
@@ -459,7 +459,7 @@ class PengajuanSubsController extends Controller
                         $updatePayload['id_tracking'] = $final->id;
                     } else {
                         $status = "Telah disetujui oleh Koordinator ITSM dan sedang diproses oleh Finance";
-                        $nextUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+                        $nextUser = karyawan::where('jabatan', 'Finance & Accounting')->first();
 
                         $e = TrackingPengajuanSubs::create([
                             'id_pengajuan_subs' => $id,
@@ -637,18 +637,18 @@ class PengajuanSubsController extends Controller
         }
 
         if ($data->karyawan->divisi == 'Education') {
-            $finance = Karyawan::where('jabatan', 'Education Manager')->latest()->first();
+            $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
-            $finance = Karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+            $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Office') {
-            $finance = Karyawan::where('jabatan', 'GM')->latest()->first();
+            $finance = karyawan::where('jabatan', 'GM')->latest()->first();
         } elseif ($data->karyawan->divisi == 'IT Service Management') {
-            $finance = Karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+            $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
         } else {
             $finance = null;
         }
 
-        $gm = Karyawan::where('jabatan', 'GM')->latest()->first();
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
 
         return view('exports.pengajuan_subs-pdf', compact('data', 'finance', 'gm', 'subsSnapshot'));
     }

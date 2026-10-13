@@ -23,7 +23,7 @@ class hasilexam extends Model
 
     public function exam()
     {
-        return $this->belongsTo(Eksam::class, 'id_exam', 'id');
+        return $this->belongsTo(eksam::class, 'id_exam', 'id');
     }
 
     public function registexam()

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Office;
+namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -8,9 +8,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Models\RKM;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Perusahaan;
-use App\Models\Eksam;
+use App\Models\eksam;
 use App\Models\BundlingExam;
 use App\Http\Resources\PostResource;
 use App\Models\DokumentasiExam;
@@ -78,11 +78,11 @@ class OfficeExamController extends Controller
                     $allInstructorIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->instruktur_all ?? '')))->unique();
                     $allRkmIds = $rows->flatMap(fn($row) => array_filter(explode(', ', $row->id ?? '')))->unique();
 
-                    $salesByCode = Karyawan::whereIn('kode_karyawan', $allSalesIds)->get()->keyBy('kode_karyawan');
-                    $instructorsByCode = Karyawan::whereIn('kode_karyawan', $allInstructorIds)->get()->keyBy('kode_karyawan');
+                    $salesByCode = karyawan::whereIn('kode_karyawan', $allSalesIds)->get()->keyBy('kode_karyawan');
+                    $instructorsByCode = karyawan::whereIn('kode_karyawan', $allInstructorIds)->get()->keyBy('kode_karyawan');
                     $companiesById = Perusahaan::whereIn('id', $allCompanyIds)->get()->keyBy('id');
                     $bundlingByRkm = BundlingExam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
-                    $examByRkm = Eksam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
+                    $examByRkm = eksam::whereIn('id_rkm', $allRkmIds)->get()->groupBy('id_rkm');
 
                     foreach ($rows as $row) {
                         $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
@@ -238,7 +238,7 @@ class OfficeExamController extends Controller
         }
         
         $perusahaanMap = Perusahaan::whereIn('id', array_unique($allPerusahaanIds))->pluck('nama_perusahaan', 'id');
-        $karyawanMap = Karyawan::whereIn('kode_karyawan', array_unique($allKaryawanIds))->pluck('nama_lengkap', 'kode_karyawan');
+        $karyawanMap = karyawan::whereIn('kode_karyawan', array_unique($allKaryawanIds))->pluck('nama_lengkap', 'kode_karyawan');
         
         $details = [];
         foreach ($rkms as $rkm) {

@@ -44,7 +44,7 @@ class KegiatanController extends Controller
     public function index()
     {
         $kegiatan = Kegiatan::all();
-        $karyawans = Karyawan::all();
+        $karyawans = karyawan::all();
         $drivers = karyawan::where('jabatan', 'Driver')
             ->where(function ($query) {
                 $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {
@@ -239,7 +239,7 @@ class KegiatanController extends Controller
 
         $idPeserta = $kegiatan->id_peserta ?? [];
 
-        $peserta = Karyawan::whereIn('id', $idPeserta)->get();
+        $peserta = karyawan::whereIn('id', $idPeserta)->get();
 
         return view('office.rab.show', compact('kegiatan', 'totalRincian', 'absensi', 'karyawan', 'peserta'));
     }
@@ -298,7 +298,7 @@ class KegiatanController extends Controller
 
         $idPeserta = $kegiatan->id_peserta ?? [];
 
-        $peserta = Karyawan::whereIn('id', $idPeserta)->get();
+        $peserta = karyawan::whereIn('id', $idPeserta)->get();
 
         $dataPengajuanBarang = PengajuanBarang::with('karyawan', 'tracking', 'detail')->where('id_kegiatan', $id)->get();
 

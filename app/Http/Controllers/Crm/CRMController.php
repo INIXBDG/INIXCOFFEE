@@ -11,7 +11,7 @@ use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Nilaifeedback;
 use App\Models\Peluang;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\Perusahaan;
 use App\Models\Peserta;
@@ -548,9 +548,9 @@ class CRMController extends Controller
 
     public function indexKoordinasi()
     {
-        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+        $latestPerKendaraan = perbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
 
-        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+        $kendaraan = perbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
             $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
         })
             ->where(function ($query) {
@@ -576,7 +576,7 @@ class CRMController extends Controller
         $extends = 'layouts_crm.app';
         $section = 'crm_contents';
 
-        return view('office.pickupdriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.index', compact('dataDriver', 'kendaraan', 'extends', 'section'));
     }
 
     public function createKoordinasi()
@@ -632,6 +632,6 @@ class CRMController extends Controller
         $extends = 'layouts_crm.app';
         $section = 'crm_contents';
 
-        return view('office.pickupdriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
+        return view('office.pickupDriver.create', compact('dataDriver', 'budgetPerjalanan', 'kendaraan', 'extends', 'section'));
     }
 }

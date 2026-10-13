@@ -28,7 +28,7 @@ class User extends Authenticatable
         'id_instruktur',
         'id_sales',
         'karyawan_id',
-        'ttd',
+        // 'ttd',
     ];
 
     /**

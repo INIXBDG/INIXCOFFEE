@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\KontrolTugas;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Notifications\ShiftConfirmationNotification;
 use Illuminate\Support\Facades\Notification;
 use Carbon\Carbon;
@@ -33,7 +33,7 @@ class FallbackShift2Notification extends Command
 
         if (!$shift1Task) return;
 
-        $karyawanShift1 = Karyawan::find($shift1Task->id_karyawan);
+        $karyawanShift1 = karyawan::find($shift1Task->id_karyawan);
 
         if ($karyawanShift1) {
             Notification::send($karyawanShift1, new ShiftConfirmationNotification(2, $today));

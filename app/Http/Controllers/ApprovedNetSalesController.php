@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\perhitunganNetSales;
 use App\Models\approvedNetSales;
-use App\Models\Karyawan;
 use App\Models\RKM;
 use App\Models\trackingNetSales;
 use App\Models\User;

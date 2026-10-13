@@ -1,7 +1,7 @@
 <?php
 namespace App\Exports;
 
-use App\Models\Lembur;
+use App\Models\lembur;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
@@ -22,7 +22,7 @@ class LemburExport implements FromCollection, WithHeadings, ShouldAutoSize
     public function collection()
     {
         // Fetch data for the specified month and year
-        $data = Lembur::with('hitunglembur')
+        $data = lembur::with('hitunglembur')
             ->whereMonth('tanggal_lembur', $this->month)
             ->whereYear('tanggal_lembur', $this->year)
             ->get();

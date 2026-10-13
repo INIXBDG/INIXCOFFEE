@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Broadcasting\PrivateChannel;
 
-class pengajuanbarangNotification extends Notification implements ShouldQueue
+class PengajuanbarangNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

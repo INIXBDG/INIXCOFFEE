@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\detailPengajuanBarang;
 use App\Models\tracking_pengajuan_barang;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Materi;
 use App\Models\Module;
 use App\Models\PengajuanBarang;
@@ -152,8 +152,8 @@ class KlaimModulController extends Controller
             $divisi = $karyawan->divisi;
             $jabatan = $karyawan->jabatan;
 
-            $Eduman = Karyawan::where('jabatan', 'Education Manager')->first();
-            $GM = Karyawan::where('jabatan', 'GM')->first();
+            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
+            $GM = karyawan::where('jabatan', 'GM')->first();
             $users = [];
 
             switch ($jabatan) {
@@ -303,7 +303,7 @@ class KlaimModulController extends Controller
                 ]);
 
                 $module = $klaimModul->module;
-                $karyawanPembuat = Karyawan::where('kode_karyawan', $module->kode_karyawan)->first();
+                $karyawanPembuat = karyawan::where('kode_karyawan', $module->kode_karyawan)->first();
 
                 if ($karyawanPembuat) {
                     $pengajuanBarang = PengajuanBarang::create([
@@ -328,7 +328,7 @@ class KlaimModulController extends Controller
 
                     $pengajuanBarang->update(['id_tracking' => $tracking->id]);
 
-                    $financeUser = Karyawan::where('jabatan', 'Finance & Accounting')->first();
+                    $financeUser = karyawan::where('jabatan', 'Finance & Accounting')->first();
                     if ($financeUser) {
                         $users = [$financeUser->kode_karyawan, $karyawanPembuat->kode_karyawan];
                         $userObjs = User::whereHas('karyawan', function ($query) use ($users) {

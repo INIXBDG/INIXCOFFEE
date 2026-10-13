@@ -184,22 +184,22 @@ class PesertaController extends Controller
      * @param  mixed $id
      * @return View
      */
-    public function show(string $id): View
-    {
-        $user = Auth::user();
-        $query = Peserta::query();
+    // public function show(string $id): View
+    // {
+    //     $user = Auth::user();
+    //     $query = Peserta::query();
 
-        if ($user && $user->jabatan === 'Sales') {
-            $salesKey = $this->getSalesKey();
-            $query->whereHas('perusahaan', function ($q) use ($salesKey) {
-                $q->where('sales_key', $salesKey);
-            });
-        }
+    //     if ($user && $user->jabatan === 'Sales') {
+    //         $salesKey = $this->getSalesKey();
+    //         $query->whereHas('perusahaan', function ($q) use ($salesKey) {
+    //             $q->where('sales_key', $salesKey);
+    //         });
+    //     }
 
-        $post = $query->findOrFail($id);
+    //     $post = $query->findOrFail($id);
 
-        return view('peserta.show', compact('post'));
-    }
+    //     return view('peserta.show', compact('post'));
+    // }
 
     /**
      * edit
@@ -326,7 +326,7 @@ class PesertaController extends Controller
         }
 
         $dataPeserta = Peserta::with('perusahaan')->get();
-        $pdf = PDF::loadView('exports.peserta-pdf', compact('dataPeserta'));
+        $pdf = Pdf::loadView('exports.peserta-pdf', compact('dataPeserta'));
 
         return $pdf->download('Data_Peserta.pdf');
     }
@@ -370,7 +370,7 @@ class PesertaController extends Controller
                 ->latest()
                 ->get();
 
-        $pdf = PDF::loadView('exports.peserta-pdf', compact('dataPeserta'))
+        $pdf = Pdf::loadView('exports.peserta-pdf', compact('dataPeserta'))
                   ->setPaper('a4', 'landscape');
 
         return $pdf->download('Data_Peserta.pdf');

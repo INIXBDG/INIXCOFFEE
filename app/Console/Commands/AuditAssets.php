@@ -388,7 +388,16 @@ class AuditAssets extends Command
         if (is_dir($abs)) {
             return null;
         }
-        if (filesize($abs) === 0) {
+        if (!is_file($abs)) {
+            $this->add('ERROR', 'Asset tidak dapat dibaca', $label, $line, "public/$actual bukan file yang dapat diakses (target link mungkin tidak ada)");
+            return null;
+        }
+        $size = filesize($abs);
+        if ($size === false) {
+            $this->add('ERROR', 'Asset tidak dapat dibaca', $label, $line, "Ukuran public/$actual tidak dapat diperiksa");
+            return null;
+        }
+        if ($size === 0) {
             $this->add('WARNING', 'Asset kosong', $label, $line, "public/$actual berukuran 0 byte");
         }
         if (str_ends_with(strtolower($abs), '.css')) {
@@ -399,7 +408,11 @@ class AuditAssets extends Command
 
     private function checkCss(string $abs): void
     {
-        if (isset($this->cssDone[$abs]) || filesize($abs) > 1500000) {
+        if (isset($this->cssDone[$abs]) || !is_file($abs)) {
+            return;
+        }
+        $size = filesize($abs);
+        if ($size === false || $size > 1500000) {
             return;
         }
         $this->cssDone[$abs] = true;

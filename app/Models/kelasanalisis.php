@@ -27,7 +27,7 @@ class kelasanalisis extends Model
         'transportasi',
         'pa_hotel_akomodasi',
         'pa_hotel',
-        'total_pa_hotel',
+        // 'total_pa_hotel',
         'exam',
         'pc_pax',
         'pc_instruktur',

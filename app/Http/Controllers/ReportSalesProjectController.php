@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lead;
 use App\Models\LeadProject; // Integrasi Model Lead
 use App\Models\Project;
 use Carbon\Carbon;

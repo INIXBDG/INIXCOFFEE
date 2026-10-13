@@ -653,18 +653,18 @@ class PengajuanLabdanSubsController extends Controller
 
         // 2. Tentukan siapa yang "menyetujui" berdasarkan divisi
         if ($data->karyawan->divisi == 'Education') {
-            $finance = Karyawan::where('jabatan', 'Education Manager')->latest()->first();
+            $finance = karyawan::where('jabatan', 'Education Manager')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Sales & Marketing') {
-            $finance = Karyawan::where('jabatan', 'SPV Sales')->latest()->first();
+            $finance = karyawan::where('jabatan', 'SPV Sales')->latest()->first();
         } elseif ($data->karyawan->divisi == 'Office') {
-            $finance = Karyawan::where('jabatan', 'GM')->latest()->first();
+            $finance = karyawan::where('jabatan', 'GM')->latest()->first();
         } elseif ($data->karyawan->divisi == 'IT Service Management') {
-            $finance = Karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
+            $finance = karyawan::where('jabatan', 'Koordinator ITSM')->latest()->first();
         } else {
             $finance = null;
         }
 
-        $gm = Karyawan::where('jabatan', 'GM')->latest()->first();
+        $gm = karyawan::where('jabatan', 'GM')->latest()->first();
 
         // 3. Kirim variabel snapshot ke view
         return view('exports.pengajuan_labsubs-pdf', compact('data', 'finance', 'gm', 'labSnapshot', 'subsSnapshot'));

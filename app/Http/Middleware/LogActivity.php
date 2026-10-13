@@ -3,92 +3,95 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Illuminate\Support\Facades\Auth;
-use Jenssegers\Agent\Agent;
-use App\Models\activityLog;
+use Illuminate\Http\Request;
 
 class LogActivity
 {
-    public function handle($request, Closure $next)
-    {
-        $response = $next($request);
+    // public function handle($request, Closure $next)
+    // {
+    //     $response = $next($request);
 
-        if (!Auth::check()) {
-            return $response;
-        }
+    //     if (!Auth::check()) {
+    //         return $response;
+    //     }
 
-        $agent = new Agent();
+    //     $agent = new Agent();
 
-        $userAgent = $request->header('User-Agent');
-        $ip = $request->ip();
-        $agent->setUserAgent($userAgent);
+    //     $userAgent = $request->header('User-Agent');
+    //     $ip = $request->ip();
+    //     $agent->setUserAgent($userAgent);
 
-        $platform = $agent->platform();
-        $browser = $agent->browser();
-        $device = $agent->device();
-        $currentUrl = $request->fullUrl();
-        $arrayUrl = explode('8001', $currentUrl);
+    //     $platform = $agent->platform();
+    //     $browser = $agent->browser();
+    //     $device = $agent->device();
+    //     $currentUrl = $request->fullUrl();
+    //     $arrayUrl = explode('8001', $currentUrl);
       
-        if (str_ends_with($currentUrl, '/user-dropdown')) {
-            return $response;
-        }
+    //     if (str_ends_with($currentUrl, '/user-dropdown')) {
+    //         return $response;
+    //     }
       
-        $status = $request->get('activity_status', $this->getStatusFromMethod($request->method()));
+    //     $status = $request->get('activity_status', $this->getStatusFromMethod($request->method()));
 
-        if ($request->routeIs('absensi.masuk')) {
-            $status = 'Absen Masuk';
-        } elseif ($request->routeIs('absensi.keluar')) {
-            $status = 'Absen Keluar';
-        }
+    //     if ($request->routeIs('absensi.masuk')) {
+    //         $status = 'Absen Masuk';
+    //     } elseif ($request->routeIs('absensi.keluar')) {
+    //         $status = 'Absen Keluar';
+    //     }
 
-        $detail = null;
+    //     $detail = null;
 
-        switch ($request->method()) {
-            case 'POST':
-                $detail = json_encode($request->except(['_token', 'password']), JSON_UNESCAPED_UNICODE);
-                break;
+    //     switch ($request->method()) {
+    //         case 'POST':
+    //             $detail = json_encode($request->except(['_token', 'password']), JSON_UNESCAPED_UNICODE);
+    //             break;
 
-            case 'PUT':
-            case 'PATCH':
-                $detail = json_encode($request->except(['_token', 'password']), JSON_UNESCAPED_UNICODE);
-                break;
+    //         case 'PUT':
+    //         case 'PATCH':
+    //             $detail = json_encode($request->except(['_token', 'password']), JSON_UNESCAPED_UNICODE);
+    //             break;
 
-            case 'DELETE':
-                $detail = 'Deleted ID: ' . $request->route('id');
-                break;
+    //         case 'DELETE':
+    //             $detail = 'Deleted ID: ' . $request->route('id');
+    //             break;
 
-            default:
-                $detail = null;
-        }
+    //         default:
+    //             $detail = null;
+    //     }
 
-        $activityLog = new activityLog();
-        $activityLog->user_id = Auth::id();
-        $activityLog->status = $status;
-        $activityLog->url = $currentUrl;
-        $activityLog->ip = $ip;
-        $activityLog->user_agent = $userAgent;
-        $activityLog->platform = $platform;
-        $activityLog->browser = $browser;
-        $activityLog->device = $device;
-        $activityLog->method = $request->method();
-        $activityLog->detail = $detail;
-        $activityLog->save();
+    //     $activityLog = new activityLog();
+    //     $activityLog->user_id = Auth::id();
+    //     $activityLog->status = $status;
+    //     $activityLog->url = $currentUrl;
+    //     $activityLog->ip = $ip;
+    //     $activityLog->user_agent = $userAgent;
+    //     $activityLog->platform = $platform;
+    //     $activityLog->browser = $browser;
+    //     $activityLog->device = $device;
+    //     $activityLog->method = $request->method();
+    //     $activityLog->detail = $detail;
+    //     $activityLog->save();
 
-        return $response;
-    }
+    //     return $response;
+    // }
 
-    private function getStatusFromMethod($method)
+    // private function getStatusFromMethod($method)
+    // {
+    //     switch ($method) {
+    //         case 'POST':
+    //             return 'create';
+    //         case 'PUT':
+    //         case 'PATCH':
+    //             return 'update';
+    //         case 'DELETE':
+    //             return 'delete';
+    //         default:
+    //             return 'visit';
+    //     }
+    // } 
+
+    public function handle(Request $request, Closure $next)
     {
-        switch ($method) {
-            case 'POST':
-                return 'create';
-            case 'PUT':
-            case 'PATCH':
-                return 'update';
-            case 'DELETE':
-                return 'delete';
-            default:
-                return 'visit';
-        }
+        return $next($request);
     }
 }

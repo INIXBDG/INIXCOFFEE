@@ -13,7 +13,7 @@ class Registrasi extends Model
         'id_materi',
         'id_instruktur',
         'id_sales',
-        'delete_at',
+        'deleted_at',
         'deleted_by',
     ];
 

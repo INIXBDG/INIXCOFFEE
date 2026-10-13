@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
-use App\Models\Jabatan;
-use App\Models\Karyawan;
+use App\Models\activityLog;
+use App\Models\jabatan;
+use App\Models\karyawan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -34,7 +34,7 @@ class UserController extends Controller
         // Catatan: Jangan gunakan ini sebagai primary key sebenarnya, biarkan auto increment
         $lastUserId = User::max('id') ?? 0;
         $countuser = $lastUserId + 1;
-        $jabatan = Jabatan::all();
+        $jabatan = jabatan::all();
 
         return view('user.register', compact('countuser', 'jabatan'));
     }
@@ -69,7 +69,7 @@ class UserController extends Controller
             }
 
             // Buat data karyawan terlebih dahulu
-            $karyawan = Karyawan::create([
+            $karyawan = karyawan::create([
                 'nama_lengkap' => $request->nama_lengkap,
                 'status_aktif' => '1',
                 'jabatan' => $request->jabatan,
@@ -130,19 +130,19 @@ class UserController extends Controller
         // Ambil log aktivitas berdasarkan user yang SEDANG DILIHAT, bukan user yang login
         $targetUserId = $userId;
 
-        $dataAuth = ActivityLog::with('karyawan')
+        $dataAuth = activityLog::with('karyawan')
             ->where('user_id', $targetUserId)
             ->whereIn('status', ['Login', 'Logout'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $dataVisit = ActivityLog::with('karyawan')
+        $dataVisit = activityLog::with('karyawan')
             ->where('user_id', $targetUserId)
             ->whereNotIn('status', ['Login', 'Logout', 'Absen Masuk', 'Absen keluar'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $dataAbsen = ActivityLog::with('karyawan')
+        $dataAbsen = activityLog::with('karyawan')
             ->where('user_id', $targetUserId)
             ->whereIn('status', ['Absen Masuk', 'Absen Keluar'])
             ->orderBy('created_at', 'desc')
@@ -214,7 +214,7 @@ class UserController extends Controller
 
         // Hapus data karyawan yang terkait
         if ($users->karyawan_id) {
-            $karyawan = Karyawan::find($users->karyawan_id);
+            $karyawan = karyawan::find($users->karyawan_id);
             if ($karyawan) {
                 $karyawan->delete();
             }

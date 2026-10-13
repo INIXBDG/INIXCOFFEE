@@ -14,7 +14,7 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
-    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'telepon', 'gaji', 'tunjangan_jabatan', 'alamat_lengkap', 'gender', 'tempat_lahir', 'tanggal_lahir', 'religion', 'provinsi', 'kota', 'resigned_at', 'alasan_resign'];
+    protected $fillable = ['foto', 'nip', 'nama_lengkap', 'email', 'divisi', 'jabatan', 'rekening_maybank', 'rekening_bca', 'status_aktif', 'awal_probation', 'akhir_probation', 'awal_kontrak', 'akhir_kontrak', 'awal_tetap', 'akhir_tetap', 'keterangan', 'kode_karyawan', 'ttd', 'cuti', 'email', 'whatsapp', 'Telepon', 'gaji', 'tunjangan_jabatan', 'alamat_lengkap', 'gender', 'tempat_lahir', 'tanggal_lahir', 'religion', 'provinsi', 'kota', 'resigned_at', 'alasan_resign'];
 
     public function user()
     {
@@ -45,12 +45,12 @@ class karyawan extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class, 'karyawan_key', 'id');
+        return $this->hasMany(comment::class, 'karyawan_key', 'id');
     }
 
     public function rkmsSales()
     {
-        return $this->hasMany(Rkm::class, 'sales_key', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'sales_key', 'kode_karyawan');
     }
 
     public function rkmsInstruktur()
@@ -60,12 +60,12 @@ class karyawan extends Model
 
     public function rkmsInstruktur2()
     {
-        return $this->hasMany(Rkm::class, 'instruktur_key2', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'instruktur_key2', 'kode_karyawan');
     }
 
     public function rkmsAsisten()
     {
-        return $this->hasMany(Rkm::class, 'asisten_key', 'kode_karyawan');
+        return $this->hasMany(RKM::class, 'asisten_key', 'kode_karyawan');
     }
     protected function image(): Attribute
     {

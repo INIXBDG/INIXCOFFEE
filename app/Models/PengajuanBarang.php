@@ -52,7 +52,7 @@ class PengajuanBarang extends Model
 
     public function user()
     {
-        return $this->belongsTo(user::class, 'id_karyawan', 'id');
+        return $this->belongsTo(User::class, 'id_karyawan', 'id');
     }
 
     public function tracking()

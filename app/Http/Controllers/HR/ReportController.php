@@ -242,30 +242,30 @@ class ReportController extends Controller
         }
     }
 
-    public function edit(ReportTemplate $template)
-    {
-        $availableColumns = $this->getAllowedColumns();
-        $placeholders = $template->placeholders->sortBy('sort_order');
+    // public function edit(ReportTemplate $template)
+    // {
+    //     $availableColumns = $this->getAllowedColumns();
+    //     $placeholders = $template->placeholders->sortBy('sort_order');
 
-        $existingMappings = [];
-        foreach ($placeholders as $p) {
-            $existingMappings[] = [
-                'key' => $p->placeholder_key,
-                'label' => $p->placeholder_label,
-                'type' => $p->field_type,
-                'is_manual' => (bool) $p->is_manual,
-                'source_column' => $p->source_column,
-                'config' => $p->config,
-            ];
-        }
+    //     $existingMappings = [];
+    //     foreach ($placeholders as $p) {
+    //         $existingMappings[] = [
+    //             'key' => $p->placeholder_key,
+    //             'label' => $p->placeholder_label,
+    //             'type' => $p->field_type,
+    //             'is_manual' => (bool) $p->is_manual,
+    //             'source_column' => $p->source_column,
+    //             'config' => $p->config,
+    //         ];
+    //     }
 
-        return view('HR.template.edit', compact(
-            'template',
-            'availableColumns',
-            'placeholders',
-            'existingMappings'
-        ));
-    }
+    //     return view('HR.template.edit', compact(
+    //         'template',
+    //         'availableColumns',
+    //         'placeholders',
+    //         'existingMappings'
+    //     ));
+    // }
 
     public function getEditData(ReportTemplate $template): JsonResponse
     {
@@ -566,17 +566,17 @@ class ReportController extends Controller
     // =========================================================
     // GENERATE FORM & GENERATE
     // =========================================================
-    public function generateForm(ReportTemplate $template)
-    {
-        $sourceTable = $template->source_table ?? '';
-        $sourceData = !empty($sourceTable) ? $this->getSourceOptions($sourceTable) : collect();
-        $placeholders = $template->placeholders->sortBy(fn ($p) => [
-            $this->isManualFieldType($p->field_type) ? 1 : 0,
-            $p->sort_order,
-        ]);
+    // public function generateForm(ReportTemplate $template)
+    // {
+    //     $sourceTable = $template->source_table ?? '';
+    //     $sourceData = !empty($sourceTable) ? $this->getSourceOptions($sourceTable) : collect();
+    //     $placeholders = $template->placeholders->sortBy(fn ($p) => [
+    //         $this->isManualFieldType($p->field_type) ? 1 : 0,
+    //         $p->sort_order,
+    //     ]);
 
-        return view('HR.template.generate', compact('template', 'sourceData', 'placeholders'));
-    }
+    //     return view('HR.template.generate', compact('template', 'sourceData', 'placeholders'));
+    // }
 
     public function generate(Request $request, ReportTemplate $template)
     {
@@ -838,19 +838,19 @@ class ReportController extends Controller
         ]);
     }
 
-    public function history(Request $request, ?ReportTemplate $template = null)
-    {
-        $query = ReportGeneration::with(['template', 'generator'])
-            ->where('generated_by', Auth::id());
+    // public function history(Request $request, ?ReportTemplate $template = null)
+    // {
+    //     $query = ReportGeneration::with(['template', 'generator'])
+    //         ->where('generated_by', Auth::id());
 
-        if ($template) {
-            $query->where('template_id', $template->id);
-        }
+    //     if ($template) {
+    //         $query->where('template_id', $template->id);
+    //     }
 
-        $generations = $query->latest()->paginate(20);
+    //     $generations = $query->latest()->paginate(20);
 
-        return view('HR.template.history', compact('generations', 'template'));
-    }
+    //     return view('HR.template.history', compact('generations', 'template'));
+    // }
 
     public function getHistoryData(Request $request, ?ReportTemplate $template = null): JsonResponse
     {

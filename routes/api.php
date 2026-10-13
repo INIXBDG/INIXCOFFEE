@@ -88,6 +88,6 @@ Route::post('/koordinasi-ob/webhook', [KoordinasiOfficeBoyController::class, 'we
 
 Route::prefix('pickup-driver')->group(function () {
     Route::post('webhook', [PickupDriverWebhookController::class, 'handle']);
-    Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+    // Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
 });
 Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::class, 'requestHandler']);

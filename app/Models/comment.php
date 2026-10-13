@@ -21,6 +21,6 @@ class comment extends Model
 
     public function karyawan()
     {
-        return $this->belongsTo(Karyawan::class, 'karyawan_key', 'id');
+        return $this->belongsTo(karyawan::class, 'karyawan_key', 'id');
     }
 }

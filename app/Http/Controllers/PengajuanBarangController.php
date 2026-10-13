@@ -18,9 +18,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\WebPushService;
 use App\Models\PushSubscription;
 use App\Models\JurnalAkuntansi;
-use App\Models\HistoriPerubahanBarang;
 use App\Models\no_akun;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use Illuminate\Support\Facades\Log;
 use App\Models\PembelianHr;
 use App\Models\TrackingPembelianHr;
@@ -111,7 +110,7 @@ class PengajuanBarangController extends Controller
     public function getPengajuanBarang($month, $year)
     {
         $user = auth()->user()->karyawan_id;
-        $karyawan = Karyawan::findOrFail($user);
+        $karyawan = karyawan::findOrFail($user);
         $jabatan = $karyawan->jabatan;
         $divisi = $karyawan->divisi;
 
@@ -368,7 +367,7 @@ class PengajuanBarangController extends Controller
         $tracking = tracking_pengajuan_barang::where('id_pengajuan_barang', $id)->latest()->first();
         $totalHarga = 0;
         $jabatan = auth()->user()->jabatan;
-        $perbaikanKendaraan = PerbaikanKendaraan::where('pengajuanbarangs_id', $id)->first(); // untuk update perbaikan kendaraan
+        $perbaikanKendaraan = perbaikanKendaraan::where('pengajuanbarangs_id', $id)->first(); // untuk update perbaikan kendaraan
 
         if ($request->approval == '1' && $jabatan == 'Finance & Accounting') {
             $status = $request->status;
@@ -684,7 +683,7 @@ class PengajuanBarangController extends Controller
 
         if ($data->perbaikanKendaraan) {
             // Hapus langsung dari database untuk menghindari infinite loop
-            PerbaikanKendaraan::where('pengajuanbarangs_id', $id)->delete();
+            perbaikanKendaraan::where('pengajuanbarangs_id', $id)->delete();
         }
 
         // Ambil detail dan tracking yang terkait

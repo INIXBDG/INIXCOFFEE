@@ -19,11 +19,11 @@ class Kwitansi extends Model
     }
         public function rkm()
     {
-        return $this->hasOneThrough(Rkm::class, Invoice::class, 'id', 'id', 'invoice_id', 'rkm_id');
+        return $this->hasOneThrough(RKM::class, Invoice::class, 'id', 'id', 'invoice_id', 'rkm_id');
     }
     public function karyawan()
 {
-    return $this->belongsTo(Karyawan::class, 'karyawan_id'); 
+    return $this->belongsTo(karyawan::class, 'karyawan_id'); 
     // pastikan kolom 'karyawan_id' ada di tabel kwitansi
 }
 

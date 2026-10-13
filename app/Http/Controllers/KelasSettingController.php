@@ -6,7 +6,7 @@ use App\Models\Inventaris;
 use App\Models\KelasSetting;
 use App\Models\RKM;
 use App\Models\Materi;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -472,8 +472,8 @@ class KelasSettingController extends Controller
         $cacheKey = 'meta_karyawan_' . md5(implode(',', $jabatanList));
         return Cache::remember($cacheKey, 7200, function () use ($jabatanList) {
             try {
-                if (!class_exists(Karyawan::class)) return [];
-                return Karyawan::whereIn('jabatan', $jabatanList)
+                if (!class_exists(karyawan::class)) return [];
+                return karyawan::whereIn('jabatan', $jabatanList)
                     ->where('status_aktif', '1')
                     ->select('kode_karyawan', 'nama_lengkap', 'jabatan')
                     ->orderBy('nama_lengkap')

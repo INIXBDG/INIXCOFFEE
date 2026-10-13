@@ -9,10 +9,10 @@ use App\Mail\NotifikasiInterview;
 use App\Mail\NotifikasiTahap;
 use App\Mail\OfferLetter;
 use App\Models\Folder;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Pelamar;
 use App\Models\PelamarFolder;
-use App\Models\PelamarRiwayat;
+use App\Models\Pelamarriwayat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Tcpdf\Fpdi;
 
 class HireController extends Controller
 {
@@ -31,16 +32,16 @@ class HireController extends Controller
 
     public function index(Request $request)
     {
-        $dataJabatan = Karyawan::whereNotIn('jabatan', ['Pilih Jabatan'])
+        $dataJabatan = karyawan::whereNotIn('jabatan', ['Pilih Jabatan'])
             ->whereNot('divisi', 'Direksi')
             ->distinct()
             ->pluck('jabatan');
 
-        $dataDivisi = Karyawan::whereNotIn('divisi', ['Pilih Divisi', 'Direksi'])
+        $dataDivisi = karyawan::whereNotIn('divisi', ['Pilih Divisi', 'Direksi'])
             ->distinct()
             ->pluck('divisi');
 
-        $Interviewer = Karyawan::whereIn('jabatan', ['HRD', 'GM', 'Direktur Utama', 'Direktur', 'Koordinator ITSM', 'SPV Sales', 'Education Manager'])
+        $Interviewer = karyawan::whereIn('jabatan', ['HRD', 'GM', 'Direktur Utama', 'Direktur', 'Koordinator ITSM', 'SPV Sales', 'Education Manager'])
             ->whereNotNull('nip')
             ->get();
 
@@ -205,7 +206,7 @@ class HireController extends Controller
 
             $pelamar = Pelamar::create([...$validated, 'gaji_diharapkan' => $gajiDiharapkan, 'keahlian' => $keahlian, 'cv_path' => $cvPath, 'portofolio_path' => $portofolioPath, 'tahap_rekrutmen' => 'applied', 'status_aktif' => true]);
 
-            PelamarRiwayat::catat($pelamar->id, 'created', [
+            Pelamarriwayat::catat($pelamar->id, 'created', [
                 'tahap_ke' => 'applied',
                 'keterangan' => 'Pelamar ditambahkan secara manual oleh HR.',
             ]);
@@ -307,7 +308,7 @@ class HireController extends Controller
 
             $pelamar->update($validated);
 
-            PelamarRiwayat::catat($pelamar->id, 'updated', [
+            Pelamarriwayat::catat($pelamar->id, 'updated', [
                 'keterangan' => 'Data pelamar diperbarui.',
             ]);
 
@@ -355,7 +356,7 @@ class HireController extends Controller
                 'rating' => $request->rating ?? $pelamar->rating,
             ]);
 
-            PelamarRiwayat::catat($pelamar->id, 'moved', [
+            Pelamarriwayat::catat($pelamar->id, 'moved', [
                 'tahap_dari' => $tahapLama,
                 'tahap_ke' => $request->tahap_ke,
                 'rating' => $request->rating,
@@ -397,7 +398,7 @@ class HireController extends Controller
                 'simpan_talent_pool' => $request->boolean('simpan_talent_pool'),
             ]);
 
-            PelamarRiwayat::catat($pelamar->id, 'rejected', [
+            Pelamarriwayat::catat($pelamar->id, 'rejected', [
                 'tahap_dari' => $tahapLama,
                 'tahap_ke' => 'rejected',
                 'keterangan' => $request->alasan_penolakan ?? $request->catatan_internal,
@@ -446,7 +447,7 @@ class HireController extends Controller
                 'tahap_rekrutmen' => 'interview',
             ]);
 
-            PelamarRiwayat::catat($pelamar->id, 'interview_scheduled', [
+            Pelamarriwayat::catat($pelamar->id, 'interview_scheduled', [
                 'tahap_ke' => 'interview',
                 'keterangan' => $request->catatan,
                 'metadata' => [
@@ -510,7 +511,7 @@ class HireController extends Controller
 
             $totalTunjanganHarian = $tunjanganMakan + $tunjanganTransport;
 
-            PelamarRiwayat::catat($pelamar->id, 'offer_sent', [
+            Pelamarriwayat::catat($pelamar->id, 'offer_sent', [
                 'tahap_ke' => 'offer',
                 'keterangan' => $request->pesan_tambahan,
                 'metadata' => [
@@ -602,7 +603,7 @@ class HireController extends Controller
                 'status_offer' => 'accepted',
             ]);
 
-            PelamarRiwayat::catat($pelamar->id, 'onboarded', [
+            Pelamarriwayat::catat($pelamar->id, 'onboarded', [
                 'tahap_ke' => 'hired',
                 'keterangan' => 'Pelamar resmi dijadikan karyawan.',
                 'metadata' => [
@@ -642,7 +643,7 @@ class HireController extends Controller
 
             Mail::to($pelamar->email)->send(new EmailKustom($pelamar, $request->subjek, $request->isi_email, $lampiranPaths));
 
-            PelamarRiwayat::catat($pelamar->id, 'email_sent', [
+            Pelamarriwayat::catat($pelamar->id, 'email_sent', [
                 'keterangan' => 'Email kustom dikirim: ' . $request->subjek,
                 'metadata' => [
                     'subjek' => $request->subjek,
@@ -677,7 +678,7 @@ class HireController extends Controller
         $field = $request->tipe === 'internal' ? 'catatan_internal' : 'catatan_hr';
         $pelamar->update([$field => $request->catatan]);
 
-        PelamarRiwayat::catat($pelamar->id, 'note', [
+        Pelamarriwayat::catat($pelamar->id, 'note', [
             'keterangan' => $request->catatan,
             'metadata' => ['tipe' => $request->tipe],
         ]);
@@ -701,19 +702,19 @@ class HireController extends Controller
         return response()->json(['success' => true, 'message' => $msg]);
     }
 
-    public function talentPool(Request $request)
-    {
-        $pelamars = Pelamar::talentPool()
-            ->filter($request->only(['search', 'divisi', 'jabatan']))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+    // public function talentPool(Request $request)
+    // {
+    //     $pelamars = Pelamar::talentPool()
+    //         ->filter($request->only(['search', 'divisi', 'jabatan']))
+    //         ->latest()
+    //         ->paginate(15)
+    //         ->withQueryString();
 
-        $dataJabatan = Karyawan::distinct()->pluck('jabatan');
-        $dataDivisi = Karyawan::distinct()->pluck('divisi');
+    //     $dataJabatan = karyawan::distinct()->pluck('jabatan');
+    //     $dataDivisi = karyawan::distinct()->pluck('divisi');
 
-        return view('HR/hire/talent_pool', compact('pelamars', 'dataJabatan', 'dataDivisi'));
-    }
+    //     return view('HR/hire/talent_pool', compact('pelamars', 'dataJabatan', 'dataDivisi'));
+    // }
 
     public function riwayat(Pelamar $pelamar)
     {
@@ -845,7 +846,7 @@ class HireController extends Controller
                 ]);
             }
 
-            PelamarRiwayat::catat($request->pelamar_id, 'rated', [
+            Pelamarriwayat::catat($request->pelamar_id, 'rated', [
                 'tahap_ke' => Pelamar::where('id', $request->pelamar_id)->value('tahap_rekrutmen'),
                 'rating' => $request->rating,
                 'keterangan' => 'Penilaian disimpan oleh ' . auth()->user()->nama_lengkap . '. Catatan: ' . ($request->catatan ?? '-'),

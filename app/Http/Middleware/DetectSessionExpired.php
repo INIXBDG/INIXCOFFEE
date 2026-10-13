@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
-use App\Models\ActivityLog;
+use App\Models\activityLog;
 use Jenssegers\Agent\Agent;
 
 class DetectSessionExpired
@@ -16,12 +16,12 @@ class DetectSessionExpired
         if (Session::has('last_user_id') && !Auth::check()) {
             $userId = Session::get('last_user_id');
 
-            $lastLog = ActivityLog::where('user_id', $userId)->latest()->first();
+            $lastLog = activityLog::where('user_id', $userId)->latest()->first();
             $agent = new Agent();
             $userAgent = $request->header('User-Agent');
             $agent->setUserAgent($userAgent);
             if ($lastLog && $lastLog->status !== 'logout') {
-                ActivityLog::create([
+                activityLog::create([
                     'user_id' => $userId,
                     'status' => 'logout',
                     'url' => $request->fullUrl(),

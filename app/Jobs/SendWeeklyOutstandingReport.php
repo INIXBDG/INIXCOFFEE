@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 // 1. Tambahkan use statement untuk class yang dibutuhkan
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\User;
 use App\Notifications\OutstandingNotification;
 use Illuminate\Bus\Queueable;
@@ -29,7 +29,7 @@ class SendWeeklyOutstandingReport implements ShouldQueue
     {
         Log::info('Menjalankan Job: SendWeeklyOutstandingNotificationsJob...'); // Ubah nama log agar sesuai
 
-        $outstandings = Outstanding::with('rkm.perusahaan', 'rkm.materi')
+        $outstandings = outstanding::with('rkm.perusahaan', 'rkm.materi')
             ->where('status_pembayaran', '0')
             ->whereDate('due_date', '>=', now())
             ->get();

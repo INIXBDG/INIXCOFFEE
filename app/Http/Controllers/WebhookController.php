@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Tickets;
-use App\Models\WhatsappUser;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 

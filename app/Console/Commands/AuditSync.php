@@ -85,6 +85,11 @@ class AuditSync extends Command
             $this->save();
         }
 
+        try {
+            app(\App\Support\AuditSolver::class)->ingest();
+        } catch (Throwable $e) {
+        }
+
         $this->status['state'] = $failed ? 'failed' : 'done';
         $this->status['finished_at'] = now()->toIso8601String();
         $this->save();
@@ -126,6 +131,13 @@ class AuditSync extends Command
                 $env[$envKey] = (string) $value;
             }
         }
+        if (!empty($env['PLAYWRIGHT_BROWSERS_PATH'])) {
+            $browserPath = $env['PLAYWRIGHT_BROWSERS_PATH'];
+            if (!is_dir($browserPath)
+                || !(glob($browserPath . '/chromium*') || glob($browserPath . '/chromium_headless_shell*'))) {
+                unset($env['PLAYWRIGHT_BROWSERS_PATH']);
+            }
+        }
         $env['AUDIT_BASE_URL'] ??= (string) config('app.url');
         if (!isset($env['PLAYWRIGHT_BROWSERS_PATH']) && is_dir(base_path('.playwright'))) {
             $env['PLAYWRIGHT_BROWSERS_PATH'] = base_path('.playwright');
@@ -135,6 +147,12 @@ class AuditSync extends Command
         $env['HOME'] = $home;
 
         if (empty($env['PLAYWRIGHT_BROWSERS_PATH'])) {
+            $localAppData = getenv('LOCALAPPDATA');
+            $windowsBrowserPath = $localAppData ? $localAppData . DIRECTORY_SEPARATOR . 'ms-playwright' : null;
+            if ($windowsBrowserPath && is_dir($windowsBrowserPath)
+                && (glob($windowsBrowserPath . '/chromium*') || glob($windowsBrowserPath . '/chromium_headless_shell*'))) {
+                $env['PLAYWRIGHT_BROWSERS_PATH'] = $windowsBrowserPath;
+            }
             $candidates = array_merge(
                 [
                     storage_path('app/audit-home/.cache/ms-playwright'),
@@ -143,10 +161,12 @@ class AuditSync extends Command
                 ],
                 (array) config('audit.playwright_search_paths', [])
             );
-            foreach ($candidates as $dir) {
-                if ($dir && is_dir($dir) && (glob($dir . '/chromium*') || glob($dir . '/chromium_headless_shell*'))) {
-                    $env['PLAYWRIGHT_BROWSERS_PATH'] = $dir;
-                    break;
+            if (empty($env['PLAYWRIGHT_BROWSERS_PATH'])) {
+                foreach ($candidates as $dir) {
+                    if ($dir && is_dir($dir) && (glob($dir . '/chromium*') || glob($dir . '/chromium_headless_shell*'))) {
+                        $env['PLAYWRIGHT_BROWSERS_PATH'] = $dir;
+                        break;
+                    }
                 }
             }
         }

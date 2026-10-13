@@ -6,10 +6,10 @@ use App\Exports\RekapitulasiAbsenperBulanExport;
 use App\Exports\RekapitulasiAbsenperKaryawanExport;
 use App\Exports\RekapitulasiWaktuKeterlambatanExport;
 use App\Models\AbsensiKaryawan;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Peserta;
-use App\Models\IzinTigaJam;
-use App\Models\PengajuanCuti;
+use App\Models\izinTigaJam;
+use App\Models\pengajuancuti;
 use App\Models\SuratPerjalanan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +28,7 @@ class RekapitulasiAbsenController extends Controller
         $auth = auth()->user();
         $jabatan = $auth->jabatan;
         if ($jabatan == "HRD" || $jabatan == "Koordinator Office") {
-            $peserta = Karyawan::all();
+            $peserta = karyawan::all();
             return view('absensi.index', compact('peserta'));
         } else {
             abort(404);
@@ -49,7 +49,7 @@ class RekapitulasiAbsenController extends Controller
 
         // Optimasi N+1 Query: Ambil semua izin sekaligus, lalu keyBy berdasarkan tanggal
         $tanggalList = $absensi->pluck('tanggal')->unique();
-        $izins = IzinTigaJam::where('id_karyawan', $id_karyawan)
+        $izins = izinTigaJam::where('id_karyawan', $id_karyawan)
             ->whereIn('tanggal_pengajuan', $tanggalList)
             ->where('approval', 2)
             ->get()
@@ -97,7 +97,7 @@ class RekapitulasiAbsenController extends Controller
             ->get();
 
         // Ambil data cuti dengan eager loading untuk menghindari N+1
-        $cuti = PengajuanCuti::with('karyawan')
+        $cuti = pengajuancuti::with('karyawan')
             ->where('id_karyawan', $id_karyawan)
             ->whereYear('tanggal_awal', $tahun)
             ->whereMonth('tanggal_awal', $bulan)
@@ -215,7 +215,7 @@ class RekapitulasiAbsenController extends Controller
             ->whereMonth('tanggal', $month)
             ->get();
 
-        $cuti = PengajuanCuti::with('karyawan')
+        $cuti = pengajuancuti::with('karyawan')
             ->whereYear('tanggal_awal', $year)
             ->whereMonth('tanggal_awal', $month)
             ->get();
