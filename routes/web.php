@@ -1986,17 +1986,3 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
 Route::post('/session/keep-alive', function () {
     return response()->json(['status' => 'alive']);
 })->name('session.keep-alive');
-
-Route::prefix('audit')->name('audit.')->group(function () {
-    Route::get('/', [AuditController::class, 'index'])->name('index');
-    Route::get('/data', [AuditController::class, 'data'])->name('data');
-    Route::get('/status', [AuditController::class, 'status'])->name('status');
-    Route::post('/sync', [AuditController::class, 'sync'])->name('sync');
-    Route::post('/sync-file', [AuditController::class, 'syncFile'])->name('sync-file');
-    Route::post('/sync-feature', [AuditController::class, 'syncFeature'])->name('sync-feature');
-    Route::post('/sync-files', [AuditController::class, 'syncFiles'])->name('sync-files');
-    Route::post('/sync-features', [AuditController::class, 'syncFeatures'])->name('sync-features');
-    Route::post('/solution', [AuditController::class, 'solution'])->name('solution');
-    Route::post('/solution/feedback', [AuditController::class, 'solutionFeedback'])->name('solution-feedback');
-    Route::get('/export', [AuditController::class, 'export'])->name('export');
-});
