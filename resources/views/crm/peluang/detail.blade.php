@@ -1156,7 +1156,6 @@
                                 <input type="file" name="pdf" id="pdfFile"
                                     class="form-control {{ $errors->uploadPdf->has('pdf') ? 'is-invalid' : '' }}"
                                     accept="application/pdf" required>
-                                <small class="text-muted">Format PDF, maksimal 2,5 MB</small>
                                 <div class="text-danger small mt-1" id="pdfError"></div>
                             </div>
 
@@ -1385,29 +1384,6 @@
             initContactSelect2();
             initMateriSelect2();
 
-            // Validasi ukuran PDF di sisi client (maks 2,5 MB)
-            const MAX_PDF_SIZE = 2.5 * 1024 * 1024;
-            const pdfInput = document.getElementById('pdfFile');
-            const pdfError = document.getElementById('pdfError');
-
-            pdfInput.addEventListener('change', function () {
-                pdfError.textContent = '';
-                const file = this.files[0];
-
-                if (file && file.size > MAX_PDF_SIZE) {
-                    const sizeMb = (file.size / 1024 / 1024).toFixed(2).replace('.', ',');
-                    pdfError.textContent = `Ukuran file ${sizeMb} MB melebihi batas maksimal 2,5 MB.`;
-                    this.value = '';
-                }
-            });
-
-            // Cegah double submit
-            document.getElementById('uploadPdfForm').addEventListener('submit', function () {
-                const btn = document.getElementById('btnUploadPdf');
-                btn.disabled = true;
-                btn.textContent = 'Mengupload...';
-            });
-
             let peluang = @json($peluang);
             console.log(peluang);
 
@@ -1464,6 +1440,11 @@
                 }).format(value);
                 hiddenInput.value = value;
             });
+
+            @if ($errors->uploadPdf->any())
+                var uploadPdfModal = new bootstrap.Modal(document.getElementById('uploadPdfModal'));
+                uploadPdfModal.show();
+            @endif
 
             // Ensure hiddenInput is clean before submission
             document.getElementById('updates').addEventListener('submit', function () {
