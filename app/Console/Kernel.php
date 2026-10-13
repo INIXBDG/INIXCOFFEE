@@ -21,10 +21,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // 1. Kirim Notifikasi Outstanding Mingguan
+
         $schedule->call(function () {
             try {
-                // Eager load relationships agar tidak terjadi N+1 query
                 $outstandings = outstanding::with('rkm.perusahaan', 'rkm.materi')
                     ->where('status_pembayaran', '0')
                     ->whereDate('due_date', '>=', now())
@@ -284,11 +283,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
 
-        $schedule->command('audit:sync --only=code');
-        $schedule->command('audit:sync --only=assets');
-        $schedule->command('audit:sync --only=js');
-        $schedule->command('audit:sync --only=features');
-        $schedule->command('absen:cron')->dailyAt('21:00');
     }
 
     protected function commands(): void

@@ -1125,6 +1125,7 @@
             </div>
         </div>
 
+        <!-- Modal Upload PDF -->
         <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content rounded-3 shadow">
@@ -1134,40 +1135,49 @@
                             aria-label="Close"></button>
                     </div>
 
-                    <form action="{{ route('crm.upload.regis') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('crm.upload.regis') }}" method="POST" enctype="multipart/form-data"
+                        id="uploadPdfForm">
                         @csrf
                         <input type="hidden" name="id_peluang" value="{{ $peluang->id }}">
 
                         <div class="modal-body">
+                            @if ($errors->uploadPdf->any())
+                                <div class="alert alert-danger py-2">
+                                    <ul class="mb-0 ps-3">
+                                        @foreach ($errors->uploadPdf->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
                             <div class="mb-3">
                                 <label for="pdfFile" class="form-label">Pilih File PDF</label>
-                                <input type="file" name="pdf" id="pdfFile" class="form-control" accept="application/pdf"
-                                    required>
-                                @error('pdf')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
+                                <input type="file" name="pdf" id="pdfFile"
+                                    class="form-control {{ $errors->uploadPdf->has('pdf') ? 'is-invalid' : '' }}"
+                                    accept="application/pdf" required>
+                                <small class="text-muted">Format PDF, maksimal 2,5 MB</small>
+                                <div class="text-danger small mt-1" id="pdfError"></div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="harga" class="form-label">Harga per pax (Rp)</label>
-                                <input type="number" name="harga" id="harga" class="form-control" min="0" required>
-                                @error('harga')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
+                                <label for="regis_harga" class="form-label">Harga per pax (Rp)</label>
+                                <input type="number" name="regis_harga" id="regis_harga"
+                                    class="form-control {{ $errors->uploadPdf->has('regis_harga') ? 'is-invalid' : '' }}"
+                                    min="0" value="{{ old('regis_harga') }}" required>
                             </div>
 
                             <div class="mb-3">
-                                <label for="pax" class="form-label">Jumlah Peserta (Pax)</label>
-                                <input type="number" name="pax" id="pax" class="form-control" min="1" required>
-                                @error('pax')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
+                                <label for="regis_pax" class="form-label">Jumlah Peserta (Pax)</label>
+                                <input type="number" name="regis_pax" id="regis_pax"
+                                    class="form-control {{ $errors->uploadPdf->has('regis_pax') ? 'is-invalid' : '' }}"
+                                    min="1" value="{{ old('regis_pax') }}" required>
                             </div>
                         </div>
 
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                            <button type="submit" class="btn btn-primary btn-sm" id="btnUploadPdf">Upload</button>
                         </div>
                     </form>
                 </div>
@@ -1374,6 +1384,29 @@
             // Existing JavaScript for Select2 and input formatting
             initContactSelect2();
             initMateriSelect2();
+
+            // Validasi ukuran PDF di sisi client (maks 2,5 MB)
+            const MAX_PDF_SIZE = 2.5 * 1024 * 1024;
+            const pdfInput = document.getElementById('pdfFile');
+            const pdfError = document.getElementById('pdfError');
+
+            pdfInput.addEventListener('change', function () {
+                pdfError.textContent = '';
+                const file = this.files[0];
+
+                if (file && file.size > MAX_PDF_SIZE) {
+                    const sizeMb = (file.size / 1024 / 1024).toFixed(2).replace('.', ',');
+                    pdfError.textContent = `Ukuran file ${sizeMb} MB melebihi batas maksimal 2,5 MB.`;
+                    this.value = '';
+                }
+            });
+
+            // Cegah double submit
+            document.getElementById('uploadPdfForm').addEventListener('submit', function () {
+                const btn = document.getElementById('btnUploadPdf');
+                btn.disabled = true;
+                btn.textContent = 'Mengupload...';
+            });
 
             let peluang = @json($peluang);
             console.log(peluang);
