@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <div class="container">
     <div class="row justify-content-center">
         {{-- <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a> --}}
@@ -86,23 +87,33 @@
                         </div>
 
                         <div class="row mb-3">
-                            <label for="password" class="col-md-4 col-form-label text-md-start">{{ __('Password') }}</label>
-                            <div class="col-md-6">
-                                <input id="password" type="password" placeholder="Masukan Kata Sandi Anda" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
-                                @error('password')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                @enderror
-                            </div>
-                        </div>
+    <label for="password" class="col-md-4 col-form-label text-md-start">{{ __('Password') }}</label>
+    <div class="col-md-6">
+        <div class="input-group">
+            <input id="password" type="password" placeholder="Masukan Kata Sandi Anda" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="new-password">
+            <button class="btn btn-outline-secondary" type="button" id="togglePass1">
+                <i class="fa-solid fa-eye" id="eyeIcon1"></i>
+            </button>
+        </div>
+        @error('password')
+            <span class="invalid-feedback" role="alert">
+                <strong>{{ $message }}</strong>
+            </span>
+        @enderror
+    </div>
+</div>
 
-                        <div class="row mb-3">
-                            <label for="password-confirm" class="col-md-4 col-form-label text-md-start">{{ __('Confirm Password') }}</label>
-                            <div class="col-md-6">
-                                <input id="password-confirm" placeholder="Masukan Kata Sandi Anda Sekali Lagi" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
-                            </div>
-                        </div>
+                       <div class="row mb-3">
+    <label for="password-confirm" class="col-md-4 col-form-label text-md-start">{{ __('Confirm Password') }}</label>
+    <div class="col-md-6">
+        <div class="input-group">
+            <input id="password-confirm" placeholder="Masukan Kata Sandi Anda Sekali Lagi" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password">
+            <button class="btn btn-outline-secondary" type="button" id="togglePass2">
+                <i class="fa-solid fa-eye" id="eyeIcon2"></i>
+            </button>
+        </div>
+    </div>
+</div>
 
                         <div class="row mb-3">
                             <label for="status_akun" class="col-md-4 col-form-label text-md-start">{{ __('Status Akun') }}</label>
@@ -135,6 +146,21 @@
     </div>
 </div>
 <script>
+    function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    document.getElementById('togglePass1').addEventListener('click', () => togglePassword('password', 'eyeIcon1'));
+    document.getElementById('togglePass2').addEventListener('click', () => togglePassword('password-confirm', 'eyeIcon2'));
     // document.getElementById('jabatan').addEventListener('change', function() {
     //     var selectedJabatan = this.value;
     //     var kodeKaryawanRow = document.getElementById('kode_karyawan_row');
