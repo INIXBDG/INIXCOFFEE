@@ -132,6 +132,7 @@ use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\crm\PaymentAdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -911,6 +912,13 @@ Route::prefix('crm')->group(function () {
     });
 
     Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
+
+    Route::prefix('paymentAdvance')->name('crm.paymentAdvance.')->group(function () {
+        Route::get('/', [PaymentAdvanceController::class, 'index'])->name('index');
+        Route::get('/data', [PaymentAdvanceController::class, 'getData'])->name('data');
+        Route::get('/form/{idRkm}', [PaymentAdvanceController::class, 'form']) ->name('form');
+        Route::post('/print', [PaymentAdvanceController::class, 'printPdf'])->name('printPdf');
+    });
 
 });
 

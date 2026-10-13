@@ -1163,6 +1163,10 @@ class PeluangController extends Controller
 
         Log::info("[PA] Completed successfully");
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Data payment advance berhasil disimpan.']);
+        }
+
         return redirect()->back()->with('success', 'Data payment advance berhasil disimpan.');
     }
 

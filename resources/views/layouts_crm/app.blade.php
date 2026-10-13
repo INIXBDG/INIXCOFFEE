@@ -251,6 +251,8 @@
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
+    <script src="{{ asset('assets/vendor/js/helpers.js') }}" defer></script>
+    <script src="{{ asset('assets/js/config.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/menu.js') }}" defer></script>
     <!-- Custom JS -->
     <script src="{{ asset('assets/js/main.js') }}" defer></script>
