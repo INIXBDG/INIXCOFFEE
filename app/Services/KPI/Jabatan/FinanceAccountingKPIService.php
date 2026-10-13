@@ -650,28 +650,34 @@ class FinanceAccountingKPIService
             return 0;
         }
 
+        // Tahun berjalan: sampai akhir bulan ini. Tahun lain: sampai 31 Desember.
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
-        $endDate = Carbon::create($tahun, now()->month, now()->daysInMonth)->endOfDay();
-        
-        // DIKEMBALIKAN KE QUERY ASLI
+        $endDate = $tahun === now()->year
+            ? now()->endOfMonth()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
+
         $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
         $total = $data->count();
-        if ($total == 0) return 0;
+        if ($total === 0) {
+            return 0;
+        }
 
         $sesuai = $data->filter(function ($row) {
             $pembayaran = (float) ($row->jumlah_pembayaran ?? 0);
-            $ppn = (float) ($row->PPN ?? 0);
-            $pph = (float) ($row->PPH ?? 0);
-            // PERBAIKAN: Menggunakan total_penjualan_kotor sesuai dengan model ApprovalPendapatan Anda
-            $kotor = (float) ($row->total_penjualan_kotor ?? 0);
+            $ppn        = (float) ($row->PPN ?? 0);
+            $pph        = (float) ($row->PPH ?? 0);
+            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0); // sama dengan controller
 
             if ($pembayaran === 0.0) {
                 $totalDenganPajak = $pembayaran + $ppn + $pph;
-                return $totalDenganPajak === $kotor || $pembayaran === $kotor;
+
+                return abs($totalDenganPajak - $kotor) < 0.01
+                    || abs($pembayaran - $kotor) < 0.01;
             }
 
-            return !is_null($row->total_penjualan_kotor);
+            // SAMA PERSIS dengan OfficeController (optional() tidak pernah null => selalu true)
+            return optional($row->total_pemasukan_kotor) !== null;
         })->count();
 
         return round(($sesuai / $total) * 100, 1);
@@ -690,89 +696,94 @@ class FinanceAccountingKPIService
             return $this->getDefaultDetailResponse();
         }
 
+        // Tahun berjalan: sampai akhir bulan ini. Tahun lain: sampai 31 Desember.
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
-        $endDate = Carbon::create($tahun, now()->month, now()->daysInMonth)->endOfDay();
+        $endDate = $tahun === now()->year
+            ? now()->endOfMonth()
+            : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        // DIKEMBALIKAN KE QUERY ASLI
         $data = ApprovalPendapatan::whereBetween('tanggal_mulai', [$startOfYear, $endDate])->get();
 
         $total = $data->count();
-        if ($total == 0) {
+        if ($total === 0) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalAkurat = 0;
         $accurateCount = 0;
         $notAccurateCount = 0;
         $dailyResult = [];
 
         foreach ($data as $row) {
             $pembayaran = (float) ($row->jumlah_pembayaran ?? 0);
-            $ppn = (float) ($row->PPN ?? 0);
-            $pph = (float) ($row->PPH ?? 0);
-            // PERBAIKAN: Menggunakan total_penjualan_kotor sesuai dengan model ApprovalPendapatan Anda
-            $kotor = (float) ($row->total_penjualan_kotor ?? 0);
+            $ppn        = (float) ($row->PPN ?? 0);
+            $pph        = (float) ($row->PPH ?? 0);
+            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0); // sama dengan controller
 
-            $isAkurat = false;
             if ($pembayaran === 0.0) {
                 $totalDenganPajak = $pembayaran + $ppn + $pph;
-                $isAkurat = ($totalDenganPajak === $kotor || $pembayaran === $kotor);
+
+                $isAkurat = abs($totalDenganPajak - $kotor) < 0.01
+                    || abs($pembayaran - $kotor) < 0.01;
             } else {
-                $isAkurat = !is_null($row->total_penjualan_kotor);
+                // SAMA PERSIS dengan OfficeController (optional() tidak pernah null => selalu true)
+                $isAkurat = optional($row->total_pemasukan_kotor) !== null;
             }
 
             $tanggalKey = Carbon::parse($row->tanggal_mulai)->format('Y-m-d');
             $dailyResult[$tanggalKey][] = $isAkurat ? 1 : 0;
 
             if ($isAkurat) {
-                $totalAkurat++;
                 $accurateCount++;
             } else {
                 $notAccurateCount++;
             }
         }
 
-        $progress = round(($totalAkurat / $total) * 100, 1);
+        $progress = round(($accurateCount / $total) * 100, 1);
         $nilaiTarget = (float) $detail->nilai_target;
-        $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
+
+        $gap = $progress < $nilaiTarget
+            ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.')
+            : 0;
         if ($gap === '') $gap = '0';
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
         foreach ($dailyResult as $dateStr => $values) {
-            $date = Carbon::parse($dateStr);
-            $monthKey = $date->format('Y-m');
+            $monthKey = Carbon::parse($dateStr)->format('Y-m');
             $avg = round((array_sum($values) / count($values)) * 100, 1);
 
             $monthlyData[$monthKey][] = $avg;
-            $monthlyProgress[$monthKey][] = $avg;
             $dailyBreakdownPerMonth[$monthKey][$dateStr] = $avg;
             $dailyProgressPerMonth[$monthKey][$dateStr] = $avg;
         }
 
         $monthlyAverages = [];
-        $monthlyProgressAverages = [];
         foreach ($monthlyData as $month => $values) {
             $monthlyAverages[$month] = round(array_sum($values) / count($values), 1);
-            $monthlyProgressAverages[$month] = round(array_sum($values) / count($values), 1);
         }
 
         ksort($monthlyAverages);
         ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
         ksort($dailyProgressPerMonth);
 
+        foreach ($dailyBreakdownPerMonth as $month => $days) {
+            ksort($dailyBreakdownPerMonth[$month]);
+        }
+        foreach ($dailyProgressPerMonth as $month => $days) {
+            ksort($dailyProgressPerMonth[$month]);
+        }
+
         return [
-            'progress' => $progress,
-            'gap' => $gap,
-            'pie_chart' => ['above' => $accurateCount, 'below' => $notAccurateCount],
-            'monthly_data' => $monthlyAverages,
+            'progress'                  => $progress,
+            'gap'                       => $gap,
+            'pie_chart'                 => ['above' => $accurateCount, 'below' => $notAccurateCount],
+            'monthly_data'              => $monthlyAverages,
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'monthly_progress'          => $monthlyAverages,
+            'daily_progress_per_month'  => $dailyProgressPerMonth,
         ];
     }
 }
