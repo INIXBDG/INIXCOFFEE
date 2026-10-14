@@ -1436,6 +1436,7 @@ Route::prefix('office')
             Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
             Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
             Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
+            Route::put('/update/kategori/{rkm_id}/{peserta_id}', [CertificateController::class, 'updateKategoriExam'])->name('updateKategoriExam');
         });
 
         Route::prefix('vendor')->name('vendor.')->group(function () {

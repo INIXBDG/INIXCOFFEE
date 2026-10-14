@@ -424,6 +424,11 @@ class CertificateController extends Controller
         $bandungD = Certificate::whereBetween($dateColumn, [$startDate, $endDate])
             ->get();
 
+        // Certificate yang kategori_exam-nya terisi, dikelompokkan per kategori
+        $certByKategori = $bandungD
+            ->filter(fn ($c) => !empty($c->kategori_exam))
+            ->groupBy('kategori_exam');
+
         // ==========================================
         // AUTHORIZED + BNSP + INIXCERT (satu query)
         // ModelsEksam -> registexam (filter dokumentasiExam.kategori_exam) -> peserta
@@ -436,10 +441,23 @@ class CertificateController extends Controller
             $endDate
         );
 
-        $byKategori  = $semuaExam->groupBy('kategori_exam');
-        $authorizedD = $byKategori->get('Authorize', collect())->values();
-        $bnspD       = $byKategori->get('BNSP', collect())->values();
-        $inixcertD   = $byKategori->get('Inixcert', collect())->values();
+        $byKategori = $semuaExam->groupBy('kategori_exam');
+
+        // Gabungkan: data exam + certificate yang kategori_exam-nya terisi (+1 per certificate)
+        // concat() dipakai (bukan merge) supaya model dari tabel berbeda tidak saling menimpa karena primary key sama.
+        $authorizedD = collect($byKategori->get('Authorize', collect()))
+            ->concat($certByKategori->get('Authorize', collect()))
+            ->values();
+
+        $bnspD = collect($byKategori->get('BNSP', collect()))
+            ->concat($certByKategori->get('BNSP', collect()))
+            ->values();
+
+        $inixcertD = collect($byKategori->get('Inixcert', collect()))
+            ->concat($certByKategori->get('Inixcert', collect()))
+            ->values();
+
+        $internasionalD = collect($certByKategori->get('Internasional', collect()))->values();
 
         // ==========================================
         // WORKSHOP
@@ -504,6 +522,11 @@ class CertificateController extends Controller
             'inixcert' => [
                 'count' => $inixcertD->count(),
                 'data'  => $inixcertD,
+            ],
+
+            'internasional' => [
+                'count' => $internasionalD->count(),
+                'data'  => $internasionalD,
             ],
 
             'workshop' => [
@@ -608,5 +631,33 @@ class CertificateController extends Controller
         $summary->delete();
 
         return redirect()->back()->with('success', 'Certificate summary deleted successfully.');
+    }
+
+    public function updateKategoriExam(Request $request, $rkm_id, $peserta_id)
+    {
+        $validated = $request->validate([
+            'kategori_exam' => 'required|in:BNSP,Internasional,Authorize,Inixcert',
+        ]);
+
+        $certificate = Certificate::where('rkm_id', $rkm_id)
+            ->where('id_peserta', $peserta_id)
+            ->first();
+
+        if (!$certificate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sertifikat tidak ditemukan.',
+            ], 404);
+        }
+
+        $certificate->update([
+            'kategori_exam' => $validated['kategori_exam'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kategori exam berhasil diperbarui.',
+            'kategori_exam' => $certificate->kategori_exam,
+        ]);
     }
 }
