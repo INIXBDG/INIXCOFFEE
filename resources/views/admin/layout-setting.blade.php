@@ -237,56 +237,52 @@ $totalSections = count($layouts);
     <div class="container-fluid" style="max-width: 1440px;">
 
         <!-- Premium Header Banner -->
-        <div class="header-banner card border-0 shadow-lg mb-4 overflow-hidden position-relative">
-            <div class="header-glow"></div>
-            <div class="card-body p-4 p-md-5 position-relative z-1">
-                <div class="row align-items-center g-3">
-                    <div class="col-lg-7">
-                        <div
-                            class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-10 text-black small mb-2 border border-white border-opacity-15">
-                            <span class="status-indicator bg-success"></span>
-                            <span class="fw-semibold text-black">GLOBAL DASHBOARD CONFIGURATOR</span>
-                        </div>
-                        <h2 class="fw-bold text-white mb-2 tracking-tight display-6"
-                            style="font-family: 'Outfit', sans-serif;">
-                            Setting Layout Dashboard
-                        </h2>
-                        <p class="text-white-50 mb-0 lead-text"
-                            style="font-size: 0.95rem; line-height: 1.6; max-width: 680px;">
-                            Pilih nomor urutan langsung via <strong class="text-white">Dropdown</strong>, tombol <strong
-                                class="text-white">Panah Cepat</strong>, atau <strong class="text-white">Drag &
-                                Drop</strong>. Urutan ini menjadi urutan global yang otomatis disaring sesuai permission
-                            setiap user. Pilih <strong class="text-white">Filter Role</strong> untuk mengatur urutan khusus satu role saja.
-                        </p>
-                    </div>
+            <div class="header-banner card border-0 shadow-lg mb-4 overflow-hidden position-relative">
+                <div class="header-glow"></div>
+                <div class="card-body p-4 p-md-5 position-relative z-1">
+                    <div class="row align-items-center g-3">
+                        <div class="col-lg-7">
 
-                    <div class="col-lg-5 text-lg-end">
-                        <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center">
-                            <a href="{{ route('home') }}"
-                                class="btn btn-outline-light px-3 py-2.5 rounded-pill fw-semibold shadow-sm action-btn">
-                                <i class="fa-solid fa-arrow-left me-1.5"></i> Dashboard
-                            </a>
-                            <button type="button"
-                                class="btn btn-outline-info px-3 py-2.5 fw-semibold rounded-pill shadow-sm action-btn"
-                                data-bs-toggle="modal" data-bs-target="#previewModal">
-                                <i class="fa-solid fa-eye me-1.5"></i> Preview
-                            </button>
-                            <button type="button"
-                                class="btn btn-outline-warning px-3 py-2.5 fw-semibold rounded-pill shadow-sm action-btn btn-reset-action"
-                                id="header-reset-btn">
-                                <i class="fa-solid fa-rotate-left me-1.5"></i> <span id="header-reset-btn-text">Reset
-                                    Default</span>
-                            </button>
-                            <button type="button"
-                                class="btn btn-primary px-4 py-2.5 fw-bold rounded-pill shadow-md action-btn btn-save-action"
-                                id="main-save-btn">
-                                <i class="fa-solid fa-cloud-arrow-up me-1.5"></i> Simpan Urutan
-                            </button>
+                            <h2 class="fw-bold text-white mb-2 tracking-tight display-6"
+                                style="font-family: 'Outfit', sans-serif;">
+                                Setting Layout Dashboard
+                            </h2>
+                            <p class="text-white-50 mb-0 lead-text"
+                                style="font-size: 0.95rem; line-height: 1.6; max-width: 680px;">
+                                Pilih nomor urutan langsung via <strong class="text-white">Dropdown</strong>, tombol <strong
+                                    class="text-white">Panah Cepat</strong>, atau <strong class="text-white">Drag &
+                                    Drop</strong>. Urutan ini menjadi urutan global yang otomatis disaring sesuai permission
+                                setiap user. Pilih <strong class="text-white">Filter Role</strong> untuk mengatur urutan khusus satu role saja.
+                            </p>
+                        </div>
+
+                        <div class="col-lg-5 text-lg-end">
+                            <div class="d-flex flex-wrap gap-2 justify-content-lg-end align-items-center header-action-group">
+                                <a href="{{ route('home') }}"
+                                    class="btn btn-outline-light px-3 py-2.5 rounded-pill fw-semibold shadow-sm action-btn">
+                                    <i class="fa-solid fa-arrow-left me-1.5"></i> Dashboard
+                                </a>
+                                <button type="button"
+                                    class="btn btn-outline-light px-3 py-2.5 rounded-pill fw-semibold shadow-sm action-btn"
+                                    data-bs-toggle="modal" data-bs-target="#previewModal">
+                                    <i class="fa-solid fa-eye me-1.5"></i> Preview
+                                </button>
+                                <button type="button"
+                                    class="btn btn-outline-light px-3 py-2.5 rounded-pill fw-semibold shadow-sm action-btn btn-reset-action"
+                                    id="header-reset-btn">
+                                    <i class="fa-solid fa-rotate-left me-1.5"></i> <span id="header-reset-btn-text">Reset
+                                        Default</span>
+                                </button>
+                                <button type="button"
+                                    class="btn btn-outline-light px-3 py-2.5 rounded-pill fw-semibold shadow-sm action-btn btn-save-action"
+                                    id="main-save-btn">
+                                    <i class="fa-solid fa-cloud-arrow-up me-1.5"></i> Simpan Urutan
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- VIEW 1: Grid Section (Membawahi Tampilan Grid & Tampilan Tabel dengan Filter Role Dinamis) -->
         <div id="grid-view-container">
@@ -297,19 +293,15 @@ $totalSections = count($layouts);
                     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
 
                         <!-- Kiri: Filter Role Dinamis -->
-                        <div class="d-flex align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center flex-wrap gap-2 role-filter-container">
                             <label for="role-filter-select"
                                 class="d-flex align-items-center gap-2 mb-0 fw-bold text-dark small flex-shrink-0">
-                                <span
-                                    class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle"
-                                    style="width: 28px; height: 28px;">
-                                    <i class="fa-solid fa-user-shield" style="font-size: 0.85rem;"></i>
-                                </span>
+                                
                                 <span>Filter Role:</span>
                             </label>
-                            <div style="min-width: 220px; max-width: 280px;">
+                            <div class="role-filter-box" style="min-width: 220px; max-width: 280px;">
                                 <select
-                                    class="form-select form-select-sm rounded-pill fw-semibold border-secondary-subtle"
+                                    class="form-select form-select-sm rounded-pill fw-semibold border-secondary-subtle w-100"
                                     id="role-filter-select" onchange="handleRoleFilterChange(this.value)">
                                     <option value="all">Semua Role / Global</option>
                                     @if(isset($allRoleList) && count($allRoleList) > 0)
@@ -321,16 +313,10 @@ $totalSections = count($layouts);
                                     @endif
                                 </select>
                             </div>
-                            {{-- <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1 d-none"
-                                id="btn-reset-role-filter" onclick="executeResetDefault()"
-                                title="Reset default urutan untuk role ini">
-                                <i class="fa-solid fa-rotate-left me-1"></i> <span id="role-reset-btn-text">Reset
-                                    Default</span>
-                            </button> --}}
                         </div>
 
                         <!-- Kanan: Switcher Tampilan & Counter -->
-                        <div class="d-flex align-items-center justify-content-md-end flex-wrap gap-2">
+                        <div class="d-flex align-items-center justify-content-md-end flex-wrap gap-2 toolbar-right-group">
                             <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold"
                                 id="role-filter-counter-badge">
                                 <i class="fa-solid fa-layer-group text-primary me-1"></i> Menampilkan <span
@@ -338,25 +324,25 @@ $totalSections = count($layouts);
                                 (Global)
                             </span>
 
-                            <div class="btn-group p-1 bg-light rounded-pill border" role="group"
+                            <div class="btn-group p-1 bg-light rounded-pill border view-switcher-group" role="group"
                                 aria-label="Tampilan Section">
                                 <button type="button"
                                     class="btn btn-sm rounded-pill px-3 py-1 fw-bold active subview-toggle-btn"
                                     id="btn-subview-grid" onclick="switchSectionDisplay('grid')"
                                     title="Tampilkan Section dalam bentuk Grid">
-                                    <i class="fa-solid fa-grip me-1 text-primary"></i> Grid Section
+                                    <i class="fa-solid fa-grip me-1 text-primary"></i> <span>Grid Section</span>
                                 </button>
                                 <button type="button"
                                     class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-secondary subview-toggle-btn"
                                     id="btn-subview-table" onclick="switchSectionDisplay('table')"
                                     title="Tampilkan Section dalam bentuk Tabel">
-                                    <i class="fa-solid fa-list-check me-1"></i> Tabel Section
+                                    <i class="fa-solid fa-list-check me-1"></i> <span>Tabel Section</span>
                                 </button>
                                 <button type="button"
                                     class="btn btn-sm rounded-pill px-3 py-1 fw-semibold text-secondary subview-toggle-btn"
                                     id="btn-subview-cards" onclick="switchSectionDisplay('cards')"
                                     title="Atur Kartu dalam Setiap Section">
-                                    <i class="fa-solid fa-layer-group me-1"></i> Detail Card
+                                    <i class="fa-solid fa-layer-group me-1"></i> <span>Detail Card</span>
                                 </button>
                             </div>
                         </div>
@@ -399,10 +385,10 @@ $totalSections = count($layouts);
                                 style="background-color: {{ $isLeft ? '#2563eb' : '#059669' }};">
                             </div>
 
-                            <div class="card-body p-3.5 d-flex align-items-start gap-3">
+                            <div class="card-body p-3.5 d-flex align-items-start gap-3 section-card-body">
 
                                 <!-- Left Block: Drag Handle + Number Badge + Icon -->
-                                <div class="d-flex align-items-center gap-2.5 flex-shrink-0 pt-0.5">
+                                <div class="d-flex align-items-center gap-2.5 flex-shrink-0 pt-0.5 section-card-left">
                                     <div class="drag-handle" title="Tahan dan geser kartu">
                                         <i class="fa-solid fa-grip-vertical"></i>
                                     </div>
@@ -427,7 +413,7 @@ $totalSections = count($layouts);
                                 </div>
 
                                 <!-- Middle Block: Title + Description + Tags -->
-                                <div class="flex-grow-1 overflow-hidden">
+                                <div class="flex-grow-1 overflow-hidden section-card-middle">
                                     <div class="d-flex align-items-center justify-content-between gap-2 mb-1">
                                         <h6 class="fw-bold text-dark mb-0 text-truncate section-title"
                                             style="font-family: 'Outfit', sans-serif; font-size: 0.98rem;">
@@ -448,7 +434,7 @@ $totalSections = count($layouts);
 
                                 <!-- Right Block: Direct Position Dropdown & Stepper Buttons -->
                                 <div
-                                    class="d-flex flex-column align-items-end gap-1.5 flex-shrink-0 ms-1 control-actions">
+                                    class="d-flex flex-column align-items-end gap-1.5 flex-shrink-0 ms-1 control-actions section-card-right">
 
                                     <div class="position-select-wrapper" title="Ubah urutan langsung">
                                         <select class="form-select form-select-sm position-select"
@@ -668,7 +654,7 @@ $totalSections = count($layouts);
                                             style="color: #182F51; font-size: 1.1rem; font-family: 'Outfit', sans-serif;">
                                             {{ $sMeta['name'] }}
                                         </h5>
-                                        <span class="badge rounded-pill bg-light text-secondary border small">{{ $totalSectionCards }} Kartu</span>
+                                        <span class="badge rounded-pill bg-light text-secondary border small section-card-count-badge">{{ $totalSectionCards }} Kartu</span>
                                     </div>
                                     <span class="badge rounded-pill text-white fw-bold px-2.5 py-1 section-pos-badge"
                                         style="background-color: {{ $accentColor }}; font-size: 0.72rem;">
@@ -680,32 +666,32 @@ $totalSections = count($layouts);
                                     @php
                                     $cardPos = $cIndex + 1;
                                     @endphp
-                                    <div class="col-sm-6 mt-2 card-sortable-item" data-id="{{ $card['id'] }}"
+                                    <div class="col-12 col-sm-6 mt-2 card-sortable-item" data-id="{{ $card['id'] }}"
                                         data-section="{{ $sKey }}">
                                         <div class="card dashboard-card-item h-100 position-relative"
                                             style="border-radius: 16px; background: #ffffff; border: 1.5px solid #e2e8f0; box-shadow: 0 4px 14px rgba(24,47,81,0.05); transition: all 0.2s ease;">
-                                            <div class="card-body d-flex align-items-center justify-content-between p-2.5"
+                                            <div class="card-body d-flex align-items-center justify-content-between p-2 p-sm-2.5"
                                                 style="min-width: 0;">
 
                                                 <!-- Left: Icon & Text Info -->
-                                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden me-2"
+                                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden me-1 me-sm-2 card-info-left"
                                                     style="min-width: 0;">
-                                                    <div class="drag-handle-card text-muted flex-shrink-0 me-2"
+                                                    <div class="drag-handle-card text-muted flex-shrink-0 me-1.5"
                                                         style="cursor: grab;" title="Tahan dan geser untuk memindahkan urutan">
                                                         <i class="fa-solid fa-grip-vertical"></i>
                                                     </div>
                                                     <div class="d-flex align-items-center justify-content-center flex-shrink-0"
-                                                        style="width: 32px;">
+                                                        style="width: 30px;">
                                                         @if(isset($card['is_svg']) && $card['is_svg'])
                                                         <img src="{{ asset('icon/' . $card['icon']) }}"
-                                                            class="img-responsive" width="24px" alt="{{ $card['title'] }}">
+                                                            class="img-responsive" width="22px" alt="{{ $card['title'] }}">
                                                         @else
                                                         <i class="{{ $card['icon'] }}"
-                                                            style="font-size: 20px; color: #182F51;"></i>
+                                                            style="font-size: 19px; color: #182F51;"></i>
                                                         @endif
                                                     </div>
                                                     <div class="flex-grow-1 overflow-hidden"
-                                                        style="margin-left: 10px; min-width: 0;">
+                                                        style="margin-left: 8px; min-width: 0;">
                                                         <div class="d-flex align-items-center gap-1.5 mb-0.5">
                                                             <span class="badge bg-light text-secondary border rounded-pill card-order-badge px-1.5 py-0.5"
                                                                 style="font-size: 0.68rem;">#{{ $cardPos }}</span>
@@ -724,7 +710,7 @@ $totalSections = count($layouts);
                                                 </div>
 
                                                 <!-- Right: Controls -->
-                                                <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0"
+                                                <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0 card-controls-col"
                                                     style="width: 105px;">
                                                     <select
                                                         class="form-select form-select-sm card-position-select text-center fw-bold text-dark w-100"
@@ -910,31 +896,37 @@ $totalSections = count($layouts);
         cursor: not-allowed;
     }
 
-    /* Header Banner */
-    .header-banner {
-        border-radius: 20px;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
-        box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.35) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
+ /* Header Banner - Ocean Blue */
+.header-banner {
+    border-radius: 20px;
+    background: linear-gradient(
+        135deg,
+        #0c4a6e 0%,
+        #0369a1 50%,
+        #0891b2 100%
+    ) !important;
 
-    .header-glow {
-        position: absolute;
-        width: 320px;
-        height: 320px;
-        top: -100px;
-        right: -80px;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.28) 0%, rgba(147, 51, 234, 0.12) 60%, transparent 80%);
-        filter: blur(40px);
-        pointer-events: none;
-    }
+    box-shadow: 0 16px 36px -8px rgba(3, 105, 161, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
 
-    .status-indicator {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+/* Ocean Glow */
+.header-glow {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    top: -100px;
+    right: -80px;
+
+    background: radial-gradient(
+        circle,
+        rgba(103, 232, 249, 0.35) 0%,
+        rgba(34, 211, 238, 0.18) 60%,
+        transparent 80%
+    );
+
+    filter: blur(40px);
+    pointer-events: none;
     }
 
     .action-btn {
@@ -1219,6 +1211,263 @@ $totalSections = count($layouts);
         color: #475569;
         font-size: 0.72rem;
     }
+
+    /* =========================================================
+     * ICON KARTU: Pastikan semua SVG (termasuk yang stroke putih) tampil jelas #182F51
+     * ========================================================= */
+    .dashboard-card-item img {
+        filter: brightness(0) saturate(100%) invert(16%) sepia(35%) saturate(1630%) hue-rotate(179deg) brightness(92%) contrast(93%);
+    }
+
+    /* =========================================================
+     * RESPONSIVITAS MOBILE (HP & LAYAR KECIL)
+     * ========================================================= */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    .layout-setting-wrapper {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    @media (max-width: 767.98px) {
+        .layout-setting-wrapper {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        /* Toolbar Responsive */
+        .role-filter-container {
+            width: 100%;
+        }
+
+        .role-filter-box {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            flex-grow: 1;
+        }
+
+        .toolbar-right-group {
+            width: 100%;
+            justify-content: space-between !important;
+        }
+
+        .view-switcher-group {
+            width: 100%;
+            display: flex;
+        }
+
+        .view-switcher-group .subview-toggle-btn {
+            flex: 1;
+            text-align: center;
+            padding: 5px 2px !important;
+            font-size: 0.75rem !important;
+        }
+
+        /* 1. Grid Section: Hilangkan #1 #2 di HP agar tombol naik ke atas samping ikon */
+        .section-card .position-badge-box {
+            display: none !important;
+        }
+
+        /* Perkecil ikon section di HP */
+        .section-card .category-icon-box {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 8px !important;
+        }
+
+        .section-card .category-icon-box img {
+            width: 17px !important;
+            height: 17px !important;
+        }
+
+        .section-card .card-body {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 8px !important;
+            padding: 12px !important;
+        }
+
+        .section-card-left {
+            order: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Tombol dropdown urutan & panel cepat tepat berada di samping kanan ikon di baris atas */
+        .section-card-right {
+            order: 2;
+            margin-left: auto !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+
+        .section-card-right .position-select {
+            min-width: 80px !important;
+            font-size: 0.72rem !important;
+            padding: 2px 18px 2px 6px !important;
+            height: 28px !important;
+        }
+
+        .section-card-right .quick-stepper {
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-card-middle {
+            order: 3;
+            width: 100% !important;
+            margin-top: 4px;
+        }
+
+        .section-card .feature-tag {
+            font-size: 0.68rem;
+            padding: 2px 6px;
+        }
+
+        /* 2. Detail Card: Hilangkan teks deskripsi di HP, sisakan judul kartu */
+        .dashboard-card-item .card-text {
+            display: none !important;
+        }
+
+        .dashboard-card-item .card-title {
+            font-size: 0.82rem !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Detail Card: Hilangkan otomatis hitung kartu dan badge posisi section di HP */
+        .section-pos-badge,
+        .section-card-count-badge {
+            display: none !important;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        /* Header Banner Actions */
+        .header-action-group {
+            width: 100%;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px !important;
+        }
+
+        .header-action-group .action-btn {
+            width: 100%;
+            text-align: center;
+            padding: 6px 8px !important;
+            font-size: 0.78rem !important;
+            justify-content: center;
+        }
+
+        /* Detail Card Mobile */
+        .dashboard-section-box {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+        }
+
+        .dashboard-section-box .card-body {
+            padding: 12px 10px !important;
+            overflow: hidden !important;
+        }
+
+        .section-pos-badge,
+        .section-card-count-badge {
+            display: none !important;
+        }
+
+        /* Hilangkan margin/padding negatif row agar kartu tidak keluar dari section */
+        .card-sortable-list {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .card-sortable-item {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            max-width: 100% !important;
+            flex: 0 0 100% !important;
+        }
+
+        /* Agak besarin sedikit card-card kecil di dalam section */
+        .dashboard-card-item {
+            border-radius: 14px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            box-shadow: 0 2px 8px rgba(24, 47, 81, 0.06) !important;
+        }
+
+        .dashboard-card-item .card-body {
+            padding: 12px 12px !important;
+            min-height: 56px !important;
+        }
+
+        .dashboard-card-item .card-title {
+            font-size: 0.88rem !important;
+            font-weight: 700 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .dashboard-card-item .card-order-badge {
+            font-size: 0.72rem !important;
+            padding: 2px 6px !important;
+        }
+
+        /* Kontrol Posisi dan Stepper di HP */
+        .card-controls-col {
+            width: 84px !important;
+            flex-shrink: 0 !important;
+        }
+
+        .card-position-select {
+            height: 26px !important;
+            font-size: 0.7rem !important;
+            padding: 1px 18px 1px 6px !important;
+            border-radius: 50rem !important;
+        }
+
+        .card-stepper-pill {
+            height: 24px !important;
+            padding: 0 2px !important;
+            width: 84px !important;
+            border-radius: 50rem !important;
+        }
+
+        .card-stepper-pill button {
+            width: 18px !important;
+            height: 18px !important;
+        }
+
+        .card-stepper-pill button i {
+            font-size: 0.65rem !important;
+        }
+
+        .card-info-left {
+            margin-right: 6px !important;
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+        }
+
+        /* Sticky Save Bar di HP */
+        .sticky-save-bar {
+            bottom: 12px !important;
+            width: calc(100% - 16px) !important;
+        }
+
+        .sticky-save-bar > div {
+            padding: 8px 12px !important;
+        }
+
+        .sticky-save-bar #sticky-desc {
+            display: none !important;
+        }
+    }
 </style>
 
 <!-- SortableJS CDN -->
@@ -1234,11 +1483,6 @@ $totalSections = count($layouts);
     // layoutStateMap = { all: {sections:[], cards:{}}, "<Role>": {sections:[], cards:{}} }
     // 'all' = layout global. Tiap role = layout global + override khusus role itu.
     let layoutStateMap = @json($layoutStateMap ?? []);
-
-    const defaultSectionOrder = [
-        'karyawan', 'peserta', 'itsm', 'rkm', 'finance', 'performance',
-        'education', 'office', 'crm', 'management', 'project'
-    ];
 
     /* =========================================================
      * STATE
@@ -1719,13 +1963,11 @@ $totalSections = count($layouts);
 
         const filterAlert = byId('role-filter-alert');
         const selectedRoleNameEl = byId('selected-role-name');
-        // const resetBtn = byId('btn-reset-role-filter');
         const counterBadge = byId('role-filter-counter-badge');
         const headerResetText = byId('header-reset-btn-text');
 
         if (isAll) {
             if (filterAlert) filterAlert.classList.add('d-none');
-            // if (resetBtn) resetBtn.classList.add('d-none');
             if (headerResetText) headerResetText.textContent = 'Reset Default';
             if (counterBadge) {
                 counterBadge.className = 'badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-semibold';
@@ -1734,7 +1976,6 @@ $totalSections = count($layouts);
         } else {
             if (filterAlert) filterAlert.classList.remove('d-none');
             if (selectedRoleNameEl) selectedRoleNameEl.textContent = role;
-            // if (resetBtn) resetBtn.classList.remove('d-none');
             if (headerResetText) headerResetText.textContent = 'Reset Role Ini';
             if (counterBadge) {
                 counterBadge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 small fw-bold';
