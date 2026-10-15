@@ -1530,5 +1530,23 @@ class RKMController extends Controller
             'message' => 'Checklist Keperluan berhasil disimpan.'
         ]);
     }
+
+    public function toggleSouvenir(Request $request)
+    {
+        $request->validate([
+            'ids'      => 'required|array|min:1',
+            'ids.*'    => 'required',
+            'souvenir' => 'required|boolean',
+        ]);
+
+        RKM::whereIn('id', $request->ids)
+            ->update(['souvenir' => $request->souvenir]);
+
+        return response()->json([
+            'status'   => true,
+            'message'  => 'Status souvenir berhasil diperbarui.',
+            'souvenir' => (int) $request->souvenir,
+        ]);
+    }
 }
 

@@ -299,6 +299,7 @@ Route::get('/rkmEdit', [App\Http\Controllers\RKMController::class, 'editRKM'])->
 Route::put('/rkmUpdate', [App\Http\Controllers\RKMController::class, 'updateRKM'])->name('rkmUpdate');
 Route::get('/rkm/checklist/{id}', [App\Http\Controllers\RKMController::class, 'getChecklist'])->name('rkm.checklist.get');
 Route::post('/rkm/checklist/store', [App\Http\Controllers\RKMController::class, 'storeChecklist'])->name('rkm.checklist.store');
+Route::post('/rkm/toggle-souvenir', [App\Http\Controllers\RKMController::class, 'toggleSouvenir'])->name('rkm.toggle-souvenir');
 
 Route::group(['middleware' => 'Admin'], function () {
     Route::get('/user/register', [App\Http\Controllers\UserController::class, 'create'])->name('user.register');
