@@ -160,7 +160,7 @@
 
                 <tr>
                     <td colspan="3" style="text-align: center; padding-top: 25px; padding-bottom: 25px;">
-                        Proctor : Anggie Anggrainie
+                        Proctor : Ferdi Ardiansyah
                     </td>
                     <td style="padding-top: 25px; padding-bottom: 25px;"></td>
                 </tr>

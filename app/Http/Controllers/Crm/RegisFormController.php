@@ -93,7 +93,7 @@ class RegisFormController extends Controller
         // 1. Validasi parameter masukan termasuk pax dan harga
         $data = $request->validate([
             'id_peluang' => 'required|integer',
-            'pdf' => 'required|file|mimes:pdf|max:20480',
+            'pdf' => 'required|file|mimes:pdf|max:2560',
             'pax' => 'required|integer|min:1',
             'harga' => 'required|numeric|min:0',
         ]);

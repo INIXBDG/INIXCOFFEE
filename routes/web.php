@@ -132,6 +132,7 @@ use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\crm\PaymentAdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -912,6 +913,13 @@ Route::prefix('crm')->group(function () {
 
     Route::get('/contact/export-pdf', [ContactController::class, 'exportPdf'])->name('contact.export_pdf');
 
+    Route::prefix('paymentAdvance')->name('crm.paymentAdvance.')->group(function () {
+        Route::get('/', [PaymentAdvanceController::class, 'index'])->name('index');
+        Route::get('/data', [PaymentAdvanceController::class, 'getData'])->name('data');
+        Route::get('/form/{idRkm}', [PaymentAdvanceController::class, 'form']) ->name('form');
+        Route::post('/print', [PaymentAdvanceController::class, 'printPdf'])->name('printPdf');
+    });
+
 });
 
 Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
@@ -1428,6 +1436,7 @@ Route::prefix('office')
             Route::post('/rekap/certif/store', [CertificateController::class, 'storeSummary'])->name('storeSummary');
             Route::put('/rekap/certif/put/{id}', [CertificateController::class, 'updateSummary'])->name('updateSummary');
             Route::delete('/rekap/certif/delete/{id}', [CertificateController::class, 'deleteSummary'])->name('deleteSummary');
+            Route::put('/update/kategori/{rkm_id}/{peserta_id}', [CertificateController::class, 'updateKategoriExam'])->name('updateKategoriExam');
         });
 
         Route::prefix('vendor')->name('vendor.')->group(function () {
@@ -1978,17 +1987,3 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
 Route::post('/session/keep-alive', function () {
     return response()->json(['status' => 'alive']);
 })->name('session.keep-alive');
-
-Route::prefix('audit')->name('audit.')->group(function () {
-    Route::get('/', [AuditController::class, 'index'])->name('index');
-    Route::get('/data', [AuditController::class, 'data'])->name('data');
-    Route::get('/status', [AuditController::class, 'status'])->name('status');
-    Route::post('/sync', [AuditController::class, 'sync'])->name('sync');
-    Route::post('/sync-file', [AuditController::class, 'syncFile'])->name('sync-file');
-    Route::post('/sync-feature', [AuditController::class, 'syncFeature'])->name('sync-feature');
-    Route::post('/sync-files', [AuditController::class, 'syncFiles'])->name('sync-files');
-    Route::post('/sync-features', [AuditController::class, 'syncFeatures'])->name('sync-features');
-    Route::post('/solution', [AuditController::class, 'solution'])->name('solution');
-    Route::post('/solution/feedback', [AuditController::class, 'solutionFeedback'])->name('solution-feedback');
-    Route::get('/export', [AuditController::class, 'export'])->name('export');
-});

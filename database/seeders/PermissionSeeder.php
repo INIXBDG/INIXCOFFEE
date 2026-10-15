@@ -23,6 +23,8 @@ class PermissionSeeder extends Seeder
         'View CRM Checklist RKM',
         'View CRM Dashboard Pribadi',
         'View CRM Perpindahan DB',
+        'View CRM PaymentAdvance',
+        'Create CRM PaymentAdvance',
         'PA Peluang',
         'Store Peluang',
         'Update Peluang',
