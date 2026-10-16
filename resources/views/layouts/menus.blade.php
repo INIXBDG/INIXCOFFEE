@@ -2172,7 +2172,7 @@
                     <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
-                                        <h5 class="text-center card-title">Finance</h5>
+                                        <h5 class="text-center card-title">Finance and Accounting</h5>
                                         <div class="row">
                                             @can('View Invoice')
                                             <div class="col-sm-6 mt-2">
