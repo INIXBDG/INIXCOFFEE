@@ -133,6 +133,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\crm\PaymentAdvanceController;
+use App\Http\Controllers\HR\LegalitasController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1888,6 +1889,14 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/materi/{year}', [RekapPenjualanController::class, 'getMateriData'])->name('materi');
         Route::get('/mingguan/{year}/{month}', [RekapPenjualanController::class, 'getMingguanData'])->name('mingguan');
         Route::get('/profitabilitas/{year}', [RekapPenjualanController::class, 'getProfitabilitas'])->name('profitabilitas');
+    });
+
+    Route::prefix('/legalitas')->name('legalitas.')->group(function () {
+        Route::get('/', [LegalitasController::class, 'index'])->name('index');
+        Route::get('/data', [LegalitasController::class, 'getData'])->name('data');
+        Route::post('/store', [LegalitasController::class, 'store'])->name('store');
+        Route::put("/update", [LegalitasController::class, 'update'])->name('update');
+        Route::put("/delete", [LegalitasController::class, 'delete'])->name('delete');
     });
 });
 

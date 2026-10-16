@@ -158,23 +158,20 @@ class CertificateController extends Controller
             ->orderBy('pesertas.nama')
             ->get();
 
-        $certificateIds = Certificate::join(
-                'registrasis',
-                'registrasis.id_peserta',
-                '=',
-                'certificates.id_peserta'
-            )
-            ->whereIn('certificates.rkm_id', $rkmIds)
-            ->whereIn('certificates.id_peserta', $peserta->pluck('id_peserta'))
-            ->pluck('registrasis.id_peserta')
-            ->unique()
-            ->toArray();
+        $certificates = Certificate::whereIn('rkm_id', $rkmIds)
+            ->whereIn('id_peserta', $peserta->pluck('id_peserta'))
+            ->orderBy('updated_at')
+            ->get()
+            ->keyBy(fn ($c) => $c->rkm_id . '-' . $c->id_peserta);
+
+        $certificateIds = $certificates->pluck('id_peserta')->unique()->toArray();
 
         return view('office.certificate.detail', compact(
             'rkm',
             'peserta',
             'certificateIds',
-            'perusahaan'
+            'perusahaan',
+            'certificates'
         ));
     }
 

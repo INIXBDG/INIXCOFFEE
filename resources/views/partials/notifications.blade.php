@@ -2101,6 +2101,30 @@
             </div>
         </div>
     @endif
+
+    @if ($tipePesan == 'Legalitas Reminder')
+        @php
+            $sisaHari = $notification->data['message']['sisa_hari'] ?? null;
+        @endphp
+
+        <div class="notification mb-3" style="border-left: 4px solid #dc3545; padding-left: 12px;">
+            <p><strong style="text-transform: capitalize;">{{ $notification->data['user'] ?? '-' }}</strong></p>
+            <p>Dokumen {{ $notification->data['message']['legalitas'] ?? '-' }}</p>
+            <p>Berakhir pada: {{ $notification->data['message']['kadaluarsa'] ?? '-' }}</p>
+            <p>Sisa waktu: {{ is_null($sisaHari) ? '-' : ($sisaHari == 0 ? 'Berakhir hari ini' : $sisaHari . ' hari lagi') }}</p>
+
+            <p class="text-danger fw-bold">Mohon segera memperpanjang dokumen legalitas ini</p>
+            <div class="d-flex">
+                <a href="{{ route('HR.legalitas.index') }}" class="btn btn-primary btn-sm"
+                    style="margin-right:8px;">Lihat Legalitas</a>
+                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
+                    @csrf
+                    @method('PUT')
+                    <button type="submit" class="btn btn-danger btn-sm" style="margin-left:8px;">Tandai sebagai Dibaca</button>
+                </form>
+            </div>
+        </div>
+    @endif
     <hr>
 @endforeach
 @endif

@@ -42,9 +42,7 @@
                                 <label class="text-muted small text-uppercase mb-1">Perusahaan</label>
                                 <ul class="list-unstyled mb-0">
                                     @foreach ($perusahaan as $item)
-                                        <li class="fw-semibold text-dark">
-                                            {{ $item }}
-                                        </li>
+                                        <li class="fw-semibold text-dark">{{ $item }}</li>
                                     @endforeach
                                 </ul>
                             </div>
@@ -101,7 +99,7 @@
                                 Total: {{ $peserta->count() }} Peserta
                             </span>
                             <span class="badge bg-success-subtle text-success">
-                                Sudah Generate: {{ count($certificateIds) }}
+                                Sudah Generate: {{ $certificates->count() }}
                             </span>
                         </div>
                     </div>
@@ -120,10 +118,9 @@
                             <tbody>
                             @forelse($peserta as $index => $p)
                                 @php
-                                    $hasCertificate = in_array($p->id_peserta, $certificateIds);
-                                    $kategoriSaatIni = isset($certificates[$p->id_peserta])
-                                        ? ($certificates[$p->id_peserta]->kategori_exam ?? '')
-                                        : '';
+                                    $cert = $certificates[$p->id_rkm . '-' . $p->id_peserta] ?? null;
+                                    $hasCertificate = $cert !== null;
+                                    $kategoriSaatIni = $cert->kategori_exam ?? '';
                                 @endphp
                                 <tr class="border-bottom hover-bg">
                                     <td class="ps-4">
@@ -159,7 +156,7 @@
                                         <select class="form-select form-select-sm d-inline-block w-auto me-1 kategori-exam-select"
                                                 data-url="{{ route('office.certificate.updateKategoriExam', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                                 data-previous="{{ $kategoriSaatIni }}">
-                                            <option value="" disabled {{ $kategoriSaatIni == '' ? 'selected' : '' }}>Pilih Kategori</option>
+                                            <option value="" disabled {{ $kategoriSaatIni === '' ? 'selected' : '' }}>Pilih Kategori</option>
                                             @foreach (['BNSP', 'Internasional', 'Authorize', 'Inixcert'] as $kategori)
                                                 <option value="{{ $kategori }}" {{ $kategoriSaatIni === $kategori ? 'selected' : '' }}>
                                                     {{ $kategori }}
@@ -201,7 +198,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforelse
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
