@@ -57,6 +57,7 @@ class RKMController extends Controller
                         $query->where('tentatif', 1)->orWhere('tahap', 'lost');
                     })
                     ->select(
+                        DB::raw('MAX(r_k_m_s.souvenir) AS souvenir'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
                         DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
