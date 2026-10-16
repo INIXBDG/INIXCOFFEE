@@ -83,12 +83,12 @@
 
                     <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center"
                         style="width:60px;height:60px;">
-                        <img src="{{ auth()->user()->foto ?? asset('assets/img/avatars/1.png') }}" alt="User Avatar"
+                        <img src="{{ auth()->user()?->foto ?? asset('assets/img/avatars/1.png') }}" alt="User Avatar"
                             class="w-px-1 h-auto rounded-circle">
                     </div>
 
                     <h4 class="mt-3 mb-1">
-                        {{ auth()->user()->karyawan->nama_lengkap ?? auth()->user()->username }}
+                        {{ auth()->user()?->karyawan?->nama_lengkap ?? auth()->user()?->username ?? 'Guest' }}
                     </h4>
                 </div>
 
@@ -99,7 +99,7 @@
                             Username
                         </div>
                         <div class="col-8 fw-semibold">
-                            {{ auth()->user()->username }}
+                            {{ auth()->user()?->username ?? '-' }}
                         </div>
                     </div>
 
@@ -108,7 +108,7 @@
                             Email
                         </div>
                         <div class="col-8 fw-semibold">
-                            {{ auth()->user()->karyawan->email }}
+                            {{ auth()->user()?->karyawan?->email ?? '-' }}
                         </div>
                     </div>
 
@@ -117,7 +117,7 @@
                             Jabatan
                         </div>
                         <div class="col-8 fw-semibold">
-                            {{ auth()->user()->karyawan->jabatan ?? '-' }}
+                            {{ auth()->user()?->karyawan?->jabatan ?? '-' }}
                         </div>
                     </div>
 
@@ -126,7 +126,7 @@
                             Divisi
                         </div>
                         <div class="col-8 fw-semibold">
-                            {{ auth()->user()->karyawan->divisi ?? '-' }}
+                            {{ auth()->user()?->karyawan?->divisi ?? '-' }}
                         </div>
                     </div>
                 </div>

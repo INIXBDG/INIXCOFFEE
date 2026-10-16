@@ -52,6 +52,7 @@ use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
+use App\Http\Controllers\HR\ThrController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -1880,6 +1881,18 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/data', [payrollController::class, 'getPphData'])->name('HR.pph21.data');
         Route::post('/store', [payrollController::class, 'storePph'])->name('HR.pph21.store');
         Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
+    });
+
+    Route::prefix('thr')->name('thr.')->group(function () {
+        Route::get('/', [ThrController::class, 'index'])->name('index');
+        Route::get('/data', [ThrController::class, 'getData'])->name('data');
+        Route::get('/periods', [ThrController::class, 'getPeriods'])->name('periods');
+        Route::post('/generate', [ThrController::class, 'generate'])->name('generate');
+        Route::post('/update-item/{id}', [ThrController::class, 'updateItem'])->name('update-item');
+        Route::post('/update-setting/{periodId}', [ThrController::class, 'updateSetting'])->name('update-setting');
+        Route::delete('/period/{id}', [ThrController::class, 'destroyPeriod'])->name('period.destroy');
+        Route::get('/holiday-date', [ThrController::class, 'getHolidayDate'])->name('holiday-date');
+        Route::get('/export/excel/{periodId}', [ThrController::class, 'exportExcel'])->name('export.excel');
     });
 
     Route::prefix('/rekapan-penjualan')->name('rekap-penjualan.')->group(function () {

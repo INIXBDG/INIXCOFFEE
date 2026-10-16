@@ -126,6 +126,11 @@ class karyawan extends Model
         return $this->hasMany(AdministrasiKaryawan::class, 'id_karyawan');
     }
 
+    public function thrItems()
+    {
+        return $this->hasMany(ThrItem::class, 'karyawan_id');
+    }
+
     public function jabatan()
     {
         return $this->belongsToMany(OrgStructure::class, 'karyawan_jabatan')->withPivot('is_primary')->withTimestamps();
