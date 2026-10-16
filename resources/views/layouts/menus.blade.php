@@ -2297,7 +2297,7 @@
                                                 </div>
                                                 @endcan
                                                 @can('View HitungLembur')
-                                                <div class="col-sm-6 mt-2" data-card-id="hitung_lembur">
+                                                <div class="col-sm-6 mt-2" data-card-id="hitung_        ">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
                                                             <div class="col-md-2">

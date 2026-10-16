@@ -1863,6 +1863,16 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
     });
 
+    Route::prefix('bonus-tahunan')->name('bonus-tahunan.')->group(function () {
+        Route::get('/', [App\Http\Controllers\HR\BonusTahunanController::class, 'index'])->name('index');
+        Route::get('/data', [App\Http\Controllers\HR\BonusTahunanController::class, 'getData'])->name('data');
+        Route::post('/update-skema', [App\Http\Controllers\HR\BonusTahunanController::class, 'updateSkema'])->name('update-skema');
+        Route::post('/bulk-update', [App\Http\Controllers\HR\BonusTahunanController::class, 'bulkUpdate'])->name('bulk-update');
+        Route::post('/recalculate', [App\Http\Controllers\HR\BonusTahunanController::class, 'recalculateAll'])->name('recalculate');
+        Route::get('/export/excel', [App\Http\Controllers\HR\BonusTahunanController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/pdf', [App\Http\Controllers\HR\BonusTahunanController::class, 'exportPdf'])->name('export.pdf');
+    });
+
     Route::prefix('/rekapan-penjualan')->name('rekap-penjualan.')->group(function () {
         Route::get('/', [RekapPenjualanController::class, 'index'])->name('index');
         Route::get('/data/{year}/{monthStart?}/{monthEnd?}', [RekapPenjualanController::class, 'getData'])->name('data');

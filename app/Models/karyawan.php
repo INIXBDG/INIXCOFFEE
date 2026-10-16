@@ -26,6 +26,11 @@ class karyawan extends Model
         return $this->hasOne(Pph21Karyawan::class, 'karyawan_id');
     }
 
+    public function bonusTahunan()
+    {
+        return $this->hasMany(BonusTahunan::class, 'karyawan_id');
+    }
+
     public function divisi()
     {
         return $this->hasOne(self::class, 'divisi', 'divisi')
