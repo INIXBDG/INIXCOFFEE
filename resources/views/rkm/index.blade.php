@@ -522,11 +522,12 @@
                                         html += '<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalChecklist" data-id="' + rkm.id_all + '">';
                                         html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Checklist Keperluan</a>';
 
-                                        const souvenirList = (rkm.souvenir !== null && rkm.souvenir !== undefined)
-                                            ? String(rkm.souvenir).split(',').map(s => s.trim())
-                                            : [];
-                                        const souvenirOn = souvenirList.length === 0 || souvenirList[0] !== '0';
-
+                                        const rawSouv = rkm.souvenir;
+                                        const souvenirOn = !(
+                                            rawSouv === false || rawSouv === 0 ||
+                                            rawSouv === '0' || rawSouv === 'false'
+                                        );
+                                        
                                         html += '<div class="dropdown-divider"></div>';
                                         html += '<div class="dropdown-item js-souvenir-wrap">' +
                                                     '<div class="form-check form-switch mb-0">' +
