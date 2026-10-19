@@ -505,7 +505,7 @@ class OutstandingController extends Controller
         if ($returnUrl && strpos($returnUrl, url('/outstanding')) === 0) {
             session(['outstanding_return_url' => $returnUrl]);
         }
-
+        
         $outstanding = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.approvalPendapatan')->findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 

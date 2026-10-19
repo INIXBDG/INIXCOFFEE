@@ -314,7 +314,10 @@
     <!-- Iconify -->
     <script src="{{ asset('assets/vendor/js/iconify.min.js') }}" defer></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
+    <script src="{{ asset('js/compress_validator.js') }}" defer></script>
     <script src="{{ asset('js/global-validator.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/sweetalert2.min.js') }}" defer></script>
 

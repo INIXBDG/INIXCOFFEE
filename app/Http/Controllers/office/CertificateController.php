@@ -158,23 +158,20 @@ class CertificateController extends Controller
             ->orderBy('pesertas.nama')
             ->get();
 
-        $certificateIds = Certificate::join(
-                'registrasis',
-                'registrasis.id_peserta',
-                '=',
-                'certificates.id_peserta'
-            )
-            ->whereIn('certificates.rkm_id', $rkmIds)
-            ->whereIn('certificates.id_peserta', $peserta->pluck('id_peserta'))
-            ->pluck('registrasis.id_peserta')
-            ->unique()
-            ->toArray();
+        $certificates = Certificate::whereIn('rkm_id', $rkmIds)
+            ->whereIn('id_peserta', $peserta->pluck('id_peserta'))
+            ->orderBy('updated_at')
+            ->get()
+            ->keyBy(fn ($c) => $c->rkm_id . '-' . $c->id_peserta);
+
+        $certificateIds = $certificates->pluck('id_peserta')->unique()->toArray();
 
         return view('office.certificate.detail', compact(
             'rkm',
             'peserta',
             'certificateIds',
-            'perusahaan'
+            'perusahaan',
+            'certificates'
         ));
     }
 
@@ -424,82 +421,40 @@ class CertificateController extends Controller
         $bandungD = Certificate::whereBetween($dateColumn, [$startDate, $endDate])
             ->get();
 
+        // Certificate yang kategori_exam-nya terisi, dikelompokkan per kategori
+        $certByKategori = $bandungD
+            ->filter(fn ($c) => !empty($c->kategori_exam))
+            ->groupBy('kategori_exam');
+
         // ==========================================
-        // AUTHORIZED
-        // ModelsEksam -> registexam -> peserta
-        // Tanggal (tanggal_mulai/tanggal_selesai) ditempel ke tiap peserta SEBELUM
-        // di-flatten, supaya info periode-nya tidak hilang.
+        // AUTHORIZED + BNSP + INIXCERT (satu query)
+        // ModelsEksam -> registexam (filter dokumentasiExam.kategori_exam) -> peserta
         // ==========================================
 
-        $authorizedD = ModelsEksam::with('rkm.materi', 'registexam.peserta', 'registexam')
-            ->whereHas('rkm.materi', function ($query) {
-                $query->where('kategori_exam', 'Authorize');
-            })
-            ->whereBetween($dateColumn, [$startDate, $endDate])
-            ->get()
-            ->flatMap(function ($eksam) {
-                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
-                    $peserta = $reg->peserta;
-                    if (!$peserta) {
-                        return null;
-                    }
-                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
-                    $peserta->materi = $eksam->materi ?? null;
-                    return $peserta;
-                });
-            })
-            ->filter()
+        $semuaExam = $this->getPesertaExam(
+            ['Authorize', 'BNSP', 'Inixcert'],
+            $dateColumn,
+            $startDate,
+            $endDate
+        );
+
+        $byKategori = $semuaExam->groupBy('kategori_exam');
+
+        // Gabungkan: data exam + certificate yang kategori_exam-nya terisi (+1 per certificate)
+        // concat() dipakai (bukan merge) supaya model dari tabel berbeda tidak saling menimpa karena primary key sama.
+        $authorizedD = collect($byKategori->get('Authorize', collect()))
+            ->concat($certByKategori->get('Authorize', collect()))
             ->values();
 
-        // ==========================================
-        // BNSP
-        // ModelsEksam -> registexam -> peserta
-        // ==========================================
-
-        $bnspD = ModelsEksam::with('rkm.materi', 'registexam.peserta')
-            ->whereHas('rkm.materi', function ($query) {
-                $query->where('kategori_exam', 'BNSP');
-            })
-            ->whereBetween($dateColumn, [$startDate, $endDate])
-            ->get()
-            ->flatMap(function ($eksam) {
-                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
-                    $peserta = $reg->peserta;
-                    if (!$peserta) {
-                        return null;
-                    }
-                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
-                    $peserta->materi = $eksam->materi ?? null;
-                    return $peserta;
-                });
-            })
-            ->filter()
+        $bnspD = collect($byKategori->get('BNSP', collect()))
+            ->concat($certByKategori->get('BNSP', collect()))
             ->values();
 
-        // ==========================================
-        // INIXCERT
-        // ModelsEksam -> registexam -> peserta
-        // ==========================================
-
-        $inixcertD = ModelsEksam::with('rkm.materi', 'registexam.peserta')
-            ->whereHas('rkm.materi', function ($query) {
-                $query->where('kategori_exam', 'Inixcert');
-            })
-            ->whereBetween($dateColumn, [$startDate, $endDate])
-            ->get()
-            ->flatMap(function ($eksam) {
-                return collect($eksam->registexam)->map(function ($reg) use ($eksam) {
-                    $peserta = $reg->peserta;
-                    if (!$peserta) {
-                        return null;
-                    }
-                    $peserta->tanggal_exam = $reg->tanggal_exam ?? null;
-                    $peserta->materi = $eksam->materi ?? null;
-                    return $peserta;
-                });
-            })
-            ->filter()
+        $inixcertD = collect($byKategori->get('Inixcert', collect()))
+            ->concat($certByKategori->get('Inixcert', collect()))
             ->values();
+
+        $internasionalD = collect($certByKategori->get('Internasional', collect()))->values();
 
         // ==========================================
         // WORKSHOP
@@ -518,9 +473,9 @@ class CertificateController extends Controller
                     if (!$peserta) {
                         return null;
                     }
-                    $peserta->tanggal_awal = $rkm->tanggal_awal;
+                    $peserta->tanggal_awal  = $rkm->tanggal_awal;
                     $peserta->tanggal_akhir = $rkm->tanggal_akhir;
-                    $peserta->materi = $rkm->materi->nama_materi ?? null;
+                    $peserta->materi        = $rkm->materi->nama_materi ?? null;
                     return $peserta;
                 });
             })
@@ -563,7 +518,12 @@ class CertificateController extends Controller
 
             'inixcert' => [
                 'count' => $inixcertD->count(),
-                'data' => $inixcertD,
+                'data'  => $inixcertD,
+            ],
+
+            'internasional' => [
+                'count' => $internasionalD->count(),
+                'data'  => $internasionalD,
             ],
 
             'workshop' => [
@@ -576,6 +536,49 @@ class CertificateController extends Controller
                 'data'  => $webinarD,
             ],
         ]);
+    }
+
+    private function getPesertaExam(array $kategori, $dateColumn, $startDate, $endDate)
+    {
+        return ModelsEksam::with([
+                'rkm.materi',
+                'registexam.peserta',
+                'registexam.dokumentasiExam',
+            ])
+            ->where(function ($q) use ($kategori) {
+                // kategori dari materi
+                $q->whereHas('rkm.materi', fn ($m) => $m->whereIn('kategori_exam', $kategori))
+                // kategori dari dokumentasi exam
+                ->orWhereHas('registexam.dokumentasiExam', fn ($d) => $d->whereIn('kategori_exam', $kategori));
+            })
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get()
+            ->flatMap(function ($eksam) use ($kategori) {
+                $materi         = $eksam->rkm->materi ?? null;
+                $kategoriMateri = $materi->kategori_exam ?? null;
+    
+                return $eksam->registexam->map(function ($reg) use ($materi, $kategori, $kategoriMateri) {
+                    if (!$reg->peserta) {
+                        return null;
+                    }
+    
+                    // prioritas: dokumentasi, fallback: materi
+                    $kategoriReg = $reg->dokumentasiExam->kategori_exam ?? $kategoriMateri;
+    
+                    if (!in_array($kategoriReg, $kategori, true)) {
+                        return null;
+                    }
+    
+                    $peserta = clone $reg->peserta;
+                    $peserta->tanggal_exam  = $reg->tanggal_exam ?? null;
+                    $peserta->materi        = $materi; // objek Materi, bukan id
+                    $peserta->kategori_exam = $kategoriReg;
+    
+                    return $peserta;
+                });
+            })
+            ->filter()
+            ->values();
     }
 
     public function storeSummary(Request $request)
@@ -625,5 +628,33 @@ class CertificateController extends Controller
         $summary->delete();
 
         return redirect()->back()->with('success', 'Certificate summary deleted successfully.');
+    }
+
+    public function updateKategoriExam(Request $request, $rkm_id, $peserta_id)
+    {
+        $validated = $request->validate([
+            'kategori_exam' => 'required|in:BNSP,Internasional,Authorize,Inixcert',
+        ]);
+
+        $certificate = Certificate::where('rkm_id', $rkm_id)
+            ->where('id_peserta', $peserta_id)
+            ->first();
+
+        if (!$certificate) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sertifikat tidak ditemukan.',
+            ], 404);
+        }
+
+        $certificate->update([
+            'kategori_exam' => $validated['kategori_exam'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kategori exam berhasil diperbarui.',
+            'kategori_exam' => $certificate->kategori_exam,
+        ]);
     }
 }

@@ -521,6 +521,23 @@
                                         html += '<div class="dropdown-divider"></div>';
                                         html += '<a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalChecklist" data-id="' + rkm.id_all + '">';
                                         html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Checklist Keperluan</a>';
+
+                                        const rawSouv = rkm.souvenir;
+                                        const souvenirOn = !(
+                                            rawSouv === false || rawSouv === 0 ||
+                                            rawSouv === '0' || rawSouv === 'false'
+                                        );
+                                        
+                                        html += '<div class="dropdown-divider"></div>';
+                                        html += '<div class="dropdown-item js-souvenir-wrap">' +
+                                                    '<div class="form-check form-switch mb-0">' +
+                                                        '<input class="form-check-input js-toggle-souvenir" type="checkbox" role="switch" ' +
+                                                            'id="souvenir-' + firstId + '" ' +
+                                                            'data-ids=\'' + jsonIds + '\' ' +
+                                                            (souvenirOn ? 'checked' : '') + '>' +
+                                                        '<label class="form-check-label" for="souvenir-' + firstId + '">Souvenir</label>' +
+                                                    '</div>' +
+                                                '</div>';
                                     }
 
                                     // 4. Submenu Makanan - Dipindahkan ke bawah
@@ -684,6 +701,53 @@
 
         // 4. Inisialisasi Select2
         initDynamicSelect2();
+    });
+
+    // Biar dropdown tidak tertutup saat klik toggle
+    $(document).on('click', '.js-souvenir-wrap', function(e) {
+        e.stopPropagation();
+    });
+
+    $(document).on('change', '.js-toggle-souvenir', function() {
+        const $el = $(this);
+        const checked = $el.is(':checked');
+        let ids = [];
+
+        try {
+            ids = JSON.parse($el.attr('data-ids'));
+        } catch (err) {
+            console.error('Gagal parse data-ids:', err);
+        }
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            $el.prop('checked', !checked);
+            alert('Tidak ada ID yang valid untuk diperbarui');
+            return;
+        }
+
+        $el.prop('disabled', true);
+
+        $.ajax({
+            url: '{{ route("rkm.toggle-souvenir") }}',
+            method: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                ids: ids,
+                souvenir: checked ? 1 : 0
+            },
+            success: function(res) {
+                // state sudah sesuai dengan checkbox, tidak perlu reload tabel
+                console.log(res.message);
+            },
+            error: function(xhr) {
+                // rollback tampilan kalau gagal
+                $el.prop('checked', !checked);
+                alert((xhr.responseJSON && xhr.responseJSON.message) || 'Gagal update souvenir');
+            },
+            complete: function() {
+                $el.prop('disabled', false);
+            }
+        });
     });
 
     function initDynamicSelect2() {

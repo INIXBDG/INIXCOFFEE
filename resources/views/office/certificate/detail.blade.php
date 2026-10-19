@@ -42,9 +42,7 @@
                                 <label class="text-muted small text-uppercase mb-1">Perusahaan</label>
                                 <ul class="list-unstyled mb-0">
                                     @foreach ($perusahaan as $item)
-                                        <li class="fw-semibold text-dark">
-                                            {{ $item }}
-                                        </li>
+                                        <li class="fw-semibold text-dark">{{ $item }}</li>
                                     @endforeach
                                 </ul>
                             </div>
@@ -101,7 +99,7 @@
                                 Total: {{ $peserta->count() }} Peserta
                             </span>
                             <span class="badge bg-success-subtle text-success">
-                                Sudah Generate: {{ count($certificateIds) }}
+                                Sudah Generate: {{ $certificates->count() }}
                             </span>
                         </div>
                     </div>
@@ -114,13 +112,15 @@
                                     <th class="border-0 ps-4" style="min-width: 60px;">No</th>
                                     <th class="border-0" style="min-width: 250px;">Nama Peserta</th>
                                     <th class="border-0 text-center" style="min-width: 120px;">Status</th>
-                                    <th class="border-0 text-center pe-4" style="min-width: 180px;">Action</th>
+                                    <th class="border-0 text-center pe-4" style="min-width: 380px;">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                             @forelse($peserta as $index => $p)
                                 @php
-                                    $hasCertificate = in_array($p->id_peserta, $certificateIds);
+                                    $cert = $certificates[$p->id_rkm . '-' . $p->id_peserta] ?? null;
+                                    $hasCertificate = $cert !== null;
+                                    $kategoriSaatIni = $cert->kategori_exam ?? '';
                                 @endphp
                                 <tr class="border-bottom hover-bg">
                                     <td class="ps-4">
@@ -152,12 +152,24 @@
                                     </td>
                                     <td class="text-center pe-4">
                                         @if($hasCertificate)
+                                        <!-- Select Kategori Exam -->
+                                        <select class="form-select form-select-sm d-inline-block w-auto me-1 kategori-exam-select"
+                                                data-url="{{ route('office.certificate.updateKategoriExam', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
+                                                data-previous="{{ $kategoriSaatIni }}">
+                                            <option value="" disabled {{ $kategoriSaatIni === '' ? 'selected' : '' }}>Pilih Kategori</option>
+                                            @foreach (['BNSP', 'Internasional', 'Authorize', 'Inixcert'] as $kategori)
+                                                <option value="{{ $kategori }}" {{ $kategoriSaatIni === $kategori ? 'selected' : '' }}>
+                                                    {{ $kategori }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+
                                         <!-- Tombol Download -->
-                                        <a href="{{ route('office.certificate.downloadByPeserta', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.downloadByPeserta', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                            class="btn btn-sm btn-success shadow-sm hover-scale">
                                             <i class="bx bx-download me-1"></i>Download PDF
                                         </a>
-                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                            class="btn btn-sm btn-primary shadow-sm hover-scale">
                                             <i class="bx bx-file-blank me-1"></i>Generate +
                                         </a>
@@ -170,7 +182,7 @@
                                         </form>
                                         @else
                                         <!-- Tombol Generate -->
-                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}" 
+                                        <a href="{{ route('office.certificate.create', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                            class="btn btn-sm btn-primary shadow-sm hover-scale">
                                             <i class="bx bx-file-blank me-1"></i>Generate
                                         </a>
@@ -186,7 +198,7 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @endforelse
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -246,6 +258,11 @@
         font-weight: 500;
     }
 
+    .kategori-exam-select {
+        min-width: 150px;
+        vertical-align: middle;
+    }
+
     /* Custom Scrollbar */
     .table-responsive::-webkit-scrollbar {
         width: 8px;
@@ -271,4 +288,43 @@
         box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content
+        ?? '{{ csrf_token() }}';
+
+    document.querySelectorAll('.kategori-exam-select').forEach(function (select) {
+        select.addEventListener('change', async function () {
+            const previous = this.dataset.previous;
+            this.disabled = true;
+
+            try {
+                const response = await fetch(this.dataset.url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrf,
+                    },
+                    body: JSON.stringify({ kategori_exam: this.value }),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Gagal memperbarui kategori.');
+                }
+
+                this.dataset.previous = this.value;
+            } catch (error) {
+                alert(error.message);
+                this.value = previous; // kembalikan ke nilai sebelumnya
+            } finally {
+                this.disabled = false;
+            }
+        });
+    });
+});
+</script>
 @endsection
