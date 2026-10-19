@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Api\PickupDriverWebhookController;
+use App\Http\Controllers\Api\ContactwebController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -66,7 +68,9 @@ Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
 Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
+Route::get('jadwalRKM/data', [App\Http\Controllers\Api\RKMController::class, 'jadwalRKM'])->name('jadwalRKM.data');
 
+Route::post('/contact/web', [ContactWebController::class, 'store'])->name('ContactWeb');
 
 
 Route::post('/create/ticket', [TicketController::class, 'store']);
@@ -91,3 +95,6 @@ Route::prefix('pickup-driver')->group(function () {
     // Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
 });
 Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::class, 'requestHandler']);
+
+Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class, 'receivePayment'])->name('receivePayment');
+Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');

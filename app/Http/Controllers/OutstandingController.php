@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Illuminate\Support\Facades\Storage;
-use setasign\Fpdi\Tcpdf\Fpdi;
+use setasign\Fpdi\Fpdi;
 use Mostafaznv\PdfOptimizer\Enums\PdfSettings;
 use Mostafaznv\PdfOptimizer\Enums\ColorConversionStrategy;
 use Mostafaznv\PdfOptimizer\Laravel\Facade\PdfOptimizer as FacadePdfOptimizer;
@@ -45,12 +45,24 @@ class OutstandingController extends Controller
     {
         $this->middleware('auth');
     }
+
     public function index()
     {
         // $materis = outstanding::all();
 
         // return view('outstanding.index', compact('materis'));
         return view('outstanding.index');
+    }
+
+    private function redirectToIndex(Request $request, string $message)
+    {
+        $returnUrl = $request->input('return_url', session()->pull('outstanding_return_url'));
+
+        if (!$returnUrl || strpos($returnUrl, url('/outstanding')) !== 0) {
+            $returnUrl = route('outstanding.index');
+        }
+
+        return redirect($returnUrl)->with(['success' => $message]);
     }
 
     public function singkronDataOutstanding(Request $request)
@@ -85,13 +97,13 @@ class OutstandingController extends Controller
         foreach ($rkms as $rkm) {
             $approvalPendapatan = ApprovalPendapatan::where('id_rkm', $rkm->id)->first();
 
-            $netSales = $approvalPendapatan 
-                ? ($approvalPendapatan->total_penjualan_sales ?? $approvalPendapatan->total_penjualan_sales ?? $rkm->harga_jual) 
+            $netSales = $approvalPendapatan
+                ? ($approvalPendapatan->total_penjualan_sales ?? $rkm->harga_jual)
                 : $rkm->harga_jual;
-            
+
             $jumlahPembayaran = $approvalPendapatan ? $approvalPendapatan->jumlah_pembayaran : null;
             $tanggalBayar = $approvalPendapatan ? $approvalPendapatan->tanggal_pembayaran : null;
-            
+
             $ppn = $approvalPendapatan ? $approvalPendapatan->PPN : null;
             $pph = $approvalPendapatan ? $approvalPendapatan->PPH : null;
             $biayaAdmin = $approvalPendapatan ? $approvalPendapatan->biaya_admin : null;
@@ -187,10 +199,16 @@ class OutstandingController extends Controller
                     $q->whereIn('kode_karyawan', $users);
                 })->get();
 
-                $receiverId = $notifiedUsers->id;
-                NotificationFacade::send($notifiedUsers, new OutstandingNotification($data, '/outstanding', $receiverId));
+                // FIX: sebelumnya $notifiedUsers->id dipanggil pada Collection (hasilnya null).
+                // Kirim per user dengan receiverId masing-masing, sama seperti di store().
+                foreach ($notifiedUsers as $notifiedUser) {
+                    NotificationFacade::send($notifiedUser, new OutstandingNotification($data, '/outstanding', $notifiedUser->id));
+                }
             }
         }
+
+        // Data index di-cache 30 menit, jadi baris hasil sinkron tidak akan tampil tanpa ini
+        Cache::flush();
 
         if (empty($tanggal_awal) || empty($tanggal_akhir)) {
             return redirect()
@@ -480,8 +498,14 @@ class OutstandingController extends Controller
             ->with(['success' => 'Data Berhasil Disimpan!']);
     }
 
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
+        // Simpan URL asal (tab & halaman index) agar update() bisa kembali ke sana
+        $returnUrl = $request->query('return');
+        if ($returnUrl && strpos($returnUrl, url('/outstanding')) === 0) {
+            session(['outstanding_return_url' => $returnUrl]);
+        }
+        
         $outstanding = outstanding::with('rkm.perusahaan', 'rkm.materi', 'rkm.approvalPendapatan')->findOrFail($id);
         $tracking_outstanding = trackingOutstanding::where('id_outstanding', $id)->first();
 
@@ -528,7 +552,7 @@ class OutstandingController extends Controller
 
         return view('outstanding.edit', compact('outstanding', 'tracking_outstanding', 'potongan', 'currentStatus', 'totalNetSales'));
     }
-        
+
     public function update(Request $request, $id)
     {
         // Validasi
@@ -553,9 +577,9 @@ class OutstandingController extends Controller
         // Handle file uploads
         $fakturPath = $post->path_faktur_pajak;
         if ($request->hasFile('faktur_pajak')) {
-            // Delete old file
-            if ($fakturPath && Storage::exists($fakturPath)) {
-                Storage::delete($fakturPath);
+            // Delete old file (disimpan di disk 'public', jadi hapus dari disk yang sama)
+            if ($fakturPath && Storage::disk('public')->exists($fakturPath)) {
+                Storage::disk('public')->delete($fakturPath);
             }
             $fakturPath = $request->file('faktur_pajak')->store('faktur_pajak', 'public');
         }
@@ -587,7 +611,7 @@ class OutstandingController extends Controller
                     $pdf->useTemplate($tpl);
                 }
             }
-            $pdf->Output($outputPath, 'F');
+            $pdf->Output('F', $outputPath);
 
             // Cleanup temp files
             foreach ($tempPaths as $path) {
@@ -644,7 +668,7 @@ class OutstandingController extends Controller
                     $pdf->useTemplate($tpl);
                 }
             }
-            $pdf->Output($outputPath, 'F');
+            $pdf->Output('F', $outputPath);
 
             // Cleanup
             foreach ($allTempPaths as $path) {
@@ -888,9 +912,7 @@ class OutstandingController extends Controller
         // Invalidasi cache setelah update
         Cache::flush();
 
-        return redirect()
-            ->route('outstanding.index')
-            ->with(['success' => 'Data Berhasil Disimpan!']);
+        return $this->redirectToIndex($request, 'Data Berhasil Disimpan!');
     }
 
     public function generatePdfPeserta($id)
@@ -1032,7 +1054,7 @@ class OutstandingController extends Controller
             }
         }
 
-        $pdf->Output($outputPath, 'F');
+        $pdf->Output('F', $outputPath);
 
         $optimizedPath = str_replace('.pdf', '_optimized.pdf', $outputPath);
 
@@ -1057,7 +1079,7 @@ class OutstandingController extends Controller
         $bilangan = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
         $satuan = ['', 'ribu', 'juta', 'miliar'];
 
-        $amount = (int) $amount; // <-- Ini benar
+        $amount = (int) $amount;
         if ($amount < 0) {
             return 'Minus ' . $this->terbilang(abs($amount));
         }
@@ -1092,7 +1114,7 @@ class OutstandingController extends Controller
         return ucwords(trim($words)) . ' rupiah';
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $post = outstanding::findOrFail($id);
 
@@ -1101,9 +1123,7 @@ class OutstandingController extends Controller
         // Invalidasi cache setelah hapus
         Cache::flush();
 
-        return redirect()
-            ->route('outstanding.index')
-            ->with(['success' => 'Data Berhasil Dihapus!']);
+        return $this->redirectToIndex($request, 'Data Berhasil Dihapus!');
     }
 
     public function exportExcel(Request $request)

@@ -2172,7 +2172,7 @@
                     <div class="masonry-item">
                                 <div class="card">
                                     <div class="card-body">
-                                        <h5 class="text-center card-title">Finance</h5>
+                                        <h5 class="text-center card-title">Finance and Accounting</h5>
                                         <div class="row">
                                             @can('View Invoice')
                                             <div class="col-sm-6 mt-2">
@@ -3151,23 +3151,6 @@
                                                         <h5 class="card-title">Schedule Logs</h5>
                                                     </a>
                                                     <p class="card-text">Schedule logs for monitoring.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                     <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2">
-                                                    <img src="{{ asset('icon/terminal.svg') }}" class="img-responsive"
-                                                        width="30px">
-                                                </div>
-                                                <div class="col-md-10" style="margin-left: 10px">
-                                                    <a href="{{ route('audit.index') }}"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Audit</h5>
-                                                    </a>
-                                                    <p class="card-text">Data Audit Apk web.</p>
                                                 </div>
                                             </div>
                                         </div>

@@ -40,10 +40,12 @@ class RKM extends Model
         'hide',
         'hide_materi',
         'hide_perusahaan',
+        'souvenir'
     ];
     protected $casts = [
         'tanggal_awal' => 'date',
         'tanggal_akhir' => 'date',
+        'souvenir' => 'boolean'
     ];
 
     public function perhitunganNetSales()

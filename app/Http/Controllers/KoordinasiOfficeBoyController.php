@@ -299,7 +299,7 @@ class KoordinasiOfficeBoyController extends Controller
             "Catatan: {$this->escapeMarkdownV2($data['catatan'] ?? '-')}\n\n" .
             "Silahkan buka detail di aplikasi\\.";
 
-        $detailUrl = 'https://coffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
+        $detailUrl = 'https://inixcoffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
 
         $inlineKeyboard = [
             [
@@ -364,7 +364,7 @@ class KoordinasiOfficeBoyController extends Controller
                 "Office Boy: {$this->escapeMarkdownV2($data['ob_name'])}\n" .
                 "Status: {$this->escapeMarkdownV2($data['status'])}\n\n";
 
-        $detailUrl = 'https://coffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
+        $detailUrl = 'https://inixcoffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
 
         if ($data['status'] === 'Dikerjakan') {
             $replyMarkup = [
