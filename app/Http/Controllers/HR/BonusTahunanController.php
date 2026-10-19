@@ -8,11 +8,9 @@ use App\Models\karyawan;
 use App\Models\LogGaji;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -27,42 +25,10 @@ class BonusTahunanController extends Controller
     }
 
     /**
-     * Pastikan tabel bonus_tahunans ada secara otomatis.
-     */
-    private function ensureTableExists(): void
-    {
-        if (!Schema::hasTable('bonus_tahunans')) {
-            Schema::create('bonus_tahunans', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('karyawan_id')->constrained('karyawans')->onDelete('cascade');
-                $table->integer('tahun')->index();
-                $table->integer('bulan')->default(12)->index();
-                $table->string('jabatan')->nullable();
-                $table->decimal('basic_salary', 15, 2)->default(0);
-                $table->string('rekening_maybank')->nullable();
-                $table->string('status_karyawan')->nullable();
-                $table->date('tanggal_bergabung')->nullable();
-                $table->integer('masa_kerja_bulan')->default(0);
-                $table->string('masa_kerja_teks')->nullable();
-                $table->string('skema_bonus', 30)->default('standar'); // standar, 2x, 4x, custom
-                $table->decimal('multiplier', 8, 2)->default(1.00);
-                $table->decimal('nominal_bonus', 15, 2)->default(0);
-                $table->text('catatan')->nullable();
-                $table->boolean('is_locked')->default(false);
-                $table->timestamps();
-
-                $table->unique(['karyawan_id', 'tahun', 'bulan'], 'unique_bonus_karyawan_periode');
-            });
-        }
-    }
-
-    /**
      * Halaman Utama Bonus Tahunan
      */
     public function index(Request $request)
     {
-        $this->ensureTableExists();
-
         $tahunSekarang = (int) $request->input('year', now()->year);
         $divisiList = karyawan::query()
             ->whereNotNull('divisi')
@@ -81,8 +47,6 @@ class BonusTahunanController extends Controller
      */
     public function getData(Request $request): JsonResponse
     {
-        $this->ensureTableExists();
-
         try {
             $tahun = (int) $request->input('year', now()->year);
             $search = trim($request->input('search', ''));
@@ -98,9 +62,10 @@ class BonusTahunanController extends Controller
                 'summary' => $dataset['summary'],
                 'period' => [
                     'year' => $tahun,
+                    'work_year' => $tahun - 1,
                     'month' => 12,
                     'month_name' => 'Desember',
-                    'cutoff_date' => Carbon::create($tahun, 12, 31)->translatedFormat('d F Y'),
+                    'cutoff_date' => Carbon::create($tahun - 1, 12, 31)->translatedFormat('d F Y'),
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -120,8 +85,6 @@ class BonusTahunanController extends Controller
      */
     public function updateSkema(Request $request): JsonResponse
     {
-        $this->ensureTableExists();
-
         $validated = $request->validate([
             'karyawan_id' => 'required|integer|exists:karyawans,id',
             'tahun' => 'required|integer',
@@ -131,15 +94,15 @@ class BonusTahunanController extends Controller
             'catatan' => 'nullable|string|max:500',
         ]);
 
+        // $tahun      = tahun pencairan (filter), disimpan di kolom bonus_tahunans.tahun
+        // $tahunKerja = tahun masa kerja yang dihitung (tahun pencairan - 1)
         $tahun = (int) $validated['tahun'];
+        $tahunKerja = $tahun - 1;
         $emp = karyawan::findOrFail($validated['karyawan_id']);
-        $cutoff = Carbon::create($tahun, 12, 31)->endOfDay();
 
         $joinDate = $this->determineJoinDate($emp);
-        $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahun);
-
-        $totalBulan = $joinDate ? (int) $joinDate->diffInMonths($cutoff) : 0;
-        $masaKerjaTeks = $this->formatMasaKerja($totalBulan);
+        $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahunKerja);
+        $masaKerjaTeks = $this->hitungMasaKerjaTeks($joinDate, $tahunKerja);
 
         if ($request->filled('basic_salary')) {
             $basicSalary = (float) $request->input('basic_salary');
@@ -149,11 +112,15 @@ class BonusTahunanController extends Controller
             $emp->update(['gaji' => $newGaji]);
         } else {
             // Cek apakah sebelumnya sudah tersimpan di bonus_tahunans
-            $existingBonus = BonusTahunan::where('karyawan_id', $emp->id)->where('tahun', $tahun)->where('bulan', 12)->first();
+            $existingBonus = BonusTahunan::where('karyawan_id', $emp->id)
+                ->where('tahun', $tahun)
+                ->where('bulan', 12)
+                ->first();
+
             if ($existingBonus && (float) $existingBonus->basic_salary > 0) {
                 $basicSalary = (float) $existingBonus->basic_salary;
             } else {
-                $basicSalary = $this->getBasicSalaryForEmployee($emp, $tahun);
+                $basicSalary = $this->getBasicSalaryForEmployee($emp, $tahunKerja);
             }
         }
 
@@ -164,10 +131,6 @@ class BonusTahunanController extends Controller
             $basicSalary,
             (float) ($validated['custom_nominal'] ?? 0)
         );
-        $multiplier = $calc['multiplier'];
-        $nominal = $calc['nominal'];
-
-        $statusStr = $this->determineStatusKaryawan($emp, $cutoff);
 
         $bonus = BonusTahunan::updateOrCreate(
             [
@@ -176,16 +139,12 @@ class BonusTahunanController extends Controller
                 'bulan' => 12,
             ],
             [
-                'jabatan' => $emp->jabatan,
                 'basic_salary' => $basicSalary,
-                'rekening_maybank' => $emp->rekening_maybank,
-                'status_karyawan' => $statusStr,
-                'tanggal_bergabung' => $joinDate?->toDateString(),
                 'masa_kerja_bulan' => $bulanKerja,
                 'masa_kerja_teks' => $masaKerjaTeks,
                 'skema_bonus' => $skema,
-                'multiplier' => $multiplier,
-                'nominal_bonus' => $nominal,
+                'multiplier' => $calc['multiplier'],
+                'nominal_bonus' => $calc['nominal'],
                 'catatan' => $validated['catatan'] ?? null,
             ]
         );
@@ -202,8 +161,6 @@ class BonusTahunanController extends Controller
      */
     public function bulkUpdate(Request $request): JsonResponse
     {
-        $this->ensureTableExists();
-
         $validated = $request->validate([
             'tahun' => 'required|integer',
             'skema_bonus' => 'required|string|in:standar,2x,4x',
@@ -212,8 +169,8 @@ class BonusTahunanController extends Controller
         ]);
 
         $tahun = (int) $validated['tahun'];
+        $tahunKerja = $tahun - 1;
         $skema = $validated['skema_bonus'];
-        $cutoff = Carbon::create($tahun, 12, 31)->endOfDay();
 
         $query = karyawan::query()
             ->whereNot('jabatan', 'Outsource')
@@ -233,17 +190,11 @@ class BonusTahunanController extends Controller
         try {
             foreach ($employees as $emp) {
                 $joinDate = $this->determineJoinDate($emp);
-                $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahun);
+                $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahunKerja);
+                $masaKerjaTeks = $this->hitungMasaKerjaTeks($joinDate, $tahunKerja);
 
-                $totalBulan = $joinDate ? (int) $joinDate->diffInMonths($cutoff) : 0;
-                $masaKerjaTeks = $this->formatMasaKerja($totalBulan);
-
-                $basicSalary = $this->getBasicSalaryForEmployee($emp, $tahun);
-                $statusStr = $this->determineStatusKaryawan($emp, $cutoff);
-
+                $basicSalary = $this->getBasicSalaryForEmployee($emp, $tahunKerja);
                 $calc = $this->calculateBonusNominal($bulanKerja, $skema, $basicSalary);
-                $multiplier = $calc['multiplier'];
-                $nominal = $calc['nominal'];
 
                 BonusTahunan::updateOrCreate(
                     [
@@ -252,16 +203,12 @@ class BonusTahunanController extends Controller
                         'bulan' => 12,
                     ],
                     [
-                        'jabatan' => $emp->jabatan,
                         'basic_salary' => $basicSalary,
-                        'rekening_maybank' => $emp->rekening_maybank,
-                        'status_karyawan' => $statusStr,
-                        'tanggal_bergabung' => $joinDate?->toDateString(),
                         'masa_kerja_bulan' => $bulanKerja,
                         'masa_kerja_teks' => $masaKerjaTeks,
                         'skema_bonus' => $skema,
-                        'multiplier' => $multiplier,
-                        'nominal_bonus' => $nominal,
+                        'multiplier' => $calc['multiplier'],
+                        'nominal_bonus' => $calc['nominal'],
                     ]
                 );
                 $updatedCount++;
@@ -286,8 +233,6 @@ class BonusTahunanController extends Controller
      */
     public function recalculateAll(Request $request): JsonResponse
     {
-        $this->ensureTableExists();
-
         $tahun = (int) $request->input('year', now()->year);
         $dataset = $this->generateBonusData($tahun);
 
@@ -300,11 +245,7 @@ class BonusTahunanController extends Controller
                     'bulan' => 12,
                 ],
                 [
-                    'jabatan' => $item['jabatan'],
                     'basic_salary' => $item['basic_salary'],
-                    'rekening_maybank' => $item['rekening_maybank'],
-                    'status_karyawan' => $item['status_karyawan'],
-                    'tanggal_bergabung' => $item['tanggal_bergabung_raw'],
                     'masa_kerja_bulan' => $item['masa_kerja_bulan'],
                     'masa_kerja_teks' => $item['masa_kerja'],
                     'skema_bonus' => $item['skema_bonus'],
@@ -325,8 +266,6 @@ class BonusTahunanController extends Controller
      */
     public function exportExcel(Request $request)
     {
-        $this->ensureTableExists();
-
         $tahun = (int) $request->input('year', now()->year);
         $search = trim($request->input('search', ''));
         $divisi = $request->input('divisi');
@@ -376,8 +315,9 @@ class BonusTahunanController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getRowDimension(1)->setRowHeight(28);
 
+        $tahunKerja = $tahun - 1;
         $sheet->mergeCells('A2:I2');
-        $sheet->setCellValue('A2', "INIXINDO • Periode Pencairan: Desember {$tahun}");
+        $sheet->setCellValue('A2', "INIXINDO • Periode Pencairan: Desember {$tahun} • Masa Kerja Tahun {$tahunKerja}");
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
         $sheet->getRowDimension(2)->setRowHeight(18);
@@ -461,8 +401,6 @@ class BonusTahunanController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        $this->ensureTableExists();
-
         $tahun = (int) $request->input('year', now()->year);
         $search = trim($request->input('search', ''));
         $divisi = $request->input('divisi');
@@ -480,12 +418,16 @@ class BonusTahunanController extends Controller
     }
 
     /**
-     * Helper: Menghasilkan dataset bonus tahunan secara terpadu
+     * Helper: Menghasilkan dataset bonus tahunan secara terpadu.
+     *
+     * $tahun      = tahun pencairan (filter), contoh 2026
+     * $tahunKerja = tahun masa kerja yang dihitung (tahun - 1), contoh 2025
      */
     private function generateBonusData(int $tahun, string $search = '', ?string $divisi = null, ?string $statusFilter = null, ?string $skemaFilter = null): array
     {
-        $cutoff = Carbon::create($tahun, 12, 31)->endOfDay();
-        $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
+        $tahunKerja = $tahun - 1;
+        $cutoff = Carbon::create($tahunKerja, 12, 31)->endOfDay();
+        $startOfYear = Carbon::create($tahunKerja, 1, 1)->startOfDay();
 
         $baseQuery = karyawan::query()
             ->whereNot('jabatan', 'Outsource')
@@ -495,7 +437,7 @@ class BonusTahunanController extends Controller
             ->whereNot('divisi', 'Direksi')
             ->where('divisi', '!=', 'Pilih Divisi')
             ->where(function ($q) use ($startOfYear) {
-                // Aktif atau resign setelah awal tahun berjalan
+                // Aktif atau resign setelah awal tahun masa kerja
                 $q->whereNull('resigned_at')
                   ->orWhere('resigned_at', '>=', $startOfYear);
             });
@@ -515,7 +457,7 @@ class BonusTahunanController extends Controller
 
         $employees = $baseQuery->orderBy('divisi')->orderBy('nama_lengkap')->get();
 
-        // Ambil data tersimpan di bonus_tahunans jika ada
+        // Ambil data tersimpan di bonus_tahunans (periode pencairan = $tahun)
         $savedRecords = BonusTahunan::where('tahun', $tahun)
             ->where('bulan', 12)
             ->get()
@@ -525,9 +467,9 @@ class BonusTahunanController extends Controller
 
         foreach ($employees as $emp) {
             $joinDate = $this->determineJoinDate($emp);
-            $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahun);
+            $bulanKerja = $this->calculateBulanKerjaTahunBerjalan($joinDate, $tahunKerja);
 
-            $totalBulan = $joinDate ? (int) $joinDate->diffInMonths($cutoff) : 0;
+            $totalBulan = $joinDate ? max(0, (int) $joinDate->diffInMonths($cutoff)) : 0;
             $masaKerjaTeks = $this->formatMasaKerja($totalBulan);
 
             $statusStr = $this->determineStatusKaryawan($emp, $cutoff);
@@ -542,7 +484,7 @@ class BonusTahunanController extends Controller
             // Basic salary
             $basicSalary = ($saved && (float) $saved->basic_salary > 0)
                 ? (float) $saved->basic_salary
-                : $this->getBasicSalaryForEmployee($emp, $tahun);
+                : $this->getBasicSalaryForEmployee($emp, $tahunKerja);
 
             // Skema & Multiplier & Nominal
             if ($saved) {
@@ -553,7 +495,7 @@ class BonusTahunanController extends Controller
                     $nominal = (float) $saved->nominal_bonus;
                     $multiplier = (float) $saved->multiplier;
                 } else {
-                    // Selalu hitung dengan rumus baru: (Basic Salary ÷ 12) × bulanKerja
+                    // Selalu hitung dengan rumus: (Basic Salary ÷ 12) × bulanKerja
                     $calc = $this->calculateBonusNominal($bulanKerja, $skema, $basicSalary);
                     $multiplier = $calc['multiplier'];
                     $nominal = $calc['nominal'];
@@ -583,7 +525,6 @@ class BonusTahunanController extends Controller
                 'rekening_maybank' => $emp->rekening_maybank ?: '-',
                 'status_karyawan' => $statusStr,
                 'tanggal_bergabung' => $joinDate ? $joinDate->translatedFormat('d M Y') : '-',
-                'tanggal_bergabung_raw' => $joinDate?->toDateString(),
                 'masa_kerja' => $masaKerjaTeks,
                 'masa_kerja_bulan' => $bulanKerja,
                 'bulan_kerja' => $bulanKerja,
@@ -612,45 +553,43 @@ class BonusTahunanController extends Controller
     }
 
     /**
-     * Hitung berapa bulan karyawan bekerja DI TAHUN PERHITUNGAN SAJA (Januari - Desember):
-     * - Jika masuk di tahun yang sama dengan tahun perhitungan:
-     *     Masa Kerja = Bulan Desember (12) - Bulan Masuk + 1
-     *     (Contoh: Masuk 1 Agustus 2026 -> 12 - 8 + 1 = 5 bulan)
-     * - Jika masuk di tahun sebelumnya:
-     *     Masa Kerja = 12 bulan (full year)
-     * - Jika belum bergabung (masuk setelah tahun perhitungan):
-     *     Masa Kerja = 0 bulan
+     * Hitung berapa bulan karyawan bekerja pada $tahunKerja (Januari - Desember):
+     * - Masuk di tahun yang sama dengan $tahunKerja:
+     *     Masa Kerja = 12 - Bulan Masuk + 1
+     *     (Contoh: Masuk 1 April 2025 -> 12 - 4 + 1 = 9 bulan)
+     * - Masuk di tahun sebelumnya: 12 bulan (full year)
+     * - Masuk setelah $tahunKerja: 0 bulan
      */
-    private function calculateBulanKerjaTahunBerjalan(?Carbon $joinDate, int $tahun): int
+    private function calculateBulanKerjaTahunBerjalan(?Carbon $joinDate, int $tahunKerja): int
     {
         if (!$joinDate) {
             return 0;
         }
 
         $joinYear = $joinDate->year;
-        if ($joinYear < $tahun) {
+        if ($joinYear < $tahunKerja) {
             return 12;
-        } elseif ($joinYear === $tahun) {
+        } elseif ($joinYear === $tahunKerja) {
             return max(0, min(12, 12 - $joinDate->month + 1));
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
      * Hitung nominal dan multiplier bonus tahunan:
-     * Rumus: (Basic Salary ÷ 12) × Masa Kerja Bulan di Tahun Berjalan
+     * Rumus: (Basic Salary ÷ 12) × Masa Kerja Bulan di tahun masa kerja
      * Skema:
      * - Standar (Prorata): 1 × (Basic Salary ÷ 12) × Masa Kerja
-     * - 2x Basic Salary: 2 × (Basic Salary ÷ 12) × Masa Kerja
-     * - 4x Basic Salary: 4 × (Basic Salary ÷ 12) × Masa Kerja
+     * - 2x: 2 × (Basic Salary ÷ 12) × Masa Kerja
+     * - 4x: 4 × (Basic Salary ÷ 12) × Masa Kerja
      * - Custom: custom_nominal
      */
     private function calculateBonusNominal(int $bulanKerja, string $skema, float $basicSalary, float $customNominal = 0): array
     {
         if ($skema === 'custom') {
             $nominal = $customNominal;
-            $multiplier = $basicSalary > 0 ? round($nominal / $basicSalary, 2) : 1.00;
+            $multiplier = $basicSalary > 0 ? round($nominal / $basicSalary, 4) : 1.0;
             return [
                 'multiplier' => $multiplier,
                 'nominal' => $nominal,
@@ -687,6 +626,17 @@ class BonusTahunanController extends Controller
     }
 
     /**
+     * Helper: Teks masa kerja sampai cut-off 31 Desember $tahunKerja
+     */
+    private function hitungMasaKerjaTeks(?Carbon $joinDate, int $tahunKerja): string
+    {
+        $cutoff = Carbon::create($tahunKerja, 12, 31)->endOfDay();
+        $totalBulan = $joinDate ? max(0, (int) $joinDate->diffInMonths($cutoff)) : 0;
+
+        return $this->formatMasaKerja($totalBulan);
+    }
+
+    /**
      * Helper: Format masa kerja ke "X Thn Y Bln"
      */
     private function formatMasaKerja(int $totalBulan): string
@@ -701,13 +651,13 @@ class BonusTahunanController extends Controller
             return "{$thn} Thn {$bln} Bln";
         } elseif ($thn > 0) {
             return "{$thn} Tahun";
-        } else {
-            return "{$bln} Bulan";
         }
+
+        return "{$bln} Bulan";
     }
 
     /**
-     * Helper: Menentukan status kepegawaian
+     * Helper: Menentukan status kepegawaian pada tanggal cut-off
      */
     private function determineStatusKaryawan($emp, Carbon $cutoff): string
     {
@@ -732,12 +682,12 @@ class BonusTahunanController extends Controller
 
     /**
      * Helper: Mengambil Basic Salary (Gaji Pokok + Tunjangan Jabatan)
+     * berdasarkan log gaji terakhir sampai dengan $tahunKerja.
      */
-    private function getBasicSalaryForEmployee($emp, int $tahun): float
+    private function getBasicSalaryForEmployee($emp, int $tahunKerja): float
     {
-        // Cek log gaji bulan 12 pada tahun tersebut
         $log = LogGaji::where('id_karyawan', $emp->id)
-            ->where('tahun', '<=', $tahun)
+            ->where('tahun', '<=', $tahunKerja)
             ->orderByDesc('tahun')
             ->orderByDesc('bulan')
             ->first();

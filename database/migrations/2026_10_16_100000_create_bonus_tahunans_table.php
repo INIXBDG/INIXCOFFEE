@@ -14,11 +14,7 @@ return new class extends Migration
                 $table->foreignId('karyawan_id')->constrained('karyawans')->onDelete('cascade');
                 $table->integer('tahun')->index();
                 $table->integer('bulan')->default(12)->index();
-                $table->string('jabatan')->nullable();
                 $table->decimal('basic_salary', 15, 2)->default(0);
-                $table->string('rekening_maybank')->nullable();
-                $table->string('status_karyawan')->nullable();
-                $table->date('tanggal_bergabung')->nullable();
                 $table->integer('masa_kerja_bulan')->default(0);
                 $table->string('masa_kerja_teks')->nullable();
                 $table->string('skema_bonus', 30)->default('standar'); // 'standar', '2x', '4x', 'custom'
