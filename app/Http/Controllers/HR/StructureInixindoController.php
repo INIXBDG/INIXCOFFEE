@@ -7,12 +7,41 @@ use App\Models\OrgStructure;
 use App\Models\karyawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class StructureInixindoController extends Controller
 {
+    private const HR_MENU_PERMISSION = 'View Struktur Organisasi';
+
+    private const PROTECTED_ROLES = ['HRD'];
+
     public function index()
     {
-        return view('HR.structure.index');
+        $karyawan = karyawan::where('status_aktif', '1')->get();
+
+        $menuEnabled = Role::whereNotIn('name', self::PROTECTED_ROLES)->exists()
+            && Role::whereNotIn('name', self::PROTECTED_ROLES)
+                ->whereDoesntHave('permissions', fn ($q) => $q->where('name', self::HR_MENU_PERMISSION))
+                ->doesntExist();
+
+        return view('HR.structure.index', compact('karyawan', 'menuEnabled'));
+    }
+
+    public function toggleMenus(Request $request)
+    {
+        $permission = Permission::where('name', self::HR_MENU_PERMISSION)->firstOrFail();
+        $enabled = $request->boolean('enabled');
+
+        DB::transaction(function () use ($permission, $enabled) {
+            Role::whereNotIn('name', self::PROTECTED_ROLES)->get()->each(function ($role) use ($permission, $enabled) {
+                $enabled
+                    ? $role->givePermissionTo($permission)
+                    : $role->revokePermissionTo($permission);
+            });
+        });
+
+        return redirect()->back()->with('status', 'Akses menu Struktur Organisasi ' . ($enabled ? 'diaktifkan' : 'dinonaktifkan') . ' untuk semua karyawan');
     }
 
     public function apiTree()
