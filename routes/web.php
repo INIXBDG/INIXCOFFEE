@@ -1798,6 +1798,8 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/store',      [StructureInixindoController::class, 'store'])->name('store');
         Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
         Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
+
+        Route::put('/toggle-menus', [StructureInixindoController::class, 'toggleMenus'])->name('toggle.menus');
     });
 
     Route::prefix('job-desk')->name('job_desk.')->group(function () {
