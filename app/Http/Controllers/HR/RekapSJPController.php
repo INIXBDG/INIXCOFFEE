@@ -295,7 +295,7 @@ class RekapSJPController extends Controller
             $namaLengkap = $item->karyawan->nama_lengkap ?? 'Unknown';
             return [
                 'tanggal' => Carbon::parse($item->tanggal_berangkat)->translatedFormat('d F Y'),
-                'nama' => explode(' ', $namaLengkap)[0],
+                'nama' => $namaLengkap,
                 'divisi' => $item->karyawan->divisi ?? '-',
                 'jabatan' => $item->karyawan->jabatan ?? '-',
                 'tipe' => $item->tipe ?? '-',
