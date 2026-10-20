@@ -132,9 +132,18 @@
                             @endfor
                         </select>
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Jenis Dinas</label>
+                        <select class="form-select" id="filter_jenis_dinas" name="jenis_dinas">
+                            <option value="">-- Semua Jenis Dinas --</option>
+                            @foreach ($jenisDinas as $jenis)
+                                <option value="{{ $jenis }}">{{ $jenis }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold d-block">Filter Periode</label>
-                        <div class="d-flex align-items-center gap-4 mt-2">
+                        <div class="d-flex flex-wrap align-items-center gap-4 mt-2">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="mode_periode" id="mode_semua" value="semua" checked>
                                 <label class="form-check-label" for="mode_semua">Seluruh Tahun</label>
@@ -184,13 +193,8 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-periode-btn" data-bs-toggle="tab" data-bs-target="#tab-periode" type="button">
-                            <i class="fa-solid fa-calendar-week me-1"></i> Rekap Per Periode
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-jenis-btn" data-bs-toggle="tab" data-bs-target="#tab-jenis" type="button">
-                            <i class="fa-solid fa-list-check me-1"></i> Rekap Per Jenis Dinas
+                        <button class="nav-link" id="tab-status-btn" data-bs-toggle="tab" data-bs-target="#tab-status" type="button">
+                            <i class="fa-solid fa-clipboard-check me-1"></i> Rekap Per Status SPJ
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -225,47 +229,26 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-periode" role="tabpanel">
+                    <div class="tab-pane fade" id="tab-status" role="tabpanel">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th width="5%">No</th>
-                                        <th>Periode</th>
-                                        <th class="text-center" width="15%">Jumlah SPJ</th>
+                                        <th>Status SPJ</th>
+                                        <th class="text-center" width="12%">Jumlah SPJ</th>
+                                        <th class="text-center" width="12%">Persentase</th>
                                         <th class="text-end" width="20%">Total Pengeluaran</th>
                                         <th class="text-center" width="10%">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tbody_periode"></tbody>
-                                <tfoot id="tfoot_periode" class="d-none">
+                                <tbody id="tbody_status"></tbody>
+                                <tfoot id="tfoot_status" class="d-none">
                                     <tr>
-                                        <td colspan="3" class="text-end">TOTAL KESELURUHAN:</td>
-                                        <td class="text-end" id="total_periode">Rp 0</td>
+                                        <td colspan="2" class="text-end">TOTAL KESELURUHAN:</td>
+                                        <td class="text-center" id="count_status">0 SPJ</td>
                                         <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tab-jenis" role="tabpanel">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th width="5%">No</th>
-                                        <th>Jenis Dinas</th>
-                                        <th class="text-center" width="15%">Jumlah SPJ</th>
-                                        <th class="text-end" width="20%">Total Pengeluaran</th>
-                                        <th class="text-center" width="10%">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tbody_jenis"></tbody>
-                                <tfoot id="tfoot_jenis" class="d-none">
-                                    <tr>
-                                        <td colspan="3" class="text-end">TOTAL KESELURUHAN:</td>
-                                        <td class="text-end" id="total_jenis">Rp 0</td>
+                                        <td class="text-end" id="total_status">Rp 0</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -327,6 +310,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // Format angka ke Rupiah (aman untuk string desimal seperti "150000.00")
+        function formatRupiah(angka) {
+            let n = Math.round(parseFloat(angka) || 0);
+            return 'Rp ' + n.toLocaleString('id-ID');
+        }
+
         function skeletonTableRows(rows = 6, cols = 5) {
             let html = '';
             for (let r = 0; r < rows; r++) {
@@ -371,14 +360,6 @@
 
         $(document).ready(function() {
             let chartPersentase, chartPerbandingan;
-
-            function formatRupiah(angka) {
-                if (!angka) return 'Rp 0';
-                let reverse = angka.toString().split('').reverse().join('');
-                let rupiah = reverse.match(/\d{1,3}/g);
-                rupiah = rupiah.join('.').split('').reverse().join('');
-                return 'Rp ' + rupiah;
-            }
 
             $('#filter_divisi').on('change', function() {
                 let divisi = $(this).val();
@@ -440,21 +421,19 @@
                 let formData = $('#form-filter-rekap').serialize();
 
                 $('#tbody_divisi').html(skeletonTableRows(6, 5));
-                $('#tbody_periode').html(skeletonTableRows(6, 5));
-                $('#tbody_jenis').html(skeletonTableRows(6, 5));
+                $('#tbody_status').html(skeletonTableRows(7, 6));
                 $('#statistikContent').html(skeletonStatistik());
-                $('#tfoot_divisi, #tfoot_periode, #tfoot_jenis').addClass('d-none');
+                $('#tfoot_divisi, #tfoot_status').addClass('d-none');
 
                 $.get('{{ route('HR.rekap_spj.load_data') }}?' + formData, function(response) {
                     if (response.success) {
                         renderTab1(response.tab1);
-                        renderTab2(response.tab2);
-                        renderTabJenis(response.tabJenis);
+                        renderTabStatus(response.tabStatus);
                         renderTab3(response.tab3, response.chart, response.chart_divisi);
                     }
                 }).fail(function() {
-                    let err = '<tr><td colspan="5" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>';
-                    $('#tbody_divisi, #tbody_periode, #tbody_jenis').html(err);
+                    let err = '<tr><td colspan="6" class="text-center py-4 text-danger">Gagal memuat data.</td></tr>';
+                    $('#tbody_divisi, #tbody_status').html(err);
                     $('#statistikContent').html('<div class="col-12 text-center py-5 text-danger">Gagal memuat statistik</div>');
                 });
             }
@@ -491,71 +470,55 @@
                 $('#tfoot_divisi').removeClass('d-none');
             }
 
-            function renderTabJenis(data) {
+            function renderTabStatus(data) {
+                const badge = {
+                    'Menunggu Manager Divisi': 'bg-warning text-dark',
+                    'Menunggu HRD': 'bg-warning text-dark',
+                    'Menunggu GM & Direksi': 'bg-warning text-dark',
+                    'Menunggu Isi Rate SPJ': 'bg-info text-dark',
+                    'Menunggu Upload Bukti dari Karyawan': 'bg-info text-dark',
+                    'Selesai': 'bg-success',
+                    'Ditolak': 'bg-danger'
+                };
+
                 let html = '';
                 let grandTotal = 0;
-                if (data.length === 0) {
-                    html = '<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data untuk filter yang dipilih.</td></tr>';
+                let grandCount = 0;
+
+                if (!data || data.length === 0) {
+                    html = '<tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data untuk filter yang dipilih.</td></tr>';
                 } else {
                     $.each(data, function(index, item) {
                         grandTotal += parseFloat(item.total);
+                        grandCount += item.jumlah_spj;
+
                         let params = new URLSearchParams($('#form-filter-rekap').serialize());
-                        params.set('tipe', 'jenis_dinas');
-                        params.set('nilai', item.jenis_dinas);
+                        params.set('tipe', 'status');
+                        params.set('nilai', item.status);
                         let urlDetail = '{{ route('HR.rekap_spj.detail_data') }}?' + params.toString();
+
+                        let aksi = item.jumlah_spj > 0 ?
+                            `<a href="#" class="btn btn-sm btn-info text-white btn-detail" data-url="${urlDetail}" data-title="Detail SPJ - ${item.status}">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>` :
+                            '-';
 
                         html += `
                             <tr>
                                 <td>${index + 1}</td>
-                                <td>${item.jenis_dinas || 'Tidak Ada Jenis'}</td>
+                                <td><span class="badge rounded-pill ${badge[item.status] || 'bg-secondary'}">${item.status}</span></td>
                                 <td class="text-center">${item.jumlah_spj} SPJ</td>
+                                <td class="text-center">${item.persentase}%</td>
                                 <td class="text-end">${formatRupiah(item.total)}</td>
-                                <td class="text-center">
-                                    <a href="#" class="btn btn-sm btn-info text-white btn-detail"
-                                        data-url="${urlDetail}"
-                                        data-title="Detail SPJ Jenis ${item.jenis_dinas || 'Tidak Ada'}">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </a>
-                                </td>
+                                <td class="text-center">${aksi}</td>
                             </tr>`;
                     });
                 }
-                $('#tbody_jenis').html(html);
-                $('#total_jenis').text(formatRupiah(grandTotal));
-                $('#tfoot_jenis').removeClass('d-none');
-            }
 
-            function renderTab2(data) {
-                let html = '';
-                let grandTotal = 0;
-                if (data.length === 0) {
-                    html = '<tr><td colspan="5" class="text-center py-4 text-muted">Tidak ada data untuk filter yang dipilih.</td></tr>';
-                } else {
-                    $.each(data, function(index, item) {
-                        grandTotal += parseFloat(item.total);
-                        let params = new URLSearchParams($('#form-filter-rekap').serialize());
-                        params.set('tipe', 'periode');
-                        params.set('filter_mode', item.filter_mode);
-                        params.set('filter_value', item.filter_value);
-                        let urlDetail = '{{ route('HR.rekap_spj.detail_data') }}?' + params.toString();
-
-                        html += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${item.periode}</td>
-                                <td class="text-center">${item.jumlah_spj} SPJ</td>
-                                <td class="text-end">${formatRupiah(item.total)}</td>
-                                <td class="text-center">
-                                    <a href="#" class="btn btn-sm btn-info text-white btn-detail" data-url="${urlDetail}" data-title="Detail SPJ Periode ${item.periode}">
-                                        <i class="fa-solid fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>`;
-                    });
-                }
-                $('#tbody_periode').html(html);
-                $('#total_periode').text(formatRupiah(grandTotal));
-                $('#tfoot_periode').removeClass('d-none');
+                $('#tbody_status').html(html);
+                $('#count_status').text(grandCount + ' SPJ');
+                $('#total_status').text(formatRupiah(grandTotal));
+                $('#tfoot_status').removeClass('d-none');
             }
 
             function renderTab3(data, chartData, chartDivisi) {
@@ -715,14 +678,6 @@
             let url = $(this).data('url');
             let title = $(this).data('title');
 
-            function formatRupiah(angka) {
-                if (!angka) return 'Rp 0';
-                let reverse = angka.toString().split('').reverse().join('');
-                let rupiah = reverse.match(/\d{1,3}/g);
-                rupiah = rupiah.join('.').split('').reverse().join('');
-                return 'Rp ' + rupiah;
-            }
-
             $('#modalDetailTitle').text(title);
             $('#tfoot_modal_detail').addClass('d-none');
             $('#tbody_modal_detail').html(skeletonModalRows(6));
@@ -731,7 +686,7 @@
                 $('#tableModalDetail').DataTable().destroy();
             }
 
-            let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
+            let modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetail'));
             modal.show();
 
             $.get(url, function(response) {
