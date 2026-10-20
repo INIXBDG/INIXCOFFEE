@@ -541,6 +541,8 @@ class DaftarTugasController extends Controller
             'tugas_id' => 'required|exists:kontrol_tugas,id',
             'bukti_before' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'bukti_after' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'waktu_mulai' => 'nullable|string|max:50',
+            'waktu_selesai' => 'nullable|string|max:50',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
@@ -552,6 +554,10 @@ class DaftarTugasController extends Controller
                 Storage::disk('public')->delete($buktiData['before']);
             }
             $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
+        }
+
+        if ($request->filled('waktu_mulai')) {
+            $buktiData['waktu_mulai'] = $request->waktu_mulai;
         }
 
         if ($request->hasFile('bukti_after')) {
@@ -568,6 +574,19 @@ class DaftarTugasController extends Controller
                 Storage::disk('public')->delete($buktiData['after']);
             }
             $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
+        }
+
+        if ($request->filled('waktu_selesai')) {
+            if (empty($buktiData['before'])) {
+                return response()->json(
+                    [
+                        'success' => false,
+                        'message' => 'Foto Before wajib diupload terlebih dahulu sebelum mengisi Waktu Selesai',
+                    ],
+                    422,
+                );
+            }
+            $buktiData['waktu_selesai'] = $request->waktu_selesai;
         }
 
         $tugas->update(['bukti' => json_encode($buktiData)]);
@@ -932,16 +951,23 @@ class DaftarTugasController extends Controller
     private function parseBukti($bukti)
     {
         if (!$bukti) {
-            return ['before' => null, 'after' => null];
+            return [
+                'before' => null,
+                'after' => null,
+                'waktu_mulai' => null,
+                'waktu_selesai' => null,
+            ];
         }
         try {
             if (is_string($bukti) && str_starts_with($bukti, '{')) {
                 $decoded = json_decode($bukti, true);
-                return is_array($decoded) ? $decoded + ['before' => null, 'after' => null] : ['before' => $bukti, 'after' => null];
+                return is_array($decoded)
+                    ? $decoded + ['before' => null, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null]
+                    : ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
             }
-            return ['before' => $bukti, 'after' => null];
+            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
         } catch (\Exception $e) {
-            return ['before' => $bukti, 'after' => null];
+            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
         }
     }
 
@@ -955,7 +981,7 @@ class DaftarTugasController extends Controller
 
     public function getForPerbaikan(Request $request)
     {
-        $hasFilter = $request->filled('start_date') 
+        $hasFilter = $request->filled('start_date')
                 || $request->filled('end_date')
                 || ($request->filled('tipe') && $request->tipe !== 'all')
                 || ($request->filled('kategori') && $request->kategori !== 'all')
@@ -987,8 +1013,8 @@ class DaftarTugasController extends Controller
             $query->where('id_DaftarTugas', $request->kategori);
         }
         if ($request->filled('karyawan') && $request->karyawan !== 'all') {
-            $request->karyawan === 'null' 
-                ? $query->whereNull('id_karyawan') 
+            $request->karyawan === 'null'
+                ? $query->whereNull('id_karyawan')
                 : $query->where('id_karyawan', $request->karyawan);
         }
 
