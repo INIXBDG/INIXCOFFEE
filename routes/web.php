@@ -132,7 +132,7 @@ use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\AuditController;
-use App\Http\Controllers\crm\PaymentAdvanceController;
+use App\Http\Controllers\Crm\PaymentAdvanceController;
 
 /*
 |--------------------------------------------------------------------------
