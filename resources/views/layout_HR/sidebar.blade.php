@@ -221,6 +221,16 @@
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
+
+        <li class="menu-item {{ request()->routeIs('hr.DaftarTugas.index') ? 'active' : '' }}">
+            <a href="{{ route('hr.DaftarTugas.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:chart-bar" data-width="20" data-height="20"></i>
+                </span>
+                <span>Daftar Tugas OB</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
     </ul>
 
     <div class="sidebar-footer px-3 pt-2 pb-3">

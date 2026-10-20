@@ -52,6 +52,7 @@ use App\Http\Controllers\HR\RekapSJPController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
+use App\Http\Controllers\HR\DaftarTugasHRController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
@@ -1903,6 +1904,8 @@ Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(functi
     Route::get('/structure/api/tree', [EmployeeStructureController::class, 'apiTree'])->name('structure.api.tree');
 });
 
+
+
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
@@ -1988,3 +1991,12 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
 Route::post('/session/keep-alive', function () {
     return response()->json(['status' => 'alive']);
 })->name('session.keep-alive');
+
+Route::prefix('hr/daftar-tugas')
+    ->name('hr.DaftarTugas.')
+    ->middleware(['auth'])
+    ->group(function () {
+        Route::get('/', [DaftarTugasHRController::class, 'index'])->name('index');
+        Route::get('/get', [DaftarTugasHRController::class, 'get'])->name('get');
+        Route::get('/chart-data', [DaftarTugasHRController::class, 'chartData'])->name('chartData');
+    });
