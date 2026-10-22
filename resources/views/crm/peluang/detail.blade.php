@@ -1161,16 +1161,16 @@
 
                             <div class="mb-3">
                                 <label for="regis_harga" class="form-label">Harga per pax (Rp)</label>
-                                <input type="number" name="regis_harga" id="regis_harga"
-                                    class="form-control {{ $errors->uploadPdf->has('regis_harga') ? 'is-invalid' : '' }}"
-                                    min="0" value="{{ old('regis_harga') }}" required>
+                                <input type="number" name="harga" id="regis_harga"
+                                    class="form-control {{ $errors->uploadPdf->has('harga') ? 'is-invalid' : '' }}"
+                                    min="0" value="{{ old('harga') }}" required>
                             </div>
 
                             <div class="mb-3">
                                 <label for="regis_pax" class="form-label">Jumlah Peserta (Pax)</label>
-                                <input type="number" name="regis_pax" id="regis_pax"
-                                    class="form-control {{ $errors->uploadPdf->has('regis_pax') ? 'is-invalid' : '' }}"
-                                    min="1" value="{{ old('regis_pax') }}" required>
+                                <input type="number" name="pax" id="regis_pax"
+                                    class="form-control {{ $errors->uploadPdf->has('pax') ? 'is-invalid' : '' }}"
+                                    min="1" value="{{ old('pax') }}" required>
                             </div>
                         </div>
 
