@@ -1,14 +1,12 @@
 <?php
 
-use App\Events\ServerTimeUpdate;
 use App\Http\Controllers\ActivityInstrukturController;
 use App\Http\Controllers\AdministrasiKaryawanController;
-use App\Http\Controllers\AliasController;
 use App\Http\Controllers\Api\RKMController;
 use App\Http\Controllers\ApprovalPendapatanController;
 use App\Http\Controllers\ApprovedNetSalesController;
-use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\CateringController;
+use App\Http\Controllers\CodeDocumentationController;
 use App\Http\Controllers\colaboratorController;
 use App\Http\Controllers\Crm\AktivitasController;
 use App\Http\Controllers\Crm\ApprovalPendapatanSalesController;
@@ -19,12 +17,14 @@ use App\Http\Controllers\Crm\CRMController;
 use App\Http\Controllers\Crm\ImportPerusahaanAndContactController;
 use App\Http\Controllers\Crm\LaporanPenjualanController;
 use App\Http\Controllers\Crm\MapController;
+use App\Http\Controllers\crm\PaymentAdvanceController;
 use App\Http\Controllers\Crm\PeluangController;
 use App\Http\Controllers\Crm\PicController;
 use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\TodoAdministrasiController;
+use App\Http\Controllers\CVInstrukturController;
 use App\Http\Controllers\DaftarPesertaExamController;
 use App\Http\Controllers\DaftarTugasController;
 use App\Http\Controllers\DailyActivityController;
@@ -32,27 +32,33 @@ use App\Http\Controllers\DashboardItsmController;
 use App\Http\Controllers\DashboardLayoutController;
 use App\Http\Controllers\DashboardSLAController;
 use App\Http\Controllers\dbklienController;
-use App\Http\Controllers\HR\EmployeeJobDeskController;
+use App\Http\Controllers\DocumentationImportController;
 use App\Http\Controllers\examController;
+use App\Http\Controllers\FeatureDocumentationController;
 use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HR\ArsipRekrutmenController;
 use App\Http\Controllers\HR\employeeController;
+use App\Http\Controllers\HR\EmployeeJobDeskController;
 use App\Http\Controllers\HR\EmployeeStructureController;
 use App\Http\Controllers\HR\FolderController;
+use App\Http\Controllers\HR\FeedbackInstukturController;
 use App\Http\Controllers\HR\HireController;
 use App\Http\Controllers\HR\HRController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\payrollController;
-use App\Http\Controllers\HR\PerhitunganTunjanganHRController;
 use App\Http\Controllers\HR\presenceController;
-use App\Http\Controllers\HR\RencanaPembelianHrController;
+use App\Http\Controllers\HR\RekapInventarisController;
+use App\Http\Controllers\HR\RekapPenjualanController;
 use App\Http\Controllers\HR\RekapSJPController;
+use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
 use App\Http\Controllers\IdeInovasiController;
+use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\InstructorDevelopmentController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\InvoiceRKMController;
@@ -62,13 +68,19 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KelasAnalisisController;
+use App\Http\Controllers\KelasSettingController;
 use App\Http\Controllers\KendaraanController;
+use App\Http\Controllers\KlaimModulController;
+use App\Http\Controllers\KnowledgeManagementController;
+use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\KomplainPesertaController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
 use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
+use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\KPI\TargetKPIController;
 use App\Http\Controllers\LaporanHarianSalesController;
 use App\Http\Controllers\laporanInsidentController;
-use App\Http\Controllers\MakananRkmController;
+use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\managementKelasController;
 use App\Http\Controllers\MateriController;
 use App\Http\Controllers\netSalesController;
@@ -76,17 +88,20 @@ use App\Http\Controllers\office\AnalysisReportController;
 use App\Http\Controllers\office\BiayaTransportasiController;
 use App\Http\Controllers\office\CertificateController;
 use App\Http\Controllers\office\DashboardSouvenirController;
+use App\Http\Controllers\office\KondisiToolsController;
 use App\Http\Controllers\office\ModulController;
 use App\Http\Controllers\office\OfficeController;
+use App\Http\Controllers\office\OfficeExamController;
 use App\Http\Controllers\office\pickupDriverController;
+use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
-use App\Http\Controllers\office\KondisiToolsController;
-use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\pengajuanKlaimController;
 use App\Http\Controllers\PenukaranSouvenirController;
 use App\Http\Controllers\PerpindahanDBController;
+use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
 use App\Http\Controllers\ProjectKanbanController;
@@ -94,45 +109,24 @@ use App\Http\Controllers\PusherAuthController;
 use App\Http\Controllers\registexamController;
 use App\Http\Controllers\RekapPenilaianExamController;
 use App\Http\Controllers\RekomendasiLanjutanController;
+use App\Http\Controllers\ReportSalesProjectController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
+use App\Http\Controllers\ScheduleLogController;
 use App\Http\Controllers\SouvenirController;
-use App\Http\Controllers\TelegramController;
+use App\Http\Controllers\StockOpnameController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisitProjectController;
 use App\Http\Controllers\WebhookController;
-use App\Http\Controllers\KnowledgeManagementController;
 use App\Http\Controllers\Webinar\CalendarController;
 use App\Http\Controllers\Webinar\ChecklistController;
 use App\Http\Controllers\Webinar\TimelineItemController;
 use App\Http\Controllers\WebPushController;
 use App\Models\Contact;
 use App\Models\Inventaris;
-use App\Models\izinTigaJam;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\KlaimModulController;
-use App\Http\Controllers\KPI\DataTargetController;
-use App\Http\Controllers\LeadProjectController;
-use App\Http\Controllers\ReportSalesProjectController;
-use App\Http\Controllers\PicPenagihanController;
-use App\Http\Controllers\StockOpnameController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-use App\Http\Controllers\IncomeStatementController;
-use App\Http\Controllers\KoordinasiOfficeBoyController;
-use App\Http\Controllers\office\OfficeExamController;
-use App\Http\Controllers\PerusahaanController;
-use App\Http\Controllers\ScheduleLogController;
-use App\Http\Controllers\VisitProjectController;
-use App\Http\Controllers\CVInstrukturController;
-use App\Http\Controllers\HR\RekapPenjualanController;
-use App\Http\Controllers\HR\RekapInventarisController;
-use App\Http\Controllers\FeatureDocumentationController;
-use App\Http\Controllers\CodeDocumentationController;
-use App\Http\Controllers\DocumentationImportController;
-use App\Http\Controllers\KelasSettingController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\KomisiSalesController;
-use App\Http\Controllers\AuditController;
-use App\Http\Controllers\crm\PaymentAdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -165,20 +159,20 @@ Route::redirect('/', '/login');
 Auth::routes(['register' => false, 'password.request' => false, 'password.email' => false, 'password.reset' => false, 'password.update' => false]);
 
 Route::middleware('auth')->group(function () {
-    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-    Route::get('/user', [App\Http\Controllers\UserController::class, 'index'])->name('user.index');
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/user', [UserController::class, 'index'])->name('user.index');
     Route::get('/user/excel', [UserController::class, 'ExportExcel'])->name('user.excel');
 
-    Route::get('/karyawan/{hashid}/edit', [App\Http\Controllers\KaryawanController::class, 'edit'])->name('karyawan.edit'); //fixing route
-    Route::put('/karyawan/{hashid}', [App\Http\Controllers\KaryawanController::class, 'updateData'])->name('karyawan.update'); //fixing route
-    Route::get('/profile/{hashid}', [App\Http\Controllers\UserController::class, 'show'])->name('user.show'); //fixing route
-    Route::get('/user/{hashid}/password', [App\Http\Controllers\UserController::class, 'editPassword'])->name('user.editPassword'); //fixing route
-    Route::put('/user/{hashid}/password', [App\Http\Controllers\UserController::class, 'updatePassword'])->name('user.updatePassword'); //fixing route
-    Route::delete('/user/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('user.destroy');
+    Route::get('/karyawan/{hashid}/edit', [KaryawanController::class, 'edit'])->name('karyawan.edit'); // fixing route
+    Route::put('/karyawan/{hashid}', [KaryawanController::class, 'updateData'])->name('karyawan.update'); // fixing route
+    Route::get('/profile/{hashid}', [UserController::class, 'show'])->name('user.show'); // fixing route
+    Route::get('/user/{hashid}/password', [UserController::class, 'editPassword'])->name('user.editPassword'); // fixing route
+    Route::put('/user/{hashid}/password', [UserController::class, 'updatePassword'])->name('user.updatePassword'); // fixing route
+    Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
     // Route::post('/user/{id}', [App\Http\Controllers\UserController::class, 'destroy'])->name('user.destroy');
-    Route::get('/gantifoto/{id}', [App\Http\Controllers\KaryawanController::class, 'gantiFoto'])->name('karyawan.gantiFoto');
-    Route::put('/gantifoto/{id}', [App\Http\Controllers\KaryawanController::class, 'updateFoto'])->name('karyawan.updateFoto');
-    Route::post('/registkaryawan', [App\Http\Controllers\UserController::class, 'regist'])->name('user.registkaryawan');
+    Route::get('/gantifoto/{id}', [KaryawanController::class, 'gantiFoto'])->name('karyawan.gantiFoto');
+    Route::put('/gantifoto/{id}', [KaryawanController::class, 'updateFoto'])->name('karyawan.updateFoto');
+    Route::post('/registkaryawan', [UserController::class, 'regist'])->name('user.registkaryawan');
 
     Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
     Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
@@ -193,8 +187,8 @@ Route::middleware('auth')->group(function () {
 });
 // test
 Route::get('/testdata', [App\Http\Controllers\TestController::class, 'index'])->name('testdata');
-Route::get('/datas', [App\Http\Controllers\UserController::class, 'datas'])->name('datauser');
-Route::get('/datarkm/{tahun}/{bulan}', [App\Http\Controllers\PerusahaanController::class, 'datas'])->name('datarkm');
+Route::get('/datas', [UserController::class, 'datas'])->name('datauser');
+Route::get('/datarkm/{tahun}/{bulan}', [PerusahaanController::class, 'datas'])->name('datarkm');
 // Route::post('/change-year', 'HomeController@changeYear')->name('changeYear');
 // test
 
@@ -223,7 +217,7 @@ Route::middleware('auth')
 Route::get('/daily-activities-data', [DailyActivityController::class, 'activitiesData']);
 
 Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
-Route::get('paymantAdvance/{year}/{month}', [App\Http\Controllers\netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
+Route::get('paymantAdvance/{year}/{month}', [netSalesController::class, 'getRkmDataPerBulanPerMinggu']);
 
 Route::prefix('catering')->name('catering.')->group(function () {
     Route::get('index', [CateringController::class, 'index'])->name('index');
@@ -240,49 +234,49 @@ Route::prefix('catering')->name('catering.')->group(function () {
 });
 
 Route::get('/exam/manual-create-pengajuan', [examController::class, 'manualCreate'])->name('exam.manualCreate');
-Route::resource('/comment', \App\Http\Controllers\CommentController::class);
+Route::resource('/comment', App\Http\Controllers\CommentController::class);
 
-Route::resource('/perusahaan', \App\Http\Controllers\PerusahaanController::class);
-Route::resource('/materi', \App\Http\Controllers\MateriController::class);
-Route::resource('/rkm', App\Http\Controllers\RKMController::class);
-Route::resource('/peserta', \App\Http\Controllers\PesertaController::class);
-Route::resource('/registrasi', \App\Http\Controllers\RegistrasiController::class);
-Route::resource('/feedback', \App\Http\Controllers\feedbackController::class);
-Route::resource('/jabatan', \App\Http\Controllers\jabatanController::class);
-Route::resource('/nilaifeedback', \App\Http\Controllers\nilaifeedbackController::class);
-Route::resource('/notif', \App\Http\Controllers\notifController::class);
+Route::resource('/perusahaan', PerusahaanController::class);
+Route::resource('/materi', MateriController::class);
+Route::resource('/rkm', ControllersRKMController::class);
+Route::resource('/peserta', App\Http\Controllers\PesertaController::class);
+Route::resource('/registrasi', App\Http\Controllers\RegistrasiController::class);
+Route::resource('/feedback', feedbackController::class);
+Route::resource('/jabatan', App\Http\Controllers\jabatanController::class);
+Route::resource('/nilaifeedback', App\Http\Controllers\nilaifeedbackController::class);
+Route::resource('/notif', App\Http\Controllers\notifController::class);
 Route::resource('/exam', examController::class);
 Route::resource('/listexams', App\Http\Controllers\listexamController::class);
-Route::resource('/creditcard', \App\Http\Controllers\creditcardController::class);
-Route::resource('/registexam', \App\Http\Controllers\registexamController::class);
+Route::resource('/creditcard', App\Http\Controllers\creditcardController::class);
+Route::resource('/registexam', registexamController::class);
 Route::resource('/souvenir', SouvenirController::class);
-Route::resource('/pengajuancuti', \App\Http\Controllers\PengajuancutiController::class);
+Route::resource('/pengajuancuti', App\Http\Controllers\PengajuancutiController::class);
 Route::resource('/pengajuanizin', izinTigaJamController::class);
-Route::resource('/pengajuanbarang', \App\Http\Controllers\PengajuanBarangController::class);
-Route::resource('/suratperjalanan', \App\Http\Controllers\SuratPerjalananController::class);
-Route::resource('/rekapitulasiabsen', \App\Http\Controllers\RekapitulasiAbsenController::class);
-Route::resource('/kelasanalisis', \App\Http\Controllers\KelasAnalisisController::class);
-Route::resource('/paymantAdvance', \App\Http\Controllers\netSalesController::class)->except(['show']);
+Route::resource('/pengajuanbarang', App\Http\Controllers\PengajuanBarangController::class);
+Route::resource('/suratperjalanan', App\Http\Controllers\SuratPerjalananController::class);
+Route::resource('/rekapitulasiabsen', App\Http\Controllers\RekapitulasiAbsenController::class);
+Route::resource('/kelasanalisis', KelasAnalisisController::class);
+Route::resource('/paymantAdvance', netSalesController::class)->except(['show']);
 Route::resource('/databasekpi', KPIDatabaseKPIController::class);
 
-Route::resource('/target', \App\Http\Controllers\TargetController::class);
+Route::resource('/target', App\Http\Controllers\TargetController::class);
 Route::resource('/outstanding', OutstandingController::class);
-Route::resource('/tunjangan', \App\Http\Controllers\TunjanganController::class);
-Route::resource('/tunjanganEducation', \App\Http\Controllers\tunjanganEducationController::class);
-Route::resource('/rekapmengajarinstruktur', \App\Http\Controllers\rekapInstrukturController::class);
-Route::resource('/lembur', \App\Http\Controllers\LemburController::class);
-Route::resource('/overtime', \App\Http\Controllers\OvertimeController::class);
-Route::resource('/pengajuanlabsdansubs', \App\Http\Controllers\PengajuanLabdanSubsController::class);
-Route::resource('/pengajuansubs', \App\Http\Controllers\PengajuanSubsController::class);
-Route::resource('/pengajuansouvenir', \App\Http\Controllers\PengajuanSouvenirController::class);
+Route::resource('/tunjangan', App\Http\Controllers\TunjanganController::class);
+Route::resource('/tunjanganEducation', App\Http\Controllers\tunjanganEducationController::class);
+Route::resource('/rekapmengajarinstruktur', App\Http\Controllers\rekapInstrukturController::class);
+Route::resource('/lembur', App\Http\Controllers\LemburController::class);
+Route::resource('/overtime', App\Http\Controllers\OvertimeController::class);
+Route::resource('/pengajuanlabsdansubs', App\Http\Controllers\PengajuanLabdanSubsController::class);
+Route::resource('/pengajuansubs', App\Http\Controllers\PengajuanSubsController::class);
+Route::resource('/pengajuansouvenir', App\Http\Controllers\PengajuanSouvenirController::class);
 Route::resource('/daily-activities', DailyActivityController::class);
-Route::resource('/registry', \App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas'])->except(['show']);
-Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
-Route::resource('roles', \App\Http\Controllers\RoleController::class);
-Route::resource('penambahansouvenir', \App\Http\Controllers\PenambahanSouvenirController::class);
+Route::resource('/registry', App\Http\Controllers\RegistryFeatureController::class)->parameters(['registry' => 'tugas'])->except(['show']);
+Route::resource('permissions', App\Http\Controllers\PermissionController::class);
+Route::resource('roles', App\Http\Controllers\RoleController::class);
+Route::resource('penambahansouvenir', App\Http\Controllers\PenambahanSouvenirController::class);
 Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
-Route::resource('content-schedules', \App\Http\Controllers\ContentScheduleController::class);
-Route::resource('colaborator', \App\Http\Controllers\colaboratorController::class)->except(['show']);
+Route::resource('content-schedules', App\Http\Controllers\ContentScheduleController::class);
+Route::resource('colaborator', colaboratorController::class)->except(['show']);
 
 Route::get('/komplain-peserta', [KomplainPesertaController::class, 'index'])->name('komplain-peserta');
 Route::get('/dataNilaiPenilaian/{id}', [KomplainPesertaController::class, 'dataNilaiPenilaian'])->name('dataNilaiPenilaian');
@@ -293,58 +287,58 @@ Route::post('komplain-peserta/{nilaifeedback_id}/update', [KomplainPesertaContro
 Route::get('komplain-peserta/dataKomplain', [KomplainPesertaController::class, 'dataKomplain'])->name('dataKomplain');
 Route::post('komplain-peserta/delete/{id}', [KomplainPesertaController::class, 'destroy'])->name('hapusKomplain');
 
-Route::get('/rkmEditInstruktur/{id}', [App\Http\Controllers\RKMController::class, 'editInstruktur'])->name('editInstruktur');
-Route::put('/rkmUpdateInstruktur', [App\Http\Controllers\RKMController::class, 'updateInstruktur'])->name('updateInstruktur');
-Route::get('/rkmEdit', [App\Http\Controllers\RKMController::class, 'editRKM'])->name('rkmEdit');
-Route::put('/rkmUpdate', [App\Http\Controllers\RKMController::class, 'updateRKM'])->name('rkmUpdate');
-Route::get('/rkm/checklist/{id}', [App\Http\Controllers\RKMController::class, 'getChecklist'])->name('rkm.checklist.get');
-Route::post('/rkm/checklist/store', [App\Http\Controllers\RKMController::class, 'storeChecklist'])->name('rkm.checklist.store');
-Route::post('/rkm/toggle-souvenir', [App\Http\Controllers\RKMController::class, 'toggleSouvenir'])->name('rkm.toggle-souvenir');
+Route::get('/rkmEditInstruktur/{id}', [ControllersRKMController::class, 'editInstruktur'])->name('editInstruktur');
+Route::put('/rkmUpdateInstruktur', [ControllersRKMController::class, 'updateInstruktur'])->name('updateInstruktur');
+Route::get('/rkmEdit', [ControllersRKMController::class, 'editRKM'])->name('rkmEdit');
+Route::put('/rkmUpdate', [ControllersRKMController::class, 'updateRKM'])->name('rkmUpdate');
+Route::get('/rkm/checklist/{id}', [ControllersRKMController::class, 'getChecklist'])->name('rkm.checklist.get');
+Route::post('/rkm/checklist/store', [ControllersRKMController::class, 'storeChecklist'])->name('rkm.checklist.store');
+Route::post('/rkm/toggle-souvenir', [ControllersRKMController::class, 'toggleSouvenir'])->name('rkm.toggle-souvenir');
 
 Route::group(['middleware' => 'Admin'], function () {
-    Route::get('/user/register', [App\Http\Controllers\UserController::class, 'create'])->name('user.register');
+    Route::get('/user/register', [UserController::class, 'create'])->name('user.register');
     // Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
 });
 
 Route::get('/roles/{id}/give-permissions', [App\Http\Controllers\RoleController::class, 'addPermissionToRole'])->name('addPermissionToRole');
 Route::put('/roles/{id}/give-permissions', [App\Http\Controllers\RoleController::class, 'givePermissionToRole'])->name('givePermissionToRole');
-Route::get('/userRolePermissions', [App\Http\Controllers\UserController::class, 'indexUser'])->name('indexUser');
-Route::get('/userRolePermissions/{id}/edit', [App\Http\Controllers\UserController::class, 'editUser'])->name('editUser');
-Route::put('/userRolePermissions/{id}/update', [App\Http\Controllers\UserController::class, 'updateUser'])->name('updateUser');
+Route::get('/userRolePermissions', [UserController::class, 'indexUser'])->name('indexUser');
+Route::get('/userRolePermissions/{id}/edit', [UserController::class, 'editUser'])->name('editUser');
+Route::put('/userRolePermissions/{id}/update', [UserController::class, 'updateUser'])->name('updateUser');
 
 Route::get('inixcoffeeloglarapelixb95', [LogViewerController::class, 'index'])->middleware('logviewer.access');
 
 Route::get('GetDatabasekpi', [KPIDatabaseKPIController::class, 'getData'])->name('GetDatabaseKPI');
 Route::get('GetDatabasekpi/profile', [KPIDatabaseKPIController::class, 'getDataProfile'])->name('GetDataProfile.kpi');
-Route::get('getPerusahaanById', [App\Http\Controllers\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
+Route::get('getPerusahaanById', [PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
 Route::get('getRegistrasiall', [App\Http\Controllers\RegistrasiController::class, 'getRegistrasiall'])->name('getRegistrasiall');
 Route::get('getPesertaall', [App\Http\Controllers\PesertaController::class, 'getPesertaall'])->name('getPesertaall');
-Route::get('getExam', [App\Http\Controllers\examController::class, 'getExam'])->name('getExam');
-Route::get('getExamKondisi', [App\Http\Controllers\examController::class, 'getExamKondisi'])->name('getExamKondisi');
+Route::get('getExam', [examController::class, 'getExam'])->name('getExam');
+Route::get('getExamKondisi', [examController::class, 'getExamKondisi'])->name('getExamKondisi');
 Route::get('/get-po-exam-sertifa', [examController::class, 'getPoExamSertifa'])->name('getPoExamSertifa');
 Route::post('/exam/{id}/upload-invoice', [examController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
 Route::post('/exam/{id}/update-kurs', [examController::class, 'updateKurs'])->name('exam.updateKurs');
 Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exam.getKurs');
 Route::post('/exam/{id}/update-tanggal', [examController::class, 'updateTanggal'])->name('exam.updateTanggal');
 Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
-Route::get('getHistoriExam', [App\Http\Controllers\examController::class, 'getHistoriExam'])->name('getHistoriExam');
+Route::get('getHistoriExam', [examController::class, 'getHistoriExam'])->name('getHistoriExam');
 Route::get('getListExam', [App\Http\Controllers\listexamController::class, 'getListExam'])->name('getListExam');
 Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])->name('getCC');
-Route::get('getRegistrasiexam', [App\Http\Controllers\registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
-Route::get('getRegistrasiexamByIdExam/{id}', [App\Http\Controllers\registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
+Route::get('getRegistrasiexam', [registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
+Route::get('getRegistrasiexamByIdExam/{id}', [registexamController::class, 'getRegistrasiexamByIdExam'])->name('getRegistrasiexamByIdExam');
 Route::post('/generate/exam/absensi', [registexamController::class, 'generateAbsensi'])->name('absensi.exam');
-Route::get('getSouvenir', [App\Http\Controllers\SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
-Route::get('getSouvenirInactive', [App\Http\Controllers\SouvenirController::class, 'getSouvenirInactive'])->name('getSouvenirInactive');
-Route::get('getSouvenirPeserta', [App\Http\Controllers\SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
-Route::get('getFeedbacksByMonth/{year}/{month}', [App\Http\Controllers\feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
-Route::get('/getTotalFeedbackPertahun', [App\Http\Controllers\feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
+Route::get('getSouvenir', [SouvenirController::class, 'getSouvenir'])->name('getSouvenir');
+Route::get('getSouvenirInactive', [SouvenirController::class, 'getSouvenirInactive'])->name('getSouvenirInactive');
+Route::get('getSouvenirPeserta', [SouvenirController::class, 'getSouvenirPeserta'])->name('getSouvenirPeserta');
+Route::get('getFeedbacksByMonth/{year}/{month}', [feedbackController::class, 'getFeedbacksByMonth'])->name('getFeedbacksByMonth');
+Route::get('/getTotalFeedbackPertahun', [feedbackController::class, 'getTotalFeedbackPertahun'])->name('office.feedback.get');
 Route::get('/chart/jumlah-update-materi-perbulan', [MateriController::class, 'chartJumlahUpdateMateriPerbulan'])
     ->name('chart.jumlah-update-materi-perbulan')
     ->middleware('auth');
-Route::get('/chart/silabus-per-instruktur-per-tahun', [App\Http\Controllers\MateriController::class, 'chartSilabusPerInstrukturPerTahun'])->middleware('auth');
-Route::get('/chart/hari-mengajar-instruktur-per-tahun', [App\Http\Controllers\RKMController::class, 'chartHariMengajarInstrukturPerTahun'])->name('chart.hari-mengajar-instruktur-per-tahun');
+Route::get('/chart/silabus-per-instruktur-per-tahun', [MateriController::class, 'chartSilabusPerInstrukturPerTahun'])->middleware('auth');
+Route::get('/chart/hari-mengajar-instruktur-per-tahun', [ControllersRKMController::class, 'chartHariMengajarInstrukturPerTahun'])->name('chart.hari-mengajar-instruktur-per-tahun');
 Route::get('getPengajuanCuti', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCuti'])->name('getPengajuanCuti');
-Route::get('getPengajuanIzin', [App\Http\Controllers\izinTigaJamController::class, 'getPengajuanIzin'])->name('getPengajuanIzin');
+Route::get('getPengajuanIzin', [izinTigaJamController::class, 'getPengajuanIzin'])->name('getPengajuanIzin');
 Route::get('/pengajuan-izin-3-jam/excel-download', [izinTigaJamController::class, 'pengajuanJamExcel'])->name('pengajuanIzin.excelDownload');
 Route::get('/pengajuan-izin-3-jam/pdf-download', [izinTigaJamController::class, 'pengajuanJamPDF'])->name('pengajuanIzin.PDFDownload');
 Route::get('getPengajuanCuti/{month}/{year}', [App\Http\Controllers\PengajuancutiController::class, 'getPengajuanCutiBulanTahun'])->name('getPengajuanCutiBulanTahun');
@@ -390,18 +384,18 @@ Route::get('/api/get-subs-by-rkm/{id}', [App\Http\Controllers\PengajuanSubsContr
 Route::get('/api/get-master-subs', [App\Http\Controllers\PengajuanSubsController::class, 'getMasterSubs'])->name('api.master-subs');
 Route::get('getAbsen', [App\Http\Controllers\RekapitulasiAbsenController::class, 'getAbsen'])->name('getAbsen');
 Route::get('getTarget', [App\Http\Controllers\TargetController::class, 'getTarget'])->name('getTarget');
-Route::get('getOutstandingLunas', [App\Http\Controllers\OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');
-Route::get('getOutstandingHutang', [App\Http\Controllers\OutstandingController::class, 'getOutstandingHutang'])->name('getOutstandingHutang');
-Route::get('getOutstandingRKM/{year}/{month}', [App\Http\Controllers\OutstandingController::class, 'getOutstandingRKM'])->name('getOutstandingRKM');
+Route::get('getOutstandingLunas', [OutstandingController::class, 'getOutstandingLunas'])->name('getOutstandingLunas');
+Route::get('getOutstandingHutang', [OutstandingController::class, 'getOutstandingHutang'])->name('getOutstandingHutang');
+Route::get('getOutstandingRKM/{year}/{month}', [OutstandingController::class, 'getOutstandingRKM'])->name('getOutstandingRKM');
 Route::get('getOutstandingPA', [OutstandingController::class, 'getOutstandingPA'])->name('getOutstandingPA');
 Route::get('/outstanding/{id}/detail', [OutstandingController::class, 'detailPA'])->name('detailDataOutstanding');
-Route::get('singkronDataOutstandingRKM', [App\Http\Controllers\OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
+Route::get('singkronDataOutstandingRKM', [OutstandingController::class, 'singkronDataOutstanding'])->name('outstanding.singkronDataOutstanding');
 Route::get('/outstanding/export/excel', [OutstandingController::class, 'exportExcel'])->name('outstanding.export.excel');
 Route::get('/outstanding/export/pdf', [OutstandingController::class, 'exportPdf'])->name('outstanding.export.pdf');
 Route::get('/download/dokumen/{id}', [OutstandingController::class, 'dokumenGabungan'])->name('dokumenGabungan');
-Route::get('cekregisform/{id}', [App\Http\Controllers\RKMController::class, 'cekregisform'])->name('cekregisform');
-Route::get('getMateri/{id}', [App\Http\Controllers\MateriController::class, 'getMateriById'])->name('getMateriById');
-Route::get('getNilaiFeedbackInstRKM/{id}', [App\Http\Controllers\feedbackController::class, 'getNilaiFeedbackInstRKM'])->name('getNilaiFeedbackInstRKM');
+Route::get('cekregisform/{id}', [ControllersRKMController::class, 'cekregisform'])->name('cekregisform');
+Route::get('getMateri/{id}', [MateriController::class, 'getMateriById'])->name('getMateriById');
+Route::get('getNilaiFeedbackInstRKM/{id}', [feedbackController::class, 'getNilaiFeedbackInstRKM'])->name('getNilaiFeedbackInstRKM');
 Route::get('editMengajarInstruktur/{id}', [App\Http\Controllers\rekapInstrukturController::class, 'editMengajarInstruktur'])->name('editMengajarInstruktur');
 Route::get('getMengajarInstruktur/{id}/{month}/{year}', [App\Http\Controllers\rekapInstrukturController::class, 'getMengajarInstruktur'])->name('getMengajarInstruktur');
 Route::get('cekLevel/{id}', [App\Http\Controllers\rekapInstrukturController::class, 'cekLevel'])->name('cekLevel');
@@ -425,7 +419,7 @@ Route::post('tunjangankelompok', [App\Http\Controllers\TunjanganController::clas
 Route::get('jumlahAbsensi/{id_karyawan}/{bulan}/{tahun}', [App\Http\Controllers\AbsensiKaryawanController::class, 'jumlahAbsensi'])->name('jumlahAbsensi');
 Route::get('getListMengajar/{bulan}/{tahun}', [App\Http\Controllers\rekapInstrukturController::class, 'getListMengajar'])->name('getListMengajar');
 Route::get('sinkronData', [App\Http\Controllers\rekapInstrukturController::class, 'sinkronData'])->name('sinkronData');
-Route::get('sinkronDataKelasAnalisis/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'sinkronDataKelasAnalisis'])->name('sinkronDataKelasAnalisis');
+Route::get('sinkronDataKelasAnalisis/{year}/{monthStart}/{monthEnd}', [KelasAnalisisController::class, 'sinkronDataKelasAnalisis'])->name('sinkronDataKelasAnalisis');
 Route::get('getListRekapInstruktur/{bulan}/{tahun}', [App\Http\Controllers\tunjanganEducationController::class, 'getListRekapInstruktur'])->name('getListRekapInstruktur');
 Route::get('getTunjanganEdu/{id}/{month}/{year}', [App\Http\Controllers\rekapInstrukturController::class, 'getTunjanganEdu'])->name('getTunjanganEdu');
 Route::get('getTunjanganEdu', [App\Http\Controllers\TunjanganController::class, 'getJenisTunjanganEdu'])->name('getTunjanganEducation');
@@ -437,8 +431,8 @@ Route::get('getOvertimeLembur/{month}/{year}', [App\Http\Controllers\OvertimeCon
 Route::get('getOvertimeLemburByKaryawan/{id}/{month}/{year}', [App\Http\Controllers\OvertimeController::class, 'getOvertimeLemburByKaryawan'])->name('getOvertimeLemburByKaryawan');
 Route::post('/export-rkm-excel-admsales', [RKMController::class, 'exportExcel'])->name('export.rkm.excel');
 
-Route::get('getYearlySales/{year}', [App\Http\Controllers\HomeController::class, 'getYearSales'])->name('getYearSales');
-Route::get('/getProjectTarget/{year}/target-project', [App\Http\Controllers\HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
+Route::get('getYearlySales/{year}', [HomeController::class, 'getYearSales'])->name('getYearSales');
+Route::get('/getProjectTarget/{year}/target-project', [HomeController::class, 'getProjectTarget'])->name('getProjectTarget');
 Route::get('getPenjualanPerBulan/{year}', [App\Http\Controllers\ChartController::class, 'getPenjualanPerBulan'])->name('getPenjualanPerBulan');
 Route::get('getPerSalesPerTahun/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerTahun'])->name('getPerSalesPerTahun');
 Route::get('getPerSalesPerQuartal/{year}', [App\Http\Controllers\ChartController::class, 'getPerSalesPerQuartal'])->name('getPerSalesPerQuartal');
@@ -456,41 +450,41 @@ Route::put('/pengajuansouvenir/{id}/updateitems', [App\Http\Controllers\Pengajua
 Route::put('/pengajuansouvenir/{id}/upload-invoice', [App\Http\Controllers\PengajuanSouvenirController::class, 'updateInvoice'])->name('pengajuansouvenir.updateInvoice');
 Route::get('/pengajuansouvenir/{id}/export-pdf', [App\Http\Controllers\PengajuanSouvenirController::class, 'exportPDF'])->name('pengajuansouvenir.exportpdf');
 
-Route::get('/create-only', [App\Http\Controllers\examController::class, 'createOnly'])->name('exam.createOnly');
-Route::post('/store-only', [App\Http\Controllers\examController::class, 'storeOnly'])->name('exam.storeOnly');
-Route::get('/hargaExam', [App\Http\Controllers\examController::class, 'hargaExam']);
-Route::get('/detailHargaExam/{id}', [App\Http\Controllers\examController::class, 'detailHargaExam']);
-Route::get('/pengajuanUpdateExam/{id}', [App\Http\Controllers\examController::class, 'pengajuanUpdateExam']);
+Route::get('/create-only', [examController::class, 'createOnly'])->name('exam.createOnly');
+Route::post('/store-only', [examController::class, 'storeOnly'])->name('exam.storeOnly');
+Route::get('/hargaExam', [examController::class, 'hargaExam']);
+Route::get('/detailHargaExam/{id}', [examController::class, 'detailHargaExam']);
+Route::get('/pengajuanUpdateExam/{id}', [examController::class, 'pengajuanUpdateExam']);
 
-Route::get('/daftar-peserta-exam', [App\Http\Controllers\DaftarPesertaExamController::class, 'index'])->name('daftar-peserta-exam.index');
-Route::get('/daftar-peserta-exam/create/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'create'])->name('daftar-peserta-exam.create');
-Route::post('/daftar-peserta-exam/store', [App\Http\Controllers\DaftarPesertaExamController::class, 'store'])->name('daftar-peserta-exam.store');
-Route::get('/daftar-peserta-exam/get-data', [App\Http\Controllers\DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
-Route::get('/daftar-peserta-exam/{id}/edit', [App\Http\Controllers\DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
-Route::put('/daftar-peserta-exam/{id}', [App\Http\Controllers\DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
-Route::post('/daftar-peserta-exam/store-peserta-ajax', [App\Http\Controllers\DaftarPesertaExamController::class, 'storePesertaAjax'])->name('daftar-peserta-exam.storeAjax');
+Route::get('/daftar-peserta-exam', [DaftarPesertaExamController::class, 'index'])->name('daftar-peserta-exam.index');
+Route::get('/daftar-peserta-exam/create/{id}', [DaftarPesertaExamController::class, 'create'])->name('daftar-peserta-exam.create');
+Route::post('/daftar-peserta-exam/store', [DaftarPesertaExamController::class, 'store'])->name('daftar-peserta-exam.store');
+Route::get('/daftar-peserta-exam/get-data', [DaftarPesertaExamController::class, 'getData'])->name('daftar-peserta-exam.get-data');
+Route::get('/daftar-peserta-exam/{id}/edit', [DaftarPesertaExamController::class, 'edit'])->name('daftar-peserta-exam.edit');
+Route::put('/daftar-peserta-exam/{id}', [DaftarPesertaExamController::class, 'update'])->name('daftar-peserta-exam.update');
+Route::post('/daftar-peserta-exam/store-peserta-ajax', [DaftarPesertaExamController::class, 'storePesertaAjax'])->name('daftar-peserta-exam.storeAjax');
 Route::post('/listexam/delete/{id}', [App\Http\Controllers\listexamController::class, 'destroy']);
 
-Route::get('/feedbackPelayanan', [App\Http\Controllers\feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
-Route::get('/pengajuanExam/{id}', [App\Http\Controllers\examController::class, 'create'])->name('pengajuanExam');
-Route::get('/approvalexam/{id}', [App\Http\Controllers\examController::class, 'approvalexam'])->name('approvalexam');
-Route::put('/sendapprovalexam/{id}', [App\Http\Controllers\examController::class, 'sendapprovalexam'])->name('exam.approval');
+Route::get('/feedbackPelayanan', [feedbackController::class, 'pelayananFeedbackShow'])->name('feedbackPelayanan');
+Route::get('/pengajuanExam/{id}', [examController::class, 'create'])->name('pengajuanExam');
+Route::get('/approvalexam/{id}', [examController::class, 'approvalexam'])->name('approvalexam');
+Route::put('/sendapprovalexam/{id}', [examController::class, 'sendapprovalexam'])->name('exam.approval');
 Route::get('/exam/{id}/add-pengajuan-barang', [examController::class, 'AddPengajuanBarang'])->name('exam.addPengajuanBarang');
-Route::post('/invoice/{data}', [App\Http\Controllers\examController::class, 'invoice'])->name('exam.invoice');
-Route::get('/invoice/registexam/{id}', [App\Http\Controllers\registexamController::class, 'invoice'])->name('registexam.invoice');
-Route::get('/uploadinvoice/{id}', [App\Http\Controllers\registexamController::class, 'uploadInvoice'])->name('exam.uploadInvoice');
-Route::put('/uploadinvoice/{id}', [App\Http\Controllers\registexamController::class, 'uploadInvoicePost'])->name('exam.uploadInvoicePost');
-Route::get('/hasilexam/{id}', [App\Http\Controllers\registexamController::class, 'createHasilUjian'])->name('exam.createHasilUjian');
-Route::post('/hasilexam/{id}', [App\Http\Controllers\registexamController::class, 'storeHasilUjian'])->name('exam.storeHasilUjian');
-Route::get('/hasilexam/{id}/edit', [App\Http\Controllers\registexamController::class, 'createHasilUjian'])->name('exam.editHasilUjian');
-Route::put('/hasilexam/{id}/update', [App\Http\Controllers\registexamController::class, 'updateHasilUjian'])->name('exam.updateHasilUjian');
-Route::get('/hasilexam/{id}/detail', [App\Http\Controllers\registexamController::class, 'showHasilUjian'])->name('exam.showHasilUjian');
-Route::get('/registexam/cc/{id}', [App\Http\Controllers\registexamController::class, 'createcc'])->name('exam.createcc');
-Route::put('/registexam/cc/{id}', [App\Http\Controllers\registexamController::class, 'storecc'])->name('exam.storecc');
-Route::put('/souvenir/{id}/updatestok', [App\Http\Controllers\SouvenirController::class, 'updateStok'])->name('souvenir.updateStok');
-Route::get('/souvenir/{id}/editstok', [App\Http\Controllers\SouvenirController::class, 'editStok'])->name('souvenir.editStok');
-Route::post('/souvenir/{id}/inactive', [App\Http\Controllers\SouvenirController::class, 'inactive'])->name('souvenir.inactive');
-Route::post('/souvenir/{id}/active', [App\Http\Controllers\SouvenirController::class, 'active'])->name('souvenir.active');
+Route::post('/invoice/{data}', [examController::class, 'invoice'])->name('exam.invoice');
+Route::get('/invoice/registexam/{id}', [registexamController::class, 'invoice'])->name('registexam.invoice');
+Route::get('/uploadinvoice/{id}', [registexamController::class, 'uploadInvoice'])->name('registexam.uploadInvoice');
+Route::put('/uploadinvoice/{id}', [registexamController::class, 'uploadInvoicePost'])->name('exam.uploadInvoicePost');
+Route::get('/hasilexam/{id}', [registexamController::class, 'createHasilUjian'])->name('exam.createHasilUjian');
+Route::post('/hasilexam/{id}', [registexamController::class, 'storeHasilUjian'])->name('exam.storeHasilUjian');
+Route::get('/hasilexam/{id}/edit', [registexamController::class, 'createHasilUjian'])->name('exam.editHasilUjian');
+Route::put('/hasilexam/{id}/update', [registexamController::class, 'updateHasilUjian'])->name('exam.updateHasilUjian');
+Route::get('/hasilexam/{id}/detail', [registexamController::class, 'showHasilUjian'])->name('exam.showHasilUjian');
+Route::get('/registexam/cc/{id}', [registexamController::class, 'createcc'])->name('exam.createcc');
+Route::put('/registexam/cc/{id}', [registexamController::class, 'storecc'])->name('exam.storecc');
+Route::put('/souvenir/{id}/updatestok', [SouvenirController::class, 'updateStok'])->name('souvenir.updateStok');
+Route::get('/souvenir/{id}/editstok', [SouvenirController::class, 'editStok'])->name('souvenir.editStok');
+Route::post('/souvenir/{id}/inactive', [SouvenirController::class, 'inactive'])->name('souvenir.inactive');
+Route::post('/souvenir/{id}/active', [SouvenirController::class, 'active'])->name('souvenir.active');
 Route::get('/suratperjalanan/{id}/editspj', [App\Http\Controllers\SuratPerjalananController::class, 'editspj'])->name('suratperjalanan.editspj');
 Route::get('/tunjangangenerate', [App\Http\Controllers\TunjanganController::class, 'indexGenerate'])->name('tunjangangenerate.index');
 Route::put('/lembur/{id}/updateKaryawan', [App\Http\Controllers\LemburController::class, 'updateKaryawan'])->name('lembur.updateKaryawan');
@@ -502,21 +496,21 @@ Route::put('/overtimeApproving', [App\Http\Controllers\OvertimeController::class
 Route::get('/export-lembur-excel/{year}/{month}', [App\Http\Controllers\OvertimeController::class, 'exportExcel'])->name('overtime.exportExcel');
 Route::get('/export-lembur-pdf/{id}/{year}/{month}', [App\Http\Controllers\OvertimeController::class, 'exportPDF'])->name('overtime.exportPDF');
 
-Route::post('/change-user', [App\Http\Controllers\UserController::class, 'changeUser'])->name('change.user');
-Route::get('/get-users', [App\Http\Controllers\UserController::class, 'getUsers'])->name('get.users');
-Route::get('/user-dropdown', [App\Http\Controllers\UserController::class, 'showUserDropdown'])->name('user.dropdown');
+Route::post('/change-user', [UserController::class, 'changeUser'])->name('change.user');
+Route::get('/get-users', [UserController::class, 'getUsers'])->name('get.users');
+Route::get('/user-dropdown', [UserController::class, 'showUserDropdown'])->name('user.dropdown');
 // Route::get('/webhook/sentry', [SentryWebhookController::class, 'index']);
 
-Route::get('/rkm/{id}/souvenir', [App\Http\Controllers\SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
+Route::get('/rkm/{id}/souvenir', [SouvenirController::class, 'createSouvenirInhouse'])->name('createSouvenirInhouse');
 Route::get('/souvenir/filter/{keyword}', [SouvenirController::class, 'filterSouvenir'])->name('filterSouvenir');
-Route::post('/rkm/storesouvenir', [App\Http\Controllers\SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
-Route::put('/rkm/{id}/updatesouvenir', [App\Http\Controllers\SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
+Route::post('/rkm/storesouvenir', [SouvenirController::class, 'storeSouvenirInhouse'])->name('storeSouvenirInhouse');
+Route::put('/rkm/{id}/updatesouvenir', [SouvenirController::class, 'updateSouvenirInhouse'])->name('updateSouvenirInhouse');
 
 Route::post('/providers', [App\Http\Controllers\listexamController::class, 'storeProviders'])->name('providers.store');
 Route::post('/vendors', [App\Http\Controllers\listexamController::class, 'storeVendor'])->name('vendors.store');
 
-Route::get('/detailfeedbacks', [App\Http\Controllers\feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
-Route::get('/paymantAdvance/edit/{id}', [App\Http\Controllers\netSalesController::class, 'edit'])->name('netSales.edit.index');
+Route::get('/detailfeedbacks', [feedbackController::class, 'detailfeedbacks'])->name('detailfeedbacks');
+Route::get('/paymantAdvance/edit/{id}', [netSalesController::class, 'edit'])->name('netSales.edit.index');
 
 // Route::get('nilaifeedback/export', [App\Http\Controllers\feedbackController::class, 'export'])->name('nilaifeedback.export');
 Route::get('nilaifeedbackexport/{year}/{month}', [App\Http\Controllers\nilaifeedbackController::class, 'export'])->name('nilaifeedbackexport');
@@ -524,7 +518,7 @@ Route::get('RekapitulasiAbsenperKaryawanExport/{year}/{month}', [App\Http\Contro
 Route::get('RekapitulasiAbsenperBulanExport/{year}/{month}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportperBulan'])->name('RekapitulasiAbsenperBulanExport');
 Route::get('RekapitulasiWaktuKeterlambatanExport/{year}', [App\Http\Controllers\RekapitulasiAbsenController::class, 'exportKeterlambatan'])->name('RekapitulasiWaktuKeterlambatanExport');
 
-//KPI
+// KPI
 Route::prefix('kpi-data/')
     ->name('kpi.')
     ->middleware(['auth'])
@@ -541,18 +535,18 @@ Route::prefix('kpi-data/')
         Route::get('/get-routes-by-jabatan', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('getRoutesByJabatan');
         Route::get('/get-target-by-route', [TargetKPIController::class, 'getDataTargetByRoute'])->name('getTargetByRoute');
         Route::get('/divisi-drilldown', [TargetKPIController::class, 'divisiDrilldown'])->name('divisiDrilldown');
-        //Overview KPI
-        route::prefix('overview/')
+        // Overview KPI
+        Route::prefix('overview/')
             ->name('overview.')
             ->middleware(['auth'])
             ->group(function () {
-                route::get('/index', [TargetKPIController::class, 'kpiOverview'])->name('index');
-                route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
-                route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
-                route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
+                Route::get('/index', [TargetKPIController::class, 'kpiOverview'])->name('index');
+                Route::get('/get', [TargetKPIController::class, 'getDataOverview'])->name('get');
+                Route::get('/index/personal/{id?}', [TargetKPIController::class, 'personalIndex'])->name('indexPersonal');
+                Route::get('/kpi/personal/data', [TargetKPIController::class, 'getDataOverviewPersonal'])->name('dataPersonal');
 
-                //yang hilang
-                route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
+                // yang hilang
+                Route::post('/update-target-per-sales', [TargetKPIController::class, 'updateTargetPerSales'])->name('updateTargetPerSales');
             });
 
         Route::get('/deadline-detail', [KPIDatabaseKPIController::class, 'getDeadlineDetail'])->name('deadlineDetail');
@@ -560,7 +554,7 @@ Route::prefix('kpi-data/')
         Route::get('/achievement-detail', [KPIDatabaseKPIController::class, 'getAchievementDetail'])->name('achievementDetail');
         Route::get('/news-detail', [KPIDatabaseKPIController::class, 'getNewsDetail'])->name('newsDetail');
 
-        Route::get('/monitoring/export/pdf',   [TargetKPIController::class, 'exportMonitoringPdf'])
+        Route::get('/monitoring/export/pdf', [TargetKPIController::class, 'exportMonitoringPdf'])
             ->name('monitoring.export.pdf');
 
         Route::get('/monitoring/export/excel', [TargetKPIController::class, 'exportMonitoringExcel'])
@@ -575,44 +569,44 @@ Route::prefix('kpi-data/')
         Route::get('/export', [TargetKPIController::class, 'exportKpiTemplate'])->name('export');
         Route::get('/export/pdf', [TargetKPIController::class, 'exportKpiTemplatePdf'])->name('export.pdf');
 
-        //Target Departement
-        route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
-        route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
-        route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
-        route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
-        route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
-        route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
-        route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');
-        route::get('get-karyawan-by-jabatan', [TargetKPIController::class, 'getKaryawanByJabatan'])->name('getKaryawanByJabatan');
-        route::get('get-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('getProgressDasboard');
-        route::get('get-statistika', [TargetKPIController::class, 'getChartStatistics']);
+        // Target Departement
+        Route::get('/table-data', [TargetKPIController::class, 'kpiIndex'])->name('index');
+        Route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
+        Route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
+        Route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
+        Route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
+        Route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
+        Route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');
+        Route::get('get-karyawan-by-jabatan', [TargetKPIController::class, 'getKaryawanByJabatan'])->name('getKaryawanByJabatan');
+        Route::get('get-dashboard', [TargetKPIController::class, 'getProgressDashboard'])->name('getProgressDasboard');
+        Route::get('get-statistika', [TargetKPIController::class, 'getChartStatistics']);
 
         Route::post('/import-target', [TargetKPIController::class, 'importTarget'])->name('importTarget');
         Route::get('/download-template', [TargetKPIController::class, 'downloadTemplate'])->name('downloadTemplate');
         Route::get('/assistant-routes', [TargetKPIController::class, 'getAssistantRoutesByJabatan'])->name('assistantRoutes');
 
-        //manual value
-        route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
-        route::post('/update-gap-kompetensi', [TargetKPIController::class, 'updateGapKompetensi'])->name('updateGapKompetensi');
+        // manual value
+        Route::post('/update-manual-value', [TargetKPIController::class, 'manualValue'])->name('manualValue');
+        Route::post('/update-gap-kompetensi', [TargetKPIController::class, 'updateGapKompetensi'])->name('updateGapKompetensi');
 
-        route::get('/cleaning-database', [TargetKPIController::class, 'cleaningDatabase'])->name('cleaningDatabase');
+        Route::get('/cleaning-database', [TargetKPIController::class, 'cleaningDatabase'])->name('cleaningDatabase');
 
-        //Target KPI karyawan
-        route::prefix('karyawan/')
+        // Target KPI karyawan
+        Route::prefix('karyawan/')
             ->name('karyawan.')
             ->middleware(['auth'])
             ->group(function () {
-                route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
+                Route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
             });
     });
 
-//Project KPI
-route::get('project/table-data', [KPIDatabaseKPIController::class, 'indexProject'])->name('project.index');
-route::get('project/control-project', [KPIDatabaseKPIController::class, 'controlProject'])->name('project.control');
+// Project KPI
+Route::get('project/table-data', [KPIDatabaseKPIController::class, 'indexProject'])->name('project.index');
+Route::get('project/control-project', [KPIDatabaseKPIController::class, 'controlProject'])->name('project.control');
 
-//Penilaian
-route::get('penilaian/data-form/edit/{kode_form}', [KPIDatabaseKPIController::class, 'formPenilaianEdit']);
-route::post('penilaian/data-form/update', [KPIDatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
+// Penilaian
+Route::get('penilaian/data-form/edit/{kode_form}', [KPIDatabaseKPIController::class, 'formPenilaianEdit']);
+Route::post('penilaian/data-form/update', [KPIDatabaseKPIController::class, 'formPenilaianUpdate'])->name('penilaian.form.update');
 Route::get('/penilaian/form', [KPIDatabaseKPIController::class, 'formPenilaianData'])->name('penilaian.form.data');
 Route::get('/penilaian/form/get', [KPIDatabaseKPIController::class, 'getFormPenilaianData'])->name('penilaian.form.get');
 Route::post('/penilaian/clean', [KPIDatabaseKPIController::class, 'clean']);
@@ -660,12 +654,12 @@ Route::post('/pengajuan-klaim/delete/scheme-work', [pengajuanKlaimController::cl
 Route::get('/pengajuan-klaim', [pengajuanKlaimController::class, 'index'])->name('pengajuanklaim.index');
 Route::put('notifications/{notification}/read', [App\Http\Controllers\CommentController::class, 'markAsRead'])->name('notifications.markAsRead');
 Route::put('/notifications/markAllAsRead', [App\Http\Controllers\CommentController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
-Route::get('/rkm/{id}/absensi', [App\Http\Controllers\RKMController::class, 'absensiPeserta'])->name('absensiPeserta');
+Route::get('/rkm/{id}/absensi', [ControllersRKMController::class, 'absensiPeserta'])->name('absensiPeserta');
 Route::put('/suratperjalanan/{id}/approval', [App\Http\Controllers\SuratPerjalananController::class, 'approval'])->name('suratperjalanan.approval');
 Route::put('/suratperjalanan/{id}/approve-direksi/{status}', [App\Http\Controllers\SuratPerjalananController::class, 'approveDireksi'])->name('suratperjalanan.approve.direksi');
 Route::put('/suratperjalanan/{id}/upload-bukti', [App\Http\Controllers\SuratPerjalananController::class, 'uploadBuktiTransfer'])->name('suratperjalanan.uploadBukti');
 Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
-Route::post('/absensi', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
+Route::post('/absensi', [App\Http\Controllers\AbsensiKaryawanController::class, 'storeAbsensi'])->name('absensi.masuk');
 Route::get('/absensi/karyawan', [App\Http\Controllers\AbsensiKaryawanController::class, 'absensiKaryawan'])->name('absensi.karyawan');
 Route::get('/absensi/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'noRecord'])->name('absensi.noRecord');
 Route::post('/absensi/approve/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'ApproveNoRecord'])->name('absensi.approveNoRecord');
@@ -679,41 +673,41 @@ Route::post('/absensi/delete/pengajuan-klaim/cancel-leave', [App\Http\Controller
 Route::post('/absensi/create/pengajuan-klaim/no-recorded', [App\Http\Controllers\AbsensiKaryawanController::class, 'createNoRecord'])->name('absensi.createNoRecord');
 Route::post('/absensi/create/pengajuan-klaim/cancel-leave', [App\Http\Controllers\AbsensiKaryawanController::class, 'createCancelLeave'])->name('absensi.createCancelLeave');
 Route::post('/absensi/create/pengajuan-klaim/scheme_work', [App\Http\Controllers\AbsensiKaryawanController::class, 'createSchemeWork'])->name('absensi.createSchemeWork');
-Route::post('/absensi/update', [\App\Http\Controllers\AbsensiKaryawanController::class, 'storeKeluar'])->name('absensi.keluar');
+Route::post('/absensi/update', [App\Http\Controllers\AbsensiKaryawanController::class, 'storeKeluar'])->name('absensi.keluar');
 Route::get('/absensi/{id}/edit', [App\Http\Controllers\RekapitulasiAbsenController::class, 'edit'])->name('absensi.edit');
 Route::get('/absensi/create', [App\Http\Controllers\AbsensiKaryawanController::class, 'create'])->name('absensi.create');
-Route::post('/absensi/manual', [\App\Http\Controllers\AbsensiKaryawanController::class, 'absenManual'])->name('absensi.manual');
+Route::post('/absensi/manual', [App\Http\Controllers\AbsensiKaryawanController::class, 'absenManual'])->name('absensi.manual');
 // Route::put('/absensi/{id}/update', [App\Http\Controllers\RekapitulasiAbsenController::class, 'update'])->name('rekapitulasiabsen.update');
 Route::get('/cekip', [App\Http\Controllers\AbsensiKaryawanController::class, 'cekip'])->name('cekip');
-Route::get('/rkm/{id}/registform', [App\Http\Controllers\RKMController::class, 'createRegistForm'])->name('createRegistForm');
-Route::put('/rkm/{id}/registformupdate', [App\Http\Controllers\RKMController::class, 'uploadRegistForm'])->name('uploadRegistForm');
-Route::post('/rkm/download/excel', [App\Http\Controllers\RKMController::class, 'excelDownload'])->name('excel');
-Route::post('/rkm/download/excel/adm-sales', [App\Http\Controllers\RKMController::class, 'excelDownloadAdmSales'])->name('excel.rkmAdmSales');
-Route::get('analisisrkm/{year}/{monthStart}/{monthEnd}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
-Route::get('analisisrkm/{id}/create', [App\Http\Controllers\KelasAnalisisController::class, 'create']);
-Route::get('getAnalisisRKM/{year}/{month}/{week}', [App\Http\Controllers\KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
-Route::post('analisisrkm/{year}/{month}/{week}/post', [App\Http\Controllers\KelasAnalisisController::class, 'postAnalisisMingguan']);
-Route::put('analisisrkm/{year}/{month}/{week}/update', [App\Http\Controllers\KelasAnalisisController::class, 'updateAnalisisMingguan']);
-Route::get('analisisrkm/{year}/{month}', [App\Http\Controllers\KelasAnalisisController::class, 'getAnalisisMargin']);
+Route::get('/rkm/{id}/registform', [ControllersRKMController::class, 'createRegistForm'])->name('createRegistForm');
+Route::put('/rkm/{id}/registformupdate', [ControllersRKMController::class, 'uploadRegistForm'])->name('uploadRegistForm');
+Route::post('/rkm/download/excel', [ControllersRKMController::class, 'excelDownload'])->name('excel');
+Route::post('/rkm/download/excel/adm-sales', [ControllersRKMController::class, 'excelDownloadAdmSales'])->name('excel.rkmAdmSales');
+Route::get('analisisrkm/{year}/{monthStart}/{monthEnd}', [KelasAnalisisController::class, 'getRkmDataPerBulanPerMinggu']);
+Route::get('analisisrkm/{id}/create', [KelasAnalisisController::class, 'create']);
+Route::get('getAnalisisRKM/{year}/{month}/{week}', [KelasAnalisisController::class, 'getRkmDataByMonthAndWeek']);
+Route::post('analisisrkm/{year}/{month}/{week}/post', [KelasAnalisisController::class, 'postAnalisisMingguan']);
+Route::put('analisisrkm/{year}/{month}/{week}/update', [KelasAnalisisController::class, 'updateAnalisisMingguan']);
+Route::get('analisisrkm/{year}/{month}', [KelasAnalisisController::class, 'getAnalisisMargin']);
 Route::get('peserta/export/excel', [App\Http\Controllers\PesertaController::class, 'exportExcel'])->name('peserta.exportExcel');
 Route::get('peserta/export/pdf', [App\Http\Controllers\PesertaController::class, 'exportPDF'])->name('peserta.exportPDF');
 Route::get('registrasi/export/excel', [App\Http\Controllers\RegistrasiController::class, 'exportExcel'])->name('registrasi.exportExcel');
 Route::get('registrasi/export/pdf', [App\Http\Controllers\RegistrasiController::class, 'exportPDF'])->name('registrasi.exportPDF');
 Route::get('registrasi/export/excels', [App\Http\Controllers\RegistrasiController::class, 'exportExcelKhusus'])->name('registrasi.exportExcels');
 Route::get('registrasi/export/pdfs', [App\Http\Controllers\RegistrasiController::class, 'exportPDFKhusus'])->name('registrasi.exportPDFs');
-Route::post('/registrasi/souvenir', [\App\Http\Controllers\RegistrasiController::class, 'storeSouvenir'])->name('registrasi.storeSouvenir');
+Route::post('/registrasi/souvenir', [App\Http\Controllers\RegistrasiController::class, 'storeSouvenir'])->name('registrasi.storeSouvenir');
 Route::get('peserta/export/excels', [App\Http\Controllers\PesertaController::class, 'exportExcelKhusus'])->name('peserta.exportExcels');
 Route::get('peserta/export/pdfs', [App\Http\Controllers\PesertaController::class, 'exportPDFKhusus'])->name('peserta.exportPDFs');
-Route::get('feedback/export/excels/{id}', [App\Http\Controllers\feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
-Route::get('feedback/export/pdfs/{id}', [App\Http\Controllers\feedbackController::class, 'exportPDFKhusus'])->name('feedback.exportPDFs');
+Route::get('feedback/export/excels/{id}', [feedbackController::class, 'exportExcelKhusus'])->name('feedback.exportExcels');
+Route::get('feedback/export/pdfs/{id}', [feedbackController::class, 'exportPDFKhusus'])->name('feedback.exportPDFs');
 Route::get('tunjanganExportPDF/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'tunjanganExportPDF'])->name('tunjanganExportPDF');
 Route::get('tunjanganExportExcel/{month}/{year}', [App\Http\Controllers\TunjanganController::class, 'tunjanganExportExcel'])->name('tunjanganExportExcel');
-Route::get('editstatusmateri/{id}', [App\Http\Controllers\MateriController::class, 'editstatusmateri'])->name('editstatusmateri');
+Route::get('editstatusmateri/{id}', [MateriController::class, 'editstatusmateri'])->name('editstatusmateri');
 Route::get('pengajuanbarang/uploadinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'uploadInvoice'])->name('uploadInvoice');
 Route::put('pengajuanbarang/updateinvoice/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateInvoice'])->name('updateInvoice');
 Route::put('pengajuanbarang/updatebarang/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'updateBarang'])->name('pengajuanbarang.updateBarang');
 Route::get('pengajuanbarang/pdf/{id}', [App\Http\Controllers\PengajuanBarangController::class, 'exportPDF'])->name('pengajuanbarang.pdf');
-Route::get('paymantAdvance/{id}/create/form-view', [App\Http\Controllers\netSalesController::class, 'create']);
+Route::get('paymantAdvance/{id}/create/form-view', [netSalesController::class, 'create']);
 Route::get('tunjanganEduExportExcel/{month}/{year}', [App\Http\Controllers\tunjanganEducationController::class, 'tunjanganEduExportExcel'])->name('tunjanganEduExportExcel');
 Route::get('pengajuancutirekap', [App\Http\Controllers\PengajuancutiController::class, 'rekap'])->name('pengajuancuti.rekap');
 Route::get('pengajuancutiexport/{month}/{year}', [App\Http\Controllers\PengajuancutiController::class, 'exportexcel'])->name('pengajuancutiexport');
@@ -731,7 +725,7 @@ Route::post('/rkm/upload-no-resi/{id}', [ControllersRKMController::class, 'uploa
 Route::post('/rkm/store/sertifikat', [ControllersRKMController::class, 'storeSertifikat'])->name('storeSertifikat');
 Route::post('/rkm/delete/sertifikat', [ControllersRKMController::class, 'deleteSertifikat'])->name('deleteSertifikat');
 // web.php
-Route::post('/rkm/update-makanan', [App\Http\Controllers\RKMController::class, 'updateMakanan'])->name('rkm.updateMakanan');
+Route::post('/rkm/update-makanan', [ControllersRKMController::class, 'updateMakanan'])->name('rkm.updateMakanan');
 
 Route::get('/rekap-penilaian-exam', [RekapPenilaianExamController::class, 'indexRekap'])->name('exam.rekap-penilaian');
 Route::get('/rekap-penilaian-exam/data', [RekapPenilaianExamController::class, 'getRekapPenilaian'])->name('exam.rekap-penilaian.data');
@@ -784,7 +778,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/target-filter-aktivitas', [CRMController::class, 'apiTargetAktivitas'])->name('crm.api.aktivitas');
     Route::post('/checklist/update', [CRMController::class, 'updateChecklist'])->name('checklist.update');
 
-    //Koordinasi Driver
+    // Koordinasi Driver
     Route::get('/koordinasi-driver', [CRMController::class, 'indexKoordinasi'])->name('CRM.index.koordinasi');
     Route::get('/koordinasi-driver/create', [CRMController::class, 'createKoordinasi'])->name('CRM.create.koordinasi');
 
@@ -805,7 +799,7 @@ Route::prefix('crm')->group(function () {
     Route::get('/contact/history-analytics-api', [ContactController::class, 'apiHistoryAnalytics'])->name('crm.contact.history_analytics_api');
     Route::get('/contact/history-status/data', [ContactController::class, 'allHistoryStatusData'])->name('crm.contact.all_history_status_data');
 
-    //cheklist RKM admin sales
+    // cheklist RKM admin sales
     Route::prefix('checklist-rkm')->name('crm.checklist-rkm.')->group(function () {
         Route::get('/', [checklistRKMController::class, 'index'])->name('index');
         Route::get('/data', [checklistRKMController::class, 'getData'])->name('data');
@@ -917,10 +911,9 @@ Route::prefix('crm')->group(function () {
     Route::prefix('paymentAdvance')->name('crm.paymentAdvance.')->group(function () {
         Route::get('/', [PaymentAdvanceController::class, 'index'])->name('index');
         Route::get('/data', [PaymentAdvanceController::class, 'getData'])->name('data');
-        Route::get('/form/{idRkm}', [PaymentAdvanceController::class, 'form']) ->name('form');
+        Route::get('/form/{idRkm}', [PaymentAdvanceController::class, 'form'])->name('form');
         Route::post('/print', [PaymentAdvanceController::class, 'printPdf'])->name('printPdf');
     });
-
 });
 
 Route::get('/crm/approval-pendapatan-sales', [ApprovalPendapatanSalesController::class, 'index'])->name('crm.approval.index');
@@ -929,7 +922,7 @@ Route::post('/crm/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSal
 Route::get('/crm/approval-pendapatan-sales/rkm-search', [ApprovalPendapatanSalesController::class, 'searchRkm']);
 Route::post('/crm/approval-pendapatan-sales/store', [ApprovalPendapatanSalesController::class, 'store']);
 
-//INVOICE
+// INVOICE
 Route::get('/invoice', [InvoiceRKMController::class, 'index'])->name('invoice.index');
 Route::get('/invoice/create/{id}', [InvoiceRKMController::class, 'create'])->name('invoice.create');
 Route::post('/invoice', [InvoiceRKMController::class, 'store'])->name('invoice.store');
@@ -944,7 +937,7 @@ Route::post('/invoice-bulk', [InvoiceRKMController::class, 'bulkStore'])->name('
 Route::post('/invoice/{invoice}/peserta-pdf', [InvoiceRKMController::class, 'pesertaPdf'])->name('invoice.peserta.pdf');
 Route::post('/invoice/{invoice}/peserta-kwitansi', [InvoiceRKMController::class, 'pesertaKwitansiPdf'])->name('invoice.peserta.kwitansi');
 Route::post('/invoice/{invoice}/update-number', [InvoiceRKMController::class, 'updateNumber'])->name('invoice.number.update');
-//Kwitansi
+// Kwitansi
 Route::get('/invoice/{id}/kwitansi', [InvoiceRKMController::class, 'kwitansi'])->name('invoice.kwitansi');
 Route::get('/invoice/{invoiceId}/kwitansi/create', [InvoiceRKMController::class, 'createKwitansi'])->name('kwitansi.create');
 Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])->name('kwitansi.store');
@@ -952,7 +945,7 @@ Route::post('/kwitansi/store', [InvoiceRKMController::class, 'storeKwitansi'])->
 Route::get('/kwitansi/{id}', [InvoiceRKMController::class, 'showKwitansi'])->name('kwitansi.show');
 Route::get('/kwitansi/download/{id}', [InvoiceRKMController::class, 'downloadPdfKwitansi'])->name('kwitansi.pdf');
 
-//laporan-insiden-route
+// laporan-insiden-route
 Route::get('/laporan-insiden', [laporanInsidentController::class, 'index'])->name('index.laporanInsiden');
 Route::get('/laporan-insiden/get', [laporanInsidentController::class, 'get'])->name('get.laporanInsiden');
 Route::get('/laporan-insiden/form', [laporanInsidentController::class, 'create'])->name('create.laporanInsiden');
@@ -962,11 +955,10 @@ Route::get('/laporan-insiden/detail/{id}', [laporanInsidentController::class, 'd
 Route::get('/laporan-insiden/edit/{id}', [laporanInsidentController::class, 'edit'])->name('edit.laporanInsiden');
 Route::get('/laporan-insiden/hapus/{id}', [laporanInsidentController::class, 'hapus'])->name('hapus.laporanInsiden');
 Route::post('/laporan-insiden/update', [laporanInsidentController::class, 'update'])->name('uodate.laporanInsiden');
-//management-kelas-offline
+// management-kelas-offline
 Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
-Route::get('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
 Route::resource('management-kelas', managementKelasController::class);
-Route::post('/management-kelas/{id}/batalkan', [ManagementKelasController::class, 'batalkan']);
+Route::post('/management-kelas/{id}/batalkan', [managementKelasController::class, 'batalkan']);
 
 Route::get('/exam/assign-room/{id}', [examController::class, 'assignRoom'])
     ->name('exam.assignRoom')
@@ -974,12 +966,11 @@ Route::get('/exam/assign-room/{id}', [examController::class, 'assignRoom'])
 
 // Routes management kelas yang sudah ada
 Route::get('/management-kelas', [managementKelasController::class, 'index'])->name('managementKelas.index');
-Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
 Route::post('/management-kelas/store', [managementKelasController::class, 'store'])->name('managementKelas.store');
 // di web.php atau routes file
 Route::post('/exam/process-room-assignment', [examController::class, 'processRoomAssignment'])->name('exam.processRoomAssignment');
 
-//rekapexam
+// rekapexam
 Route::get('/rekapexam', [examController::class, 'rekapExam'])->name('exam.rekapexam');
 Route::get('/getRekapExamByMonth/{year}/{month}', [examController::class, 'getRekapExam'])->name('exam.getRekapExam');
 Route::get('/rekapExamExportExcel/{year}/{month}', [examController::class, 'rekapExamExportExcel'])->name('exam.rekapExamExportExcel');
@@ -1008,12 +999,12 @@ Route::get('/gaji/karyawan', [KaryawanController::class, 'gajiIndex'])->name('ga
 Route::post('/gaji', [KaryawanController::class, 'storeGaji'])->name('gaji.store');
 Route::put('/gaji/{id}', [KaryawanController::class, 'updateGaji'])->name('gaji.update');
 
-//Slip Gaji
+// Slip Gaji
 Route::get('/slip/gaji', [KaryawanController::class, 'slip'])->name('SlipGaji');
 
 Route::get('/test-error', function () {
     // ini error manual
-    throw new \Exception('Test error from Handler.php');
+    throw new Exception('Test error from Handler.php');
 });
 Route::middleware('auth')
     ->get('/notifications/unread-count', function () {
@@ -1042,10 +1033,10 @@ Route::patch('/daily-activities/{dailyActivity}/quick-update', [DailyActivityCon
 // RegistryFeature
 Route::patch('/registry/{tugas}/start', [App\Http\Controllers\RegistryFeatureController::class, 'startTask'])->name('registry.start');
 Route::patch('/registry/{tugas}/finish', [App\Http\Controllers\RegistryFeatureController::class, 'finishTask'])->name('registry.finish');
-Route::get('/registry/data', [\App\Http\Controllers\RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
+Route::get('/registry/data', [App\Http\Controllers\RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
 
-route::get('activity-log', [KPIDatabaseKPIController::class, 'activityLog'])->name('activity.log');
-route::get('activity-log/data', [KPIDatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
+Route::get('activity-log', [KPIDatabaseKPIController::class, 'activityLog'])->name('activity.log');
+Route::get('activity-log/data', [KPIDatabaseKPIController::class, 'getActivityChart'])->name('activity.log.chart');
 
 // survey kepuasan
 Route::get('/survey/kepuasan', [App\Http\Controllers\SurveyKepuasanController::class, 'index'])->name('surveykepuasan.index');
@@ -1131,7 +1122,6 @@ Route::prefix('office')->group(function () {
     Route::put('/sop-perusahaan/update/{id}', [PerusahaanController::class, 'updateSop'])->name('sop.perusahaan.update');
     Route::delete('/sop-perusahaan/delete/{id}', [PerusahaanController::class, 'deleteSop'])->name('sop.perusahaan.delete');
 
-
     // administrasi karyawan
     Route::get('data-administrasi/{id}', [AdministrasiKaryawanController::class, 'getData']);
     Route::get('administrasi-karyawan', [AdministrasiKaryawanController::class, 'index'])->name('administrasi.karyawan');
@@ -1189,10 +1179,10 @@ Route::prefix('office')->group(function () {
         Route::delete('/delete-row/{id_rkm}', [KomisiSalesController::class, 'deleteRow']);
     });
 
-    route::prefix('exam')->name('office.exam.')->group(function () {
-        route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
+    Route::prefix('exam')->name('office.exam.')->group(function () {
+        Route::get('/index', [OfficeExamController::class, 'indexOffice'])->name('index');
         Route::get('/detail/{id}', [OfficeExamController::class, 'showDetailExam']);
-        route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
+        Route::post('/update-bundling', [OfficeExamController::class, 'updateBundling'])->name('updateBundling');
 
         Route::get('/rekap', [OfficeExamController::class, 'indexRekap'])->name('rekap.index');
         Route::get('/rekap/json', [OfficeExamController::class, 'rekapJson'])->name('rekap.json');
@@ -1200,7 +1190,7 @@ Route::prefix('office')->group(function () {
         Route::get('/{year}/{month}', [OfficeExamController::class, 'showExamMonth'])->where(['year' => '[0-9]+', 'month' => '[0-9]+']);
     });
 
-    route::prefix('certifa')->name('office.certifa.')->group(function () {
+    Route::prefix('certifa')->name('office.certifa.')->group(function () {
         Route::get('/data', [PoExamSertifaController::class, 'getData'])->name('data');
         Route::get('index', [PoExamSertifaController::class, 'index'])->name('index');
         Route::post('/store', [PoExamSertifaController::class, 'store'])->name('store');
@@ -1227,16 +1217,16 @@ Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardD
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/shift/pending',  [DaftarTugasController::class, 'getPendingShift'])->name('shift.pending');
+    Route::get('/shift/pending', [DaftarTugasController::class, 'getPendingShift'])->name('shift.pending');
     Route::post('/shift/approve', [DaftarTugasController::class, 'approveShift'])->name('shift.approve');
-    Route::post('/shift/reject',  [DaftarTugasController::class, 'rejectShift'])->name('shift.reject');
+    Route::post('/shift/reject', [DaftarTugasController::class, 'rejectShift'])->name('shift.reject');
 });
 
 Route::prefix('office')
     ->name('office.')
     ->middleware(['auth'])
     ->group(function () {
-        //pickup driver routes
+        // pickup driver routes
         Route::prefix('pickup-driver')
             ->name('pickupDriver.')
             ->group(function () {
@@ -1295,7 +1285,7 @@ Route::prefix('office')
         Route::prefix('feedback')
             ->name('feedback.')
             ->group(function () {
-                Route::get('chartFeedback', [OfficeController::class, 'getNilaiInstruktur'])->name('get');
+                Route::get('chartFeedback', [OfficeController::class, 'getNilaiInstruktur'])->name('chartFeedback');
             });
         Route::get('/feedbackinstrukturpdf', [OfficeController::class, 'exportPdf'])->name('feedbackinstrukturpdf');
 
@@ -1352,7 +1342,7 @@ Route::prefix('office')
             Route::delete('/delete/rincian/{id}', [KegiatanController::class, 'deleteRincian'])->name('deleteRincian');
         });
 
-        //To Do list OB
+        // To Do list OB
         Route::prefix('daftar-tugas')->name('DaftarTugas.')->group(function () {
             Route::get('/', [DaftarTugasController::class, 'index'])->name('index');
             Route::post('store', [DaftarTugasController::class, 'store'])->name('store');
@@ -1388,7 +1378,7 @@ Route::prefix('office')
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
         });
 
-        Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function() {
+        Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function () {
             Route::get('/', [KoordinasiOfficeBoyController::class, 'index'])->name('index');
             Route::get('/get-data', [KoordinasiOfficeBoyController::class, 'getData'])->name('getData');
             Route::post('/store', [KoordinasiOfficeBoyController::class, 'store'])->name('store');
@@ -1398,7 +1388,7 @@ Route::prefix('office')
             Route::get('/detail/{id}', [KoordinasiOfficeBoyController::class, 'telegramDetail'])->name('telegram.detail');
         });
 
-        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function() {
+        Route::prefix('kondisi-tools')->name('KondisiTools.')->group(function () {
             Route::get('/', [KondisiToolsController::class, 'index'])->name('index');
             Route::post('/store', [KondisiToolsController::class, 'store'])->name('store');
             Route::post('/update/{id}', [KondisiToolsController::class, 'update'])->name('update');
@@ -1454,7 +1444,7 @@ Route::prefix('office')
             Route::put('/update/kondisi/{id}', [KendaraanController::class, 'updateKondisi'])->name('updateKondisiKendaraan');
             Route::delete('/delete/kondisi/{id}', [KendaraanController::class, 'deleteKondisi'])->name('deleteKondisiKendaraan');
 
-            //perbaikan
+            // perbaikan
             Route::get('/index/perbaikan', [KendaraanController::class, 'indexPerbaikan'])->name('indexPerbaikanKendaraan');
             Route::get('/detail/perbaikan/{id}', [KendaraanController::class, 'detailPerbaikan'])->name('detailPerbaikanKendaraan');
             Route::post('/store/perbaikan', [KendaraanController::class, 'storePerbaikan'])->name('storePerbaikanKendaraan');
@@ -1506,7 +1496,7 @@ Route::post('/activityinstruktur-update', [ActivityInstrukturController::class, 
 Route::get('/activityinstruktur', [ActivityInstrukturController::class, 'index'])->name('activities.index');
 
 // Pastikan berada di dalam grup middleware auth
-Route::get('/activityinstruktur-data/summary', [App\Http\Controllers\ActivityInstrukturController::class, 'getSummaryData'])->name('api.activities.summary');
+Route::get('/activityinstruktur-data/summary', [ActivityInstrukturController::class, 'getSummaryData'])->name('api.activities.summary');
 // content
 Route::patch('content-schedules/{contentSchedule}/mark-uploaded', [App\Http\Controllers\ContentScheduleController::class, 'markAsUploaded'])->name('content-schedules.mark-uploaded');
 
@@ -1545,10 +1535,10 @@ Route::post('/jurnalakuntansi/store-manual/{id}', [JurnalAkuntansiController::cl
 Route::get('/jurnalakuntansi/{id}/edit', [JurnalAkuntansiController::class, 'edit'])->name('jurnalakuntansi.edit');
 Route::put('/jurnalakuntansi/{id}', [JurnalAkuntansiController::class, 'update'])->name('jurnalakuntansi.update');
 Route::post('/jurnalakuntansi/petty-cash', [JurnalAkuntansiController::class, 'storePettyCash'])->name('jurnalakuntansi.storePettyCash');
-Route::post('/jurnalakuntansi/import-excel', [App\Http\Controllers\JurnalAkuntansiController::class, 'importExcel'])->name('jurnalakuntansi.importExcel');
+Route::post('/jurnalakuntansi/import-excel', [JurnalAkuntansiController::class, 'importExcel'])->name('jurnalakuntansi.importExcel');
 Route::get('/jurnalakuntansi/belum-jurnal-netsales', [JurnalAkuntansiController::class, 'getBelumJurnalNetSales'])->name('jurnalakuntansi.belumJurnalNetSales');
 Route::post('/jurnalakuntansi/store-manual-netsales/{id}', [JurnalAkuntansiController::class, 'storeManualNetSales']);
-Route::get('/jurnalakuntansi/export', [App\Http\Controllers\JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
+Route::get('/jurnalakuntansi/export', [JurnalAkuntansiController::class, 'export'])->name('jurnalakuntansi.export');
 Route::get('/jurnalakuntansi/pdf/{id}', [JurnalAkuntansiController::class, 'eksportPdf'])->name('jurnalakuntansi.pdf');
 Route::post('/jurnalakuntansi/otomatisasi/data', [JurnalAkuntansiController::class, 'otomatisasiJurnal'])->name('jurnalakuntansi.otomatisasiJurnal');
 Route::get('/jurnalakuntansi/belum-jurnal-sp', [JurnalAkuntansiController::class, 'getBelumJurnalSuratPerjalanan'])->name('jurnalakuntansi.belumJurnalSuratPerjalanan');
@@ -1564,7 +1554,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/projects/administrasi', ProjectAdministrationController::class);
     Route::post('/projects/{id}/update-info', [ProjectAdministrationController::class, 'updateProjectInfo'])->name('projects.update_info');
     // Route Kanban Project
-    Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('kanban.index');
+    Route::get('/projects/kanban', [ProjectKanbanController::class, 'index'])->name('projects.kanban.index');
     Route::get('/projects/kanban/get-tasks', [ProjectKanbanController::class, 'getTasks']);
     Route::get('/projects/kanban/{id}/team-members', [ProjectKanbanController::class, 'getTeamMembers']);
     Route::post('/projects/kanban/{id}/assign-team', [ProjectKanbanController::class, 'assignTeam']);
@@ -1582,7 +1572,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/projects/handovers/data', [ProjectHandoverController::class, 'getHandovers'])->name('handovers.data');
     Route::post('/projects/handovers/{id}/upload-bast', [ProjectHandoverController::class, 'uploadBAST'])->name('handovers.upload_bast');
 });
-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/pengajuanklaimmodul', [KlaimModulController::class, 'index'])->name('pengajuanklaimmodul.index');
@@ -1619,7 +1608,7 @@ Route::put('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'upda
 Route::delete('/no-akun/{id}', [App\Http\Controllers\NoAkunController::class, 'destroy'])->name('no_akun.destroy');
 Route::post('/no-akun/import', [App\Http\Controllers\NoAkunController::class, 'importExcel'])->name('no_akun.import');
 
-Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function() {
+Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function () {
     Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
     Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
     Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
@@ -1732,24 +1721,24 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('{template}/generate-modal', [ReportController::class, 'generateFormModal'])->name('.generate.modal');
     });
 
-    Route::prefix('hire')->name('hire.')->group(function() {
-        Route::get('/',             [HireController::class, 'index'])->name('index');
-        Route::post('/store',            [HireController::class, 'store'])->name('store');
-        Route::get('/show/{pelamar}',    [HireController::class, 'show'])->name('show');
-        Route::put('/update/{pelamar}',    [HireController::class, 'update'])->name('update');
+    Route::prefix('hire')->name('hire.')->group(function () {
+        Route::get('/', [HireController::class, 'index'])->name('index');
+        Route::post('/store', [HireController::class, 'store'])->name('store');
+        Route::get('/show/{pelamar}', [HireController::class, 'show'])->name('show');
+        Route::put('/update/{pelamar}', [HireController::class, 'update'])->name('update');
         Route::delete('/delete/{pelamar}', [HireController::class, 'destroy'])->name('destroy');
-        Route::post('/{pelamar}/lanjut-tahap',      [HireController::class, 'lanjutTahap'])->name('lanjutTahap');
-        Route::post('/{pelamar}/tolak',             [HireController::class, 'tolak'])->name('tolak');
-        Route::post('/{pelamar}/jadwal-interview',  [HireController::class, 'jadwalkanInterview'])->name('jadwalInterview');
-        Route::post('/{pelamar}/kirim-offer',       [HireController::class, 'kirimOffer'])->name('kirimOffer');
-        Route::post('/{pelamar}/onboarding',        [HireController::class, 'onboarding'])->name('onboarding');
-        Route::post('/{pelamar}/kirim-email',       [HireController::class, 'kirimEmail'])->name('kirimEmail');
-        Route::post('/{pelamar}/catatan',           [HireController::class, 'tambahCatatan'])->name('catatan');
-        Route::get('/{pelamar}/riwayat',            [HireController::class, 'riwayat'])->name('riwayat');
+        Route::post('/{pelamar}/lanjut-tahap', [HireController::class, 'lanjutTahap'])->name('lanjutTahap');
+        Route::post('/{pelamar}/tolak', [HireController::class, 'tolak'])->name('tolak');
+        Route::post('/{pelamar}/jadwal-interview', [HireController::class, 'jadwalkanInterview'])->name('jadwalInterview');
+        Route::post('/{pelamar}/kirim-offer', [HireController::class, 'kirimOffer'])->name('kirimOffer');
+        Route::post('/{pelamar}/onboarding', [HireController::class, 'onboarding'])->name('onboarding');
+        Route::post('/{pelamar}/kirim-email', [HireController::class, 'kirimEmail'])->name('kirimEmail');
+        Route::post('/{pelamar}/catatan', [HireController::class, 'tambahCatatan'])->name('catatan');
+        Route::get('/{pelamar}/riwayat', [HireController::class, 'riwayat'])->name('riwayat');
         // Route::get('/talent-pool/list',             [HireController::class, 'talentPool'])->name('talentPool');
-        Route::post('/{pelamar}/talent-pool',       [HireController::class, 'toggleTalentPool'])->name('toggleTalentPool');
-        Route::get('/export/data',                  [HireController::class, 'export'])->name('export');
-        Route::get('/stats/funnel',                 [HireController::class, 'funnelStats'])->name('funnelStats');
+        Route::post('/{pelamar}/talent-pool', [HireController::class, 'toggleTalentPool'])->name('toggleTalentPool');
+        Route::get('/export/data', [HireController::class, 'export'])->name('export');
+        Route::get('/stats/funnel', [HireController::class, 'funnelStats'])->name('funnelStats');
         Route::get('/by-folder/{folderId?}', [HireController::class, 'getPelamarByFolder'])->name('by-folder');
         Route::get('/folder-list', [HireController::class, 'getFolderList'])->name('folder-list');
         Route::post('/penilaian', [HireController::class, 'storePenilaian'])->name('penilaian.store');
@@ -1785,28 +1774,27 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/folders/{folder}/restore', [ArsipRekrutmenController::class, 'restoreFolder'])->name('folders.restore');
         Route::delete('/folders/{folder}', [ArsipRekrutmenController::class, 'permanentDeleteFolder'])->name('folders.delete');
         Route::delete('/pelamar/{pelamarFolderId}/restore', [ArsipRekrutmenController::class, 'restorePelamar'])->name('pelamar.restore');
-
     });
 
     Route::prefix('structure')->name('structure.')->group(function () {
-        Route::get('/',          [StructureInixindoController::class, 'index'])->name('index');
-        Route::get('/api/tree',  [StructureInixindoController::class, 'apiTree'])->name('api.tree');
-        Route::post('/sync',     [StructureInixindoController::class, 'sync'])->name('sync');
-        Route::post('/reorder',  [StructureInixindoController::class, 'reorder'])->name('reorder');
-        Route::put('/update/{id}',  [StructureInixindoController::class, 'update'])->name('update');
-        Route::delete('/{id}',      [StructureInixindoController::class, 'destroy'])->name('destroy');
-        Route::post('/store',      [StructureInixindoController::class, 'store'])->name('store');
+        Route::get('/', [StructureInixindoController::class, 'index'])->name('index');
+        Route::get('/api/tree', [StructureInixindoController::class, 'apiTree'])->name('api.tree');
+        Route::post('/sync', [StructureInixindoController::class, 'sync'])->name('sync');
+        Route::post('/reorder', [StructureInixindoController::class, 'reorder'])->name('reorder');
+        Route::put('/update/{id}', [StructureInixindoController::class, 'update'])->name('update');
+        Route::delete('/{id}', [StructureInixindoController::class, 'destroy'])->name('destroy');
+        Route::post('/store', [StructureInixindoController::class, 'store'])->name('store');
         Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
         Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
     });
 
     Route::prefix('job-desk')->name('job_desk.')->group(function () {
-        Route::get('/',                 [KaryawanTaskController::class, 'index'])->name('index');
-        Route::post('/store',           [KaryawanTaskController::class, 'store'])->name('store');
-        Route::get('/api/{id}',         [KaryawanTaskController::class, 'show'])->name('show');
-        Route::put('/{id}',             [KaryawanTaskController::class, 'update'])->name('update');
-        Route::delete('/{id}',          [KaryawanTaskController::class, 'destroy'])->name('destroy');
-        Route::get('/org/{orgId}',      [KaryawanTaskController::class, 'getJobDesk'])->name('getByOrg');
+        Route::get('/', [KaryawanTaskController::class, 'index'])->name('index');
+        Route::post('/store', [KaryawanTaskController::class, 'store'])->name('store');
+        Route::get('/api/{id}', [KaryawanTaskController::class, 'show'])->name('show');
+        Route::put('/{id}', [KaryawanTaskController::class, 'update'])->name('update');
+        Route::delete('/{id}', [KaryawanTaskController::class, 'destroy'])->name('destroy');
+        Route::get('/org/{orgId}', [KaryawanTaskController::class, 'getJobDesk'])->name('getByOrg');
     });
 
     Route::prefix('sop')->name('sop.')->group(function () {
@@ -1846,15 +1834,15 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     });
 
     Route::prefix('perhitungan-tunjangan')->name('perhitungan-tunjangan.')->group(function () {
-        Route::get('/',          [payrollController::class, 'indexPerhitungan'])->name('index');
+        Route::get('/', [payrollController::class, 'indexPerhitungan'])->name('index');
         Route::get('/karyawan-data', [payrollController::class, 'getKaryawanDataPerhitungan'])->name('karyawan-data');
-        Route::get('/get-data',  [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
-        Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
-        Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
-        Route::get('/logs-all',  [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
-        Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
-        Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
-        Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
+        Route::get('/get-data', [payrollController::class, 'getPayrollDataPerhitungan'])->name('get-data');
+        Route::get('/stats', [payrollController::class, 'getStatsPerhitungan'])->name('stats');
+        Route::post('/', [payrollController::class, 'storePerhitungan'])->name('store');
+        Route::get('/logs-all', [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
+        Route::get('/{id}', [payrollController::class, 'showPerhitungan'])->name('show');
+        Route::put('/{id}', [payrollController::class, 'updatePerhitungan'])->name('update');
+        Route::delete('/{id}', [payrollController::class, 'destroyPerhitungan'])->name('destroy');
         Route::post('/{id}/approve', [payrollController::class, 'approvePerhitungan'])->name('approve');
         Route::get('/perhitungan-tunjangan/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
         Route::get('/perhitungan-tunjangan/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
@@ -1876,7 +1864,7 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     });
 
     Route::prefix('perhitungan-pph')->name('perhitungan-pph.')->group(function () {
-        Route::get('/',          [payrollController::class, 'indexPph'])->name('index');
+        Route::get('/', [payrollController::class, 'indexPph'])->name('index');
         Route::get('/data', [payrollController::class, 'getPphData'])->name('HR.pph21.data');
         Route::post('/store', [payrollController::class, 'storePph'])->name('HR.pph21.store');
         Route::delete('/{id}', [payrollController::class, 'deletePph'])->name('HR.pph21.delete');
@@ -1888,6 +1876,12 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/materi/{year}', [RekapPenjualanController::class, 'getMateriData'])->name('materi');
         Route::get('/mingguan/{year}/{month}', [RekapPenjualanController::class, 'getMingguanData'])->name('mingguan');
         Route::get('/profitabilitas/{year}', [RekapPenjualanController::class, 'getProfitabilitas'])->name('profitabilitas');
+    });
+
+    Route::prefix('/feedback-instruktur')->name('feedback-instruktur.')->group(function () {
+        Route::get('/', [FeedbackInstukturController::class, 'index'])->name('index');
+        Route::get('/export/pdf', [FeedbackInstukturController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel', [FeedbackInstukturController::class, 'exportExcel'])->name('export.excel');
     });
 });
 
@@ -1907,7 +1901,6 @@ Route::get('/income-statement', [IncomeStatementController::class, 'index'])->na
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
 Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('perusahaan.merge');
-
 
 Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
 Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
@@ -1969,9 +1962,7 @@ Route::get('/sla-management', [DashboardSLAController::class, 'index'])->name('s
 Route::middleware(['auth'])->group(function () {
     Route::get('/knowledge-management/{id}/download', [KnowledgeManagementController::class, 'downloadFile'])->name('knowledge-management.download');
     Route::resource('knowledge-management', KnowledgeManagementController::class);
-
 });
-
 
 Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
     Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
