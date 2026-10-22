@@ -222,6 +222,16 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.feedback-instruktur.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.feedback-instruktur.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:chart-bar" data-width="20" data-height="20"></i>
+                </span>
+                <span>Feedback Instruktur</span>
+                 <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+        
         <li class="menu-item {{ request()->routeIs('hr.DaftarTugas.index') ? 'active' : '' }}">
             <a href="{{ route('hr.DaftarTugas.index') }}" class="menu-link">
                 <span class="menu-link-icon">

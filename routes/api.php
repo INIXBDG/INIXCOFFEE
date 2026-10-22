@@ -15,7 +15,7 @@ use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Api\PickupDriverWebhookController;
 use App\Http\Controllers\Api\ContactwebController;
-
+use App\Http\Controllers\HR\FeedbackInstukturController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,10 +29,10 @@ use App\Http\Controllers\Api\ContactwebController;
 */
 
 Route::middleware('auth:api')->group(function () {
-    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
-    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
-    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
-    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('api.webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('api.webpush.unsubscribe');
+    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('api.webpush.vapid-key');
+    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('api.webpush.test');
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -98,3 +98,5 @@ Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::c
 
 Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class, 'receivePayment'])->name('receivePayment');
 Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');
+Route::get('/feedback-instruktur/{year}/{type?}/{period?}',[FeedbackInstukturController::class, 'getDataFeedbackInstruktur']);
+Route::get('/feedback-instruktur/detail/{kode_karyawan}/{peran}/{year}/{type}/{period?}', [FeedbackInstukturController::class, 'getDetailRkmInstruktur']);
