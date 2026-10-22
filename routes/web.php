@@ -128,18 +128,6 @@ use App\Models\Inventaris;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-use App\Http\Controllers\KoordinasiOfficeBoyController;
-use App\Http\Controllers\office\OfficeExamController;
-use App\Http\Controllers\VisitProjectController;
-use App\Http\Controllers\CVInstrukturController;
-use App\Http\Controllers\HR\RekapPenjualanController;
-use App\Http\Controllers\HR\RekapInventarisController;
-use App\Http\Controllers\FeatureDocumentationController;
-use App\Http\Controllers\CodeDocumentationController;
-use App\Http\Controllers\DocumentationImportController;
-use App\Http\Controllers\KelasSettingController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\KomisiSalesController;
 use App\Http\Controllers\AuditController;
 
 /*
