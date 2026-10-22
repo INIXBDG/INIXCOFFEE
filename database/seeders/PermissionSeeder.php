@@ -151,6 +151,7 @@ class PermissionSeeder extends Seeder
         'View RekapRKM Office',
         'Update RekapRKM Office',
         'View ITSM Only',
+        'View Struktur Organisasi',
     ];
 
     public function run(): void

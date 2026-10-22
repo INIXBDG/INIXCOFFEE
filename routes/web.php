@@ -57,6 +57,7 @@ use App\Http\Controllers\HR\RencanaPembelianHrController;
 use App\Http\Controllers\HR\ReportController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
+use App\Http\Controllers\HR\DaftarTugasHRController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\InstructorDevelopmentController;
@@ -127,6 +128,23 @@ use App\Models\Inventaris;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\IncomeStatementController;
+use App\Http\Controllers\KoordinasiOfficeBoyController;
+use App\Http\Controllers\office\OfficeExamController;
+use App\Http\Controllers\PerusahaanController;
+use App\Http\Controllers\ScheduleLogController;
+use App\Http\Controllers\VisitProjectController;
+use App\Http\Controllers\CVInstrukturController;
+use App\Http\Controllers\HR\RekapPenjualanController;
+use App\Http\Controllers\HR\RekapInventarisController;
+use App\Http\Controllers\FeatureDocumentationController;
+use App\Http\Controllers\CodeDocumentationController;
+use App\Http\Controllers\DocumentationImportController;
+use App\Http\Controllers\KelasSettingController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\KomisiSalesController;
+use App\Http\Controllers\AuditController;
+use App\Http\Controllers\Crm\PaymentAdvanceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -321,7 +339,8 @@ Route::post('/exam/{id}/update-kurs', [examController::class, 'updateKurs'])->na
 Route::get('/exam/get-kurs/{id}', [examController::class, 'getKurs'])->name('exam.getKurs');
 Route::post('/exam/{id}/update-tanggal', [examController::class, 'updateTanggal'])->name('exam.updateTanggal');
 Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
-Route::get('getHistoriExam', [examController::class, 'getHistoriExam'])->name('getHistoriExam');
+Route::put('/exam/update/status', [examController::class, 'updateStatus'])->name('exam.updateStatus');
+Route::get('getHistoriExam', [App\Http\Controllers\examController::class, 'getHistoriExam'])->name('getHistoriExam');
 Route::get('getListExam', [App\Http\Controllers\listexamController::class, 'getListExam'])->name('getListExam');
 Route::get('getCC', [App\Http\Controllers\creditcardController::class, 'getCC'])->name('getCC');
 Route::get('getRegistrasiexam', [registexamController::class, 'getRegistrasiexam'])->name('getRegistrasiexam');
@@ -1786,6 +1805,8 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::post('/store', [StructureInixindoController::class, 'store'])->name('store');
         Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
         Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
+
+        Route::put('/toggle-menus', [StructureInixindoController::class, 'toggleMenus'])->name('toggle.menus');
     });
 
     Route::prefix('job-desk')->name('job_desk.')->group(function () {
@@ -1897,6 +1918,8 @@ Route::prefix('employee')->name('employee.')->middleware(['auth'])->group(functi
     Route::get('/structure/api/tree', [EmployeeStructureController::class, 'apiTree'])->name('structure.api.tree');
 });
 
+
+
 Route::get('/income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
 Route::post('/income-statement/store', [IncomeStatementController::class, 'store'])->name('income-statement.store');
 Route::get('/income-statement/laporan', [IncomeStatementController::class, 'laporan'])->name('income-statement.laporan');
@@ -1979,3 +2002,12 @@ Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
 Route::post('/session/keep-alive', function () {
     return response()->json(['status' => 'alive']);
 })->name('session.keep-alive');
+
+Route::prefix('hr/daftar-tugas')
+    ->name('hr.DaftarTugas.')
+    ->middleware(['auth'])
+    ->group(function () {
+        Route::get('/', [DaftarTugasHRController::class, 'index'])->name('index');
+        Route::get('/get', [DaftarTugasHRController::class, 'get'])->name('get');
+        Route::get('/chart-data', [DaftarTugasHRController::class, 'chartData'])->name('chartData');
+    });

@@ -42,6 +42,8 @@
                                     <option value="" selected disabled>Pilih Jenis Dinas</option>
                                     <option value="Perjalanan Dinas">Perjalanan Dinas</option>
                                     <option value="InHouse Luar Bandung">Inhouse Luar Bandung</option>
+                                    <option value="Project">Project</option>
+                                    <option value="Kepentingan Direksi">Kepentingan Direksi</option>
                                 </select>
                                 @error('tipe')
                                 <span class="invalid-feedback" role="alert">

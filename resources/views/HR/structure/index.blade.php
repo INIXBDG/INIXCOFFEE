@@ -4,6 +4,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
         integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    @if (session('status'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('status') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h4 class="mb-0"><i class="ri-org-chart me-2"></i>Struktur Organisasi</h4>
@@ -23,6 +31,19 @@
             <button class="btn btn-success btn-sm" id="btnExport">
                 <i class="fa-solid fa-file-arrow-down me-2"></i> Export PNG
             </button>
+            <form method="POST" action="{{ route('HR.structure.toggle.menus') }}"
+                class="d-flex align-items-center gap-2 border rounded px-3 py-1 bg-white">
+                @csrf
+                @method('PUT')
+                <label class="form-check-label small mb-0" for="switchMenuStruktur">
+                    <i class="fa-solid fa-user-shield me-1"></i>Menu Struktur untuk semua karyawan
+                </label>
+                <div class="form-check form-switch mb-0">
+                    <input type="hidden" name="enabled" value="0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="switchMenuStruktur"
+                        name="enabled" value="1" @checked($menuEnabled) onchange="this.form.submit()">
+                </div>
+            </form>
         </div>
     </div>
 
@@ -90,22 +111,23 @@
                 </button>
             </div>
         </div>
-            <div class="card-body p-0 position-relative">
-                <div id="exportWrapper" style="position: relative; background: #f8fafc;">
-                    <div class="structure-header" id="structureHeader">
-                        <input type="text" id="chartTitle" value="Struktur Inixindo Bandung" placeholder="Klik untuk ubah judul">
-                    </div>
-                    <div id="structureContainer" class="structure-container">
-                        <div id="structureChart" class="structure-chart"></div>
-                    </div>
+        <div class="card-body p-0 position-relative">
+            <div id="exportWrapper" style="position: relative; background: #f8fafc;">
+                <div class="structure-header" id="structureHeader">
+                    <input type="text" id="chartTitle" value="Struktur Inixindo Bandung"
+                        placeholder="Klik untuk ubah judul">
                 </div>
-                <div id="miniMap" class="mini-map d-none d-md-block">
-                    <canvas id="miniMapCanvas" width="160" height="90"></canvas>
-                    <div id="miniMapViewport"></div>
+                <div id="structureContainer" class="structure-container">
+                    <div id="structureChart" class="structure-chart"></div>
                 </div>
+            </div>
+            <div id="miniMap" class="mini-map d-none d-md-block">
+                <canvas id="miniMapCanvas" width="160" height="90"></canvas>
+                <div id="miniMapViewport"></div>
             </div>
         </div>
     </div>
+
 
     <div class="modal fade" id="modalKaryawan" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
@@ -288,9 +310,9 @@
 
         .org-node .node-actions {
             display: flex;
-            gap: 8px;  /* Ubah dari 4px menjadi 8px atau lebih */
+            gap: 8px;
             justify-content: center;
-            padding: 8px 12px;  /* Tambah padding vertikal & horizontal */
+            padding: 8px 12px;
             background: #f8fafc;
             border-radius: 0 0 10px 10px;
         }
@@ -567,11 +589,13 @@
             border-bottom-color: #3b82f6;
         }
 
-        .org-avatar, .karyawan-avatar {
+        .org-avatar,
+        .karyawan-avatar {
             background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
         }
 
-        .org-avatar img, .karyawan-avatar img {
+        .org-avatar img,
+        .karyawan-avatar img {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
@@ -709,14 +733,14 @@
 
             const adjustMultiParentPositions = () => {
                 const allItems = flattenTree(structuresData);
-                
-                const multiParentNodes = allPositions.filter(p => 
+
+                const multiParentNodes = allPositions.filter(p =>
                     p.item.additional_parents && p.item.additional_parents.length > 0
                 );
-                
+
                 multiParentNodes.forEach(pos => {
                     const item = pos.item;
-                    
+
                     const allParentIds = [];
                     if (item.parent_id) {
                         allParentIds.push(String(item.parent_id));
@@ -728,41 +752,41 @@
                             }
                         });
                     }
-                    
+
                     if (allParentIds.length > 0) {
                         const parentPositions = allParentIds
                             .map(pid => allPositions.find(ap => String(ap.item.id) === pid))
                             .filter(p => p);
-                        
+
                         if (parentPositions.length > 0) {
                             // Hitung level berdasarkan parent terdalam + 1
                             const maxParentLevel = Math.max(...parentPositions.map(p => p.level));
                             const targetLevel = maxParentLevel + 1;
-                            
+
                             // Hitung posisi X di tengah-tengah parent
                             const minX = Math.min(...parentPositions.map(p => p.x));
                             const maxX = Math.max(...parentPositions.map(p => p.x + NODE_W));
                             const centerX = (minX + maxX) / 2 - NODE_W / 2;
-                            
+
                             // Hitung offset
                             const offsetX = centerX - pos.x;
                             const offsetY = (targetLevel - pos.level) * LEVEL_H;
-                            
+
                             // Geser node dan seluruh subtree-nya
                             const shiftSubtree = (nodePos) => {
                                 nodePos.x += offsetX;
                                 nodePos.y += offsetY;
                                 nodePos.level = targetLevel + (nodePos.level - pos.level);
-                                
-                                const children = allPositions.filter(p => 
+
+                                const children = allPositions.filter(p =>
                                     p.item.parent_id && String(p.item.parent_id) === String(nodePos.item.id)
                                 );
-                                
+
                                 children.forEach(childPos => {
                                     shiftSubtree(childPos);
                                 });
                             };
-                            
+
                             shiftSubtree(pos);
                         }
                     }
@@ -789,10 +813,10 @@
                 const chartPadX = 60;
                 const chartW = totalW + chartPadX * 2;
                 allPositions = calcPositions(items, 0, chartPadX);
-                
+
                 // Adjust posisi untuk multi-parent
                 adjustMultiParentPositions();
-                
+
                 // Hitung ulang tinggi chart berdasarkan posisi terbaru
                 const totalH = allPositions.reduce((m, p) => Math.max(m, p.y + NODE_H + 80), 400);
 
@@ -822,7 +846,7 @@
                 svg.innerHTML = '';
                 const posMap = {};
                 allPositions.forEach(p => posMap[p.item.id] = p);
-                
+
                 const allItems = flattenTree(items);
 
                 const drawLine = (x1, y1, x2, y2) => {
@@ -843,7 +867,7 @@
                         if (!pp) return;
                         const px = pp.x + NODE_W / 2;
                         const py = pp.y + NODE_H;
-                        
+
                         parent.children.forEach(child => {
                             const cp = posMap[child.id];
                             if (!cp) return;
@@ -855,24 +879,24 @@
                             drawLine(px, midY, cx, midY);
                             drawLine(cx, midY, cx, cy);
                         });
-                        
+
                         drawTreeLines(parent.children);
                     });
                 };
 
                 drawTreeLines(items);
-                
+
                 // Draw lines for additional parents
                 allPositions.forEach(p => {
                     const item = p.item;
                     if (item.additional_parents && item.additional_parents.length > 0) {
                         const cx = p.x + NODE_W / 2;
                         const cy = p.y;
-                        
+
                         item.additional_parents.forEach(addParentId => {
                             const addParentPos = posMap[String(addParentId)];
                             if (!addParentPos) return;
-                            
+
                             const apx = addParentPos.x + NODE_W / 2;
                             const apy = addParentPos.y + NODE_H;
                             const midY = apy + (cy - apy) / 2;
@@ -1591,7 +1615,7 @@
                     await new Promise((resolve) => {
                         const images = chart.querySelectorAll('img');
                         if (images.length === 0) return resolve();
-                        
+
                         let loaded = 0;
                         images.forEach(img => {
                             if (img.complete) {
@@ -1603,14 +1627,17 @@
                                 };
                             }
                         });
-                        
+
                         if (loaded === images.length) resolve();
                         else setTimeout(resolve, 2000);
                     });
 
                     // Hitung bounding box aktual dari semua node
                     const nodes = chart.querySelectorAll('.org-node');
-                    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
+                    let minX = Infinity,
+                        minY = Infinity,
+                        maxX = 0,
+                        maxY = 0;
                     nodes.forEach(node => {
                         const left = parseFloat(node.style.left);
                         const top = parseFloat(node.style.top);
@@ -1630,7 +1657,7 @@
                     // Buat clone
                     const wrapper = document.getElementById('exportWrapper');
                     const clone = wrapper.cloneNode(true);
-                    
+
                     clone.style.position = 'absolute';
                     clone.style.left = '-10000px';
                     clone.style.top = '0';
@@ -1642,7 +1669,7 @@
                     // Geser semua node ke kiri agar minX = padding
                     const offsetX = padding - minX;
                     const offsetY = padding + headerH - minY;
-                    
+
                     const cloneNodes = clone.querySelectorAll('.org-node');
                     cloneNodes.forEach(node => {
                         const left = parseFloat(node.style.left) + offsetX;
@@ -1656,7 +1683,7 @@
                     if (cloneSvg) {
                         cloneSvg.setAttribute('width', structureW);
                         cloneSvg.setAttribute('height', structureH + headerH);
-                        
+
                         // Geser semua line di SVG
                         const lines = cloneSvg.querySelectorAll('line');
                         lines.forEach(line => {
