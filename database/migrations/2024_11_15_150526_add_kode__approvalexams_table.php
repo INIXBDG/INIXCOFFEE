@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('approvalexams', function (Blueprint $table) {
-            //
+            $table->dropColumn(['ttd_sales', 'ttd_ts', 'ttd_off']);
         });
     }
 };

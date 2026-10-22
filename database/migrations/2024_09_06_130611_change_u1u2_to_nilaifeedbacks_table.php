@@ -23,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('nilaifeedbacks', function (Blueprint $table) {
-            //
+            $table->string('U1')->change();
+            $table->string('U2')->change();
         });
     }
 };

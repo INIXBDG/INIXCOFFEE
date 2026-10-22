@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('listexams', function (Blueprint $table) {
-            //
+            $table->dropColumn(['harga_exam', 'valid_until', 'estimasi_durasi_booking', 'note']);
         });
     }
 };

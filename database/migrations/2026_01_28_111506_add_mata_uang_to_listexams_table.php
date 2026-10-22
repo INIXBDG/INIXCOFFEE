@@ -26,7 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('listexams', function (Blueprint $table) {
-            //
+            $table->dropColumn(['mata_uang', 'harga', 'kurs', 'biaya_admin', 'kurs_dollar']);
         });
     }
 };

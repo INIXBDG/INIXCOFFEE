@@ -28,7 +28,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vendor_bengkels', function (Blueprint $table) {
-            //
+            $table->dropColumn(['no_hp', 'no_rekening', 'alamat']);
+        });
+
+        Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
+            $table->dropColumn('id_vendor');
         });
     }
 };

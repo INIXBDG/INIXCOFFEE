@@ -17,6 +17,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('nomor_moduls', function (Blueprint $table) {
+            $table->dropColumn(['note_modul', 'note_peserta']);
         });
     }
 };

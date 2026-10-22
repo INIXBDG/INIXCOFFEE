@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('daily_activities', function (Blueprint $table) {
-            //
+            $table->dropColumn('end_date');
         });
     }
 };

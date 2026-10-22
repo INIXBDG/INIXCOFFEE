@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('nomor_moduls', function (Blueprint $table) {
-            //
+            $table->dropColumn(['status_subscode', 'tanggal_subscode_masuk', 'catatan']);
         });
     }
 };

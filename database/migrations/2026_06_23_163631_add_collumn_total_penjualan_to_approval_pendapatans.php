@@ -23,6 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('approval_pendapatans', function (Blueprint $table) {
+            $table->dropColumn(['total_penjualan_kotor', 'total_penjualan_bersih']);
         });
     }
 };

@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('absensi_noRecord', function (Blueprint $table) {
-            $table->dropColumn('date_approval');
+        Schema::table('absensi_no_records', function (Blueprint $table) {
+            $table->dropColumn('approval_date');
         });
     }
 };

@@ -17,4 +17,10 @@ return new class extends Migration
         });
     }
 
+    public function down(): void
+    {
+        Schema::table('pengajuan_lab_subs', function (Blueprint $table) {
+            $table->dropColumn(['lab_snapshot', 'subs_snapshot']);
+        });
+    }
 };

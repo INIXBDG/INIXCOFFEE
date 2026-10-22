@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('checklist_keperluans', function (Blueprint $table) {
-            //
+            $table->dropColumn('tanggal_keperluan');
         });
     }
 };

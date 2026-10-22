@@ -31,5 +31,9 @@ return new class extends Migration {
         Schema::table('template_placeholders', function (Blueprint $table) {
             $table->dropColumn('config');
         });
+
+        Schema::table('report_templates', function (Blueprint $table) {
+            $table->dropColumn('settings');
+        });
     }
 };

@@ -22,8 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('nullable_hasilexam', function (Blueprint $table) {
-            //
+        Schema::table('hasilexams', function (Blueprint $table) {
+            $table->string('hasil', 50)->change();
+            $table->string('pdf', 50)->change();
         });
     }
 };

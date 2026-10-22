@@ -21,4 +21,19 @@ return new class extends Migration
             $table->string('kota')->nullable()->after('provinsi');
         });
     }
+
+    public function down(): void
+    {
+        Schema::table('karyawans', function (Blueprint $table) {
+            $table->dropColumn([
+                'alamat_lengkap',
+                'gender',
+                'tempat_lahir',
+                'tanggal_lahir',
+                'religion',
+                'provinsi',
+                'kota',
+            ]);
+        });
+    }
 };

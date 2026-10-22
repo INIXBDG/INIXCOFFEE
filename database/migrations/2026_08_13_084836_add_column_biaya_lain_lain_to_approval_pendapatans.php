@@ -31,5 +31,9 @@ return new class extends Migration
             $table->dropColumn('biaya_lain_lain');
             $table->dropColumn('pengurangan_pph');
         });
+
+        Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
+            $table->dropColumn(['biaya_lain_lain', 'exam']);
+        });
     }
 };

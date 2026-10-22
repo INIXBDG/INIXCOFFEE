@@ -23,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('aktivitas', function (Blueprint $table) {
+            $table->dropColumn(['foto_lokasi', 'latitude', 'longitude']);
+        });
     }
 };

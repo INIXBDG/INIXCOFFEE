@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('izin_tiga_jam', function (Blueprint $table) {
-            $table->dropColumn('date_approval');
+        Schema::table('izin_tiga_jams', function (Blueprint $table) {
+            $table->dropColumn('approval_date');
         });
     }
 };

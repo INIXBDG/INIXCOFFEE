@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('project_administrations', function (Blueprint $table) {
-            $table->string('assignee_id')->nullable();
-        });
+        if (!Schema::hasColumn('project_administrations', 'assignee_id')) {
+            Schema::table('project_administrations', function (Blueprint $table) {
+                $table->string('assignee_id')->nullable();
+            });
+        }
     }
 
     /**
@@ -22,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('project_administrations', function (Blueprint $table) {
-            //
+            $table->dropColumn('assignee_id');
         });
     }
 };

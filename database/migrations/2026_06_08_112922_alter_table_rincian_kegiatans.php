@@ -25,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('rincian_kegiatans', function (Blueprint $table) {
-            //
+            $table->dropColumn(['id_karyawan', 'tipe', 'status', 'tanggal']);
         });
     }
 };

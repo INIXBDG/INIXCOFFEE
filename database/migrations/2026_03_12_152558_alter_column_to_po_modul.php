@@ -23,7 +23,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->dropColumn('upload_po');
+            $table->dropColumn('uploaded');
         });
 
         DB::statement("

@@ -25,6 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('todo_administrasis', function (Blueprint $table) {
+            $table->dropColumn(['tanggal_selesai', 'dokumen']);
             $table->string('solusi')->nullable()->change();
             $table->string('catatan')->nullable()->change();
         });

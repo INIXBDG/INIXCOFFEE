@@ -23,6 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('outstandings', function (Blueprint $table) {
+            $table->dropColumn(['path_faktur_pajak', 'path_dokumen_tambahan']);
+        });
     }
 };

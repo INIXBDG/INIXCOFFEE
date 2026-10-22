@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('pengajuanbarangs', function (Blueprint $table) {
-            //
+            $table->dropColumn(['no_kk', 'tanggal_pencairan', 'tanggal_terima_finance']);
         });
     }
 };

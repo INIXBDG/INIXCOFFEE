@@ -31,7 +31,16 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('pickup_drivers', function (Blueprint $table) {
-            //
+            $table->dropColumn(['KM_awal', 'KM_akhir', 'tipe_perjalanan']);
+        });
+
+        Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
+            $table->dropColumn([
+                'tanggal_perbaikan',
+                'selesai_perbaikan',
+                'detail_perbaikan',
+                'document',
+            ]);
         });
     }
 };

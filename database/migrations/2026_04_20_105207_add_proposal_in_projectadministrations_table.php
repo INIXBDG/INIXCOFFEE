@@ -24,7 +24,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('project_administrations', function (Blueprint $table) {
-            $table->dropColumn('legal_file');
+            $table->dropColumn([
+                'proposal_file',
+                'surat_pekerjaan_dimulai_file',
+                'project_handover_id',
+            ]);
         });
     }
 };

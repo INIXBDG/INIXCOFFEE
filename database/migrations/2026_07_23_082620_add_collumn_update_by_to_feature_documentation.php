@@ -40,8 +40,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('feature_documentation', function (Blueprint $table) {
+        Schema::table('feature_documentations', function (Blueprint $table) {
             $table->dropConstrainedForeignId('parent_id');
+            $table->dropColumn(['update_by', 'log_update', 'log_time_update']);
+        });
+
+        Schema::table('code_documentations', function (Blueprint $table) {
+            $table->dropColumn(['update_by', 'log_update', 'log_time_update', 'log_changes']);
         });
     }
 };

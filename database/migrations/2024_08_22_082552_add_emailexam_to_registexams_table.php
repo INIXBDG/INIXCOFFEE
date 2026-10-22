@@ -23,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('registexams', function (Blueprint $table) {
-            //
+            $table->dropColumn('email_exam');
+            $table->dropColumn('akun_exam');
         });
     }
 };

@@ -30,6 +30,7 @@ return new class extends Migration
             $table->time('waktu_pelaksanaan')->change();
             $table->integer('jumlah_peserta_hadir')->change();
             $table->string('jenis_meeting')->change();
+            $table->dropColumn('is_draft');
         });
     }
 };

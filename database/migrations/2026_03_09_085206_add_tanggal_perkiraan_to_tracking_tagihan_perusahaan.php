@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tracking_tagihan_perusahaans', function (Blueprint $table) {
-            //
+            $table->dropColumn(['tanggal_perkiraan_mulai', 'tanggal_perkiraan_selesai']);
         });
     }
 };

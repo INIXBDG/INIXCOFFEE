@@ -26,7 +26,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('approval_pendapatans', function (Blueprint $table) {
-            //
+            $table->dropColumn('entertainment');
+        });
+
+        Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
+            $table->dropColumn('entertainment');
         });
     }
 };

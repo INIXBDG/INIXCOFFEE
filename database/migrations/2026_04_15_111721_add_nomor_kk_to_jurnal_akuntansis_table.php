@@ -20,7 +20,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('jurnal_akuntansis', function (Blueprint $table) {
-            
+            $table->dropColumn(['nomor_kk', 'no_akun']);
         });
     }
 };

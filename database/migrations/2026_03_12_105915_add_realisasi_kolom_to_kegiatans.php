@@ -15,4 +15,11 @@ return new class extends Migration
             $table->string('realisasi')->nullable();
         });
     }
+
+    public function down(): void
+    {
+        Schema::table('kegiatans', function (Blueprint $table) {
+            $table->dropColumn('realisasi');
+        });
+    }
 };

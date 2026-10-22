@@ -23,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('registrasis', function (Blueprint $table) {
-            //
+            $table->dropSoftDeletes();
+            $table->dropColumn('deleted_by');
         });
     }
 };

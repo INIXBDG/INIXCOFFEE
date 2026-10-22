@@ -27,6 +27,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::table('nilaifeedbacks', function (Blueprint $table) {
+            $table->dropColumn(['s1', 's2', 's3', 's4', 's5', 's6', 's7']);
+        });
     }
 };

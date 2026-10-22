@@ -18,6 +18,8 @@ return new class extends Migration
 
     public function down()
     {
-        // kososng
+        Schema::table('eksams', function (Blueprint $table) {
+            $table->dropColumn('id_pengajuan_barang');
+        });
     }
 };
