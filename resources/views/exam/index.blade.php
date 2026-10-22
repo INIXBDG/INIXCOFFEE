@@ -416,24 +416,31 @@
                     {
                         "data": null,
                         "render": function (data) {
-                            if (data.approvalexam) {
-                                var app = data.approvalexam;
-
-                                if (app.technical_support == 1) {
-                                    return '<span class="badge bg-success">Selesai</span>';
-                                }
-
-                                if (app.office_manager == 1) {
-                                    return '<span class="badge bg-info text-dark">Office Manager</span>';
-                                }
-
-                                if (app.spv_sales == 1) {
-                                    return '<span class="badge bg-info text-dark">SPV Sales</span>';
-                                }
-
-                                return '<span class="badge bg-warning text-dark">Belum Approval</span>';
+                            var app = data.approvalexam;
+                            if (!app) {
+                                return '<span class="text-muted">-</span>';
                             }
-                            return '<span class="text-muted">-</span>';
+
+                            // Status akhir dari alur checkout
+                            if (app.status === 'Selesai') {
+                                return '<span class="badge bg-success">Selesai</span>';
+                            }
+                            if (app.status === 'Proses Checkout') {
+                                return '<span class="badge bg-warning text-dark">Proses Checkout</span>';
+                            }
+
+                            // Tahap approval sebelum checkout
+                            if (app.technical_support == 1) {
+                                return '<span class="badge bg-primary">Dikonfirmasi Technical Support</span>';
+                            }
+                            if (app.office_manager == 1) {
+                                return '<span class="badge bg-info text-dark">Office Manager</span>';
+                            }
+                            if (app.spv_sales == 1) {
+                                return '<span class="badge bg-info text-dark">SPV Sales</span>';
+                            }
+
+                            return '<span class="badge bg-warning text-dark">Belum Approval</span>';
                         }
                     },
                     {
