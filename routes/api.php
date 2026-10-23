@@ -16,6 +16,7 @@ use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Api\PickupDriverWebhookController;
 use App\Http\Controllers\Api\ContactwebController;
 use App\Http\Controllers\HR\FeedbackInstukturController;
+use App\Http\Middleware\ApiBasicAuth;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,3 +101,12 @@ Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class
 Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');
 Route::get('/feedback-instruktur/{year}/{type?}/{period?}',[FeedbackInstukturController::class, 'getDataFeedbackInstruktur']);
 Route::get('/feedback-instruktur/detail/{kode_karyawan}/{peran}/{year}/{type}/{period?}', [FeedbackInstukturController::class, 'getDetailRkmInstruktur']);
+
+Route::middleware(ApiBasicAuth::class)->group(function () {
+    Route::get('/feedback/data', [App\Http\Controllers\Api\FeedbackAPIController::class, 'index']);
+    Route::post('/feedback/cek', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekFeedback']);
+    Route::post('/feedback/cek-rkm', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekFeedbackRKM']);
+    Route::post('/feedback/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'store']);
+    Route::post('/feedback/souvenir/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'storeSouvenir']);
+    Route::get('/feedback/cek-souvenir/{id}/{ids}', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekSouvenir']);
+});
