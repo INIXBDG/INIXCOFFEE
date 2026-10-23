@@ -15,6 +15,7 @@ use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Api\PickupDriverWebhookController;
 use App\Http\Controllers\Api\ContactwebController;
+use App\Http\Controllers\Api\RegisApiController;
 use App\Http\Controllers\HR\FeedbackInstukturController;
 use App\Http\Middleware\ApiBasicAuth;
 
@@ -109,4 +110,10 @@ Route::middleware(ApiBasicAuth::class)->group(function () {
     Route::post('/feedback/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'store']);
     Route::post('/feedback/souvenir/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'storeSouvenir']);
     Route::get('/feedback/cek-souvenir/{id}/{ids}', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekSouvenir']);
+
+    Route::get('/kelasBerjalan', [RegisApiController::class, 'kelasBerjalan']);
+    Route::get('/cek-peserta/{id}', [RegisApiController::class, 'index']);
+    Route::get('/cekPeserta', [RegisApiController::class, 'cekPeserta']);
+    Route::get('/cekRKM', [RegisApiController::class, 'cekRKM']);
+    Route::post('/storePeserta/{id}', [RegisApiController::class, 'store']);
 });
