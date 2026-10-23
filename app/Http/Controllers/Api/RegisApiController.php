@@ -244,14 +244,14 @@ class RegisApiController extends Controller
         return response()->json(['rkm' => $peserta]);
     }
 
-    public function store(Request $request, $id)
+public function store(Request $request, $id)
     {
         Log::info('Store registration started', [
             'request_data' => $request->all(),
             'id' => $id,
         ]);
 
-        // Jika Moodle sedang dimatikan, set ke null (jangan diisi string 'hmm')
+        // Inisialisasi MoodleService (ubah menjadi null jika ingin dimatikan sementara)
         $moodle = app(MoodleService::class);
         // $moodle = null;
 
@@ -326,8 +326,8 @@ class RegisApiController extends Controller
         }
 
         Log::info('RKM found', [
-            'rkm_id' => $rkm->id,
-            'isi_pax' => $rkm->isi_pax,
+            'rkm_id'     => $rkm->id,
+            'isi_pax'    => $rkm->isi_pax,
             'materi_key' => $rkm->materi_key,
         ]);
 
@@ -337,10 +337,13 @@ class RegisApiController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'title' => 'Mohon Maaf',
-                'text' => 'Kapasitas peserta sudah penuh',
+                'title'  => 'Mohon Maaf',
+                'text'   => 'Kapasitas peserta sudah penuh',
             ], 500);
         }
+
+        // Siapkan variabel penampung ID Moodle
+        $moodleUserId = $peserta?->moodle_user_id;
 
         // ===============================
         // ✅ JIKA PESERTA BARU
@@ -349,20 +352,20 @@ class RegisApiController extends Controller
             Log::info('Creating new participant', ['email' => $request->email]);
 
             $peserta = Peserta::create([
-                'nama' => $request->nama,
-                'jenis_kelamin' => $request->jenis_kelamin,
-                'email' => $request->email,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
+                'nama'           => $request->nama,
+                'jenis_kelamin'  => $request->jenis_kelamin,
+                'email'          => $request->email,
+                'no_hp'          => $request->no_hp,
+                'alamat'         => $request->alamat,
                 'perusahaan_key' => $perusahaan_key,
-                'tanggal_lahir' => $request->tanggal_lahir,
-                'checkregist' => $request->checkregist,
+                'tanggal_lahir'  => $request->tanggal_lahir,
+                'checkregist'    => $request->checkregist,
             ]);
 
             Log::info('New participant created', [
                 'participant_id' => $peserta->id,
-                'email' => $peserta->email,
-                'name' => $peserta->nama,
+                'email'          => $peserta->email,
+                'name'           => $peserta->nama,
             ]);
 
             // Sync ke Moodle (Hanya jalan jika $moodle tidak null)
@@ -370,22 +373,29 @@ class RegisApiController extends Controller
                 try {
                     Log::info('Starting Moodle sync for new participant', [
                         'participant_id' => $peserta->id,
-                        'email' => $peserta->email,
+                        'email'          => $peserta->email,
                     ]);
 
                     $moodleUserId = $moodle->syncUser($peserta);
 
                     if ($moodleUserId) {
-                        $peserta->update(['moodle_user_id' => $moodleUserId]);
+                        $peserta->moodle_user_id = $moodleUserId;
+                        $peserta->save();
+
                         Log::info('Local participant record updated with moodle_user_id', [
                             'participant_id' => $peserta->id,
                             'moodle_user_id' => $moodleUserId,
+                        ]);
+                    } else {
+                        Log::warning('Moodle sync failed for new participant', [
+                            'participant_id' => $peserta->id,
+                            'email'          => $peserta->email,
                         ]);
                     }
                 } catch (\Throwable $e) {
                     Log::error('Moodle sync error for new participant: '.$e->getMessage(), [
                         'participant_id' => $peserta->id,
-                        'email' => $peserta->email,
+                        'email'          => $peserta->email,
                     ]);
                 }
             }
@@ -396,8 +406,8 @@ class RegisApiController extends Controller
         else {
             Log::info('Existing participant found', [
                 'participant_id' => $peserta->id,
-                'email' => $peserta->email,
-                'has_moodle_id' => $peserta->moodle_user_id ? true : false,
+                'email'          => $peserta->email,
+                'has_moodle_id'  => $moodleUserId ? true : false,
             ]);
 
             $peserta->update([
@@ -405,17 +415,33 @@ class RegisApiController extends Controller
             ]);
 
             // Lazy sync (Hanya jalan jika $moodle tidak null dan belum ada moodle_user_id)
-            if ($moodle && !$peserta->moodle_user_id) {
+            if ($moodle && !$moodleUserId) {
+                Log::info('Lazy sync required for existing participant', [
+                    'participant_id' => $peserta->id,
+                    'email'          => $peserta->email,
+                ]);
+
                 try {
                     $moodleUserId = $moodle->syncUser($peserta);
 
                     if ($moodleUserId) {
-                        $peserta->update(['moodle_user_id' => $moodleUserId]);
+                        $peserta->moodle_user_id = $moodleUserId;
+                        $peserta->save();
+
+                        Log::info('Local participant record updated with moodle_user_id after lazy sync', [
+                            'participant_id' => $peserta->id,
+                            'moodle_user_id' => $moodleUserId,
+                        ]);
+                    } else {
+                        Log::warning('Lazy Moodle sync failed for existing participant', [
+                            'participant_id' => $peserta->id,
+                            'email'          => $peserta->email,
+                        ]);
                     }
                 } catch (\Throwable $e) {
                     Log::error('Moodle lazy sync error: '.$e->getMessage(), [
                         'participant_id' => $peserta->id,
-                        'email' => $peserta->email,
+                        'email'          => $peserta->email,
                     ]);
                 }
             }
@@ -427,15 +453,15 @@ class RegisApiController extends Controller
 
             if ($registrasi) {
                 Log::warning('Participant already registered for this class', [
-                    'participant_id' => $peserta->id,
-                    'rkm_id' => $rkm->id,
+                    'participant_id'  => $peserta->id,
+                    'rkm_id'          => $rkm->id,
                     'registration_id' => $registrasi->id,
                 ]);
 
                 return response()->json([
                     'status' => 'error',
-                    'title' => 'Mohon Maaf',
-                    'text' => 'Anda sudah terdaftar di kelas ini',
+                    'title'  => 'Mohon Maaf',
+                    'text'   => 'Anda sudah terdaftar di kelas ini',
                 ], 500);
             }
         }
@@ -447,12 +473,35 @@ class RegisApiController extends Controller
         if ($moodle) {
             try {
                 $courseId = $moodle->findCourse(
-                    $rkm->materi?->nama_materi,
+                    $rkm->materi?->nama_materi ?? '',
                     $rkm->perusahaan?->nama_perusahaan
                 );
 
-                if ($peserta->moodle_user_id && $courseId !== null) {
-                    $moodle->enroll($peserta->moodle_user_id, $courseId);
+                Log::info('Moodle findCourse result', [
+                    'materi'     => $rkm->materi?->nama_materi,
+                    'perusahaan' => $rkm->perusahaan?->nama_perusahaan,
+                    'course_id'  => $courseId,
+                ]);
+
+                if ($moodleUserId && $courseId !== null) {
+                    Log::info('Starting Moodle enrollment', [
+                        'participant_id' => $peserta->id,
+                        'moodle_user_id' => $moodleUserId,
+                        'course_id'      => $courseId,
+                    ]);
+
+                    $enrolled = $moodle->enroll((int) $moodleUserId, (int) $courseId);
+
+                    Log::info('Moodle enrollment result', [
+                        'participant_id' => $peserta->id,
+                        'success'        => $enrolled,
+                    ]);
+                } else {
+                    Log::warning('Enroll dilewati karena moodleUserId atau courseId kosong', [
+                        'participant_id' => $peserta->id,
+                        'moodle_user_id' => $moodleUserId,
+                        'course_id'      => $courseId,
+                    ]);
                 }
             } catch (\Throwable $e) {
                 Log::error('Moodle enrollment error: '.$e->getMessage(), [
@@ -465,26 +514,31 @@ class RegisApiController extends Controller
         // ✅ BUAT REGISTRASI
         // ===============================
         Log::info('Creating registration record', [
-            'rkm_id' => $rkm->id,
+            'rkm_id'         => $rkm->id,
             'participant_id' => $peserta->id,
-            'materi_key' => $rkm->materi_key,
+            'materi_key'     => $rkm->materi_key,
             'instruktur_key' => $rkm->instruktur_key,
-            'sales_key' => $rkm->sales_key,
+            'sales_key'      => $rkm->sales_key,
         ]);
 
         $registrasi = Registrasi::create([
-            'id_rkm' => $rkm->id,
-            'id_peserta' => $peserta->id,
-            'id_materi' => $rkm->materi_key,
+            'id_rkm'        => $rkm->id,
+            'id_peserta'    => $peserta->id,
+            'id_materi'     => $rkm->materi_key,
             'id_instruktur' => $rkm->instruktur_key,
-            'id_sales' => $rkm->sales_key,
+            'id_sales'      => $rkm->sales_key,
         ]);
 
         if ($registrasi) {
-            $registrasi->update([
+            $registrasi->moodle_course_id = $courseId;
+            $registrasi->save();
+
+            $this->kirimNotifikasi($rkm, $peserta, $request->id_karyawan);
+
+            Log::info('Registration record updated with Moodle enrollment status', [
+                'registration_id'  => $registrasi->id,
                 'moodle_course_id' => $courseId,
             ]);
-            $this->kirimNotifikasi($rkm, $peserta, $request->id_karyawan);
         }
 
         $peserta->update([
@@ -493,14 +547,14 @@ class RegisApiController extends Controller
 
         $rkm->decrement('isi_pax');
         Log::info('RKM capacity decremented', [
-            'rkm_id' => $rkm->id,
+            'rkm_id'       => $rkm->id,
             'new_capacity' => $rkm->fresh()->isi_pax,
         ]);
 
         return response()->json([
             'status' => 'success',
-            'title' => 'Selamat!',
-            'text' => 'Anda telah berhasil mendaftar kelas ini',
+            'title'  => 'Selamat!',
+            'text'   => 'Anda telah berhasil mendaftar kelas ini',
         ], 200);
     }
 
