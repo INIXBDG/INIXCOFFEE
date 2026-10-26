@@ -87,11 +87,9 @@
         <tbody>
             <tr>
                 <td>Instruktur: {{ number_format($report['average_feedback']['instruktur'] ?? 0, 1, ',', '.') }}</td>
-                <td>Instruktur Kedua: {{ number_format($report['average_feedback']['instruktur2'] ?? 0, 1, ',', '.') }}</td>
-                <td>Asisten: {{ number_format($report['average_feedback']['asisten'] ?? 0, 1, ',', '.') }}</td>
             </tr>
             <tr>
-                <td colspan="3">Total data feedback: {{ number_format($report['total_feedback'] ?? 0, 0, ',', '.') }}</td>
+                <td>Total data feedback: {{ number_format($report['total_feedback'] ?? 0, 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -103,9 +101,10 @@
                 <th width="5%">No</th>
                 <th width="15%">Kode Karyawan</th>
                 <th>Nama Instruktur</th>
-                <th width="17%">Peran</th>
-                <th width="17%">Jumlah Feedback</th>
-                <th width="13%">Rata-rata</th>
+                @foreach ($months as $month)
+                    <th>{{ \Illuminate\Support\Carbon::createFromDate($report['tahun'], $month, 1)->translatedFormat('F') }}</th>
+                @endforeach
+                <th>Grand Total</th>
             </tr>
         </thead>
         <tbody>
@@ -125,22 +124,22 @@
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ $item['kode_karyawan'] }}</td>
                     <td>{{ $item['nama'] }}</td>
-                    <td>{{ [
-                        'instruktur' => 'Instruktur',
-                        'instruktur2' => 'Instruktur Kedua',
-                        'asisten' => 'Asisten',
-                    ][$item['peran']] ?? $item['peran'] }}</td>
-                    <td class="text-center">{{ $item['total_feedback'] }}</td>
+                    @foreach ($months as $month)
+                        <td class="text-center">{{ isset($item['rata_rata_per_bulan'][$month]) ? number_format($item['rata_rata_per_bulan'][$month], 1, ',', '.') : '-' }}</td>
+                    @endforeach
                     <td class="text-center">{{ number_format($item['rata_rata'], 1, ',', '.') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center">Tidak ada data feedback instruktur pada periode ini.</td>
+                    <td colspan="{{ 4 + count($months) }}" class="text-center">Tidak ada data feedback instruktur pada periode ini.</td>
                 </tr>
             @endforelse
             <tr class="total-row">
-                <td colspan="4">Jumlah instruktur</td>
-                <td colspan="2" class="text-center">{{ $rows->count() }}</td>
+                <td colspan="3">Grand Total</td>
+                @foreach ($months as $month)
+                    <td class="text-center">{{ isset($report['average_feedback_per_bulan'][$month]) ? number_format($report['average_feedback_per_bulan'][$month], 1, ',', '.') : '-' }}</td>
+                @endforeach
+                <td class="text-center">{{ number_format($report['average_feedback']['instruktur'] ?? 0, 1, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>

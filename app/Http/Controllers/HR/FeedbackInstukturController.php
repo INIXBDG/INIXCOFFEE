@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\HR;
 
+use App\Exports\FeedbackInstrukturExport;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Feedback;
-use App\Models\Registrasi;
+use App\Models\Nilaifeedback;
 use App\Models\RKM;
 use App\Models\souvenir;
-use App\Models\Nilaifeedback;
-use App\Exports\FeedbackInstrukturExport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -37,6 +36,7 @@ class FeedbackInstukturController extends Controller
 
         return Pdf::loadView('HR.feedback_instruktur.export_pdf', [
             'report' => $report,
+            'months' => $this->getReportMonths($report),
             'periodLabel' => $this->getPeriodLabel(
                 $report['tahun'],
                 $report['jenis_periode'],
@@ -45,32 +45,54 @@ class FeedbackInstukturController extends Controller
             'printedAt' => Carbon::now()->translatedFormat('l, d F Y H:i'),
         ])
             ->setPaper('a4', 'landscape')
-            ->download('rekap-feedback-instruktur-' . $report['tahun'] . '.pdf');
+            ->download('rekap-feedback-instruktur-'.$report['tahun'].'.pdf');
     }
 
     public function exportExcel(Request $request)
     {
         $report = $this->getExportReport($request);
+        $months = $this->getReportMonths($report);
         $rows = collect($report['per_instruktur'])
-            ->filter(fn ($item) =>
-                !empty($item['kode_karyawan']) &&
+            ->filter(fn ($item) => ! empty($item['kode_karyawan']) &&
                 trim($item['kode_karyawan']) !== '-' &&
                 $item['total_feedback'] > 0 &&
                 $item['total_penilaian'] > 0
             )
             ->values()
             ->map(fn ($item, $index) => [
-                'no' => $index + 1,
-                'kode_karyawan' => $item['kode_karyawan'],
-                'nama' => $item['nama'],
-                'peran' => $this->getRoleLabel($item['peran']),
-                'total_feedback' => $item['total_feedback'],
-                'rata_rata' => $item['rata_rata'],
+                $index + 1,
+                $item['kode_karyawan'],
+                $item['nama'],
+                ...array_map(
+                    fn ($month) => $item['rata_rata_per_bulan'][$month] ?? '',
+                    $months
+                ),
+                $item['rata_rata'],
+            ])
+            ->push([
+                '',
+                '',
+                'Grand Total',
+                ...array_map(
+                    fn ($month) => $report['average_feedback_per_bulan'][$month] ?? '',
+                    $months
+                ),
+                $report['average_feedback']['instruktur'] ?? 0,
             ]);
 
         return Excel::download(
-            new FeedbackInstrukturExport($rows->all()),
-            'rekap-feedback-instruktur-' . $report['tahun'] . '.xlsx'
+            new FeedbackInstrukturExport(
+                $rows->all(),
+                array_map(
+                    fn ($month) => Carbon::createFromDate(
+                        $report['tahun'],
+                        $month,
+                        1
+                    )->translatedFormat('F'),
+                    $months
+                )
+            ),
+            'rekap-feedback-instruktur-'.$report['tahun'].'.xlsx'
         );
     }
 
@@ -84,7 +106,7 @@ class FeedbackInstukturController extends Controller
                 : ['nullable']);
 
         $filters = $request->validate([
-            'year' => ['required', 'integer', 'min:2023', 'max:' . date('Y')],
+            'year' => ['required', 'integer', 'min:2023', 'max:'.date('Y')],
             'type' => ['required', 'in:year,month,quarter'],
             'period' => $periodRules,
         ]);
@@ -109,119 +131,30 @@ class FeedbackInstukturController extends Controller
         }
 
         if ($type === 'quarter') {
-            return 'Kuartal ' . $period . ' ' . $year;
+            return 'Kuartal '.$period.' '.$year;
         }
 
-        return 'Januari - Desember ' . $year;
+        return 'Januari - Desember '.$year;
     }
 
-    private function getRoleLabel(string $role): string
+    private function getReportMonths(array $report): array
+    {
+        if ($report['jenis_periode'] === 'month') {
+            return [(int) $report['periode']];
+        }
+
+        if ($report['jenis_periode'] === 'quarter') {
+            $firstMonth = (((int) $report['periode'] - 1) * 3) + 1;
+
+            return range($firstMonth, $firstMonth + 2);
+        }
+
+        return range(1, 12);
+    }
+
+    private function getInstructorFeedbackSources(): array
     {
         return [
-            'instruktur' => 'Instruktur',
-            'instruktur2' => 'Instruktur Kedua',
-            'asisten' => 'Asisten',
-        ][$role] ?? $role;
-    }
-
-public function getDataFeedbackInstruktur($year,$type = 'year',$period = null)
-{
-    try {
-        $query = Nilaifeedback::with([
-            'rkm.instruktur',
-            'rkm.instruktur2',
-            'rkm.asisten',
-            'regist',
-            'rkm'
-        ])
-        ->whereHas('rkm', function ($query) use ($year, $type, $period) {
-            $query->whereYear('tanggal_awal', $year);
-
-            if ($type === 'month') {
-                $query->whereMonth('tanggal_awal', $period);
-            } elseif ($type === 'quarter') {
-                if (!in_array((int) $period, [1, 2, 3, 4], true)) {
-                    throw new \InvalidArgumentException(
-                        'Kuartal harus bernilai 1 sampai 4.'
-                    );
-                }
-
-                $startMonth = (((int) $period - 1) * 3) + 1;
-
-                $startDate = Carbon::create(
-                    (int) $year,
-                    $startMonth,
-                    1
-                )->startOfDay();
-
-                $endDate = $startDate->copy()
-                    ->addMonths(3)
-                    ->subSecond();
-
-                $query->whereBetween('tanggal_awal', [
-                    $startDate,
-                    $endDate
-                ]);
-            } elseif ($type !== 'year') {
-                throw new \InvalidArgumentException(
-                    'Periode harus month, quarter, atau year.'
-                );
-            }
-        });
-
-        $feedbacks = $query->get();
-
-        // return $feedbacks;
-
-        // Menghitung rata-rata feedback setiap instruktur
-        $averageFeedback = [
-            'instruktur' => round(
-                $feedbacks->pluck('I1')
-                    ->merge($feedbacks->pluck('I2'))
-                    ->merge($feedbacks->pluck('I3'))
-                    ->merge($feedbacks->pluck('I4'))
-                    ->merge($feedbacks->pluck('I5'))
-                    ->merge($feedbacks->pluck('I6'))
-                    ->merge($feedbacks->pluck('I7'))
-                    ->merge($feedbacks->pluck('I8'))
-                    ->filter(fn ($value) => $value !== null && $value !== '')
-                    ->avg() ?? 0,
-                1
-            ),
-
-            'instruktur2' => round(
-                $feedbacks->pluck('I1b')
-                    ->merge($feedbacks->pluck('I2b'))
-                    ->merge($feedbacks->pluck('I3b'))
-                    ->merge($feedbacks->pluck('I4b'))
-                    ->merge($feedbacks->pluck('I5b'))
-                    ->merge($feedbacks->pluck('I6b'))
-                    ->merge($feedbacks->pluck('I7b'))
-                    ->merge($feedbacks->pluck('I8b'))
-                    ->filter(fn ($value) => $value !== null && $value !== '')
-                    ->avg() ?? 0,
-                1
-            ),
-
-            'asisten' => round(
-                $feedbacks->pluck('I1as')
-                    ->merge($feedbacks->pluck('I2as'))
-                    ->merge($feedbacks->pluck('I3as'))
-                    ->merge($feedbacks->pluck('I4as'))
-                    ->merge($feedbacks->pluck('I5as'))
-                    ->merge($feedbacks->pluck('I6as'))
-                    ->merge($feedbacks->pluck('I7as'))
-                    ->merge($feedbacks->pluck('I8as'))
-                    ->filter(fn ($value) => $value !== null && $value !== '')
-                    ->avg() ?? 0,
-                1
-            ),
-        ];
-
-        
-        $perInstruktur = [];
-
-        $instrukturFields = [
             'instruktur' => [
                 'relation' => 'instruktur',
                 'key' => 'instruktur_key',
@@ -235,90 +168,256 @@ public function getDataFeedbackInstruktur($year,$type = 'year',$period = null)
             'asisten' => [
                 'relation' => 'asisten',
                 'key' => 'asisten_key',
-                'fields' => ['I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as'],
+                'fields' => ['I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as'],
             ],
         ];
+    }
 
-        foreach ($feedbacks as $feedback) {
-            $rkm = $feedback->rkm;
+    public function getDataFeedbackInstruktur($year, $type = 'year', $period = null)
+    {
+        try {
+            $query = Nilaifeedback::with([
+                'rkm.instruktur',
+                'rkm.instruktur2',
+                'rkm.asisten',
+                'regist',
+                'rkm',
+            ])
+                ->whereHas('rkm', function ($query) use ($year, $type, $period) {
+                    $query->whereYear('tanggal_awal', $year);
 
-            if (!$rkm) {
-                continue;
+                    if ($type === 'month') {
+                        $query->whereMonth('tanggal_awal', $period);
+                    } elseif ($type === 'quarter') {
+                        if (! in_array((int) $period, [1, 2, 3, 4], true)) {
+                            throw new \InvalidArgumentException(
+                                'Kuartal harus bernilai 1 sampai 4.'
+                            );
+                        }
+
+                        $startMonth = (((int) $period - 1) * 3) + 1;
+
+                        $startDate = Carbon::create(
+                            (int) $year,
+                            $startMonth,
+                            1
+                        )->startOfDay();
+
+                        $endDate = $startDate->copy()
+                            ->addMonths(3)
+                            ->subSecond();
+
+                        $query->whereBetween('tanggal_awal', [
+                            $startDate,
+                            $endDate,
+                        ]);
+                    } elseif ($type !== 'year') {
+                        throw new \InvalidArgumentException(
+                            'Periode harus month, quarter, atau year.'
+                        );
+                    }
+                });
+
+            $feedbacks = $query->get();
+
+            $feedbackSources = $this->getInstructorFeedbackSources();
+            $monthlyFeedbackValues = [];
+            foreach ($feedbacks as $feedback) {
+                if (! $feedback->rkm) {
+                    continue;
+                }
+
+                $month = (int) Carbon::parse($feedback->rkm->tanggal_awal)->format('n');
+                foreach ($feedbackSources as $source) {
+                    foreach ($source['fields'] as $field) {
+                        $value = $feedback->{$field};
+                        if (is_numeric($value)) {
+                            $monthlyFeedbackValues[$month][] = (float) $value;
+                        }
+                    }
+                }
             }
 
-            foreach ($instrukturFields as $role => $config) {
-                $kode = trim((string) ($rkm->{$config['key']} ?? ''));
+            $allInstructorValues = collect($monthlyFeedbackValues)->flatten();
+            $averageFeedbackPerMonth = collect($monthlyFeedbackValues)
+                ->map(fn ($values) => round(collect($values)->avg(), 1));
 
-                // Abaikan jika kode karyawan kosong atau "-"
-                if ($kode === '' || $kode === '-') {
-                    continue;
-                }
+            $averageFeedback = [
+                'instruktur' => round($allInstructorValues->avg() ?? 0, 1),
+            ];
 
-                $karyawan = $rkm->{$config['relation']};
+            $rkmQuery = RKM::with(['instruktur', 'instruktur2', 'asisten'])
+                ->whereYear('tanggal_awal', $year);
 
-                // Abaikan jika data karyawan tidak ditemukan
-                if (!$karyawan) {
-                    continue;
-                }
+            if ($type === 'month') {
+                $rkmQuery->whereMonth('tanggal_awal', $period);
+            } elseif ($type === 'quarter') {
+                $firstMonth = (((int) $period - 1) * 3) + 1;
+                $startDate = Carbon::create((int) $year, $firstMonth, 1)->startOfDay();
+                $endDate = $startDate->copy()->addMonths(3)->subSecond();
+                $rkmQuery->whereBetween('tanggal_awal', [$startDate, $endDate]);
+            }
 
-                $karyawan = $rkm->{$config['relation']};
+            $perKelas = [];
+            foreach ($rkmQuery->get() as $rkm) {
+                $month = (int) Carbon::parse($rkm->tanggal_awal)->format('n');
+                $instructorsInRkm = [];
 
-                // Pisahkan berdasarkan identitas dan peran.
-                $key = $role . '|' . $kode;
+                foreach ($feedbackSources as $source) {
+                    $kode = trim((string) ($rkm->{$source['key']} ?? ''));
+                    $karyawan = $rkm->{$source['relation']};
 
-                if (!isset($perInstruktur[$key])) {
-                    $perInstruktur[$key] = [
-                        'kode_karyawan' => $kode,
+                    if ($kode === '' || $kode === '-' || ! $karyawan) {
+                        continue;
+                    }
+
+                    $instructorsInRkm[$kode] = [
                         'nama' => $karyawan->nama
                             ?? $karyawan->nama_lengkap
                             ?? $kode,
-                        'peran' => $role,
-                        'total_feedback' => 0,
-                        'total_penilaian' => 0,
-                        'total_nilai' => 0,
-                        'nilai' => [],
                     ];
                 }
 
-                $nilaiFeedback = collect($config['fields'])
-                    ->map(fn ($field) => $feedback->{$field})
-                    ->filter(fn ($value) =>
-                        $value !== null &&
-                        $value !== '' &&
-                        is_numeric($value)
-                    );
+                foreach ($instructorsInRkm as $kode => $instructor) {
+                    if (! isset($perKelas[$kode])) {
+                        $perKelas[$kode] = [
+                            'kode_karyawan' => $kode,
+                            'nama' => $instructor['nama'],
+                            'total_kelas' => 0,
+                            'kelas_per_bulan' => [],
+                        ];
+                    }
 
-                // Hitung rata-rata seluruh jawaban valid.
-                if ($nilaiFeedback->isNotEmpty()) {
-                    $perInstruktur[$key]['total_feedback']++;
-
-                    $perInstruktur[$key]['total_penilaian']
-                        += $nilaiFeedback->count();
-
-                    $perInstruktur[$key]['total_nilai']
-                        += $nilaiFeedback->sum();
+                    $perKelas[$kode]['total_kelas']++;
+                    $perKelas[$kode]['kelas_per_bulan'][$month] =
+                        ($perKelas[$kode]['kelas_per_bulan'][$month] ?? 0) + 1;
                 }
             }
-        }
 
-        // Finalisasi hasil per instruktur.
-        $perInstruktur = collect($perInstruktur)
-            ->map(function ($item) {
-                $item['rata_rata'] = $item['total_penilaian'] > 0
-                    ? round(
-                        $item['total_nilai'] / $item['total_penilaian'],
-                        1
-                    )
-                    : 0;
+            $perKelas = collect($perKelas)
+                ->sortBy('nama')
+                ->values();
+            $totalKelas = $perKelas->sum('total_kelas');
+            $perKelas = $perKelas
+                ->map(function ($instructor) use ($totalKelas) {
+                    $instructor['persentase'] = $totalKelas > 0
+                        ? round(($instructor['total_kelas'] / $totalKelas) * 100, 2)
+                        : 0;
 
-                unset($item['total_nilai'], $item['nilai']);
+                    return $instructor;
+                });
 
-                return $item;
-            })
-            ->sortBy('nama')
-            ->values();
+            $totalKelasPerBulan = [];
+            foreach ($perKelas as $instructor) {
+                foreach ($instructor['kelas_per_bulan'] as $month => $count) {
+                    $totalKelasPerBulan[$month] =
+                        ($totalKelasPerBulan[$month] ?? 0) + $count;
+                }
+            }
 
-             return response()->json([
+            $perInstruktur = [];
+
+            foreach ($feedbacks as $feedback) {
+                $rkm = $feedback->rkm;
+
+                if (! $rkm) {
+                    continue;
+                }
+
+                $instructorsInFeedback = [];
+
+                foreach ($feedbackSources as $config) {
+                    $kode = trim((string) ($rkm->{$config['key']} ?? ''));
+
+                    if ($kode === '' || $kode === '-') {
+                        continue;
+                    }
+
+                    $karyawan = $rkm->{$config['relation']};
+
+                    if (! $karyawan) {
+                        continue;
+                    }
+
+                    if (! isset($instructorsInFeedback[$kode])) {
+                        $instructorsInFeedback[$kode] = [
+                            'nama' => $karyawan->nama
+                                ?? $karyawan->nama_lengkap
+                                ?? $kode,
+                            'nilai' => collect(),
+                        ];
+                    }
+
+                    $instructorsInFeedback[$kode]['nilai'] = $instructorsInFeedback[$kode]['nilai']
+                        ->merge(collect($config['fields'])
+                            ->map(fn ($field) => $feedback->{$field})
+                            ->filter(fn ($value) => $value !== null &&
+                                $value !== '' &&
+                                is_numeric($value)
+                            ));
+                }
+
+                foreach ($instructorsInFeedback as $kode => $instructor) {
+                    if ($instructor['nilai']->isEmpty()) {
+                        continue;
+                    }
+
+                    if (! isset($perInstruktur[$kode])) {
+                        $perInstruktur[$kode] = [
+                            'kode_karyawan' => $kode,
+                            'nama' => $instructor['nama'],
+                            'peran' => 'instruktur',
+                            'total_feedback' => 0,
+                            'total_penilaian' => 0,
+                            'total_nilai' => 0,
+                            'per_bulan' => [],
+                        ];
+                    }
+
+                    $month = (int) Carbon::parse($rkm->tanggal_awal)->format('n');
+                    if (! isset($perInstruktur[$kode]['per_bulan'][$month])) {
+                        $perInstruktur[$kode]['per_bulan'][$month] = [
+                            'total_feedback' => 0,
+                            'total_penilaian' => 0,
+                            'total_nilai' => 0,
+                        ];
+                    }
+
+                    $perInstruktur[$kode]['total_feedback']++;
+                    $perInstruktur[$kode]['total_penilaian'] += $instructor['nilai']->count();
+                    $perInstruktur[$kode]['total_nilai'] += $instructor['nilai']->sum();
+                    $perInstruktur[$kode]['per_bulan'][$month]['total_feedback']++;
+                    $perInstruktur[$kode]['per_bulan'][$month]['total_penilaian']
+                        += $instructor['nilai']->count();
+                    $perInstruktur[$kode]['per_bulan'][$month]['total_nilai']
+                        += $instructor['nilai']->sum();
+                }
+            }
+
+            // Finalisasi hasil per instruktur.
+            $perInstruktur = collect($perInstruktur)
+                ->map(function ($item) {
+                    $item['rata_rata'] = $item['total_penilaian'] > 0
+                        ? round(
+                            $item['total_nilai'] / $item['total_penilaian'],
+                            1
+                        )
+                        : 0;
+
+                    $item['rata_rata_per_bulan'] = collect($item['per_bulan'])
+                        ->map(fn ($month) => round(
+                            $month['total_nilai'] / $month['total_penilaian'],
+                            1
+                        ));
+
+                    unset($item['total_nilai'], $item['per_bulan']);
+
+                    return $item;
+                })
+                ->sortBy('nama')
+                ->values();
+
+            return response()->json([
                 'status' => 'success',
                 'title' => 'Berhasil!',
                 'tahun' => (int) $year,
@@ -326,62 +425,48 @@ public function getDataFeedbackInstruktur($year,$type = 'year',$period = null)
                 'periode' => $period,
                 'total_feedback' => $feedbacks->count(),
                 'average_feedback' => $averageFeedback,
+                'average_feedback_per_bulan' => $averageFeedbackPerMonth,
                 'per_instruktur' => $perInstruktur,
+                'per_kelas' => $perKelas,
+                'total_kelas_per_bulan' => $totalKelasPerBulan,
+                'total_kelas' => $totalKelas,
                 // 'data' => $feedbacks,
             ], 200);
 
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengambil feedback instruktur', [
+                'tahun' => $year,
+                'jenis_periode' => $type,
+                'periode' => $period,
+                'error' => $e->getMessage(),
+            ]);
 
-    } catch (\Throwable $e) {
-        Log::error('Gagal mengambil feedback instruktur', [
-            'tahun' => $year,
-            'jenis_periode' => $type,
-            'periode' => $period,
-            'error' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'status' => 'error',
-            'title' => 'Gagal!',
-            'message' => 'Terjadi kesalahan saat mengambil data feedback instruktur.',
-        ], 500);
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Gagal!',
+                'message' => 'Terjadi kesalahan saat mengambil data feedback instruktur.',
+            ], 500);
+        }
     }
-}
-
 
     public function getDetailRkmInstruktur($kode_karyawan, $peran, $year, $type = 'year', $period = null)
     {
         try {
-            // Map peran ke kolom relasi/kunci RKM dan kolom feedback-nya
-            $configPeran = [
-                'instruktur' => [
-                    'column' => 'instruktur_key',
-                    'label' => 'Instruktur',
-                    'fields' => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8'],
-                ],
-                'instruktur2' => [
-                    'column' => 'instruktur_key2',
-                    'label' => 'Instruktur Kedua',
-                    'fields' => ['I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b'],
-                ],
-                'asisten' => [
-                    'column' => 'asisten_key',
-                    'label' => 'Asisten',
-                    'fields' => ['I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as'],
-                ],
-            ];
-
-            if (!isset($configPeran[$peran])) {
+            if ($peran !== 'instruktur') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Peran tidak valid.'
+                    'message' => 'Peran tidak valid.',
                 ], 400);
             }
 
-            $config = $configPeran[$peran];
+            $feedbackSources = $this->getInstructorFeedbackSources();
 
-            // Query RKM spesifik untuk peran ini
             $query = RKM::with(['materi', 'perusahaan', 'nilaifeedback'])
-                ->where($config['column'], $kode_karyawan)
+                ->where(function ($query) use ($feedbackSources, $kode_karyawan) {
+                    foreach ($feedbackSources as $source) {
+                        $query->orWhere($source['key'], $kode_karyawan);
+                    }
+                })
                 ->whereYear('tanggal_awal', $year);
 
             if ($type === 'month') {
@@ -396,18 +481,23 @@ public function getDataFeedbackInstruktur($year,$type = 'year',$period = null)
 
             $rkms = $query->get();
 
-            $data = $rkms->map(function ($rkm) use ($config) {
+            $data = $rkms->map(function ($rkm) use ($feedbackSources, $kode_karyawan) {
                 $tglAwal = Carbon::parse($rkm->tanggal_awal)->translatedFormat('d M Y');
                 $tglAkhir = Carbon::parse($rkm->tanggal_akhir)->translatedFormat('d M Y');
-                $tanggalString = ($tglAwal === $tglAkhir) ? $tglAwal : $tglAwal . ' - ' . $tglAkhir;
+                $tanggalString = ($tglAwal === $tglAkhir) ? $tglAwal : $tglAwal.' - '.$tglAkhir;
 
-                // Hitung rata-rata nilai feedback spesifik untuk peran ini di RKM tersebut
                 $allValues = collect();
                 foreach ($rkm->nilaifeedback as $feedback) {
-                    foreach ($config['fields'] as $field) {
-                        $val = $feedback->{$field};
-                        if ($val !== null && $val !== '' && is_numeric($val)) {
-                            $allValues->push((float) $val);
+                    foreach ($feedbackSources as $source) {
+                        if (($rkm->{$source['key']} ?? null) !== $kode_karyawan) {
+                            continue;
+                        }
+
+                        foreach ($source['fields'] as $field) {
+                            $value = $feedback->{$field};
+                            if ($value !== null && $value !== '' && is_numeric($value)) {
+                                $allValues->push((float) $value);
+                            }
                         }
                     }
                 }
@@ -425,15 +515,16 @@ public function getDataFeedbackInstruktur($year,$type = 'year',$period = null)
 
             return response()->json([
                 'status' => 'success',
-                'peran_label' => $config['label'],
-                'data' => $data
+                'peran_label' => 'Instruktur',
+                'data' => $data,
             ], 200);
 
         } catch (\Throwable $e) {
             Log::error('Gagal mengambil detail RKM instruktur', ['error' => $e->getMessage()]);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Terjadi kesalahan saat memuat detail RKM.'
+                'message' => 'Terjadi kesalahan saat memuat detail RKM.',
             ], 500);
         }
     }

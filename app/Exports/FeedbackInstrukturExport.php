@@ -10,8 +10,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class FeedbackInstrukturExport implements FromArray, WithHeadings, ShouldAutoSize, WithStyles
 {
-    public function __construct(private array $rows)
-    {
+    public function __construct(
+        private array $rows,
+        private array $monthHeadings
+    ) {
     }
 
     public function array(): array
@@ -25,9 +27,8 @@ class FeedbackInstrukturExport implements FromArray, WithHeadings, ShouldAutoSiz
             'No',
             'Kode Karyawan',
             'Nama Instruktur',
-            'Peran',
-            'Jumlah Feedback',
-            'Rata-rata',
+            ...$this->monthHeadings,
+            'Grand Total',
         ];
     }
 
