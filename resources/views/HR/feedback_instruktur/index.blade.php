@@ -50,7 +50,7 @@
     </div>
 
     {{-- Statistik rata-rata --}}
-    <div class="row g-3 mb-4">
+    {{-- <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -59,21 +59,54 @@
                 </div>
             </div>
         </div>
+    </div> --}}
 
-        <div class="col-md-4">
+    <div class="row g-3 mb-4">
+        <div class="col-xl-6">
             <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Tren Rata-rata Feedback per Instruktur</h6>
+                </div>
                 <div class="card-body">
-                    <div class="text-muted small">Rata-rata Instruktur Kedua</div>
-                    <div class="fs-2 fw-bold" id="avg_instruktur2">-</div>
+                    <div style="height: 320px">
+                        <canvas id="chart_feedback_instruktur"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-4">
+        <div class="col-xl-6">
             <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Jumlah Kelas per Instruktur</h6>
+                </div>
                 <div class="card-body">
-                    <div class="text-muted small">Rata-rata Asisten</div>
-                    <div class="fs-2 fw-bold" id="avg_asisten">-</div>
+                    <div style="height: 320px">
+                        <canvas id="chart_kelas_instruktur"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Persentase Kelas per Instruktur</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 320px">
+                        <canvas id="chart_persentase_instruktur"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Jumlah Feedback dan Rata-rata per Instruktur</h6>
+                </div>
+                <div class="card-body">
+                    <div style="height: 320px">
+                        <canvas id="chart_jumlah_feedback_instruktur"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -104,23 +137,50 @@
             <div class="table-responsive">
                 <table id="table_instruktur" class="table table-hover table-bordered align-middle">
                     <thead class="table-light">
-                        <tr>
+                        <tr id="header_instruktur">
                             <th class="text-center" width="60">No</th>
                             <th>Kode Karyawan</th>
                             <th>Nama Instruktur</th>
-                            <th>Peran</th>
-                            <th class="text-center">Jumlah Feedback</th>
-                            <th class="text-center">Rata-rata</th>
+                            <th class="text-center">Grand Total</th>
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="tbody_instruktur">
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 Pilih periode untuk menampilkan data.
                             </td>
                         </tr>
                     </tbody>
+                    <tfoot id="footer_instruktur"></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0">Rekap Kelas Instruktur</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr id="header_kelas">
+                            <th>Kode Karyawan</th>
+                            <th>Nama Instruktur</th>
+                            <th class="text-center">Grand Total</th>
+                            <th class="text-center">Persentase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_kelas">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                Pilih periode untuk menampilkan data.
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot id="footer_kelas"></tfoot>
                 </table>
             </div>
         </div>
@@ -175,6 +235,10 @@
         const exportPdfUrl = @json(route('HR.feedback-instruktur.export.pdf'));
         const exportExcelUrl = @json(route('HR.feedback-instruktur.export.excel'));
         let activeFilters = {};
+        let feedbackChart = null;
+        let kelasChart = null;
+        let persentaseChart = null;
+        let jumlahFeedbackChart = null;
 
         const namaBulan = [
             'Januari', 'Februari', 'Maret', 'April',
@@ -225,6 +289,17 @@
             return Number.isFinite(number) ? number.toFixed(1) : '0.0';
         }
 
+        function formatPersentase(nilai) {
+            const number = Number(nilai);
+
+            return Number.isFinite(number)
+                ? new Intl.NumberFormat('id-ID', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(number) + '%'
+                : '0,00%';
+        }
+
         function escapeHtml(value) {
             return $('<div>').text(value ?? '-').html();
         }
@@ -236,12 +311,14 @@
         }
 
         function initializeDataTable() {
+            const lastColumn = $('#header_instruktur th').length - 1;
+
             $('#table_instruktur').DataTable({
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'Semua']],
                 order: [[2, 'asc']],
                 columnDefs: [{
-                    targets: [0, 6],
+                    targets: [0, lastColumn],
                     orderable: false,
                     searchable: false
                 }],
@@ -271,6 +348,241 @@
             });
         }
 
+        function getDisplayedMonths(type, period) {
+            if (type === 'month') {
+                return [Number(period)];
+            }
+
+            if (type === 'quarter') {
+                const firstMonth = ((Number(period) - 1) * 3) + 1;
+                return [firstMonth, firstMonth + 1, firstMonth + 2];
+            }
+
+            return namaBulan.map((_, index) => index + 1);
+        }
+
+        function renderTableHeader(months) {
+            const monthHeaders = months.map(function (month) {
+                return `<th class="text-center">${escapeHtml(namaBulan[month - 1])}</th>`;
+            }).join('');
+
+            $('#header_instruktur').html(`
+                <th class="text-center" width="60">No</th>
+                <th>Kode Karyawan</th>
+                <th>Nama Instruktur</th>
+                ${monthHeaders}
+                <th class="text-center">Grand Total</th>
+                <th class="text-center">Aksi</th>
+            `);
+
+            $('#header_kelas').html(`
+                <th>Kode Karyawan</th>
+                <th>Nama Instruktur</th>
+                ${monthHeaders}
+                <th class="text-center">Grand Total</th>
+                <th class="text-center">Persentase</th>
+            `);
+        }
+
+        function renderClassTable(response, months) {
+            const data = response.per_kelas || [];
+            const columnCount = months.length + 4;
+
+            if (data.length === 0) {
+                $('#tbody_kelas').html(`
+                    <tr>
+                        <td colspan="${columnCount}" class="text-center text-muted py-4">
+                            Tidak ada data kelas instruktur pada periode ini.
+                        </td>
+                    </tr>
+                `);
+                $('#footer_kelas').empty();
+                return;
+            }
+
+            const rows = data.map(function (item) {
+                const monthlyValues = months.map(function (month) {
+                    const count = item.kelas_per_bulan?.[month];
+                    return `<td class="text-center">${count ?? '-'}</td>`;
+                }).join('');
+
+                return `
+                    <tr>
+                        <td>${escapeHtml(item.kode_karyawan)}</td>
+                        <td>${escapeHtml(item.nama)}</td>
+                        ${monthlyValues}
+                        <td class="text-center fw-bold">${item.total_kelas}</td>
+                        <td class="text-center">${formatPersentase(item.persentase)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const monthlyTotals = months.map(function (month) {
+                const count = response.total_kelas_per_bulan?.[month];
+                return `<td class="text-center">${count ?? 0}</td>`;
+            }).join('');
+
+            $('#tbody_kelas').html(rows);
+            $('#footer_kelas').html(`
+                <tr class="table-light fw-bold">
+                    <td colspan="2">Grand Total</td>
+                    ${monthlyTotals}
+                    <td class="text-center">${response.total_kelas ?? 0}</td>
+                    <td class="text-center">100%</td>
+                </tr>
+            `);
+        }
+
+        function updateCharts(response, months) {
+            [feedbackChart, kelasChart, persentaseChart, jumlahFeedbackChart].forEach(function (chart) {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+
+            const palette = [
+                '#0d6efd', '#dc3545', '#198754', '#fd7e14', '#6f42c1',
+                '#20c997', '#d63384', '#0dcaf0', '#6c757d', '#ffc107'
+            ];
+            const monthLabels = months.map(month => namaBulan[month - 1]);
+            const instructorsWithFeedback = (response.per_instruktur || []).filter(function (item) {
+                return item.total_penilaian > 0;
+            });
+            const instructorsWithClasses = response.per_kelas || [];
+
+            feedbackChart = new Chart(document.getElementById('chart_feedback_instruktur'), {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: instructorsWithFeedback.map(function (item, index) {
+                        return {
+                            label: item.nama,
+                            data: months.map(function (month) {
+                                return item.rata_rata_per_bulan?.[month] ?? null;
+                            }),
+                            borderColor: palette[index % palette.length],
+                            backgroundColor: palette[index % palette.length],
+                            tension: 0.25,
+                            spanGaps: false
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 5,
+                            title: { display: true, text: 'Rata-rata feedback' }
+                        }
+                    }
+                }
+            });
+
+            kelasChart = new Chart(document.getElementById('chart_kelas_instruktur'), {
+                type: 'bar',
+                data: {
+                    labels: instructorsWithClasses.map(item => item.nama),
+                    datasets: months.map(function (month, index) {
+                        return {
+                            label: namaBulan[month - 1],
+                            data: instructorsWithClasses.map(function (item) {
+                                return item.kelas_per_bulan?.[month] ?? 0;
+                            }),
+                            backgroundColor: palette[index % palette.length]
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: false },
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Jumlah kelas' }
+                        }
+                    }
+                }
+            });
+
+            persentaseChart = new Chart(document.getElementById('chart_persentase_instruktur'), {
+                type: 'doughnut',
+                data: {
+                    labels: instructorsWithClasses.map(item => item.nama),
+                    datasets: [{
+                        data: instructorsWithClasses.map(item => item.persentase),
+                        backgroundColor: instructorsWithClasses.map(
+                            (_, index) => palette[index % palette.length]
+                        )
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.label + ': ' + formatPersentase(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            jumlahFeedbackChart = new Chart(
+                document.getElementById('chart_jumlah_feedback_instruktur'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: instructorsWithFeedback.map(item => item.nama),
+                        datasets: [{
+                            type: 'bar',
+                            label: 'Jumlah Feedback',
+                            data: instructorsWithFeedback.map(item => item.total_feedback),
+                            backgroundColor: 'rgba(13, 110, 253, 0.65)',
+                            borderColor: '#0d6efd',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        }, {
+                            type: 'line',
+                            label: 'Rata-rata Feedback',
+                            data: instructorsWithFeedback.map(item => item.rata_rata),
+                            borderColor: '#dc3545',
+                            backgroundColor: '#dc3545',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.25,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Jumlah feedback' },
+                                ticks: { precision: 0 }
+                            },
+                            y1: {
+                                beginAtZero: true,
+                                suggestedMax: 5,
+                                position: 'right',
+                                title: { display: true, text: 'Rata-rata feedback' },
+                                grid: { drawOnChartArea: false }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
         function loadData() {
             const year = $('#filter_tahun').val();
             const type = $('#filter_type').val();
@@ -280,6 +592,10 @@
             if (type !== 'year') {
                 activeFilters.period = period;
             }
+            const months = getDisplayedMonths(type, period);
+            destroyDataTable();
+            renderTableHeader(months);
+            const columnCount = $('#header_instruktur th').length;
 
             let url = baseUrl + '/' + encodeURIComponent(year) + '/' + type;
 
@@ -287,16 +603,25 @@
                 url += '/' + encodeURIComponent(period);
             }
 
-            destroyDataTable();
             $('#btn_filter').prop('disabled', true);
             $('#tbody_instruktur').html(`
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="${columnCount}" class="text-center py-4">
                         <span class="spinner-border spinner-border-sm me-2"></span>
                         Memuat data...
                     </td>
                 </tr>
             `);
+            $('#footer_instruktur').empty();
+            $('#tbody_kelas').html(`
+                <tr>
+                    <td colspan="${months.length + 4}" class="text-center py-4">
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        Memuat data...
+                    </td>
+                </tr>
+            `);
+            $('#footer_kelas').empty();
 
             $.ajax({
                 url: url,
@@ -311,8 +636,6 @@
                 const avg = response.average_feedback || {};
 
                 $('#avg_instruktur').text(formatNilai(avg.instruktur));
-                $('#avg_instruktur2').text(formatNilai(avg.instruktur2));
-                $('#avg_asisten').text(formatNilai(avg.asisten));
                 $('#total_feedback').text(response.total_feedback ?? 0);
 
                 let label = year;
@@ -328,15 +651,18 @@
                 $('#label_hasil_periode').text(label);
 
                 const data = response.per_instruktur || [];
+                renderClassTable(response, months);
+                updateCharts(response, months);
 
                 if (data.length === 0) {
                     $('#tbody_instruktur').html(`
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="${columnCount}" class="text-center text-muted py-4">
                                 Tidak ada data feedback instruktur pada periode ini.
                             </td>
                         </tr>
                     `);
+                    $('#footer_instruktur').empty();
                     return;
                 }
 
@@ -353,12 +679,10 @@
                         return;
                     }
 
-                    // Di dalam looping data.forEach pada loadData()
-                    const peran = {
-                        instruktur: 'Instruktur',
-                        instruktur2: 'Instruktur Kedua',
-                        asisten: 'Asisten'
-                    }[item.peran] || item.peran;
+                    const monthlyValues = months.map(function (month) {
+                        const value = item.rata_rata_per_bulan?.[month];
+                        return `<td class="text-center">${value === undefined ? '-' : formatNilai(value)}</td>`;
+                    }).join('');
 
                     hasRows = true;
                     html += `
@@ -366,15 +690,13 @@
                             <td class="text-center">${index + 1}</td>
                             <td>${escapeHtml(item.kode_karyawan)}</td>
                             <td>${escapeHtml(item.nama)}</td>
-                            <td>${escapeHtml(peran)}</td>
-                            <td class="text-center">${item.total_feedback}</td>
+                            ${monthlyValues}
                             <td class="text-center fw-bold">${formatNilai(item.rata_rata)}</td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-sm btn-info text-white btn-detail-rkm" 
                                     data-kode="${escapeHtml(item.kode_karyawan)}" 
                                     data-nama="${escapeHtml(item.nama)}"
-                                    data-peran="${escapeHtml(item.peran)}"
-                                    data-label-peran="${escapeHtml(peran)}">
+                                    data-peran="instruktur">
                                     <i class="fas fa-eye me-1"></i>Detail RKM
                                 </button>
                             </td>
@@ -385,7 +707,7 @@
                 if (!hasRows) {
                     html = `
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">
+                            <td colspan="${columnCount}" class="text-center text-muted py-4">
                                 Tidak ada data instruktur dengan penilaian valid.
                             </td>
                         </tr>
@@ -395,7 +717,24 @@
                 $('#tbody_instruktur').html(html);
 
                 if (hasRows) {
+                    const monthlyTotals = months.map(function (month) {
+                        const value = response.average_feedback_per_bulan?.[month];
+                        return `<td class="text-center">${value === undefined ? '-' : formatNilai(value)}</td>`;
+                    }).join('');
+
+                    $('#footer_instruktur').html(`
+                        <tr class="table-light fw-bold">
+                            <td></td>
+                            <td></td>
+                            <td>Grand Total</td>
+                            ${monthlyTotals}
+                            <td class="text-center">${formatNilai(avg.instruktur)}</td>
+                            <td></td>
+                        </tr>
+                    `);
                     initializeDataTable();
+                } else {
+                    $('#footer_instruktur').empty();
                 }
             })
             .fail(function (xhr) {
@@ -404,13 +743,26 @@
 
                 $('#tbody_instruktur').html(`
                     <tr>
-                        <td colspan="7" class="text-center text-danger py-4">
+                        <td colspan="${columnCount}" class="text-center text-danger py-4">
                             ${escapeHtml(message)}
                         </td>
                     </tr>
                 `);
+                $('#footer_instruktur').empty();
+                $('#tbody_kelas').html(`
+                    <tr>
+                        <td colspan="${months.length + 4}" class="text-center text-danger py-4">
+                            ${escapeHtml(message)}
+                        </td>
+                    </tr>
+                `);
+                $('#footer_kelas').empty();
+                updateCharts({
+                    per_instruktur: [],
+                    per_kelas: []
+                }, months);
 
-                $('#avg_instruktur, #avg_instruktur2, #avg_asisten').text('-');
+                $('#avg_instruktur').text('-');
                 $('#total_feedback').text('0');
             })
             .always(function () {
@@ -436,8 +788,8 @@
         $(document).on('click', '.btn-detail-rkm', function () {
             const kodeKaryawan = $(this).data('kode');
             const namaInstruktur = $(this).data('nama');
-            const peran = $(this).data('peran');             // 'instruktur', 'instruktur2', atau 'asisten'
-            const labelPeran = $(this).data('label-peran');   // 'Instruktur', 'Instruktur Kedua', atau 'Asisten'
+            const peran = $(this).data('peran');
+            const labelPeran = 'Instruktur';
             
             const year = $('#filter_tahun').val();
             const type = $('#filter_type').val();
