@@ -23,89 +23,96 @@ class RegisApiController extends Controller
 {
     public function kelasBerjalan()
     {
-        $now = CarbonImmutable::now()->locale('id_ID');
+        $now = CarbonImmutable::now('Asia/Jakarta')->locale('id_ID');
 
-        // Mendefinisikan batas waktu secara eksplisit: Awal minggu lalu hingga akhir minggu ini
-        // $startOfWeek = $now->subWeek()->startOfWeek()->format('Y-m-d');
-        // $startOfWeek = $now->addWeeks(1)->startOfWeek()->format('Y-m-d');
-        // $endOfWeek = $now->addWeeks(1)->endOfWeek()->format('Y-m-d');
         $startOfWeek = $now->startOfWeek()->format('Y-m-d');
-        $endOfWeek = $now->endOfWeek()->format('Y-m-d');
+        $endOfWeek   = $now->endOfWeek()->format('Y-m-d');
 
-        // Mengambil data RKM menggunakan metode agregasi seperti fungsi showMonth
         $rows = RKM::with(['materi', 'peluang', 'perusahaan'])
-                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                ->whereBetween('r_k_m_s.tanggal_awal', [$startOfWeek, $endOfWeek])
-                ->whereNot('metode_kelas', 'Exam Only')
-                ->where(function ($query) {
-                    $query->whereDoesntHave('peluang')
-                        ->orWhereHas('peluang', function ($q) {
-                            $q->where('tahap', 'merah');
-                        });
-                })
-                ->select(
-                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
-                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
-                    'r_k_m_s.materi_key',
-                    'materis.nama_materi',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.metode_kelas',
-                    'r_k_m_s.event',
-                    'r_k_m_s.tanggal_awal',
-                    'r_k_m_s.tanggal_akhir'
-                )
-                ->groupBy(
-                    'r_k_m_s.materi_key',
-                    'materis.nama_materi',
-                    'r_k_m_s.ruang',
-                    'r_k_m_s.metode_kelas',
-                    'r_k_m_s.event',
-                    'r_k_m_s.tanggal_awal',
-                    'r_k_m_s.tanggal_akhir'
-                )
-                ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                ->get();
-
-        // return $rows;
+            ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+            ->whereBetween('r_k_m_s.tanggal_awal', [$startOfWeek, $endOfWeek])
+            ->whereNot('r_k_m_s.metode_kelas', 'Exam Only')
+            ->where(function ($query) {
+                $query->whereDoesntHave('peluang')
+                    ->orWhereHas('peluang', function ($q) {
+                        $q->where('tahap', 'merah');
+                    });
+            })
+            ->select(
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
+                // Tambahkan kembali agregasi yang dipakai di foreach bawah:
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                DB::raw('GROUP_CONCAT(DISTINCT r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                'r_k_m_s.materi_key',
+                'materis.nama_materi',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                // Pastikan diambil sebagai string murni YYYY-MM-DD dari DB
+                DB::raw('DATE_FORMAT(r_k_m_s.tanggal_awal, "%Y-%m-%d") AS tanggal_awal_raw'),
+                DB::raw('DATE_FORMAT(r_k_m_s.tanggal_akhir, "%Y-%m-%d") AS tanggal_akhir_raw'),
+                'r_k_m_s.tanggal_awal',
+                'r_k_m_s.tanggal_akhir'
+            )
+            ->groupBy(
+                'r_k_m_s.materi_key',
+                'materis.nama_materi',
+                'r_k_m_s.ruang',
+                'r_k_m_s.metode_kelas',
+                'r_k_m_s.event',
+                'r_k_m_s.tanggal_awal',
+                'r_k_m_s.tanggal_akhir'
+            )
+            ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+            ->get();
 
         $combinedData = [];
 
         foreach ($rows as $row) {
-            // Memetakan relasi data instruktur, sales, dan perusahaan
-            $sales_ids = explode(', ', $row->sales_all);
-            $perusahaan_ids = explode(', ', $row->perusahaan_all);
-            $instruktur_ids = explode(', ', $row->instruktur_all);
+            // Mengambil tanggal murni tanpa terpengaruh konversi UTC Laravel
+            $tglAwal  = $row->tanggal_awal_raw ?? Carbon::parse($row->getRawOriginal('tanggal_awal'))->format('Y-m-d');
+            $tglAkhir = $row->tanggal_akhir_raw ?? Carbon::parse($row->getRawOriginal('tanggal_akhir'))->format('Y-m-d');
+
+            // Memetakan relasi data instruktur, sales, dan perusahaan (dengan pengaman jika kosong)
+            $sales_ids      = $row->sales_all ? explode(', ', $row->sales_all) : [];
+            $perusahaan_ids = $row->perusahaan_all ? explode(', ', $row->perusahaan_all) : [];
+            $instruktur_ids = $row->instruktur_all ? explode(', ', $row->instruktur_all) : [];
 
             $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-            $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+            $row->sales      = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
             $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
 
-            // Pembuatan string id_baru
+            // Pembuatan string id_baru menggunakan tanggal yang sudah aman
+            $tgl     = Carbon::createFromFormat('Y-m-d', $tglAwal, 'Asia/Jakarta');
+            $metode  = strtolower(str_replace(' ', '', $row->metode_kelas));
+            $id_baru = $row->materi_key . 'ib' . $tgl->format('d') . 'ie' . $tgl->format('Y') . 'ie' . $tgl->format('m') . 'im' . $metode;
 
-            // ganti 3 baris explode + id_baru dengan:
-            $tgl    = Carbon::parse($row->tanggal_awal);
-            $metode = strtolower(str_replace(' ', '', $row->metode_kelas));
-            $id_baru = $row->materi_key . 'ib' . $tgl->format('d') . 'ie' . $tgl->format('Y') . 'ie' . $tgl->format('m') . 'im' . $metode; 
+            // Ubah ke array lalu timpa tanggalnya agar di dalam 'items' juga tidak mundur 1 hari
+            $rowArray = $row->toArray();
+            $rowArray['tanggal_awal']  = $tglAwal;
+            $rowArray['tanggal_akhir'] = $tglAkhir;
 
             // Penyusunan format akhir data
             $combinedData[] = [
                 'id_baru'       => $id_baru,
-                'id_all'       => $row->id_all,
+                'id_all'        => $row->id_all,
                 'materi_key'    => $row->materi_key,
                 'nama_materi'   => $row->nama_materi,
-                'tanggal_awal'  => $row->tanggal_awal,
-                'tanggal_akhir' => $row->tanggal_akhir,
-                'total_pax'     => $row->total_pax,
+                'tanggal_awal'  => $tglAwal,
+                'tanggal_akhir' => $tglAkhir,
+                'total_pax'     => $row->total_pax ?? 0,
                 'isi_pax'       => $row->total_isi_pax ?? 0,
                 'metode_kelas'  => $row->metode_kelas,
                 'ruang'         => $row->ruang,
-                'items'         => [$row->toArray()], // Dibungkus array sesuai kebutuhan struktur
+                'items'         => [$rowArray],
             ];
         }
 
-        $data = $combinedData;
         return response()->json([
-            'data' => $data
+            'data' => $combinedData
         ]);
     }
 
@@ -187,14 +194,14 @@ class RegisApiController extends Controller
         }
 
         $checkrkm = collect(explode('||', $data->pasangan ?? ''))
-            ->filter() 
+            ->filter()
             ->map(function ($item) {
                 $parts = explode('|', $item);
 
                 return [
                     'id_rkm'          => $parts[0] ?? null,
-                    'perusahaan_id'   => $parts[1] ?? null, 
-                    'nama_perusahaan' => $parts[2] ?? null, 
+                    'perusahaan_id'   => $parts[1] ?? null,
+                    'nama_perusahaan' => $parts[2] ?? null,
                 ];
             })
             ->values();
