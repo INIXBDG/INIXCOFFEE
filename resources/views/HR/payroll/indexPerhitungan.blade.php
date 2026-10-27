@@ -32,108 +32,580 @@
             --shadow-lg: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .07);
         }
 
-        .page-header { margin-bottom: 1.5rem; }
-        .page-title { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: .15rem; }
-        .page-sub { color: var(--gray-400); font-size: .875rem; }
+        .page-header {
+            margin-bottom: 1.5rem;
+        }
 
-        .stat-card { border: none; border-radius: var(--radius); box-shadow: var(--shadow); transition: transform .25s, box-shadow .25s; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-        .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff; }
-        .stat-value { font-size: 1.45rem; font-weight: 700; color: var(--gray-900); margin: .4rem 0 .15rem; }
-        .stat-label { color: var(--gray-400); font-size: .8rem; margin: 0; }
+        .page-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: .15rem;
+        }
 
-        .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
-        .nav-tabs-custom .nav-link { border: none; color: var(--gray-400); font-weight: 600; padding: .85rem 1.25rem; font-size: .875rem; transition: color .2s; }
-        .nav-tabs-custom .nav-link:hover { color: var(--pri); }
-        .nav-tabs-custom .nav-link.active { color: var(--pri); border-bottom: 3px solid var(--pri); background: transparent; }
+        .page-sub {
+            color: var(--gray-400);
+            font-size: .875rem;
+        }
 
-        .card-shell { border: none; border-radius: var(--radius); box-shadow: var(--shadow); }
+        .stat-card {
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: transform .25s, box-shadow .25s;
+        }
 
-        .badge-status { padding: .35rem .75rem; border-radius: 20px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-        .bs-draft { background: var(--gray-100); color: var(--gray-600); }
-        .bs-calculated { background: #dbeafe; color: #1d4ed8; }
-        .bs-approved { background: var(--success-light); color: var(--success); }
-        .bs-paid { background: #ede9fe; color: #6d28d9; }
-        .bs-cancelled { background: var(--danger-light); color: var(--danger); }
-        .bs-none { background: var(--warning-light); color: var(--warning); }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
 
-        .detail-panel { background: var(--gray-50); border-left: 4px solid var(--pri); border-radius: 0 var(--radius) var(--radius) 0; padding: 1.5rem; }
-        .detail-section h6 { font-weight: 700; color: var(--gray-700); font-size: .8rem; text-transform: uppercase; letter-spacing: .6px; margin-bottom: .75rem; padding-bottom: .5rem; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: .4rem; }
-        .detail-item { display: flex; justify-content: space-between; padding: .45rem 0; font-size: .85rem; color: var(--gray-600); border-bottom: 1px dashed var(--gray-200); }
-        .detail-item:last-child { border-bottom: none; }
-        .detail-total { font-weight: 700; font-size: .95rem; color: var(--gray-900); border-top: 2px solid var(--gray-200); padding-top: .6rem; margin-top: .4rem; border-bottom: none !important; }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: #fff;
+        }
 
-        .wizard-bar { display: flex; justify-content: space-between; margin-bottom: 2rem; position: relative; }
-        .wizard-bar::before { content: ''; position: absolute; top: 18px; left: 8%; right: 8%; height: 2px; background: var(--gray-200); z-index: 0; }
-        .wz-step { position: relative; z-index: 1; text-align: center; flex: 1; }
-        .wz-circle { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 2px solid var(--gray-200); display: flex; align-items: center; justify-content: center; margin: 0 auto .4rem; font-weight: 700; font-size: .8rem; color: var(--gray-400); transition: all .3s; }
-        .wz-step.active .wz-circle { background: var(--pri); border-color: var(--pri); color: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, .2); }
-        .wz-step.done .wz-circle { background: var(--success); border-color: var(--success); color: #fff; }
-        .wz-label { font-size: .72rem; color: var(--gray-400); font-weight: 600; }
-        .wz-step.active .wz-label { color: var(--pri); }
+        .stat-value {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin: .4rem 0 .15rem;
+        }
 
-        .preview-box { background: linear-gradient(135deg, rgba(79, 70, 229, .06) 0%, rgba(99, 102, 241, .04) 100%); border: 1.5px solid rgba(79, 70, 229, .25); border-radius: var(--radius); padding: 1.25rem; margin-top: 1.25rem; }
-        .preview-box h6 { font-weight: 700; color: var(--pri); margin-bottom: .75rem; font-size: .85rem; }
-        .preview-row { display: flex; justify-content: space-between; padding: .35rem 0; font-size: .875rem; }
-        .preview-total { font-size: 1.1rem; font-weight: 700; color: var(--pri); border-top: 2px solid var(--gray-200); padding-top: .6rem; margin-top: .4rem; }
+        .stat-label {
+            color: var(--gray-400);
+            font-size: .8rem;
+            margin: 0;
+        }
 
-        .form-label { font-weight: 600; color: var(--gray-700); font-size: .85rem; margin-bottom: .4rem; }
-        .mono-input { font-family: 'Courier New', monospace; font-weight: 600; }
-        .readonly-val { background: var(--gray-50) !important; border: 1px solid var(--gray-200) !important; color: var(--gray-600) !important; cursor: not-allowed; }
-        .badge-source { font-size: .65rem; padding: .2rem .5rem; border-radius: 10px; }
+        .nav-tabs-custom {
+            border-bottom: 2px solid var(--gray-200);
+        }
 
-        .btn-pri { background: var(--pri); border: none; color: #fff; font-weight: 600; padding: .5rem 1.25rem; border-radius: 8px; transition: all .25s; }
-        .btn-pri:hover { background: var(--pri-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, .35); color: #fff; }
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: var(--gray-400);
+            font-weight: 600;
+            padding: .85rem 1.25rem;
+            font-size: .875rem;
+            transition: color .2s;
+        }
 
-        .modal-header-custom { background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%); color: #fff; border-radius: 12px 12px 0 0; }
-        .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
-        .chart-wrap { position: relative; height: 260px; }
+        .nav-tabs-custom .nav-link:hover {
+            color: var(--pri);
+        }
 
-        .tunjangan-source-info { background: var(--info-light); border: 1px solid #bae6fd; border-radius: 8px; padding: .75rem 1rem; margin-bottom: 1rem; font-size: .82rem; }
-        .tunjangan-empty-info { background: var(--warning-light); border: 1px solid #fcd34d; border-radius: 8px; padding: .75rem 1rem; margin-bottom: 1rem; font-size: .82rem; }
+        .nav-tabs-custom .nav-link.active {
+            color: var(--pri);
+            border-bottom: 3px solid var(--pri);
+            background: transparent;
+        }
 
-        .dataTables_wrapper { padding: 0 !important; }
-        .dataTables_wrapper .row { margin: 0 !important; border: none !important; }
-        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter { padding: 1rem 1.5rem !important; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); margin: 0 !important; }
-        .dataTables_wrapper .dataTables_length label, .dataTables_wrapper .dataTables_filter label { margin: 0 !important; font-size: .85rem; font-weight: 600; color: var(--gray-600); display: flex; align-items: center; gap: .5rem; }
-        .dataTables_wrapper .dataTables_length select { border: 1px solid var(--gray-200) !important; border-radius: 6px !important; padding: .35rem .75rem !important; font-size: .85rem !important; color: var(--gray-700) !important; background: #fff !important; transition: all .2s; width: auto !important; margin: 0 .5rem !important; }
-        .dataTables_wrapper .dataTables_length select:focus { border-color: var(--pri) !important; box-shadow: 0 0 0 3px rgba(79, 70, 229, .15) !important; outline: none !important; }
-        .dataTables_wrapper .dataTables_filter input { border: 1px solid var(--gray-200) !important; border-radius: 6px !important; padding: .35rem .75rem !important; font-size: .85rem !important; color: var(--gray-700) !important; background: #fff !important; transition: all .2s; margin-left: .5rem !important; }
-        .dataTables_wrapper .dataTables_filter input:focus { border-color: var(--pri) !important; box-shadow: 0 0 0 3px rgba(79, 70, 229, .15) !important; outline: none !important; }
-        .dataTables_wrapper .dataTables_info { padding: 1rem 1.5rem !important; font-size: .82rem; color: var(--gray-400); margin: 0 !important; border-top: 1px solid var(--gray-100); }
-        .dataTables_wrapper .dataTables_paginate { padding: 1rem 1.5rem !important; margin: 0 !important; border-top: 1px solid var(--gray-100); }
-        .dataTables_wrapper .dataTables_paginate .paginate_button { padding: 0 !important; margin: 0 2px !important; border-radius: 6px !important; transition: all .2s !important; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button:hover { background: var(--pri) !important; color: #fff !important; border: 1px solid var(--pri) !important; font-weight: 600; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled { color: var(--gray-400) !important; background: transparent !important; border: 1px solid var(--gray-200) !important; opacity: .6; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button:not(.current):not(.disabled) { background: #fff !important; color: var(--gray-600) !important; border: 1px solid var(--gray-200) !important; }
-        .dataTables_wrapper .dataTables_paginate .paginate_button:not(.current):not(.disabled):hover { background: var(--pri-light) !important; color: var(--pri) !important; border-color: var(--pri) !important; }
+        .card-shell {
+            border: none;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
 
-        #payrollTable, #auditTable { border-collapse: separate; border-spacing: 0; }
-        #payrollTable thead th, #auditTable thead th { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-600); background: var(--gray-50); border-bottom: 2px solid var(--gray-200) !important; border-top: none !important; }
-        #payrollTable tbody tr { cursor: pointer; transition: background .15s; }
-        #payrollTable tbody tr:hover { background: var(--pri-light) !important; }
-        #payrollTable tbody td, #auditTable tbody td { vertical-align: middle; font-size: .875rem; border-bottom: 1px solid var(--gray-100) !important; border-top: none !important; }
-        #payrollTable tbody tr:last-child td, #auditTable tbody tr:last-child td { border-bottom: none !important; }
-        .dt-loading { text-align: center; padding: 3rem; color: var(--gray-400); }
-        .expand-btn { color: var(--gray-400); transition: transform .25s; font-size: .75rem; }
-        .expanded .expand-btn { transform: rotate(90deg); color: var(--pri); }
+        .badge-status {
+            padding: .35rem .75rem;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
 
-        .audit-badge { padding: .3rem .65rem; border-radius: 12px; font-size: .68rem; font-weight: 700; }
-        .audit-create { background: var(--success-light); color: var(--success); }
-        .audit-edit { background: #dbeafe; color: #1d4ed8; }
-        .audit-approve { background: #ede9fe; color: #6d28d9; }
+        .bs-calculated {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
 
-        #toast-container { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: .5rem; }
-        .toast-msg { padding: .75rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: .875rem; color: #fff; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: .5rem; animation: slideIn .3s ease; }
-        .toast-success { background: var(--success); }
-        .toast-error { background: var(--danger); }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: none; } }
-        .spinner-overlay { position: fixed; inset: 0; background: rgba(255, 255, 255, .6); display: flex; align-items: center; justify-content: center; z-index: 9998; }
+        .bs-none {
+            background: var(--warning-light);
+            color: var(--warning);
+        }
 
-        .change-log-item { background: #fff; border: 1px solid var(--gray-200); border-radius: 6px; padding: .5rem .75rem; margin-bottom: .5rem; font-size: .8rem; }
-        .change-log-item:last-child { margin-bottom: 0; }
-        .change-old { color: var(--danger); text-decoration: line-through; }
-        .change-new { color: var(--success); font-weight: 700; }
+        .detail-panel {
+            background: var(--gray-50);
+            border-left: 4px solid var(--pri);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            padding: 1.5rem;
+        }
+
+        .detail-section h6 {
+            font-weight: 700;
+            color: var(--gray-700);
+            font-size: .8rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            margin-bottom: .75rem;
+            padding-bottom: .5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: .45rem 0;
+            font-size: .85rem;
+            color: var(--gray-600);
+            border-bottom: 1px dashed var(--gray-200);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-total {
+            font-weight: 700;
+            font-size: .95rem;
+            color: var(--gray-900);
+            border-top: 2px solid var(--gray-200);
+            padding-top: .6rem;
+            margin-top: .4rem;
+            border-bottom: none !important;
+        }
+
+        .wizard-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .wizard-bar::before {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: 8%;
+            right: 8%;
+            height: 2px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+
+        .wz-step {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            flex: 1;
+        }
+
+        .wz-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto .4rem;
+            font-weight: 700;
+            font-size: .8rem;
+            color: var(--gray-400);
+            transition: all .3s;
+        }
+
+        .wz-step.active .wz-circle {
+            background: var(--pri);
+            border-color: var(--pri);
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, .2);
+        }
+
+        .wz-step.done .wz-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+        }
+
+        .wz-label {
+            font-size: .72rem;
+            color: var(--gray-400);
+            font-weight: 600;
+        }
+
+        .wz-step.active .wz-label {
+            color: var(--pri);
+        }
+
+        .preview-box {
+            background: linear-gradient(135deg, rgba(79, 70, 229, .06) 0%, rgba(99, 102, 241, .04) 100%);
+            border: 1.5px solid rgba(79, 70, 229, .25);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+        }
+
+        .preview-box h6 {
+            font-weight: 700;
+            color: var(--pri);
+            margin-bottom: .75rem;
+            font-size: .85rem;
+        }
+
+        .preview-row {
+            display: flex;
+            justify-content: space-between;
+            padding: .35rem 0;
+            font-size: .875rem;
+        }
+
+        .preview-total {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--pri);
+            border-top: 2px solid var(--gray-200);
+            padding-top: .6rem;
+            margin-top: .4rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: .85rem;
+            margin-bottom: .4rem;
+        }
+
+        .mono-input {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .readonly-val {
+            background: var(--gray-50) !important;
+            border: 1px solid var(--gray-200) !important;
+            color: var(--gray-600) !important;
+            cursor: not-allowed;
+        }
+
+        .badge-source {
+            font-size: .65rem;
+            padding: .2rem .5rem;
+            border-radius: 10px;
+        }
+
+        .btn-pri {
+            background: var(--pri);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            padding: .5rem 1.25rem;
+            border-radius: 8px;
+            transition: all .25s;
+        }
+
+        .btn-pri:hover {
+            background: var(--pri-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, .35);
+            color: #fff;
+        }
+
+        .modal-header-custom {
+            background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header-custom .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 260px;
+        }
+
+        .tunjangan-source-info {
+            background: var(--info-light);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: .82rem;
+        }
+
+        .tunjangan-empty-info {
+            background: var(--warning-light);
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: .82rem;
+        }
+
+        .dataTables_wrapper {
+            padding: 0 !important;
+        }
+
+        .dataTables_wrapper .row {
+            margin: 0 !important;
+            border: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter {
+            padding: 1rem 1.5rem !important;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+            margin: 0 !important;
+        }
+
+        .dataTables_wrapper .dataTables_length label,
+        .dataTables_wrapper .dataTables_filter label {
+            margin: 0 !important;
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid var(--gray-200) !important;
+            border-radius: 6px !important;
+            padding: .35rem .75rem !important;
+            font-size: .85rem !important;
+            color: var(--gray-700) !important;
+            background: #fff !important;
+            transition: all .2s;
+            width: auto !important;
+            margin: 0 .5rem !important;
+        }
+
+        .dataTables_wrapper .dataTables_length select:focus {
+            border-color: var(--pri) !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .15) !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid var(--gray-200) !important;
+            border-radius: 6px !important;
+            padding: .35rem .75rem !important;
+            font-size: .85rem !important;
+            color: var(--gray-700) !important;
+            background: #fff !important;
+            transition: all .2s;
+            margin-left: .5rem !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: var(--pri) !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .15) !important;
+            outline: none !important;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            padding: 1rem 1.5rem !important;
+            font-size: .82rem;
+            color: var(--gray-400);
+            margin: 0 !important;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem 1.5rem !important;
+            margin: 0 !important;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0 !important;
+            margin: 0 2px !important;
+            border-radius: 6px !important;
+            transition: all .2s !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: var(--pri) !important;
+            color: #fff !important;
+            border: 1px solid var(--pri) !important;
+            font-weight: 600;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+            color: var(--gray-400) !important;
+            background: transparent !important;
+            border: 1px solid var(--gray-200) !important;
+            opacity: .6;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:not(.current):not(.disabled) {
+            background: #fff !important;
+            color: var(--gray-600) !important;
+            border: 1px solid var(--gray-200) !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:not(.current):not(.disabled):hover {
+            background: var(--pri-light) !important;
+            color: var(--pri) !important;
+            border-color: var(--pri) !important;
+        }
+
+        #payrollTable,
+        #auditTable {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #payrollTable thead th,
+        #auditTable thead th {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: var(--gray-600);
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200) !important;
+            border-top: none !important;
+        }
+
+        #payrollTable tbody tr {
+            cursor: pointer;
+            transition: background .15s;
+        }
+
+        #payrollTable tbody tr:hover {
+            background: var(--pri-light) !important;
+        }
+
+        #payrollTable tbody td,
+        #auditTable tbody td {
+            vertical-align: middle;
+            font-size: .875rem;
+            border-bottom: 1px solid var(--gray-100) !important;
+            border-top: none !important;
+        }
+
+        #payrollTable tbody tr:last-child td,
+        #auditTable tbody tr:last-child td {
+            border-bottom: none !important;
+        }
+
+        .dt-loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-400);
+        }
+
+        .expand-btn {
+            color: var(--gray-400);
+            transition: transform .25s;
+            font-size: .75rem;
+        }
+
+        .expanded .expand-btn {
+            transform: rotate(90deg);
+            color: var(--pri);
+        }
+
+        .audit-badge {
+            padding: .3rem .65rem;
+            border-radius: 12px;
+            font-size: .68rem;
+            font-weight: 700;
+        }
+
+        .audit-create {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .audit-edit {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+
+        .toast-msg {
+            padding: .75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: .875rem;
+            color: #fff;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            animation: slideIn .3s ease;
+        }
+
+        .toast-success {
+            background: var(--success);
+        }
+
+        .toast-error {
+            background: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .spinner-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, .6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .change-log-item {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+            padding: .5rem .75rem;
+            margin-bottom: .5rem;
+            font-size: .8rem;
+        }
+
+        .change-log-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .change-old {
+            color: var(--danger);
+            text-decoration: line-through;
+        }
+
+        .change-new {
+            color: var(--success);
+            font-weight: 700;
+        }
     </style>
 
     <div id="toast-container"></div>
@@ -142,49 +614,42 @@
         <div class="d-sm-flex align-items-center justify-content-between page-header">
             <div>
                 <h1 class="page-title">Perhitungan BPJS</h1>
-                <p class="page-sub mb-0">Periode: <strong>{{ \Carbon\Carbon::create()->month($bulanSekarang)->format('F') }}
-                        {{ $tahunSekarang }}</strong></p>
+                <p class="page-sub mb-0">Data terkini per karyawan. Cukup diisi sekali, update hanya jika ada perubahan.</p>
             </div>
             <div class="d-flex gap-2 mt-2 mt-sm-0">
-                <button class="btn btn-pri" onclick="openWizard()"><i class="fa-solid fa-plus me-2"></i>Buat Payroll</button>
+                <button class="btn btn-pri" onclick="openWizard()"><i class="fa-solid fa-plus me-2"></i>Buat
+                    Perhitungan</button>
+                <button class="btn btn-outline-danger" onclick="confirmDeleteAll()">
+                    <i class="fa-solid fa-trash-can me-2"></i>Hapus Semua Data
+                </button>
             </div>
         </div>
 
         <div class="card card-shell mb-4">
             <div class="card-body py-3">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <span class="fw-bold text-primary" style="font-size:.875rem;"><i class="fa-solid fa-filter me-1"></i>Filter</span>
+                    <span class="fw-bold text-primary" style="font-size:.875rem;"><i
+                            class="fa-solid fa-filter me-1"></i>Filter</span>
                     <div class="d-flex gap-2 flex-wrap" id="filterGroup">
-                        <select id="fBulan" class="form-select form-select-sm" style="width:120px" onchange="applyFilter()">
-                            <option value="">Semua Bulan</option>
-                            @foreach ([1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'] as $n => $nm)
-                                <option value="{{ $n }}" {{ $n == $bulanSekarang ? 'selected' : '' }}>{{ $nm }}</option>
-                            @endforeach
-                        </select>
-                        <select id="fTahun" class="form-select form-select-sm" style="width:95px" onchange="applyFilter()">
-                            <option value="">Semua Tahun</option>
-                            @for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++)
-                                <option value="{{ $y }}" {{ $y == $tahunSekarang ? 'selected' : '' }}>{{ $y }}</option>
-                            @endfor
-                        </select>
-                        <select id="fDivisi" class="form-select form-select-sm" style="width:140px" onchange="applyFilter()">
+                        <select id="fDivisi" class="form-select form-select-sm" style="width:160px"
+                            onchange="applyFilter()">
                             <option value="">Semua Divisi</option>
-                            @foreach ($karyawans->pluck('divisi')->unique()->filter()->sort() as $d)
+                            @foreach ($divisiList as $d)
                                 <option value="{{ $d }}">{{ $d }}</option>
                             @endforeach
                         </select>
-                        <select id="fStatus" class="form-select form-select-sm" style="width:155px" onchange="applyFilter()">
+                        <select id="fStatus" class="form-select form-select-sm" style="width:170px"
+                            onchange="applyFilter()">
                             <option value="">Semua Status</option>
-                            <option value="sudah">Sudah Ada Payroll</option>
-                            <option value="belum">Belum Ada Payroll</option>
-                            <option value="draft">Draft</option>
-                            <option value="calculated">Calculated</option>
-                            <option value="approved">Approved</option>
-                            <option value="paid">Paid</option>
+                            <option value="sudah">Sudah Ada Perhitungan</option>
+                            <option value="belum">Belum Ada Perhitungan</option>
                         </select>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()"><i class="fa-solid fa-rotate me-1"></i>Reset</button>
-                        <button class="btn btn-outline-success" onclick="exportExcel()"><i class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
-                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="resetFilter()"><i
+                                class="fa-solid fa-rotate me-1"></i>Reset</button>
+                        <button class="btn btn-outline-success" onclick="exportExcel()"><i
+                                class="fa-solid fa-file-excel me-2"></i>Export Excel</button>
+                        <button class="btn btn-outline-danger" onclick="exportPdf()"><i
+                                class="fa-solid fa-file-pdf me-2"></i>Export PDF</button>
                     </div>
                 </div>
             </div>
@@ -198,7 +663,8 @@
                             <p class="stat-label">Total Karyawan Aktif</p>
                             <h3 class="stat-value">{{ $totalKaryawan }}</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#4f46e5,#7c3aed)"><i
+                                class="fa-solid fa-users"></i></div>
                     </div>
                 </div>
             </div>
@@ -206,10 +672,11 @@
                 <div class="card stat-card">
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div>
-                            <p class="stat-label">Sudah Ada Payroll</p>
+                            <p class="stat-label">Sudah Ada Perhitungan</p>
                             <h3 class="stat-value" id="statSudah">{{ $sudahPayroll }}</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fa-solid fa-check-circle"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#059669,#10b981)"><i
+                                class="fa-solid fa-check-circle"></i></div>
                     </div>
                 </div>
             </div>
@@ -217,10 +684,11 @@
                 <div class="card stat-card">
                     <div class="card-body d-flex align-items-center justify-content-between">
                         <div>
-                            <p class="stat-label">Belum Ada Payroll</p>
+                            <p class="stat-label">Belum Ada Perhitungan</p>
                             <h3 class="stat-value" id="statBelum">{{ $belumPayroll }}</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fa-solid fa-exclamation-circle"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i
+                                class="fa-solid fa-exclamation-circle"></i></div>
                     </div>
                 </div>
             </div>
@@ -231,17 +699,22 @@
                             <p class="stat-label">Total Gaji Pokok</p>
                             <h3 class="stat-value">Rp {{ number_format($totalGaji, 0, ',', '.') }}</h3>
                         </div>
-                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i class="fa-solid fa-money-bill-wave"></i></div>
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#0284c7,#38bdf8)"><i
+                                class="fa-solid fa-money-bill-wave"></i></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPayroll"><i class="fa-solid fa-table me-2"></i>Data Payroll</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabInfo"><i class="fa-solid fa-circle-info me-2"></i>Informasi BPJS</button></li>
-            <li class="nav-item"><button class="nav-link" id="tabStatBtn" data-bs-toggle="tab" data-bs-target="#tabStat"><i class="fa-solid fa-chart-pie me-2"></i>Statistik</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAudit"><i class="fa-solid fa-clock-rotate-left me-2"></i>Riwayat</button></li>
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPayroll"><i
+                        class="fa-solid fa-table me-2"></i>Data Perhitungan</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabInfo"><i
+                        class="fa-solid fa-circle-info me-2"></i>Informasi BPJS</button></li>
+            <li class="nav-item"><button class="nav-link" id="tabStatBtn" data-bs-toggle="tab"
+                    data-bs-target="#tabStat"><i class="fa-solid fa-chart-pie me-2"></i>Statistik</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAudit"><i
+                        class="fa-solid fa-clock-rotate-left me-2"></i>Riwayat</button></li>
         </ul>
 
         <div class="tab-content">
@@ -256,11 +729,10 @@
                                         <th>NIP</th>
                                         <th>Nama Karyawan</th>
                                         <th>Jabatan / Divisi</th>
-                                        <th>Status</th>
                                         <th>Gaji Pokok</th>
                                         <th>THP Bersih</th>
                                         <th>Total BPJS Perusahaan</th>
-                                        <th>Status Payroll</th>
+                                        <th>Status Perhitungan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -275,7 +747,8 @@
                 <div class="row g-4">
                     <div class="col-lg-6">
                         <div class="card card-shell">
-                            <div class="card-header" style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
+                            <div class="card-header"
+                                style="background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
                                 <h6 class="mb-0 fw-bold"><i class="fa-solid fa-building me-2"></i>BPJS PERUSAHAAN</h6>
                             </div>
                             <div class="card-body p-4">
@@ -283,7 +756,8 @@
                                     <div class="py-2 px-3 rounded mb-2" style="background:rgba(5,150,105,.07)">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
-                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}</div>
+                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}
+                                                </div>
                                                 <small class="text-muted">Dari {{ $base }}</small>
                                             </div>
                                             <span class="badge bg-success fs-6">{{ $pct }}</span>
@@ -298,7 +772,8 @@
                     </div>
                     <div class="col-lg-6">
                         <div class="card card-shell">
-                            <div class="card-header" style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
+                            <div class="card-header"
+                                style="background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
                                 <h6 class="mb-0 fw-bold"><i class="fa-solid fa-user me-2"></i>Ditanggung Karyawan</h6>
                             </div>
                             <div class="card-body p-4">
@@ -306,7 +781,8 @@
                                     <div class="py-2 px-3 rounded mb-2" style="background:rgba(2,132,199,.07)">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div>
-                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}</div>
+                                                <div class="fw-semibold" style="font-size:.875rem">{{ $label }}
+                                                </div>
                                                 <small class="text-muted">Dari {{ $base }}</small>
                                             </div>
                                             <span class="badge bg-info fs-6">{{ $pct }}</span>
@@ -316,12 +792,19 @@
                                         </div>
                                     </div>
                                 @endforeach
-                                <div class="mt-4 p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                    <h6 class="fw-bold mb-3" style="font-size:.8rem;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px">Rumus THP Bersih</h6>
-                                    <code style="display:block;background:#fff;padding:.75rem;border-radius:6px;border:1px solid var(--gray-200);font-size:.8rem">
+                                <div class="mt-4 p-3 rounded"
+                                    style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                    <h6 class="fw-bold mb-3"
+                                        style="font-size:.8rem;color:var(--gray-600);text-transform:uppercase;letter-spacing:.5px">
+                                        Rumus THP Bersih</h6>
+                                    <code
+                                        style="display:block;background:#fff;padding:.75rem;border-radius:6px;border:1px solid var(--gray-200);font-size:.8rem">
                                         THP Bersih = (Gaji Pokok + Tunjangan)<br>
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− BPJS Karyawan<br>
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− Potongan Lainnya
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− BPJS
+                                        Karyawan<br>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− Biaya
+                                        Tanggungan<br>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;− PPh 21
                                     </code>
                                 </div>
                             </div>
@@ -332,8 +815,10 @@
                 <div class="row mt-4">
                     <div class="col-12">
                         <div class="card card-shell">
-                            <div class="card-header" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
-                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-lightbulb me-2"></i>Contoh Simulasi Perhitungan</h6>
+                            <div class="card-header"
+                                style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px 10px 0 0;padding:1rem 1.5rem">
+                                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-lightbulb me-2"></i>Contoh Simulasi
+                                    Perhitungan</h6>
                             </div>
                             <div class="card-body p-4">
                                 <div class="alert alert-light border mb-4" style="font-size:.85rem;">
@@ -343,23 +828,37 @@
                                 </div>
                                 <div class="row g-4">
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold mb-3" style="color:var(--success)"><i class="fa-solid fa-building me-2"></i>Total BPJS Perusahaan</h6>
+                                        <h6 class="fw-bold mb-3" style="color:var(--success)"><i
+                                                class="fa-solid fa-building me-2"></i>Total BPJS Perusahaan</h6>
                                         <div style="font-size:.85rem;">
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (3.7% × 10.000.000)</span><span class="fw-bold">Rp 370.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKM (0.3% × 10.000.000)</span><span class="fw-bold">Rp 30.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKK (0.24% × 10.000.000)</span><span class="fw-bold">Rp 24.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (2% × 10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes. (4% × 2.100.000)</span><span class="fw-bold">Rp 84.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 fw-bold" style="color:var(--success)"><span>TOTAL PERUSAHAAN</span><span>Rp 708.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (3.7%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 370.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKM (0.3%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 30.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JKK (0.24%
+                                                    × 10.000.000)</span><span class="fw-bold">Rp 24.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (2% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes.
+                                                    (4% × 2.100.000)</span><span class="fw-bold">Rp 84.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 fw-bold"
+                                                style="color:var(--success)"><span>TOTAL PERUSAHAAN</span><span>Rp
+                                                    708.000</span></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold mb-3" style="color:var(--info)"><i class="fa-solid fa-user me-2"></i>Total Potongan BPJS Karyawan</h6>
+                                        <h6 class="fw-bold mb-3" style="color:var(--info)"><i
+                                                class="fa-solid fa-user me-2"></i>Total Potongan BPJS Karyawan</h6>
                                         <div style="font-size:.85rem;">
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (2% × 10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (1% × 10.000.000)</span><span class="fw-bold">Rp 100.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes. (1% × 2.100.000)</span><span class="fw-bold">Rp 21.000</span></div>
-                                            <div class="d-flex justify-content-between py-2 fw-bold" style="color:var(--info)"><span>TOTAL POTONGAN KARYAWAN</span><span>Rp 321.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JHT (2% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 200.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>JP (1% ×
+                                                    10.000.000)</span><span class="fw-bold">Rp 100.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 border-bottom"><span>BPJS Kes.
+                                                    (1% × 2.100.000)</span><span class="fw-bold">Rp 21.000</span></div>
+                                            <div class="d-flex justify-content-between py-2 fw-bold"
+                                                style="color:var(--info)"><span>TOTAL POTONGAN KARYAWAN</span><span>Rp
+                                                    321.000</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -408,7 +907,8 @@
                     <div class="col-lg-7">
                         <div class="card card-shell">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Tren THP & BPJS Sepanjang Tahun</h6>
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i
+                                        class="fa-solid fa-chart-line me-2 text-primary"></i>Tren THP & BPJS</h6>
                                 <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
                             </div>
                         </div>
@@ -416,7 +916,9 @@
                     <div class="col-lg-5">
                         <div class="card card-shell">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Breakdown Komponen BPJS Perusahaan</h6>
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i
+                                        class="fa-solid fa-chart-pie me-2 text-primary"></i>Breakdown Komponen BPJS
+                                    Perusahaan</h6>
                                 <div class="chart-wrap"><canvas id="chartBPJS"></canvas></div>
                             </div>
                         </div>
@@ -424,7 +926,9 @@
                     <div class="col-12">
                         <div class="card card-shell">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i class="fa-solid fa-calculator me-2 text-primary"></i>RINGKASAN TOTAL BIAYA BPJS</h6>
+                                <h6 class="fw-bold mb-3" style="font-size:.875rem"><i
+                                        class="fa-solid fa-calculator me-2 text-primary"></i>RINGKASAN TOTAL BIAYA BPJS
+                                </h6>
                                 <div class="table-responsive">
                                     <table class="table table-bordered mb-0" style="font-size:.85rem">
                                         <thead class="table-light">
@@ -455,19 +959,32 @@
                                 </div>
                                 <div class="row g-3 mt-3">
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian Bulanan</h6>
-                                            <div class="d-flex justify-content-between mb-2"><span>Total Gaji Pokok:</span><strong id="ringkasanGajiBulanan">Rp 0</strong></div>
-                                            <div class="d-flex justify-content-between mb-2"><span>BPJS Perusahaan:</span><strong class="text-success" id="ringkasanBPJSPerBulan">Rp 0</strong></div>
-                                            <div class="d-flex justify-content-between"><span>BPJS Karyawan:</span><strong class="text-info" id="ringkasanBPJSKarBulan">Rp 0</strong></div>
+                                        <div class="p-3 rounded"
+                                            style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian
+                                                Bulanan</h6>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total Gaji
+                                                    Pokok:</span><strong id="ringkasanGajiBulanan">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between mb-2"><span>BPJS
+                                                    Perusahaan:</span><strong class="text-success"
+                                                    id="ringkasanBPJSPerBulan">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between"><span>BPJS Karyawan:</span><strong
+                                                    class="text-info" id="ringkasanBPJSKarBulan">Rp 0</strong></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:var(--gray-50);border:1px solid var(--gray-200)">
-                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian Tahunan</h6>
-                                            <div class="d-flex justify-content-between mb-2"><span>Total Gaji:</span><strong id="ringkasanGajiTahunanDetail">Rp 0</strong></div>
-                                            <div class="d-flex justify-content-between mb-2"><span>Total BPJS Perusahaan:</span><strong class="text-success" id="ringkasanBPJSPerTahun">Rp 0</strong></div>
-                                            <div class="d-flex justify-content-between"><span>Total BPJS Karyawan:</span><strong class="text-info" id="ringkasanBPJSKarTahun">Rp 0</strong></div>
+                                        <div class="p-3 rounded"
+                                            style="background:var(--gray-50);border:1px solid var(--gray-200)">
+                                            <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--gray-600)">Rincian
+                                                Tahunan</h6>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total
+                                                    Gaji:</span><strong id="ringkasanGajiTahunanDetail">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between mb-2"><span>Total BPJS
+                                                    Perusahaan:</span><strong class="text-success"
+                                                    id="ringkasanBPJSPerTahun">Rp 0</strong></div>
+                                            <div class="d-flex justify-content-between"><span>Total BPJS
+                                                    Karyawan:</span><strong class="text-info"
+                                                    id="ringkasanBPJSKarTahun">Rp 0</strong></div>
                                         </div>
                                     </div>
                                 </div>
@@ -487,9 +1004,7 @@
                                     <th>User</th>
                                     <th>Aksi</th>
                                     <th>Karyawan</th>
-                                    <th>Periode</th>
                                     <th>THP Bersih</th>
-                                    <th>Status</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -505,7 +1020,7 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content" style="border-radius:12px;border:none">
                 <div class="modal-header modal-header-custom border-0">
-                    <h5 class="modal-title fw-bold"><span id="wizardTitle">Buat Payroll Baru</span></h5>
+                    <h5 class="modal-title fw-bold"><span id="wizardTitle">Buat Perhitungan</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body px-4 pt-4">
@@ -517,79 +1032,78 @@
                             </div>
                         @endforeach
                     </div>
+
                     <div class="wz-content" id="wz1">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-user-check me-2 text-primary"></i>Pilih Karyawan & Periode</h6>
-                                <div class="row g-3">
-                                    <div class="col-md-12 mb-1">
-                                        <label class="form-label">Karyawan <span class="text-danger">*</span></label>
-                                        <select class="form-select" id="wKaryawan">
-                                            <option value="">— Pilih Karyawan —</option>
-                                            @foreach ($karyawans as $k)
-                                                <option value="{{ $k->id }}" data-nama="{{ $k->nama_lengkap }}" data-nip="{{ $k->nip }}">
-                                                    {{ $k->nama_lengkap }} ({{ $k->jabatan ?? '-' }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Bulan</label>
-                                        <select class="form-select" id="wBulan">
-                                            @foreach ([1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'] as $n => $nm)
-                                                <option value="{{ $n }}" {{ $n == $bulanSekarang ? 'selected' : '' }}>{{ $nm }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Tahun</label>
-                                        <select class="form-select" id="wTahun">
-                                            @for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++)
-                                                <option value="{{ $y }}" {{ $y == $tahunSekarang ? 'selected' : '' }}>{{ $y }}</option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                </div>
-                                <div id="wz1Alert" class="mt-3 d-none"></div>
+                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-user-check me-2 text-primary"></i>Pilih
+                                    Karyawan</h6>
+                                <label class="form-label">Karyawan <span class="text-danger">*</span></label>
+                                <select class="form-select" id="wKaryawan">
+                                    <option value="">— Pilih Karyawan —</option>
+                                    @foreach ($karyawans as $k)
+                                        <option value="{{ $k->id }}" data-nama="{{ $k->nama_lengkap }}"
+                                            data-nip="{{ $k->nip }}">
+                                            {{ $k->nama_lengkap }} ({{ $k->jabatan ?? '-' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Jika karyawan sudah punya data payroll, data tersebut dipakai dan
+                                    tinggal diubah bila ada perubahan.</div>
                             </div>
                         </div>
                     </div>
+
                     <div class="wz-content d-none" id="wz2">
+                        <div id="wz2Info"></div>
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>Gaji Pokok & Dasar BPJS</h6>
+                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-money-bill-wave me-2 text-primary"></i>Gaji
+                                    Pokok & Dasar BPJS</h6>
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-4">
-                                        <label class="form-label">Gaji Pokok <span class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
-                                        <input type="text" class="form-control mono-input" id="wGajiPokok" oninput="formatAndCalc(this)">
+                                        <label class="form-label">Gaji Pokok <span
+                                                class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
+                                        <input type="text" class="form-control mono-input" id="wGajiPokok"
+                                            oninput="formatAndCalc(this)">
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">Salary BPJSTK <span class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
-                                        <input type="text" class="form-control mono-input" id="wSalaryBPJSTK" placeholder="0" oninput="formatAndCalc(this)">
+                                        <label class="form-label">Salary BPJSTK <span
+                                                class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
+                                        <input type="text" class="form-control mono-input" id="wSalaryBPJSTK"
+                                            placeholder="0" oninput="formatAndCalc(this)">
                                         <div class="form-text">Default = gaji pokok.</div>
                                     </div>
                                     <div class="col-md-4">
-                                        <label class="form-label">UMK Bandung <span class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
-                                        <input type="text" class="form-control mono-input" id="wUMK" placeholder="0" oninput="formatAndCalc(this)">
+                                        <label class="form-label">UMK Bandung <span
+                                                class="badge-source badge bg-secondary ms-1">dapat diubah</span></label>
+                                        <input type="text" class="form-control mono-input" id="wUMK"
+                                            placeholder="0" oninput="formatAndCalc(this)">
                                     </div>
                                 </div>
                                 <hr>
-                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-gift me-2 text-primary"></i>Tunjangan (Dapat Diubah)</h6>
+                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-gift me-2 text-primary"></i>Tunjangan
+                                    (Dapat Diubah)</h6>
                                 <div id="tunjanganSourceInfo"></div>
                                 <div class="row g-3" id="tunjanganFields"></div>
                                 <div class="preview-box mt-4">
                                     <h6><i class="fa-solid fa-calculator me-2"></i>Perhitungan Sementara</h6>
-                                    <div class="preview-row"><span>Gaji Pokok</span><span class="fw-bold" id="pvGaji">Rp 0</span></div>
-                                    <div class="preview-row"><span>Total Tunjangan</span><span class="text-success fw-bold" id="pvTunj">Rp 0</span></div>
-                                    <div class="preview-row preview-total"><span>THP Kotor</span><span id="pvTHP">Rp 0</span></div>
+                                    <div class="preview-row"><span>Gaji Pokok</span><span class="fw-bold"
+                                            id="pvGaji">Rp 0</span></div>
+                                    <div class="preview-row"><span>Total Tunjangan</span><span
+                                            class="text-success fw-bold" id="pvTunj">Rp 0</span></div>
+                                    <div class="preview-row preview-total"><span>THP Kotor</span><span id="pvTHP">Rp
+                                            0</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="wz-content d-none" id="wz3">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-shield-alt me-2 text-success"></i>BPJS (Dapat Diubah Manual)</h6>
+                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-shield-alt me-2 text-success"></i>BPJS
+                                    (Dapat Diubah Manual)</h6>
                                 <div class="alert alert-info py-2 mb-3">
                                     <i class="fa-solid fa-info-circle me-1"></i>
                                     Dasar BPJSTK: <strong id="dasarBPJSTK">Rp 0</strong> &nbsp;|&nbsp;
@@ -597,119 +1111,174 @@
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:rgba(5,150,105,.05);border:1px solid var(--success-light)">
-                                            <div class="fw-bold text-success mb-2" style="font-size:.8rem;text-transform:uppercase">Perusahaan (Dapat Diubah)</div>
+                                        <div class="p-3 rounded"
+                                            style="background:rgba(5,150,105,.05);border:1px solid var(--success-light)">
+                                            <div class="fw-bold text-success mb-2"
+                                                style="font-size:.8rem;text-transform:uppercase">Perusahaan (Dapat Diubah)
+                                            </div>
                                             @foreach ([['b3JHTper', 'JHT 3.7%'], ['b3JKMper', 'JKM 0.3%'], ['b3JKKper', 'JKK 0.24%'], ['b3JPper', 'JP 2%'], ['b3KESper', 'Kes. 4%']] as [$id, $label])
-                                                <div class="d-flex justify-content-between py-1 align-items-center" style="font-size:.82rem">
+                                                <div class="d-flex justify-content-between py-1 align-items-center"
+                                                    style="font-size:.82rem">
                                                     <span class="text-muted">{{ $label }}</span>
-                                                    <input type="text" class="form-control form-control-sm mono-input text-end bpjs-input" id="{{ $id }}" style="width: 130px;" oninput="formatBPJSInput(this)">
+                                                    <input type="text"
+                                                        class="form-control form-control-sm mono-input text-end bpjs-input"
+                                                        id="{{ $id }}" style="width: 130px;"
+                                                        oninput="formatBPJSInput(this)">
                                                 </div>
                                             @endforeach
-                                            <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-success" style="font-size:.9rem">
+                                            <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-success"
+                                                style="font-size:.9rem">
                                                 <span>Total</span>
-                                                <input type="text" class="form-control form-control-sm mono-input text-end fw-bold bpjs-input" id="b3TotalPer" style="width: 130px;" oninput="formatBPJSInput(this)">
+                                                <input type="text"
+                                                    class="form-control form-control-sm mono-input text-end fw-bold bpjs-input"
+                                                    id="b3TotalPer" style="width: 130px;" readonly>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="p-3 rounded" style="background:rgba(2,132,199,.05);border:1px solid var(--info-light)">
-                                            <div class="fw-bold text-info mb-2" style="font-size:.8rem;text-transform:uppercase">Karyawan (Dapat Diubah)</div>
+                                        <div class="p-3 rounded"
+                                            style="background:rgba(2,132,199,.05);border:1px solid var(--info-light)">
+                                            <div class="fw-bold text-info mb-2"
+                                                style="font-size:.8rem;text-transform:uppercase">Karyawan (Dapat Diubah)
+                                            </div>
                                             @foreach ([['b3JHTkar', 'JHT 2%'], ['b3JPkar', 'JP 1%'], ['b3KESkar', 'Kes. 1%']] as [$id, $label])
-                                                <div class="d-flex justify-content-between py-1 align-items-center" style="font-size:.82rem">
+                                                <div class="d-flex justify-content-between py-1 align-items-center"
+                                                    style="font-size:.82rem">
                                                     <span class="text-muted">{{ $label }}</span>
-                                                    <input type="text" class="form-control form-control-sm mono-input text-end bpjs-input" id="{{ $id }}" style="width: 130px;" oninput="formatBPJSInput(this)">
+                                                    <input type="text"
+                                                        class="form-control form-control-sm mono-input text-end bpjs-input"
+                                                        id="{{ $id }}" style="width: 130px;"
+                                                        oninput="formatBPJSInput(this)">
                                                 </div>
                                             @endforeach
-                                            <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-info" style="font-size:.9rem">
+                                            <div class="d-flex justify-content-between py-1 align-items-center"
+                                                style="font-size:.82rem">
+                                                <span class="text-muted">Biaya Tanggungan (Kes.)</span>
+                                                <input type="text"
+                                                    class="form-control form-control-sm mono-input text-end"
+                                                    id="b3Tanggungan" style="width: 130px;" placeholder="0"
+                                                    oninput="formatTanggungan(this)">
+                                            </div>
+                                            <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold text-info"
+                                                style="font-size:.9rem">
                                                 <span>Total Potongan</span>
-                                                <input type="text" class="form-control form-control-sm mono-input text-end fw-bold bpjs-input" id="b3TotalKar" style="width: 130px;" oninput="formatBPJSInput(this)">
+                                                <input type="text"
+                                                    class="form-control form-control-sm mono-input text-end fw-bold bpjs-input"
+                                                    id="b3TotalKar" style="width: 130px;" readonly>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <hr>
-                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-minus-circle me-2 text-danger"></i>Potongan Lainnya <small class="text-muted fw-normal">(input manual)</small></h6>
+                                <h6 class="fw-bold mb-2"><i class="fa-solid fa-minus-circle me-2 text-danger"></i>Potongan
+                                    PPh 21</h6>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">PPh 21 <span class="badge-source badge bg-info ms-1" id="pph21Badge">Auto-fill</span></label>
-                                        <input type="text" class="form-control mono-input" id="wPPh" placeholder="0" oninput="formatAndCalc(this)">
-                                        <div class="form-text" id="pph21Info">Akan terisi otomatis dari data PPH 21 karyawan.</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Kasbon / Pinjaman</label>
-                                        <input type="text" class="form-control mono-input" id="wKasbon" placeholder="0" oninput="formatAndCalc(this)">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Denda / Telat</label>
-                                        <input type="text" class="form-control mono-input" id="wDenda" placeholder="0" oninput="formatAndCalc(this)">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Potongan Lainnya</label>
-                                        <input type="text" class="form-control mono-input" id="wPotLain" placeholder="0" oninput="formatAndCalc(this)">
+                                        <label class="form-label">PPh 21 <span class="badge-source badge bg-info ms-1"
+                                                id="pph21Badge">Auto-fill</span></label>
+                                        <input type="text" class="form-control mono-input" id="wPPh"
+                                            placeholder="0" oninput="formatAndCalc(this)">
+                                        <div class="form-text" id="pph21Info">Akan terisi otomatis dari data PPH 21
+                                            karyawan.</div>
                                     </div>
                                 </div>
                                 <div class="preview-box mt-4">
                                     <h6><i class="fa-solid fa-calculator me-2"></i>Ringkasan Potongan</h6>
-                                    <div class="preview-row"><span>THP Kotor</span><span class="fw-bold" id="pv3THPKotor">Rp 0</span></div>
-                                    <div class="preview-row"><span>Potongan BPJS Karyawan</span><span class="text-danger fw-bold" id="pv3BPJS">Rp 0</span></div>
-                                    <div class="preview-row"><span>Potongan Lainnya</span><span class="text-warning fw-bold" id="pv3Lain">Rp 0</span></div>
-                                    <div class="preview-row preview-total"><span>THP Bersih</span><span id="pv3THPBersih">Rp 0</span></div>
+                                    <div class="preview-row"><span>THP Kotor</span><span class="fw-bold"
+                                            id="pv3THPKotor">Rp 0</span></div>
+                                    <div class="preview-row"><span>Potongan BPJS Karyawan</span><span
+                                            class="text-danger fw-bold" id="pv3BPJS">Rp 0</span></div>
+                                    <div class="preview-row"><span>Biaya Tanggungan</span><span
+                                            class="text-danger fw-bold" id="pv3Tanggungan">Rp 0</span></div>
+                                    <div class="preview-row"><span>PPh 21</span><span class="text-warning fw-bold"
+                                            id="pv3Lain">Rp 0</span></div>
+                                    <div class="preview-row"><span>Total Potongan Karyawan</span><span
+                                            class="text-danger fw-bold" id="pv3TotalPot">Rp 0</span></div>
+                                    <div class="preview-row preview-total"><span>THP Bersih</span><span
+                                            id="pv3THPBersih">Rp 0</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <div class="wz-content d-none" id="wz4">
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-check me-2 text-primary"></i>Review Sebelum Simpan</h6>
+                                <h6 class="fw-bold mb-3"><i
+                                        class="fa-solid fa-clipboard-check me-2 text-primary"></i>Review Sebelum Simpan
+                                </h6>
                                 <div class="row g-2 mb-3">
-                                    <div class="col-md-6">
-                                        <div class="p-3 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem;text-transform:uppercase">Karyawan</small><strong id="rv4Nama">—</strong></div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="p-3 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem;text-transform:uppercase">Periode</small><strong id="rv4Periode">—</strong></div>
+                                    <div class="col-12">
+                                        <div class="p-3 rounded bg-light"><small class="text-muted d-block"
+                                                style="font-size:.7rem;text-transform:uppercase">Karyawan</small><strong
+                                                id="rv4Nama">—</strong></div>
                                     </div>
                                 </div>
                                 <div class="detail-panel">
                                     <div class="row g-4">
                                         <div class="col-md-4">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-wallet" style="color:var(--pri)"></i>Pendapatan</h6>
-                                                <div class="detail-item"><span>Gaji Pokok</span><span class="fw-bold" id="rv4Gaji">Rp 0</span></div>
-                                                <div class="detail-item"><span>Total Tunjangan</span><span class="text-success" id="rv4Tunj">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>THP Kotor</span><span id="rv4THPKotor">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-wallet" style="color:var(--pri)"></i>Pendapatan
+                                                </h6>
+                                                <div class="detail-item"><span>Gaji Pokok</span><span class="fw-bold"
+                                                        id="rv4Gaji">Rp 0</span></div>
+                                                <div class="detail-item"><span>Total Tunjangan</span><span
+                                                        class="text-success" id="rv4Tunj">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>THP Kotor</span><span
+                                                        id="rv4THPKotor">Rp 0</span></div>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-heart-pulse" style="color:var(--info)"></i>BPJS Kesehatan</h6>
-                                                <div class="detail-item"><span>BPJS Perusahaan</span><span id="rv4BPJSKesper">Rp 0</span></div>
-                                                <div class="detail-item"><span>Potongan Karyawan</span><span id="rv4BPJSKeskar">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>Total</span><span class="text-info" id="rv4TotalKes">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-heart-pulse" style="color:var(--info)"></i>BPJS
+                                                    Kesehatan</h6>
+                                                <div class="detail-item"><span>BPJS Kesehatan Perusahaan</span><span
+                                                        id="rv4BPJSKesper">Rp 0</span></div>
+                                                <div class="detail-item"><span>BPJS Kesehatan Karyawan</span><span
+                                                        id="rv4BPJSKeskar">Rp 0</span></div>
+                                                <div class="detail-item"><span>Biaya Tanggungan Karyawan</span><span
+                                                        id="rv4Tanggungan">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>Total BPJS Kesehatan
+                                                        Karyawan</span><span class="text-info" id="rv4TotalKes">Rp
+                                                        0</span></div>
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-helmet-safety" style="color:var(--success)"></i>BPJS Ketenagakerjaan</h6>
-                                                <div class="detail-item"><span>BPJS Perusahaan</span><span id="rv4BPJSTKper">Rp 0</span></div>
-                                                <div class="detail-item"><span>Potongan Karyawan</span><span id="rv4BPJSTKkar">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>Total</span><span class="text-success" id="rv4TotalTK">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-helmet-safety"
+                                                        style="color:var(--success)"></i>BPJS Ketenagakerjaan</h6>
+                                                <div class="detail-item"><span>BPJS Perusahaan</span><span
+                                                        id="rv4BPJSTKper">Rp 0</span></div>
+                                                <div class="detail-item"><span>Potongan Karyawan</span><span
+                                                        id="rv4BPJSTKkar">Rp 0</span></div>
+                                                <div class="detail-item detail-total"><span>Total</span><span
+                                                        class="text-success" id="rv4TotalTK">Rp 0</span></div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="row g-4 mt-2">
                                         <div class="col-md-6">
                                             <div class="detail-section">
-                                                <h6><i class="fa-solid fa-minus-circle" style="color:var(--danger)"></i>Potongan Lainnya</h6>
-                                                <div class="detail-item"><span>PPh 21 + Kasbon + Denda + Lainnya</span><span id="rv4PotLain">Rp 0</span></div>
-                                                <div class="detail-item detail-total"><span>Total Potongan Karyawan</span><span class="text-danger" id="rv4TotalPot">Rp 0</span></div>
+                                                <h6><i class="fa-solid fa-minus-circle"
+                                                        style="color:var(--danger)"></i>Potongan Lainnya</h6>
+                                                <div class="detail-item"><span>PPh 21</span><span id="rv4PotLain">Rp
+                                                        0</span></div>
+                                                <div class="detail-item detail-total"><span>Total Potongan
+                                                        Karyawan</span><span class="text-danger" id="rv4TotalPot">Rp
+                                                        0</span></div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="p-3 rounded text-center" style="background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(79,70,229,.04));border:2px solid rgba(79,70,229,.2)">
-                                                <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">THP Bersih</div>
-                                                <div class="fw-bold" style="font-size:1.6rem;color:var(--pri)" id="rv4THPBersih">Rp 0</div>
-                                                <div class="text-muted" style="font-size:.75rem">Total Biaya Perusahaan: <strong id="rv4TotalBiaya">Rp 0</strong></div>
+                                            <div class="p-3 rounded text-center"
+                                                style="background:linear-gradient(135deg,rgba(79,70,229,.08),rgba(79,70,229,.04));border:2px solid rgba(79,70,229,.2)">
+                                                <div class="text-muted"
+                                                    style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">
+                                                    THP Bersih</div>
+                                                <div class="fw-bold" style="font-size:1.6rem;color:var(--pri)"
+                                                    id="rv4THPBersih">Rp 0</div>
+                                                <div class="text-muted" style="font-size:.75rem">Total Biaya Perusahaan:
+                                                    <strong id="rv4TotalBiaya">Rp 0</strong>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -719,9 +1288,12 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-secondary" id="wBtnPrev" style="display:none" onclick="wzPrev()"><i class="fa-solid fa-arrow-left me-1"></i>Sebelumnya</button>
-                    <button class="btn btn-pri" id="wBtnNext" onclick="wzNext()">Lanjut <i class="fa-solid fa-arrow-right ms-1"></i></button>
-                    <button class="btn btn-success" id="wBtnSave" style="display:none" onclick="savePayroll()">Simpan Payroll</button>
+                    <button class="btn btn-secondary" id="wBtnPrev" style="display:none" onclick="wzPrev()"><i
+                            class="fa-solid fa-arrow-left me-1"></i>Sebelumnya</button>
+                    <button class="btn btn-pri" id="wBtnNext" onclick="wzNext()">Lanjut <i
+                            class="fa-solid fa-arrow-right ms-1"></i></button>
+                    <button class="btn btn-success" id="wBtnSave" style="display:none" onclick="savePayroll()">Simpan
+                        Perhitungan</button>
                 </div>
             </div>
         </div>
@@ -731,19 +1303,22 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content" style="border-radius:12px;border:none">
                 <div class="modal-header modal-header-custom border-0 d-flex justify-content-between align-items-center">
-                    <h5 class="modal-title fw-bold mb-0"><i class="fa-solid fa-file-invoice me-2"></i>Detail Payroll</h5>
+                    <h5 class="modal-title fw-bold mb-0"><i class="fa-solid fa-file-invoice me-2"></i>Detail Perhitungan
+                    </h5>
                     <div class="d-flex align-items-center gap-3">
-                        <button class="btn btn-info btn-sm" id="detailBtnLog" onclick="showLogModal()"><i class="fa-solid fa-history me-1"></i>Lihat Log</button>
-                        <button type="button" class="btn-close m-0" data-bs-dismiss="modal"></button>
+                        <button class="btn btn-info btn-sm me-6" id="detailBtnLog" onclick="showLogModal()"><i
+                                class="fa-solid fa-history me-1"></i>Lihat Log</button>
+                        <button type="button" class="btn-close m-0 ms-4" data-bs-dismiss="modal"></button>
                     </div>
                 </div>
                 <div class="modal-body" id="detailModalBody">
                     <div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin fa-2x text-primary"></i></div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button class="btn btn-warning btn-sm d-none" id="detailBtnEdit" onclick="editPayrollId(activeDetailId)"><i class="fa-solid fa-edit me-1"></i>Edit</button>
-                    <button class="btn btn-success btn-sm d-none" id="detailBtnApprove" onclick="approvePayroll()"><i class="fa-solid fa-check me-1"></i>Approve</button>
-                    <button class="btn btn-danger btn-sm d-none" id="detailBtnDelete" onclick="deletePayroll()"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
+                    <button class="btn btn-warning btn-sm d-none" id="detailBtnEdit"
+                        onclick="editPayrollId(activeDetailId)"><i class="fa-solid fa-edit me-1"></i>Edit</button>
+                    <button class="btn btn-danger btn-sm d-none" id="detailBtnDelete" onclick="deletePayroll()"><i
+                            class="fa-solid fa-trash me-1"></i>Hapus</button>
                     <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
@@ -776,13 +1351,13 @@
     <script>
         const CSRF = document.querySelector('meta[name="csrf-token"]').content;
         const BASE = '{{ url('HR-dashboard/perhitungan-tunjangan') }}';
-        const BULAN_NAMES = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const UMK = 2100000;
+        const DEFAULT_TUNJANGAN = 1100000;
 
         let wzStep = 1;
         let wzEditId = null;
+        let wzKeepBpjs = false;
         let wzEmployee = null;
-        let wzTunjReadonly = false;
         let activeDetailId = null;
         let dtTable = null;
         let dtAudit = null;
@@ -790,7 +1365,12 @@
         let globalChangeLogs = [];
 
         $(function() {
-            $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': CSRF }, cache: false });
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': CSRF
+                },
+                cache: false
+            });
             initDataTable();
             initAuditTable();
             applyFilter();
@@ -807,17 +1387,52 @@
         function initDataTable() {
             dtTable = $('#payrollTable').DataTable({
                 data: [],
-                columns: [
-                    { data: null, orderable: false, searchable: false, render: () => `<i class="fa-solid fa-chevron-right expand-btn"></i>` },
-                    { data: 'nip' },
-                    { data: null, render: d => `<div class="fw-semibold">${d.nama || d.nama_lengkap || '-'}</div><small class="text-muted">${d.divisi || '-'}</small>` },
-                    { data: null, render: d => `<div>${d.jabatan || '-'}</div><small class="text-muted">${d.divisi || '-'}</small>` },
-                    { data: 'status_aktif', render: v => v === 'Aktif' ? `<span class="badge" style="background:var(--success-light);color:var(--success);font-size:.72rem">Aktif</span>` : `<span class="badge" style="background:var(--danger-light);color:var(--danger);font-size:.72rem">Nonaktif</span>` },
-                    { data: 'gaji_pokok', render: v => 'Rp ' + fmtNum(v) },
-                    { data: null, render: d => d.payroll ? `<span class="fw-bold text-primary">Rp ${fmtNum(d.payroll.thp_bersih)}</span>` : `<span class="text-muted">—</span>` },
-                    { data: null, render: d => d.payroll ? `Rp ${fmtNum(d.payroll.total_bpjs_perusahaan)}` : `<span class="text-muted">—</span>` },
-                    { data: null, render: d => d.payroll ? statusBadge(d.payroll.status) : `<span class="badge-status bs-none">Belum Ada</span>` },
-                    { data: null, orderable: false, render: d => d.payroll ? `<button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)" title="Detail"><i class="fa-solid fa-eye"></i></button>` : `<button class="btn btn-sm btn-pri" onclick="openWizardFor(${d.karyawan_id},event)" title="Buat Payroll"><i class="fa-solid fa-plus"></i></button>` },
+                columns: [{
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: () => `<i class="fa-solid fa-chevron-right expand-btn"></i>`
+                    },
+                    {
+                        data: 'nip'
+                    },
+                    {
+                        data: null,
+                        render: d => `<div class="fw-semibold">${d.nama || '-'}</div>`
+                    },
+                    {
+                        data: null,
+                        render: d =>
+                            `<div>${d.jabatan || '-'}</div><small class="text-muted">${d.divisi || '-'}</small>`
+                    },
+                    {
+                        data: 'gaji_pokok',
+                        render: v => 'Rp ' + fmtNum(v)
+                    },
+                    {
+                        data: null,
+                        render: d => d.payroll ?
+                            `<span class="fw-bold text-primary">Rp ${fmtNum(d.payroll.thp_bersih)}</span>` :
+                            `<span class="text-muted">—</span>`
+                    },
+                    {
+                        data: null,
+                        render: d => d.payroll ? `Rp ${fmtNum(d.payroll.total_bpjs_perusahaan)}` :
+                            `<span class="text-muted">—</span>`
+                    },
+                    {
+                        data: null,
+                        render: d => d.payroll ?
+                            `<span class="badge-status bs-calculated">SUDAH ADA</span>` :
+                            `<span class="badge-status bs-none">BELUM ADA</span>`
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: d => d.payroll ?
+                            `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)" title="Detail"><i class="fa-solid fa-eye"></i></button><button class="btn btn-sm btn-pri" onclick="editPayrollId(${d.payroll.id},event)" title="Update"><i class="fa-solid fa-pen"></i></button></div>` :
+                            `<button class="btn btn-sm btn-pri" onclick="openWizardFor(${d.karyawan_id},event)" title="Buat Perhitungan"><i class="fa-solid fa-plus"></i></button>`
+                    },
                 ],
                 rowCallback: function(row, data) {
                     if (data.payroll) {
@@ -830,13 +1445,23 @@
                     }
                 },
                 language: {
-                    search: '', searchPlaceholder: 'Cari nama / NIP...', lengthMenu: 'Tampilkan _MENU_ data',
-                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ karyawan', infoEmpty: 'Tidak ada data',
-                    paginate: { previous: '‹', next: '›' },
+                    search: '',
+                    searchPlaceholder: 'Cari nama / NIP...',
+                    lengthMenu: 'Tampilkan _MENU_ data',
+                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ karyawan',
+                    infoEmpty: 'Tidak ada data',
+                    paginate: {
+                        previous: '‹',
+                        next: '›'
+                    },
                     zeroRecords: '<div class="text-center py-4 text-muted"><i class="fa-solid fa-filter-circle-xmark fa-2x mb-2 d-block"></i>Tidak ada data sesuai filter</div>',
                     loadingRecords: '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat...</div>'
                 },
-                responsive: true, pageLength: 15, order: [[2, 'asc']],
+                responsive: true,
+                pageLength: 15,
+                order: [
+                    [2, 'asc']
+                ],
                 dom: '<"d-flex justify-content-between align-items-center mb-3"lf>rt<"d-flex justify-content-between align-items-center mt-3"ip>',
             });
         }
@@ -844,95 +1469,129 @@
         function initAuditTable() {
             dtAudit = $('#auditTable').DataTable({
                 data: [],
-                columns: [
-                    { data: null, render: d => d.payroll ? d.payroll.created_at : '—' },
-                    { data: null, render: d => d.payroll ? d.payroll.created_by : '—' },
-                    { data: null, render: () => `<span class="audit-badge audit-create">CREATE</span>` },
-                    { data: 'nama' },
-                    { data: null, render: d => d.payroll ? `${BULAN_NAMES[d.payroll.bulan]} ${d.payroll.tahun}` : '—' },
-                    { data: null, render: d => d.payroll ? `Rp ${fmtNum(d.payroll.thp_bersih)}` : '—' },
-                    { data: null, render: d => d.payroll ? statusBadge(d.payroll.status) : '—' },
-                    { data: null, orderable: false, render: d => d.payroll ? `<button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)"><i class="fa-solid fa-eye"></i></button>` : '' },
+                columns: [{
+                        data: null,
+                        render: d => d.payroll ? d.payroll.created_at : '—'
+                    },
+                    {
+                        data: null,
+                        render: d => d.payroll ? d.payroll.created_by : '—'
+                    },
+                    {
+                        data: null,
+                        render: () => `<span class="audit-badge audit-create">CREATE</span>`
+                    },
+                    {
+                        data: 'nama'
+                    },
+                    {
+                        data: null,
+                        render: d => d.payroll ? `Rp ${fmtNum(d.payroll.thp_bersih)}` : '—'
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: d => d.payroll ?
+                            `<button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)"><i class="fa-solid fa-eye"></i></button>` :
+                            ''
+                    },
                 ],
-                language: { search: '', searchPlaceholder: 'Cari...', lengthMenu: 'Tampilkan _MENU_', info: '_START_–_END_ dari _TOTAL_', paginate: { previous: '‹', next: '›' } },
-                order: [[0, 'desc']], pageLength: 10,
+                language: {
+                    search: '',
+                    searchPlaceholder: 'Cari...',
+                    lengthMenu: 'Tampilkan _MENU_',
+                    info: '_START_–_END_ dari _TOTAL_',
+                    paginate: {
+                        previous: '‹',
+                        next: '›'
+                    }
+                },
+                order: [
+                    [0, 'desc']
+                ],
+                pageLength: 10,
                 dom: '<"d-flex justify-content-between mb-3"lf>rt<"d-flex justify-content-between mt-3"ip>',
             });
         }
 
+        function filterParams() {
+            return {
+                divisi: $('#fDivisi').val(),
+                status: $('#fStatus').val()
+            };
+        }
+
         function exportExcel() {
-            const params = new URLSearchParams({ bulan: $('#fBulan').val(), tahun: $('#fTahun').val(), divisi: $('#fDivisi').val(), status: $('#fStatus').val() });
-            window.location.href = `{{ route('HR.perhitungan-tunjangan.export.excel') }}?${params.toString()}`;
+            window.location.href =
+                `{{ route('HR.perhitungan-tunjangan.export.excel') }}?${new URLSearchParams(filterParams()).toString()}`;
         }
 
         function exportPdf() {
-            const params = new URLSearchParams({ bulan: $('#fBulan').val(), tahun: $('#fTahun').val(), divisi: $('#fDivisi').val(), status: $('#fStatus').val() });
-            window.location.href = `{{ route('HR.perhitungan-tunjangan.export.pdf') }}?${params.toString()}`;
+            window.location.href =
+                `{{ route('HR.perhitungan-tunjangan.export.pdf') }}?${new URLSearchParams(filterParams()).toString()}`;
         }
 
         function applyFilter() {
-            const params = { bulan: $('#fBulan').val(), tahun: $('#fTahun').val(), divisi: $('#fDivisi').val(), status: $('#fStatus').val() };
-            $.ajax({ url: BASE + '/get-data', method: 'GET', data: params, dataType: 'json' })
+            const params = filterParams();
+            $.ajax({
+                    url: BASE + '/get-data',
+                    method: 'GET',
+                    data: params,
+                    dataType: 'json'
+                })
                 .done(function(res) {
                     if (!res.success) return;
                     const data = Array.isArray(res.data) ? res.data : [];
                     dtTable.clear().rows.add(data).draw();
                     dtAudit.clear().rows.add(data.filter(d => d.payroll)).draw();
-                    $('#statSudah').text(data.filter(d => d.payroll).length);
-                    $('#statBelum').text(data.filter(d => !d.payroll).length);
+                    if (!params.divisi && !params.status) {
+                        $('#statSudah').text(data.filter(d => d.payroll).length);
+                        $('#statBelum').text(data.filter(d => !d.payroll).length);
+                    }
                 })
-                .fail(function() { toast('Gagal memuat data filter', 'error'); });
+                .fail(function() {
+                    toast('Gagal memuat data', 'error');
+                });
         }
 
         function resetFilter() {
-            $('#fBulan').val('{{ $bulanSekarang }}');
-            $('#fTahun').val('{{ $tahunSekarang }}');
             $('#fDivisi, #fStatus').val('');
             applyFilter();
         }
 
         function toggleDetailRow($row, data) {
             const existingNext = $row.next('.detail-expanded-row');
-            if (existingNext.length) { existingNext.remove(); $row.removeClass('expanded'); return; }
+            if (existingNext.length) {
+                existingNext.remove();
+                $row.removeClass('expanded');
+                return;
+            }
             $('.detail-expanded-row').remove();
             $('.expanded').removeClass('expanded');
             $row.addClass('expanded');
             const colCount = dtTable.columns().count();
-            const detailHtml = renderDetailHtml(data);
-            $row.after(`<tr class="detail-expanded-row"><td colspan="${colCount}" style="padding:0;background:var(--gray-50)">${detailHtml}</td></tr>`);
+            $row.after(
+                `<tr class="detail-expanded-row"><td colspan="${colCount}" style="padding:0;background:var(--gray-50)">${renderDetailHtml(data)}</td></tr>`
+            );
         }
 
         function renderTunjItems(detail) {
-            if (!detail || !detail.length) return '<div class="text-muted" style="font-size:.8rem">— Tidak ada tunjangan —</div>';
-            return detail.map(t => `<div class="detail-item"><span>${t.nama}</span><span>Rp ${fmtNum(t.total)}</span></div>`).join('');
+            if (!detail || !detail.length)
+                return '<div class="text-muted" style="font-size:.8rem">— Tidak ada tunjangan —</div>';
+            return detail.map(t =>
+                `<div class="detail-item"><span>${t.nama}</span><span>Rp ${fmtNum(t.total)}</span></div>`).join('');
         }
 
         function renderDetailHtml(data) {
             const p = data.payroll;
-            if (!p) return `<div class="p-4 text-center text-muted">Belum ada payroll untuk karyawan ini.</div>`;
-            
+            if (!p) return `<div class="p-4 text-center text-muted">Belum ada perhitungan untuk karyawan ini.</div>`;
+
             const tunjDetail = (p.tunjangan && p.tunjangan.detail) ? p.tunjangan.detail : [];
             const tunjHtml = renderTunjItems(tunjDetail);
-            
-            // Hitung breakdown BPJS
-            const jhtPer = p.jht_perusahaan || 0;
-            const jkmPer = p.jkm_perusahaan || 0;
-            const jkkPer = p.jkk_perusahaan || 0;
-            const jpPer = p.jp_perusahaan || 0;
-            const kesPer = p.bpjs_kes_perusahaan || 0;
-            const totalPer = p.total_bpjs_perusahaan || 0;
-            
-            const jhtKar = p.jht_karyawan || 0;
-            const jpKar = p.jp_karyawan || 0;
-            const kesKar = p.bpjs_kes_karyawan || 0;
-            const totalKar = p.total_bpjs_karyawan || 0;
-            
-            const colCount = dtTable.columns().count();
-            
+
             return `
                 <div class="detail-panel m-3">
                     <div class="row g-3">
-                        <!-- PENDAPATAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
                                 <h6><i class="fa-solid fa-wallet" style="color:var(--pri)"></i>PENDAPATAN</h6>
@@ -941,76 +1600,106 @@
                                 <div class="detail-item detail-total"><span>THP Kotor</span><span class="text-primary fw-bold">Rp ${fmtNum(p.thp_kotor)}</span></div>
                             </div>
                         </div>
-                        
-                        <!-- BPJS PERUSAHAAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
                                 <h6><i class="fa-solid fa-building" style="color:var(--success)"></i>BPJS PERUSAHAAN</h6>
-                                <div class="detail-item"><span>JHT (3.7%)</span><span>Rp ${fmtNum(jhtPer)}</span></div>
-                                <div class="detail-item"><span>JKM (0.3%)</span><span>Rp ${fmtNum(jkmPer)}</span></div>
-                                <div class="detail-item"><span>JKK (0.24%)</span><span>Rp ${fmtNum(jkkPer)}</span></div>
-                                <div class="detail-item"><span>JP (2%)</span><span>Rp ${fmtNum(jpPer)}</span></div>
-                                <div class="detail-item"><span>BPJS Kes. (4%)</span><span>Rp ${fmtNum(kesPer)}</span></div>
-                                <div class="detail-item detail-total"><span>Total</span><span class="text-success fw-bold">Rp ${fmtNum(totalPer)}</span></div>
+                                <div class="detail-item"><span>JHT (3.7%)</span><span>Rp ${fmtNum(p.jht_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JKM (0.3%)</span><span>Rp ${fmtNum(p.jkm_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JKK (0.24%)</span><span>Rp ${fmtNum(p.jkk_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JP (2%)</span><span>Rp ${fmtNum(p.jp_perusahaan)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (4%)</span><span>Rp ${fmtNum(p.bpjs_kes_perusahaan)}</span></div>
+                                <div class="detail-item detail-total"><span>Total</span><span class="text-success fw-bold">Rp ${fmtNum(p.total_bpjs_perusahaan)}</span></div>
                             </div>
                         </div>
-                        
-                        <!-- POTONGAN KARYAWAN -->
                         <div class="col-md-4">
                             <div class="detail-section">
                                 <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>POTONGAN KARYAWAN</h6>
-                                <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(jhtKar)}</span></div>
-                                <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(jpKar)}</span></div>
-                                <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(kesKar)}</span></div>
+                                <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(p.jht_karyawan)}</span></div>
+                                <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(p.jp_karyawan)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(p.bpjs_kes_karyawan)}</span></div>
+                                <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>Rp ${fmtNum(p.biaya_tanggungan)}</span></div>
                                 ${p.potongan_pph21 ? `<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>` : ''}
-                                ${p.potongan_kasbon ? `<div class="detail-item"><span>Kasbon</span><span>Rp ${fmtNum(p.potongan_kasbon)}</span></div>` : ''}
-                                ${p.potongan_denda ? `<div class="detail-item"><span>Denda</span><span>Rp ${fmtNum(p.potongan_denda)}</span></div>` : ''}
+                                <div class="detail-item"><span class="fw-semibold">Total Potongan Karyawan</span><span class="text-danger fw-bold">Rp ${fmtNum(totalPotonganKaryawan(p))}</span></div>
                                 <div class="detail-item detail-total"><span>THP Bersih</span><span class="text-primary fw-bold" style="font-size:1.05rem">Rp ${fmtNum(p.thp_bersih)}</span></div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Tombol Aksi -->
                     <div class="d-flex gap-2 mt-4 pt-3 border-top">
-                        <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)">
-                            <i class="fa-solid fa-eye me-1"></i>Detail Lengkap Modal
-                        </button>
-                        ${['draft','calculated'].includes(p.status) ? `
-                            <button class="btn btn-sm btn-success" onclick="approvePayrollId(${p.id},event)">
-                                <i class="fa-solid fa-check me-1"></i>Approve
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)">
-                            <i class="fa-solid fa-trash me-1"></i>Hapus
-                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)"><i class="fa-solid fa-eye me-1"></i>Detail Lengkap</button>
+                        <button class="btn btn-sm btn-pri" onclick="editPayrollId(${p.id},event)"><i class="fa-solid fa-pen me-1"></i>Update</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
                     </div>
-                </div>
-            `;
+                </div>`;
+        }
+
+        function confirmDeleteAll() {
+            if (!confirm('Apakah Anda yakin ingin menghapus SEMUA data perhitungan BPJS?')) {
+                return;
+            }
+
+            if (!confirm(
+                    'PERINGATAN!\n\nData yang dihapus TIDAK DAPAT DIKEMBALIKAN LAGI.\n\nLanjutkan menghapus semua data?')) {
+                return;
+            }
+
+            $.ajax({
+                    url: BASE + '/delete-all',
+                    method: 'DELETE',
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    beforeSend: function() {}
+                })
+                .done(function(res) {
+                    toast(res.message || 'Semua data berhasil dihapus', 'success');
+                    applyFilter();
+                    if (res.stats) {
+                        $('#statSudah').text(res.stats.sudah ?? 0);
+                        $('#statBelum').text(res.stats.belum ?? 0);
+                    }
+                })
+                .fail(function(xhr) {
+                    toast(xhr.responseJSON?.message || 'Gagal menghapus data', 'error');
+                });
+        }
+
+        function renderChangeLogs(logs) {
+            if (!logs || !logs.length) {
+                return '<div class="text-center text-muted py-5"><i class="fa-solid fa-clock-rotate-left fa-2x mb-2 d-block"></i>Belum ada perubahan tercatat</div>';
+            }
+            return '<div class="p-3">' + logs.map(g => `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2" style="font-size:.78rem">
+                        <strong>${g.changed_by || 'System'}</strong>
+                        <span class="text-muted">${g.waktu || ''}</span>
+                    </div>
+                    ${(g.details || []).map(d => `
+                                        <div class="change-log-item">
+                                            <div class="fw-semibold">${d.field_name}</div>
+                                            <div><span class="change-old">Rp ${fmtNum(d.old_value)}</span> → <span class="change-new">Rp ${fmtNum(d.new_value)}</span></div>
+                                        </div>`).join('')}
+                </div>`).join('') + '</div>';
         }
 
         function showLogModal() {
-            const html = renderChangeLogs(globalChangeLogs);
-            $('#logModalBody').html(html);
+            $('#logModalBody').html(renderChangeLogs(globalChangeLogs));
             new bootstrap.Modal('#logModal').show();
         }
 
         function showDetail(id, e) {
             if (e) e.stopPropagation();
             activeDetailId = id;
-            $('#detailModalBody').html('<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin fa-2x text-primary"></i></div>');
-            $('#detailBtnApprove, #detailBtnDelete, #detailBtnEdit').addClass('d-none');
+            $('#detailModalBody').html(
+                '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin fa-2x text-primary"></i></div>');
+            $('#detailBtnDelete, #detailBtnEdit').addClass('d-none');
             new bootstrap.Modal('#detailModal').show();
 
             $.get(BASE + '/' + id).done(function(res) {
                 if (!res.success) return;
                 const p = res.data;
                 const tunjDetail = p.tunjangan_detail || [];
-                const changeLogs = res.change_logs || [];
-                globalChangeLogs = changeLogs;
+                globalChangeLogs = res.change_logs || [];
 
-                if (['draft', 'calculated'].includes(p.status)) $('#detailBtnApprove').removeClass('d-none');
-                
-                // Selalu memunculkan tombol Hapus dan Edit
                 $('#detailBtnDelete').removeClass('d-none');
                 $('#detailBtnEdit').removeClass('d-none');
 
@@ -1019,9 +1708,8 @@
                 $('#detailModalBody').html(`
                     <div class="row g-2 mb-3">
                         <div class="col-6"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">Karyawan</small><strong>${p.karyawan?.nama_lengkap ?? '—'}</strong></div></div>
-                        <div class="col-6"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">Periode</small><strong>${BULAN_NAMES[p.bulan]} ${p.tahun}</strong></div></div>
-                        <div class="col-6"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">Status</small>${statusBadge(p.status)}</div></div>
-                        <div class="col-6"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">Dibuat oleh</small><strong>${p.created_by?.name ?? p.created_by_name ?? '—'}</strong></div></div>
+                        <div class="col-6"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">NIP</small><strong>${p.karyawan?.nip ?? '—'}</strong></div></div>
+                        <div class="col-12"><div class="p-2 rounded bg-light"><small class="text-muted d-block" style="font-size:.7rem">Dibuat oleh</small><strong>${p.created_by?.name ?? p.created_by_name ?? '—'}</strong></div></div>
                     </div>
                     <div class="detail-panel">
                         <div class="row g-3">
@@ -1050,9 +1738,9 @@
                                     <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(p.jht_karyawan)}</span></div>
                                     <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(p.jp_karyawan)}</span></div>
                                     <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(p.bpjs_kes_karyawan)}</span></div>
-                                    ${p.potongan_pph21?`<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>`:''}
-                                    ${p.potongan_kasbon?`<div class="detail-item"><span>Kasbon</span><span>Rp ${fmtNum(p.potongan_kasbon)}</span></div>`:''}
-                                    ${p.potongan_denda?`<div class="detail-item"><span>Denda</span><span>Rp ${fmtNum(p.potongan_denda)}</span></div>`:''}
+                                    <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>Rp ${fmtNum(p.biaya_tanggungan)}</span></div>
+                                    ${p.potongan_pph21 ? `<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>` : ''}
+                                    <div class="detail-item"><span class="fw-semibold">Total Potongan Karyawan</span><span class="text-danger fw-bold">Rp ${fmtNum(totalPotonganKaryawan(p))}</span></div>
                                     <div class="detail-item detail-total"><span>THP Bersih</span><span class="fw-bold text-primary">Rp ${fmtNum(p.thp_bersih)}</span></div>
                                 </div>
                             </div>
@@ -1062,58 +1750,80 @@
             });
         }
 
-        function approvePayroll() { approvePayrollId(activeDetailId); }
-        function deletePayroll() { deletePayrollId(activeDetailId); }
-
-        function approvePayrollId(id, e) {
-            if (e) e.stopPropagation();
-            if (!confirm('Approve payroll ini?')) return;
-            $.ajax({ url: BASE + '/' + id + '/approve', method: 'POST' })
-                .done(function(res) { toast(res.message, 'success'); bootstrap.Modal.getInstance('#detailModal')?.hide(); applyFilter(); })
-                .fail(function(xhr) { toast(xhr.responseJSON?.message || 'Gagal approve', 'error'); });
+        function deletePayroll() {
+            deletePayrollId(activeDetailId);
         }
 
         function deletePayrollId(id, e) {
             if (e) e.stopPropagation();
-            if (!confirm('Hapus payroll ini? Tindakan tidak bisa dibatalkan.')) return;
-            $.ajax({ url: BASE + '/' + id, method: 'DELETE' })
-                .done(function(res) { toast(res.message, 'success'); bootstrap.Modal.getInstance('#detailModal')?.hide(); applyFilter(); })
-                .fail(function(xhr) { toast(xhr.responseJSON?.message || 'Gagal hapus', 'error'); });
+            if (!confirm('Hapus Perhitungan ini? Tindakan tidak bisa dibatalkan.')) return;
+            $.ajax({
+                    url: BASE + '/' + id,
+                    method: 'DELETE'
+                })
+                .done(function(res) {
+                    toast(res.message, 'success');
+                    bootstrap.Modal.getInstance('#detailModal')?.hide();
+                    applyFilter();
+                })
+                .fail(function(xhr) {
+                    toast(xhr.responseJSON?.message || 'Gagal hapus', 'error');
+                });
         }
 
-        function editPayrollId(id) {
+        function editPayrollId(id, e) {
+            if (e && e.stopPropagation) e.stopPropagation();
             bootstrap.Modal.getInstance('#detailModal')?.hide();
-            wzEditId = id;
             $.get(BASE + '/' + id).done(function(res) {
                 if (!res.success) return toast('Gagal memuat data edit', 'error');
                 const p = res.data;
                 resetWizard();
                 wzEditId = id;
-                $('#wizardTitle').text('Edit Payroll');
+                wzKeepBpjs = true;
+                $('#wizardTitle').text('Update Perhitungan');
+                $('#wBtnSave').html('<i class="fa-solid fa-save me-1"></i>Update Perhitungan');
                 $('#wKaryawan').val(p.karyawan_id);
-                $('#wBulan').val(p.bulan);
-                $('#wTahun').val(p.tahun);
 
-                wzEmployee = { id: p.karyawan_id, nama: p.karyawan?.nama_lengkap, nip: p.karyawan?.nip };
+                wzEmployee = {
+                    id: p.karyawan_id,
+                    nama: p.karyawan?.nama_lengkap,
+                    nip: p.karyawan?.nip
+                };
                 $('#wGajiPokok').val(fmtNum(p.gaji_pokok));
                 $('#wSalaryBPJSTK').val(fmtNum(p.salary_bpjstk));
                 $('#wUMK').val(fmtNum(p.umk_bandung));
                 $('#wPPh').val(p.potongan_pph21 ? fmtNum(p.potongan_pph21) : '');
-                $('#wKasbon').val(p.potongan_kasbon ? fmtNum(p.potongan_kasbon) : '');
-                $('#wDenda').val(p.potongan_denda ? fmtNum(p.potongan_denda) : '');
-                $('#wPotLain').val(p.potongan_lain ? fmtNum(p.potongan_lain) : '');
-
-                renderTunjanganFields(p.tunjangan_detail || []);
+                setPphBadge('payroll');
+                fillBpjsFromObject(p);
+                renderTunjanganFields(
+                    p.total_tunjangan ?? (p.tunjangan_detail || []).reduce((s, t) => s + (+t.total || 0), 0)
+                );
+                $('#wz2Info').html(
+                    `<div class="alert alert-info py-2"><i class="fa-solid fa-circle-info me-2"></i>Mengubah data Perhitungan yang tersimpan. Ubah hanya bagian yang berubah.</div>`
+                );
+                $('#tunjanganSourceInfo').html('');
                 calcPreview();
-                calcBPJS();
                 new bootstrap.Modal('#wizardModal').show();
                 goStep(2);
+                recalcBPJSTotals();
+                $.get(BASE + '/karyawan-data', {
+                    karyawan_id: p.karyawan_id
+                }).done(function(r) {
+                    if (r.success && r.karyawan.pph21_source === 'pph21') {
+                        $('#wPPh').val(fmtNum(r.karyawan.pph21_bulanan));
+                        setPphBadge('pph21');
+                        recalcBPJSTotals();
+                    }
+                });
             }).fail(function() {
                 toast('Gagal memuat data edit', 'error');
             });
         }
 
-        function openWizard() { resetWizard(); new bootstrap.Modal('#wizardModal').show(); }
+        function openWizard() {
+            resetWizard();
+            new bootstrap.Modal('#wizardModal').show();
+        }
 
         function openWizardFor(id, e) {
             if (e) e.stopPropagation();
@@ -1125,86 +1835,141 @@
         function getTunjanganItems() {
             const items = [];
             $('#tunjanganFields .tunj-input').each(function() {
-                items.push({ jenis_tunjangan_id: $(this).data('jenis-id') || null, nama: $(this).data('nama'), total: parseNum($(this).val()) });
+                items.push({
+                    jenis_tunjangan_id: $(this).data('jenis-id') || null,
+                    nama: $(this).data('nama'),
+                    total: parseNum($(this).val())
+                });
             });
             return items;
         }
 
-        function getTunjTotal() { return getTunjanganItems().reduce((s, t) => s + t.total, 0); }
+        function getTunjTotal() {
+            return getTunjanganItems().reduce((s, t) => s + t.total, 0);
+        }
 
-        function renderTunjanganFields(detail) {
-            if (!detail || !detail.length) {
-                $('#tunjanganFields').html(`<div class="col-md-12"><label class="form-label">Total Tunjangan (Manual)</label><input type="text" class="form-control mono-input tunj-input" value="0" data-nama="Total Tunjangan" oninput="formatAndCalc(this)"></div>`);
+        function getTanggungan() {
+            return parseNum($('#b3Tanggungan').val());
+        }
+
+        function renderTunjanganFields(total = DEFAULT_TUNJANGAN) {
+            $('#tunjanganFields').html(
+                `<div class="col-md-6">
+                    <label class="form-label">Total Tunjangan</label>
+                    <input type="text" class="form-control mono-input tunj-input" value="${fmtNum(total)}" data-nama="Total Tunjangan" oninput="formatAndCalc(this)">
+                </div>`
+            );
+        }
+
+        function fillBpjsFromObject(b) {
+            if (!b) return;
+            $('#b3JHTper').val(fmtNum(b.jht_perusahaan));
+            $('#b3JKMper').val(fmtNum(b.jkm_perusahaan));
+            $('#b3JKKper').val(fmtNum(b.jkk_perusahaan));
+            $('#b3JPper').val(fmtNum(b.jp_perusahaan));
+            $('#b3KESper').val(fmtNum(b.bpjs_kes_perusahaan));
+            $('#b3JHTkar').val(fmtNum(b.jht_karyawan));
+            $('#b3JPkar').val(fmtNum(b.jp_karyawan));
+            $('#b3KESkar').val(fmtNum(b.bpjs_kes_karyawan));
+            $('#b3Tanggungan').val(b.biaya_tanggungan ? fmtNum(b.biaya_tanggungan) : '');
+        }
+
+        function setPphBadge(source) {
+            const map = {
+                pph21: ['Dari PPH 21', 'bg-success', 'Nilai diambil langsung dari data PPH 21 karyawan.'],
+                setup: ['Dari Setup PPH 21', 'bg-info', 'Total PPH belum tersimpan, dihitung dari status PTKP.'],
+                payroll: ['Data tersimpan', 'bg-primary', 'Nilai yang sudah tersimpan di perhitungan.']
+            };
+            $('#pph21Badge').removeClass('bg-info bg-success bg-secondary bg-primary');
+
+            const lock = source === 'pph21';
+            $('#wPPh').prop('readonly', lock).toggleClass('readonly-val', lock);
+
+            if (!map[source]) {
+                $('#pph21Badge').text('Tidak Ada').addClass('bg-secondary');
+                $('#pph21Info').text('Belum ada data PPH 21 karyawan. Isi manual jika perlu.');
                 return;
             }
-            const html = detail.map(t => `<div class="col-md-6"><label class="form-label">${t.nama}</label><input type="text" class="form-control mono-input tunj-input" value="${fmtNum(t.total)}" data-jenis-id="${t.jenis_tunjangan_id ?? ''}" data-nama="${t.nama}" oninput="formatAndCalc(this)"></div>`).join('');
-            $('#tunjanganFields').html(html);
+            $('#pph21Badge').text(map[source][0]).addClass(map[source][1]);
+            $('#pph21Info').text(map[source][2]);
         }
 
         function wzNext() {
             if (wzStep === 1) {
                 const empId = $('#wKaryawan').val();
-                const bulan = $('#wBulan').val();
-                const tahun = $('#wTahun').val();
-                if (!empId) { toast('Pilih karyawan terlebih dahulu!', 'error'); return; }
+                if (!empId) {
+                    toast('Pilih karyawan terlebih dahulu!', 'error');
+                    return;
+                }
 
                 $('#wBtnNext').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i>Memuat...');
-                $.get(BASE + '/karyawan-data', { karyawan_id: empId, bulan, tahun })
+                $.get(BASE + '/karyawan-data', {
+                        karyawan_id: empId
+                    })
                     .done(function(res) {
-                        if (!res.success) { toast(res.message || 'Gagal memuat data', 'error'); return; }
-                        if (res.existing_payroll) {
-                            $('#wz1Alert').removeClass('d-none').html(`<div class="alert alert-warning mb-0"><i class="fa-solid fa-triangle-exclamation me-2"></i>Karyawan ini sudah memiliki payroll <strong>${res.existing_payroll.status.toUpperCase()}</strong> untuk periode ini.</div>`);
-                        } else {
-                            $('#wz1Alert').addClass('d-none');
+                        if (!res.success) {
+                            toast(res.message || 'Gagal memuat data', 'error');
+                            return;
                         }
 
                         wzEmployee = res.karyawan;
-                        wzTunjReadonly = res.has_tunjangan;
+                        wzEditId = res.mode === 'update' ? res.existing_payroll.id : null;
+                        wzKeepBpjs = !!res.keep_bpjs;
+                        $('#wizardTitle').text(wzEditId ? 'Update Perhitungan' : 'Buat Perhitungan');
+                        $('#wBtnSave').html(wzEditId ?
+                            '<i class="fa-solid fa-save me-1"></i>Update Perhitungan' :
+                            '<i class="fa-solid fa-save me-1"></i>Simpan Perhitungan');
+                        $('#wz2Info').html(
+                            `<div class="alert alert-info py-2"><i class="fa-solid fa-circle-info me-2"></i>${res.info || ''}</div>`
+                        );
+
                         $('#wGajiPokok').val(fmtNum(wzEmployee.gaji_pokok));
                         $('#wSalaryBPJSTK').val(fmtNum(wzEmployee.salary_bpjstk));
                         $('#wUMK').val(fmtNum(wzEmployee.umk_bandung || UMK));
+                        $('#wPPh').val(wzEmployee.pph21_bulanan > 0 ? fmtNum(wzEmployee.pph21_bulanan) : '');
+                        setPphBadge(wzEmployee.pph21_source);
 
-                        if (res.karyawan.pph21_bulanan > 0) {
-                            $('#wPPh').val(fmtNum(res.karyawan.pph21_bulanan));
-                            if (res.karyawan.has_pph21) {
-                                $('#pph21Badge').text('Dari Setup PPH 21').removeClass('bg-info bg-secondary').addClass('bg-success');
-                                $('#pph21Info').text('Nilai diambil dari setup PPH 21. Tetap dapat diubah manual jika perlu.');
-                            } else {
-                                $('#pph21Badge').text('Manual').removeClass('bg-info bg-success').addClass('bg-secondary');
-                                $('#pph21Info').text('Karyawan belum punya setup PPH 21. Silakan input manual.');
-                            }
-                        } else {
-                            $('#wPPh').val('');
-                            $('#pph21Badge').text('Tidak Ada').removeClass('bg-info bg-success').addClass('bg-secondary');
-                            $('#pph21Info').text('Karyawan belum memiliki setup PPH 21 atau nilai PPH 21 adalah 0.');
-                        }
+                        const savedTunj = wzEditId ?
+                            (res.tunjangan_detail || []).reduce((s, t) => s + (+t.total || 0), 0) :
+                            DEFAULT_TUNJANGAN;
+                        renderTunjanganFields(savedTunj || DEFAULT_TUNJANGAN);
+                        $('#tunjanganSourceInfo').html('');
 
-                        renderTunjanganFields(res.tunjangan_detail);
-
-                        if (res.has_tunjangan) {
-                            const items = res.tunjangan_detail.map(t => `<strong>${t.nama}</strong>: Rp ${fmtNum(t.total)}`).join(' | ');
-                            $('#tunjanganSourceInfo').html(`<div class="tunjangan-source-info"><i class="fa-solid fa-circle-check text-info me-2"></i>Tunjangan default dari data approved (dapat diubah): ${items}</div>`);
-                        } else {
-                            $('#tunjanganSourceInfo').html(`<div class="tunjangan-empty-info"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Tidak ada data tunjangan approved. Silakan input manual.</div>`);
-                        }
+                        if (wzKeepBpjs && res.bpjs) fillBpjsFromObject(res.bpjs);
                         calcPreview();
-                        calcBPJS();
                         goStep(2);
+                        if (wzKeepBpjs) recalcBPJSTotals();
+                        else calcBPJS();
                     })
-                    .fail(function() { toast('Gagal memuat data karyawan', 'error'); })
-                    .always(function() { $('#wBtnNext').prop('disabled', false).html('Lanjut <i class="fa-solid fa-arrow-right ms-1"></i>'); });
+                    .fail(function() {
+                        toast('Gagal memuat data karyawan', 'error');
+                    })
+                    .always(function() {
+                        $('#wBtnNext').prop('disabled', false).html(
+                            'Lanjut <i class="fa-solid fa-arrow-right ms-1"></i>');
+                    });
                 return;
             }
             if (wzStep === 2) {
-                if (!parseNum($('#wSalaryBPJSTK').val())) { toast('Salary BPJSTK wajib diisi!', 'error'); return; }
-                calcBPJS();
+                if (!parseNum($('#wSalaryBPJSTK').val())) {
+                    toast('Salary BPJSTK wajib diisi!', 'error');
+                    return;
+                }
+                if (!wzKeepBpjs) calcBPJS();
+                else recalcBPJSTotals();
                 goStep(3);
                 return;
             }
-            if (wzStep === 3) { updateReview(); goStep(4); return; }
+            if (wzStep === 3) {
+                updateReview();
+                goStep(4);
+                return;
+            }
         }
 
-        function wzPrev() { if (wzStep > 1) goStep(wzStep - 1); }
+        function wzPrev() {
+            if (wzStep > 1) goStep(wzStep - 1);
+        }
 
         function goStep(n) {
             wzStep = n;
@@ -1224,97 +1989,97 @@
         function resetWizard() {
             wzStep = 1;
             wzEditId = null;
+            wzKeepBpjs = false;
             wzEmployee = null;
-            wzTunjReadonly = false;
             goStep(1);
             $('#wKaryawan').val('');
-            $('#wz1Alert').addClass('d-none');
-            $('#wSalaryBPJSTK,#wPPh,#wKasbon,#wDenda,#wPotLain,#wGajiPokok,#wUMK').val('');
+            $('#wSalaryBPJSTK,#wPPh,#wGajiPokok,#wUMK').val('');
             $('.bpjs-input').val('');
-            $('#tunjanganFields').html('');
+            $('#b3Tanggungan').val('');
+            renderTunjanganFields();
             $('#tunjanganSourceInfo').html('');
-            $('#pph21Badge').text('Auto-fill').removeClass('bg-success bg-secondary').addClass('bg-info');
+            $('#wz2Info').html('');
+            $('#pph21Badge').text('Auto-fill').removeClass('bg-success bg-secondary bg-primary').addClass('bg-info');
             $('#pph21Info').text('Akan terisi otomatis dari data PPH 21 karyawan.');
-            $('#wizardTitle').text('Buat Payroll Baru');
+            $('#wizardTitle').text('Buat Perhitungan');
+            $('#wBtnSave').html('Simpan Perhitungan');
+            $('#wPPh').prop('readonly', false).removeClass('readonly-val');
         }
 
         function calcPreview() {
             const gaji = parseNum($('#wGajiPokok').val());
             const tunj = getTunjTotal();
-            const thp = gaji + tunj;
             $('#pvGaji').text('Rp ' + fmtNum(gaji));
             $('#pvTunj').text('Rp ' + fmtNum(tunj));
-            $('#pvTHP').text('Rp ' + fmtNum(thp));
+            $('#pvTHP').text('Rp ' + fmtNum(gaji + tunj));
         }
 
         function formatAndCalc(el) {
             let raw = $(el).val().replace(/\D/g, '');
             if (raw) $(el).val(fmtNum(+raw));
+            if (el && (el.id === 'wSalaryBPJSTK' || el.id === 'wUMK')) wzKeepBpjs = false;
             calcPreview();
-            calcBPJS();
+            if (wzKeepBpjs) recalcBPJSTotals();
+            else calcBPJS();
         }
 
         function formatBPJSInput(el) {
             let raw = $(el).val().replace(/\D/g, '');
             if (raw) $(el).val(fmtNum(+raw));
+            wzKeepBpjs = true;
             recalcBPJSTotals();
         }
 
+        function formatTanggungan(el) {
+            let raw = $(el).val().replace(/\D/g, '');
+            if (raw) $(el).val(fmtNum(+raw));
+            updateTHPBersihPreview();
+        }
+
         function recalcBPJSTotals() {
-            const idsPer = ['b3JHTper', 'b3JKMper', 'b3JKKper', 'b3JPper', 'b3KESper'];
             let totalPer = 0;
-            idsPer.forEach(id => totalPer += parseNum($('#' + id).val()));
+            ['b3JHTper', 'b3JKMper', 'b3JKKper', 'b3JPper', 'b3KESper'].forEach(id => totalPer += parseNum($('#' + id)
+                .val()));
             $('#b3TotalPer').val(fmtNum(totalPer));
 
-            const idsKar = ['b3JHTkar', 'b3JPkar', 'b3KESkar'];
             let totalKar = 0;
-            idsKar.forEach(id => totalKar += parseNum($('#' + id).val()));
+            ['b3JHTkar', 'b3JPkar', 'b3KESkar'].forEach(id => totalKar += parseNum($('#' + id).val()));
             $('#b3TotalKar').val(fmtNum(totalKar));
 
             updateTHPBersihPreview();
         }
 
         function updateTHPBersihPreview() {
-            const gaji = parseNum($('#wGajiPokok').val());
-            const tunj = getTunjTotal();
-            const thpKotor = gaji + tunj;
+            const thpKotor = parseNum($('#wGajiPokok').val()) + getTunjTotal();
             const totalKar = parseNum($('#b3TotalKar').val());
-            const potLain = ['#wPPh', '#wKasbon', '#wDenda', '#wPotLain'].reduce((s, id) => s + parseNum($(id).val()), 0);
-            const thpBersih = thpKotor - totalKar - potLain;
+            const tanggungan = getTanggungan();
+            const potLain = parseNum($('#wPPh').val());
 
             $('#pv3THPKotor').text('Rp ' + fmtNum(thpKotor));
             $('#pv3BPJS').text('Rp ' + fmtNum(totalKar));
+            $('#pv3Tanggungan').text('Rp ' + fmtNum(tanggungan));
             $('#pv3Lain').text('Rp ' + fmtNum(potLain));
-            $('#pv3THPBersih').text('Rp ' + fmtNum(thpBersih));
+            $('#pv3TotalPot').text('Rp ' + fmtNum(totalKar + tanggungan + potLain));
+            $('#pv3THPBersih').text('Rp ' + fmtNum(thpKotor - totalKar - tanggungan - potLain));
         }
 
         function calcBPJS() {
             const salary = parseNum($('#wSalaryBPJSTK').val()) || parseNum($('#wGajiPokok').val());
             const umk = parseNum($('#wUMK').val()) || UMK;
 
-            const jhtPer = Math.round(salary * 3.7 / 100);
-            const jkmPer = Math.round(salary * 0.3 / 100);
-            const jkkPer = Math.round(salary * 0.24 / 100);
-            const jpPer = Math.round(salary * 2 / 100);
-            const kesPer = Math.round(umk * 4 / 100);
-
-            const jhtKar = Math.round(salary * 2 / 100);
-            const jpKar = Math.round(salary * 1 / 100);
-            const kesKar = Math.round(umk * 1 / 100);
-
             $('#dasarBPJSTK').text('Rp ' + fmtNum(salary));
             $('#dasarUMK').text('Rp ' + fmtNum(umk));
 
             if (wzStep === 2) {
-                $('#b3JHTper').val(fmtNum(jhtPer));
-                $('#b3JKMper').val(fmtNum(jkmPer));
-                $('#b3JKKper').val(fmtNum(jkkPer));
-                $('#b3JPper').val(fmtNum(jpPer));
-                $('#b3KESper').val(fmtNum(kesPer));
+                $('#b3JHTper').val(fmtNum(Math.round(salary * 3.7 / 100)));
+                $('#b3JKMper').val(fmtNum(Math.round(salary * 0.3 / 100)));
+                $('#b3JKKper').val(fmtNum(Math.round(salary * 0.24 / 100)));
+                $('#b3JPper').val(fmtNum(Math.round(salary * 2 / 100)));
+                $('#b3KESper').val(fmtNum(Math.round(umk * 4 / 100)));
 
-                $('#b3JHTkar').val(fmtNum(jhtKar));
-                $('#b3JPkar').val(fmtNum(jpKar));
-                $('#b3KESkar').val(fmtNum(kesKar));
+                $('#b3JHTkar').val(fmtNum(Math.round(salary * 2 / 100)));
+                $('#b3JPkar').val(fmtNum(Math.round(salary * 1 / 100)));
+                $('#b3KESkar').val(fmtNum(Math.round(umk * 1 / 100)));
             }
 
             recalcBPJSTotals();
@@ -1322,7 +2087,6 @@
 
         function updateReview() {
             if (!wzEmployee) return;
-            const bulan = $('#wBulan').val(), tahun = $('#wTahun').val();
             const gaji = parseNum($('#wGajiPokok').val());
             const tunj = getTunjTotal();
             const thpKotor = gaji + tunj;
@@ -1335,64 +2099,75 @@
             const bpjsKesKar = parseNum($('#b3KESkar').val());
             const bpjsTKKar = totalBPJSKar - bpjsKesKar;
 
-            const potLain = ['#wPPh', '#wKasbon', '#wDenda', '#wPotLain'].reduce((s, id) => s + parseNum($(id).val()), 0);
-            const thpBersih = thpKotor - totalBPJSKar - potLain;
-            const totalBiaya = thpKotor + totalBPJSPer;
+            const tanggungan = getTanggungan();
+            const potLain = parseNum($('#wPPh').val());
+            const thpBersih = thpKotor - totalBPJSKar - tanggungan - potLain;
 
             $('#rv4Nama').text(`${wzEmployee.nama} (${wzEmployee.nip})`);
-            $('#rv4Periode').text(`${BULAN_NAMES[+bulan]} ${tahun}`);
             $('#rv4Gaji').text('Rp ' + fmtNum(gaji));
             $('#rv4Tunj').text('Rp ' + fmtNum(tunj));
             $('#rv4THPKotor').text('Rp ' + fmtNum(thpKotor));
             $('#rv4BPJSTKper').text('Rp ' + fmtNum(bpjsTKPer));
             $('#rv4BPJSKesper').text('Rp ' + fmtNum(bpjsKesPer));
-            $('#rv4TotalKes').text('Rp ' + fmtNum(bpjsKesPer + bpjsKesKar));
-            $('#rv4BPJSTKkar').text('Rp ' + fmtNum(bpjsTKKar));
             $('#rv4BPJSKeskar').text('Rp ' + fmtNum(bpjsKesKar));
+            $('#rv4Tanggungan').text('Rp ' + fmtNum(tanggungan));
+            $('#rv4TotalKes').text('Rp ' + fmtNum(bpjsKesKar + tanggungan));
+            $('#rv4BPJSTKkar').text('Rp ' + fmtNum(bpjsTKKar));
             $('#rv4TotalTK').text('Rp ' + fmtNum(bpjsTKPer + bpjsTKKar));
             $('#rv4PotLain').text('Rp ' + fmtNum(potLain));
-            $('#rv4TotalPot').text('Rp ' + fmtNum(totalBPJSKar + potLain));
+            $('#rv4TotalPot').text('Rp ' + fmtNum(totalBPJSKar + tanggungan + potLain));
             $('#rv4THPBersih').text('Rp ' + fmtNum(thpBersih));
-            $('#rv4TotalBiaya').text('Rp ' + fmtNum(totalBiaya));
+            $('#rv4TotalBiaya').text('Rp ' + fmtNum(thpKotor + totalBPJSPer));
         }
 
         function savePayroll() {
             if (!wzEmployee) return;
             const payload = {
                 karyawan_id: wzEmployee.id,
-                bulan: +$('#wBulan').val(),
-                tahun: +$('#wTahun').val(),
                 gaji_pokok: parseNum($('#wGajiPokok').val()),
                 salary_bpjstk: parseNum($('#wSalaryBPJSTK').val()),
                 umk_bandung: parseNum($('#wUMK').val()),
                 tunjangan: getTunjanganItems(),
                 'potongan[pph21]': parseNum($('#wPPh').val()),
-                'potongan[kasbon]': parseNum($('#wKasbon').val()),
-                'potongan[denda]': parseNum($('#wDenda').val()),
-                'potongan[lain]': parseNum($('#wPotLain').val()),
                 jht_perusahaan: parseNum($('#b3JHTper').val()),
                 jkm_perusahaan: parseNum($('#b3JKMper').val()),
                 jkk_perusahaan: parseNum($('#b3JKKper').val()),
                 jp_perusahaan: parseNum($('#b3JPper').val()),
                 bpjs_kes_perusahaan: parseNum($('#b3KESper').val()),
-                total_bpjs_perusahaan: parseNum($('#b3TotalPer').val()),
                 jht_karyawan: parseNum($('#b3JHTkar').val()),
                 jp_karyawan: parseNum($('#b3JPkar').val()),
                 bpjs_kes_karyawan: parseNum($('#b3KESkar').val()),
-                total_bpjs_karyawan: parseNum($('#b3TotalKar').val()),
+                biaya_tanggungan: getTanggungan(),
             };
             const url = wzEditId ? BASE + '/' + wzEditId : BASE;
             const method = wzEditId ? 'PUT' : 'POST';
+            const labelSave = wzEditId ? 'Update Perhitungan' : 'Simpan Perhitungan';
             $('#wBtnSave').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...');
-            $.ajax({ url, method, data: payload, dataType: 'json' })
-                .done(function(res) { bootstrap.Modal.getInstance('#wizardModal')?.hide(); toast(res.message, 'success'); applyFilter(); })
-                .fail(function(xhr) { toast(xhr.responseJSON?.message || 'Terjadi kesalahan!', 'error'); })
-                .always(function() { $('#wBtnSave').prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i>Simpan Payroll'); });
+            $.ajax({
+                    url,
+                    method,
+                    data: payload,
+                    dataType: 'json'
+                })
+                .done(function(res) {
+                    bootstrap.Modal.getInstance('#wizardModal')?.hide();
+                    toast(res.message, 'success');
+                    applyFilter();
+                })
+                .fail(function(xhr) {
+                    const errs = xhr.responseJSON?.errors;
+                    toast(errs ? Object.values(errs)[0][0] : (xhr.responseJSON?.message || 'Terjadi kesalahan!'),
+                        'error');
+                })
+                .always(function() {
+                    $('#wBtnSave').prop('disabled', false).html('<i class="fa-solid fa-save me-1"></i>' + labelSave);
+                });
         }
 
         function loadStats() {
-            const params = { bulan: $('#fBulan').val(), tahun: $('#fTahun').val(), divisi: $('#fDivisi').val() };
-            $.get(BASE + '/stats', params).done(function(res) {
+            $.get(BASE + '/stats', {
+                divisi: $('#fDivisi').val()
+            }).done(function(res) {
                 if (!res.success) return;
                 $('#stTHPKotor').text('Rp ' + fmtNum(res.total_payroll));
                 $('#stBPJSPer').text('Rp ' + fmtNum(res.total_bpjs_perusahaan));
@@ -1402,6 +2177,10 @@
             });
         }
 
+        const BULAN_NAMES = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
+            'Oktober', 'November', 'Desember'
+        ];
+
         function initCharts(res) {
             Object.values(charts).forEach(c => c?.destroy());
             const trendLabels = (res.trend || []).map(t => BULAN_NAMES[t.bulan]);
@@ -1409,15 +2188,42 @@
                 type: 'line',
                 data: {
                     labels: trendLabels,
-                    datasets: [
-                        { label: 'Total THP', data: (res.trend || []).map(t => t.total_thp), borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.1)', tension: .4, fill: true, pointRadius: 4 },
-                        { label: 'BPJS Perusahaan', data: (res.trend || []).map(t => t.total_bpjs_per), borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.07)', tension: .4, fill: true, pointRadius: 4 }
+                    datasets: [{
+                            label: 'Total THP',
+                            data: (res.trend || []).map(t => t.total_thp),
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79,70,229,.1)',
+                            tension: .4,
+                            fill: true,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'BPJS Perusahaan',
+                            data: (res.trend || []).map(t => t.total_bpjs_per),
+                            borderColor: '#059669',
+                            backgroundColor: 'rgba(5,150,105,.07)',
+                            tension: .4,
+                            fill: true,
+                            pointRadius: 4
+                        }
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + (v / 1e6).toFixed(1) + 'Jt' } } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: v => 'Rp ' + (v / 1e6).toFixed(1) + 'Jt'
+                            }
+                        }
+                    }
                 }
             });
 
@@ -1427,14 +2233,27 @@
                 data: {
                     labels: ['JHT Perusahaan', 'JKM', 'JKK', 'JP Perusahaan', 'BPJS Kes.'],
                     datasets: [{
-                        data: [bd.jht_perusahaan, bd.jkm_perusahaan, bd.jkk_perusahaan, bd.jp_perusahaan, bd.kes_perusahaan],
+                        data: [bd.jht_perusahaan, bd.jkm_perusahaan, bd.jkk_perusahaan, bd.jp_perusahaan, bd
+                            .kes_perusahaan
+                        ],
                         backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'],
                         borderWidth: 0
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -1453,18 +2272,24 @@
             }
         }
 
-        function fmtNum(n) { return Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
-        function parseNum(s) { if (!s) return 0; return parseInt(s.toString().replace(/\./g, '').replace(/,/g, '')) || 0; }
+        function fmtNum(n) {
+            return Math.round(parseFloat(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
 
-        function statusBadge(s) {
-            if (!s) return `<span class="badge-status bs-none">BELUM ADA</span>`;
-            const map = { draft: 'bs-draft', calculated: 'bs-calculated', approved: 'bs-approved', paid: 'bs-paid', cancelled: 'bs-cancelled' };
-            const label = { draft: 'DRAFT', calculated: 'CALCULATED', approved: 'APPROVED', paid: 'PAID', cancelled: 'CANCELLED' };
-            return `<span class="badge-status ${map[s] || 'bs-draft'}">${label[s] || s.toString().toUpperCase()}</span>`;
+        function totalPotonganKaryawan(p) {
+            return ['jht_karyawan', 'jp_karyawan', 'bpjs_kes_karyawan', 'biaya_tanggungan', 'potongan_pph21']
+                .reduce((s, k) => s + (parseFloat(p[k]) || 0), 0);
+        }
+
+        function parseNum(s) {
+            if (!s) return 0;
+            return parseInt(s.toString().replace(/\./g, '').replace(/,/g, '')) || 0;
         }
 
         function toast(msg, type = 'success') {
-            const el = $(`<div class="toast-msg toast-${type}"><i class="fa-solid ${type==='success'?'fa-check-circle':'fa-times-circle'}"></i>${msg}</div>`);
+            const el = $(
+                `<div class="toast-msg toast-${type}"><i class="fa-solid ${type==='success'?'fa-check-circle':'fa-times-circle'}"></i>${msg}</div>`
+            );
             $('#toast-container').append(el);
             setTimeout(() => el.fadeOut(300, () => el.remove()), 3500);
         }

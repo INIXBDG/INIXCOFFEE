@@ -49,6 +49,19 @@
             </span>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.master_karyawan.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.master_karyawan.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify user-icon"
+                    data-icon="mdi:account-box-multiple-outline"
+                    data-width="20"
+                    data-height="20"></i>
+                </span>
+                <span>Master Karyawan</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-item {{ request()->routeIs('HR.employee.*') ? 'active' : '' }}">
             <a href="{{ route('HR.employee.index') }}" class="menu-link">
                 <span class="menu-link-icon">
@@ -91,11 +104,44 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.instruktur-ol.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.instruktur-ol.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon"
+                    data-icon="mdi:briefcase-account"
+                    data-width="20"
+                    data-height="20"></i>
+                </span>
+                <span>Data Instruktur OL</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">
                 <i class="iconify me-1" data-icon="mdi:tune" data-width="14" data-height="14"></i>
                 Management
             </span>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.data-password.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.data-password.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:lock-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Data Password</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.legalitas.*') ? 'active' : '' }}">
+            <a href="{{ url('/HR-dashboard/legalitas') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:file-certificate-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Legalitas</span>
+                <span class="menu-link-indicator"></span>
+            </a>
         </li>
 
         <li class="menu-item {{ request()->routeIs('HR.structure.*') ? 'active' : '' }}">
@@ -113,6 +159,16 @@
                     <i class="iconify menu-icon" data-icon="mdi:clipboard-text-outline" data-width="20" data-height="20"></i>
                 </span>
                 <span>Job Desk</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.maintenance.*') ? 'active' : '' }}">
+            <a href="{{ url('/HR-dashboard/maintenance') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:tools" data-width="20" data-height="20"></i>
+                </span>
+                <span>Maintenance</span>
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
@@ -180,16 +236,6 @@
                     <i class="iconify menu-icon" data-icon="mdi:file-percent" data-width="20" data-height="20"></i>
                 </span>
                 <span>Perhitungan PPH 21</span>
-                <span class="menu-link-indicator"></span>
-            </a>
-        </li>
-
-        <li class="menu-item {{ request()->routeIs('HR.maintenance.*') ? 'active' : '' }}">
-            <a href="{{ url('/HR-dashboard/maintenance') }}" class="menu-link">
-                <span class="menu-link-icon">
-                    <i class="iconify menu-icon" data-icon="mdi:tools" data-width="20" data-height="20"></i>
-                </span>
-                <span>Maintenance</span>
                 <span class="menu-link-indicator"></span>
             </a>
         </li>
