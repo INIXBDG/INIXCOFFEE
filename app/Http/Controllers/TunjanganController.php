@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 use App\Exports\TunjanganExport;
 use App\Models\AdministrasiKaryawan;
 use App\Models\LogGaji;
+use App\Models\PerhitunganTunjanganHR;
+use App\Models\Pph21Karyawan;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TunjanganController extends Controller
@@ -139,6 +141,24 @@ class TunjanganController extends Controller
             'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
             'data' => $tunjangan,
             'gaji' => $gaji,
+        ]);
+    }
+
+    public function ambilDataBPJS($id) {
+        $dataBPJS = PerhitunganTunjanganHR::where('karyawan_id', $id)->first();
+        $dataPPH = Pph21Karyawan::where('karyawan_id', $id)->first();
+
+        $jenisBPJSkar = JenisTunjangan::where('nama_tunjangan', 'BPJS Kesehatan')->first();
+        $jenisBPJStk = JenisTunjangan::where('nama_tunjangan', 'BPJS Tenaga Kerja')->first();
+        $jenisPPH = JenisTunjangan::where('nama_tunjangan', 'PPH')->first();
+
+        return response()->json([
+            'valKar' => $dataBPJS->bpjs_kes_karyawan,
+            'valTK' => $dataBPJS->jht_karyawan,
+            'jesKar' => $jenisBPJSkar,
+            'jesTK' => $jenisBPJStk,
+            'pph' => $dataPPH->total_pph,
+            'jesPPH' => $jenisPPH,
         ]);
     }
 

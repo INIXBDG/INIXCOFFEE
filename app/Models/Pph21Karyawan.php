@@ -9,12 +9,7 @@ class Pph21Karyawan extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'karyawan_id',
-        'ptkp',
-        'status_menikah',
-        'anak',
-    ];
+    protected $fillable = ['karyawan_id', 'ptkp', 'status_menikah', 'anak', 'total_pph'];
 
     protected $casts = [
         'anak' => 'array',

@@ -282,7 +282,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
-
+        $schedule->command('app:legalitas-reminder')->dailyAt('08:00');
     }
 
     protected function commands(): void
