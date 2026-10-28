@@ -135,6 +135,7 @@ use App\Http\Controllers\HR\MasterKaryawanController;
 use App\Http\Controllers\HR\LegalitasController;
 use App\Http\Controllers\HR\MaintenanceController;
 use App\Http\Controllers\HR\ReportSmartController;
+use App\Http\Controllers\HR\LspLpkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -1636,7 +1637,12 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
     Route::get('/card-details', [HRController::class, 'getCardDetails'])->name('dashboard.card');
     Route::get('/dashboard/detail', [HRController::class, 'getDetail'])->name('dashboard.detail');
     Route::get('/dashboard/export', [HRController::class, 'exportDetail'])->name('dashboard.export');
-
+    Route::post('/unlock', [HRController::class, 'unlock'])->name('unlock');
+    Route::post('/lock', [HRController::class, 'lock'])->name('lock');
+    Route::post('/master/setup', [HRController::class, 'storeMaster'])->name('master.setup');
+    Route::get('/gate-status', [HRController::class, 'gateStatus'])->name('gate.status');
+    Route::post('/lupa-password', [HRController::class, 'lupaPassword'])->name('lupa');
+    
     Route::prefix('instruktur-ol')->name('instruktur-ol.')->group(function () {
         Route::get('/', [InstrukturOlController::class, 'index'])->name('index');
         Route::get('data', [InstrukturOlController::class, 'getData'])->name('data');
@@ -2005,6 +2011,8 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::delete('/delete-all', [payrollController::class, 'deleteAllPph'])->name('delete-all');
     });
 
+    
+
     Route::prefix('/rekapan-penjualan')->name('rekap-penjualan.')->group(function () {
         Route::get('/', [RekapPenjualanController::class, 'index'])->name('index');
         Route::get('/data/{year}/{monthStart?}/{monthEnd?}', [RekapPenjualanController::class, 'getData'])->name('data');
@@ -2017,6 +2025,34 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
         Route::get('/', [FeedbackInstukturController::class, 'index'])->name('index');
         Route::get('/export/pdf', [FeedbackInstukturController::class, 'exportPdf'])->name('export.pdf');
         Route::get('/export/excel', [FeedbackInstukturController::class, 'exportExcel'])->name('export.excel');
+    });
+
+    Route::prefix('lsp-lpk')->name('lsp-lpk.')->group(function () {
+        Route::get('/', [LspLpkController::class, 'index'])->name('index');
+        Route::get('options', [LspLpkController::class, 'options'])->name('options');
+        Route::get('lsp', [LspLpkController::class, 'lspList'])->name('lsp.list');
+        Route::post('lsp', [LspLpkController::class, 'lspStore'])->name('lsp.store');
+        Route::get('lsp/{lsp}', [LspLpkController::class, 'lspShow'])->name('lsp.show');
+        Route::put('lsp/{lsp}', [LspLpkController::class, 'lspUpdate'])->name('lsp.update');
+        Route::delete('lsp/{lsp}', [LspLpkController::class, 'lspDestroy'])->name('lsp.destroy');
+        Route::post('lsp/{lsp}/asesor', [LspLpkController::class, 'lspAttachAsesor'])->name('lsp.attach');
+        Route::delete('lsp/{lsp}/asesor/{asesor}', [LspLpkController::class, 'lspDetachAsesor'])->name('lsp.detach');
+
+        Route::get('program/{jenis}', [LspLpkController::class, 'programList'])->whereIn('jenis', ['sertifikasi', 'pelatihan'])->name('program.list');
+        Route::post('program', [LspLpkController::class, 'programStore'])->name('program.store');
+        Route::put('program/{program}', [LspLpkController::class, 'programUpdate'])->name('program.update');
+        Route::delete('program/{program}', [LspLpkController::class, 'programDestroy'])->name('program.destroy');
+
+        Route::get('asesor', [LspLpkController::class, 'asesorList'])->name('asesor.list');
+        Route::post('asesor', [LspLpkController::class, 'asesorStore'])->name('asesor.store');
+        Route::get('asesor/{asesor}', [LspLpkController::class, 'asesorShow'])->name('asesor.show');
+        Route::put('asesor/{asesor}', [LspLpkController::class, 'asesorUpdate'])->name('asesor.update');
+        Route::delete('asesor/{asesor}', [LspLpkController::class, 'asesorDestroy'])->name('asesor.destroy');
+
+        Route::get('riwayat', [LspLpkController::class, 'riwayatList'])->name('riwayat.list');
+        Route::post('riwayat', [LspLpkController::class, 'riwayatStore'])->name('riwayat.store');
+        Route::put('riwayat/{riwayat}', [LspLpkController::class, 'riwayatUpdate'])->name('riwayat.update');
+        Route::delete('riwayat/{riwayat}', [LspLpkController::class, 'riwayatDestroy'])->name('riwayat.destroy');
     });
 });
 

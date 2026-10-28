@@ -87,54 +87,6 @@ class Kernel extends ConsoleKernel
             }
         })->dailyAt('23:00')->description('Update Status Read Notifikasi Outstanding');
 
-        // 3. Kirim Reminder Survey Kepuasan ITSM
-        $schedule->call(function () {
-            try {
-                $now = now();
-                $users = User::with(['surveyKepuasan' => fn ($q) => $q->latest('created_at')])->get();
-                $notifications = [];
-
-                foreach ($users as $user) {
-                    $lastSurvey = $user->surveyKepuasan->first();
-
-                    if (!$lastSurvey || $now->diffInMonths($lastSurvey->created_at) >= 3) {
-                        $notifications[] = [
-                            'id' => \Illuminate\Support\Str::uuid(),
-                            'type' => 'App\\Notifications\\SurveyReminderNotification',
-                            'notifiable_type' => 'App\\Models\\User',
-                            'notifiable_id' => $user->id,
-                            'data' => json_encode([
-                                'user' => 'System',
-                                'message' => [
-                                    'tipe' => 'survey_reminder',
-                                    'judul' => 'Survey Kepuasan ITSM!',
-                                    'deskripsi' => 'Dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
-                                ],
-                                'path' => route('surveykepuasan.index'),
-                                'status' => 'unread',
-                                'data' => [
-                                    'id_user' => $user->id,
-                                    'terakhir_survey' => $lastSurvey ? $lastSurvey->created_at->format('d/m/Y') : 'Belum Pernah',
-                                ],
-                            ]),
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
-                    }
-                }
-
-                if (!empty($notifications)) {
-                    DB::table('notifications')->insert($notifications);
-                    Log::info('Survey reminder executed successfully. Total: '.count($notifications));
-                } else {
-                    Log::info('Survey reminder executed, no pending notifications.');
-                }
-            } catch (\Throwable $e) {
-                Log::error('Survey reminder failed: '.$e->getMessage());
-                throw $e;
-            }
-        })->dailyAt('14:04')->description('Kirim Reminder Survey Kepuasan ITSM');
-
         // 4. Pembersihan Otomatis Activity Log
         // $schedule->call(function () {
         //     try {

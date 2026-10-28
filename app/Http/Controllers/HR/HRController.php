@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
+use App\Models\DataPassword;
 use App\Models\karyawan;
 use App\Models\Pelamar;
 use App\Models\SuratPerjalanan;
@@ -13,6 +14,10 @@ use Illuminate\Support\Facades\DB;
 use App\Models\InstrukturOl;
 use App\Models\RKM;
 use App\Models\Maintenance;
+use Illuminate\Support\Facades\Log;
+use \Illuminate\Support\Facades\Crypt;
+use App\Models\DataPasswordLog;
+use App\Models\DataPasswordPemulihan;
 
 class HRController extends Controller
 {
@@ -25,6 +30,9 @@ class HRController extends Controller
         'pending' => 'Menunggu persetujuan',
         'tidak_hadir' => 'Tanpa keterangan',
     ];
+
+    private const LUPA_MAKS_PERCOBAAN = 5;
+    private const LUPA_BLOKIR_MENIT = 15;
 
     const DAILY_COLUMNS = ['Tanggal', 'Nama', 'Divisi', 'Jabatan', 'Status', 'Jam masuk', 'Telat (menit)', 'Keterangan'];
 
@@ -40,6 +48,221 @@ class HRController extends Controller
     public function __construct()
     {
         $this->presence = app(presenceController::class);
+    }
+
+    private const IDLE_MENIT = 5;
+    private const SESSION_KEY = 'hr_unlocked_until';
+
+    public function master(): ?DataPassword
+    {
+        return DataPassword::where('kategori', DataPassword::MASTER_HR_PASS)->first();
+    }
+
+    public function isHrd(): bool
+    {
+        return auth()->check() && in_array(auth()->user()->jabatan, ['HRD', 'GM', 'Direktur Utama', 'Direktur'], true);
+    }
+
+    public function unlocked(): bool
+    {
+        $until = session('hr_unlocked_until');
+        return $until && now()->timestamp < $until;
+    }
+    private function touchSession(): void
+    {
+        session([self::SESSION_KEY => now()->addMinutes(self::IDLE_MENIT)->timestamp]);
+    }
+
+    public function unlock(Request $request)
+    {
+        $request->validate(['password' => ['required', 'string']]);
+
+        $master = $this->master();
+
+        if (!$master) {
+            return response()->json(['message' => 'Password Master belum dibuat.'], 409);
+        }
+
+        if (!$master->verifySecret($request->input('password'))) {
+            Log::warning('hr_gate: gagal membuka', ['user' => auth()->id()]);
+            return response()->json(['message' => 'Password salah.'], 422);
+        }
+
+        $this->touchSession();
+        Log::info('hr_gate: dibuka', ['user' => auth()->id()]);
+
+        return response()->json(['message' => 'Terbuka.']);
+    }
+
+    public function lock()
+    {
+        session()->forget(self::SESSION_KEY);
+        return response()->json(['message' => 'Terkunci.']);
+    }
+
+    public function storeMaster(Request $request)
+    {
+        abort_unless($this->isHrd(), 403);
+
+        if ($this->master()) {
+            return redirect()->route('HR.index');
+        }
+
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'max:50', 'confirmed'],
+        ], [
+            'password.confirmed' => 'Konfirmasi password tidak sama.',
+            'password.min'       => 'Password minimal 8 karakter.',
+            'password.max'       => 'Password maksimal 50 karakter.',
+        ]);
+
+        DataPassword::create([
+            'judul'    => DataPassword::MASTER_HR_PASS,
+            'kategori' => DataPassword::MASTER_HR_PASS,
+            'password' => Crypt::encryptString($data['password']),
+        ]);
+
+        $this->touchSession();
+        Log::info('hr_gate: password dibuat', ['user' => auth()->id()]);
+
+        return redirect()->route('HR.index');
+    }
+
+    public function lupaPassword(Request $request)
+    {
+        abort_unless($this->isHrd(), 403);
+
+        $master = $this->master();
+        if (!$master) {
+            return response()->json(['message' => 'Password Master belum dibuat.'], 409);
+        }
+
+        $user = auth()->user();
+
+        $percobaan = DataPasswordPemulihan::where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subMinutes(self::LUPA_BLOKIR_MENIT))
+            ->count();
+
+        if ($percobaan >= self::LUPA_MAKS_PERCOBAAN) {
+            return response()->json([
+                'message' => 'Terlalu banyak percobaan. Coba lagi dalam ' . self::LUPA_BLOKIR_MENIT . ' menit.',
+            ], 429);
+        }
+
+        $data = $request->validate(
+            [
+                'npwp'      => ['required', 'string', 'max:50'],
+                'nib'       => ['required', 'string', 'max:50'],
+                'tgl_akta'  => ['required', 'string', 'max:50'],
+                'direktur'  => ['required', 'string', 'max:100'],
+                'alasan'    => ['required', 'string', 'min:10', 'max:1000'],
+                'konfirmasi' => ['accepted'],
+                'password'  => ['required', 'string', 'min:8', 'max:50', 'confirmed'],
+            ],
+            [
+                'npwp.required'        => 'Pertanyaan 1 wajib diisi.',
+                'nib.required'         => 'Pertanyaan 2 wajib diisi.',
+                'tgl_akta.required'    => 'Pertanyaan 3 wajib diisi.',
+                'direktur.required'    => 'Pertanyaan 4 wajib diisi.',
+                'alasan.required'      => 'Alasan wajib diisi.',
+                'alasan.min'           => 'Alasan minimal 10 karakter.',
+                'konfirmasi.accepted'  => 'Anda harus menyatakan bahwa ini benar-benar Anda.',
+                'password.confirmed'   => 'Konfirmasi password tidak sama.',
+                'password.min'         => 'Password minimal 8 karakter.',
+                'password.max'         => 'Password maksimal 50 karakter.',
+            ],
+        );
+
+        $ua = (string) $request->userAgent();
+        $nama = $user->nama_lengkap ?? ($user->name ?? ($user->email ?? 'ID ' . $user->id));
+
+        // Jawaban dicatat apa adanya (tidak divalidasi), HRD menilai sendiri lewat riwayat
+        $rec = DataPasswordPemulihan::create([
+            'user_id'         => $user->id,
+            'user_nama'       => $nama,
+            'user_jabatan'    => $user->jabatan ?? null,
+            'status'          => DataPasswordPemulihan::SELESAI,
+            'jawaban_nama'    => 'NPWP: ' . $data['npwp'] . ' | NIB: ' . $data['nib'],
+            'jawaban_judul'   => 'Tgl pendirian: ' . $data['tgl_akta'] . ' | Direktur: ' . $data['direktur'],
+            'alasan'          => '[Password Master HR] ' . $data['alasan'],
+            'konfirmasi'      => true,
+            'username'        => false,
+            'hasil'           => [],
+            'ip_address'      => $request->ip(),
+            'device'          => $this->deviceLabel($ua),
+            'diverifikasi_at' => now(),
+            'selesai_at'      => now(),
+        ]);
+
+        $master->update(['password' => Crypt::encryptString($data['password'])]);
+
+        $this->catatLupa('lupa_verifikasi', "Master HR: jawaban dicatat, riwayat #{$rec->id}", $user, $nama, $ua);
+        $this->catatLupa('lupa_reset', "Master HR direset via lupa password, riwayat #{$rec->id}", $user, $nama, $ua);
+
+        $this->touchSession();
+        Log::warning('hr_gate: password master direset via lupa password', ['user' => $user->id, 'riwayat' => $rec->id]);
+
+        return response()->json(['message' => 'Password Master berhasil dibuat ulang.']);
+    }
+
+    private function catatLupa(string $aksi, string $ket, $user, string $nama, string $ua): void
+    {
+        try {
+            DataPasswordLog::create([
+                'user_id'      => $user->id,
+                'user_nama'    => $nama,
+                'user_jabatan' => $user->jabatan ?? null,
+                'aksi'         => $aksi,
+                'data_id'      => null,
+                'data_judul'   => 'Password Master HR',
+                'ip_address'   => request()->ip(),
+                'device'       => $this->deviceLabel($ua),
+                'user_agent'   => mb_substr($ua, 0, 1000),
+                'keterangan'   => $ket,
+                'sumber'       => 'sistem',
+                'waktu'        => now(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function deviceLabel(string $ua): string
+    {
+        if ($ua === '') {
+            return '-';
+        }
+
+        $os = match (true) {
+            str_contains($ua, 'Windows') => 'Windows',
+            str_contains($ua, 'Android') => 'Android',
+            preg_match('/iPhone|iPad|iPod/', $ua) === 1 => 'iOS',
+            str_contains($ua, 'Mac OS') => 'macOS',
+            str_contains($ua, 'Linux') => 'Linux',
+            default => 'OS tidak dikenal',
+        };
+
+        $browser = 'Browser tidak dikenal';
+        foreach (['Edg' => 'Edge', 'OPR' => 'Opera', 'Firefox' => 'Firefox', 'Chrome' => 'Chrome', 'Safari' => 'Safari'] as $k => $n) {
+            if (preg_match('/' . $k . '\/(\d+)/', $ua, $m)) {
+                $browser = $n . ' ' . $m[1];
+                break;
+            }
+        }
+
+        return "{$browser} · {$os} (" . (str_contains($ua, 'Mobile') ? 'Mobile' : 'Desktop') . ')';
+    }
+
+    public function gateStatus()
+    {
+        $hasPassword = (bool) $this->master();
+
+        return response()->json([
+            'has_password' => $hasPassword,
+            'unlocked'     => $hasPassword ? $this->unlocked() : false,
+            'is_hrd'       => $this->isHrd(),
+            'idle_minutes' => self::IDLE_MENIT,
+        ]);
     }
 
     public function index()

@@ -48,7 +48,6 @@ class MasterKaryawanController extends Controller
         'whatsapp',
         'pendidikan_terakhir',
         'kejuruan',
-        'alamat_ktp',
         'alamat_lengkap',
         'divisi',
         'jabatan',
@@ -69,9 +68,6 @@ class MasterKaryawanController extends Controller
 
     private const CACHE_TTL = 300;
 
-    private const IDLE_MENIT = 5;
-    private const SESSION_KEY = 'master_karyawan_unlocked_until';
-
     public function __construct()
     {
         $this->middleware('auth');
@@ -79,110 +75,7 @@ class MasterKaryawanController extends Controller
 
     public function index()
     {
-        $mode = 'main';
-
-        if (!$this->master()) {
-            $mode = $this->isHrd() ? 'create' : 'denied';
-        }
-
-        return view('HR.master_karyawan.index', [
-            'mode'     => $mode,
-            'unlocked' => $this->unlocked(),
-        ]);
-    }
-
-    public function storeMaster(Request $request)
-    {
-        abort_unless($this->isHrd(), 403);
-
-        if ($this->master()) {
-            return redirect()->route('HR.master_karyawan.index');
-        }
-
-        $data = $request->validate([
-            'password' => ['required', 'string', 'min:8', 'max:50', 'confirmed'],
-        ], [
-            'password.confirmed' => 'Konfirmasi password tidak sama.',
-            'password.min'       => 'Password minimal 8 karakter.',
-            'password.max'       => 'Password maksimal 50 karakter.',
-        ]);
-
-        DataPassword::create([
-            'judul'    => DataPassword::MASTER_KARYAWAN,
-            'kategori' => DataPassword::MASTER_KARYAWAN,
-            'password' => Crypt::encryptString($data['password']),
-        ]);
-
-        $this->touchSession();
-        Log::info('master_karyawan: password dibuat', ['user' => auth()->id()]);
-
-        return redirect()->route('HR.master_karyawan.index');
-    }
-
-    public function unlock(Request $request): JsonResponse
-    {
-        $request->validate(['password' => ['required', 'string']]);
-
-        $master = $this->master();
-
-        if (!$master) {
-            return response()->json(['message' => 'Password Master Karyawan belum dibuat.'], 409);
-        }
-
-        if (!$master->verifySecret($request->input('password'))) {
-            Log::warning('master_karyawan: gagal membuka', ['user' => auth()->id()]);
-
-            return response()->json(['message' => 'Password salah.'], 422);
-        }
-
-        $this->touchSession();
-        Log::info('master_karyawan: dibuka', ['user' => auth()->id()]);
-
-        return response()->json(['message' => 'Terbuka.']);
-    }
-
-    public function lock(): JsonResponse
-    {
-        session()->forget(self::SESSION_KEY);
-
-        return response()->json(['message' => 'Terkunci.']);
-    }
-
-    private function master(): ?DataPassword
-    {
-        return DataPassword::where('kategori', DataPassword::MASTER_KARYAWAN)->first();
-    }
-
-    private function isHrd(): bool
-    {
-        return auth()->check() && auth()->user()->jabatan === 'HRD';
-    }
-
-    private function unlocked(): bool
-    {
-        $until = session(self::SESSION_KEY);
-
-        return $until && now()->timestamp < $until;
-    }
-
-    private function touchSession(): void
-    {
-        session([self::SESSION_KEY => now()->addMinutes(self::IDLE_MENIT)->timestamp]);
-    }
-
-    private function guard(): ?JsonResponse
-    {
-        if (!$this->master()) {
-            return response()->json(['message' => 'Password Master Karyawan belum dibuat.'], 409);
-        }
-
-        if (!$this->unlocked()) {
-            return response()->json(['message' => 'Terkunci.'], 423);
-        }
-
-        $this->touchSession();
-
-        return null;
+        return view('HR.master_karyawan.index');
     }
 
     public function get(Request $request)
@@ -251,13 +144,12 @@ class MasterKaryawanController extends Controller
             'pendidikan_terakhir' => $k->pendidikan_terakhir,
             'kejuruan'            => $k->kejuruan,
             'no_hp'               => $k->whatsapp ?: $k->Telepon,
-            'alamat_ktp'          => $k->alamat_ktp,
             'alamat_domisili'     => $k->alamat_lengkap,
             'rekening_maybank'    => $k->rekening_maybank,
             'rekening_bca'        => $k->rekening_bca,
             'keterangan'          => $k->keterangan,
-            'masa_kerja'          => $this->durasi($k->awal_probation ?: $k->awal_kontrak),
-            'masa_kontrak'        => $this->durasiKontrak($k->awal_kontrak, $k->akhir_kontrak),
+            'masa_kerja'          => $this->masaKerja($k),
+            'masa_kontrak'        => $this->masaKontrak($k),
             'basic_salary'        => $this->rupiah($this->basicSalary($k)),
             'awal_probation'      => $this->tanggal($k->awal_probation),
             'akhir_probation'     => $this->tanggal($k->akhir_probation),
@@ -654,8 +546,8 @@ class MasterKaryawanController extends Controller
             'divisi'           => $k->divisi,
             'jabatan'          => $k->jabatan,
             'status_karyawan'  => $k->status_karyawan,
-            'masa_kerja'       => $this->durasi($k->awal_probation ?: $k->awal_kontrak),
-            'masa_kontrak'     => $this->durasi($k->awal_kontrak),
+            'masa_kerja'       => $this->masaKerja($k),
+            'masa_kontrak'     => $this->masaKontrak($k),
             'basic_salary'     => $basic,
             'basic_salary_fmt' => $this->rupiah($basic),
             'dokumen'          => [
@@ -824,14 +716,24 @@ class MasterKaryawanController extends Controller
         return $nilai ? Carbon::parse($nilai)->locale('id')->translatedFormat('j F Y') : '-';
     }
 
-    private function durasi($mulai): string
+    private function masaKerja($k): string
+    {
+        return $this->durasi($k->awal_probation ?: $k->awal_kontrak);
+    }
+
+    private function masaKontrak($k): string
+    {
+        return $this->durasi($k->awal_kontrak, $k->akhir_kontrak);
+    }
+
+    private function durasi($mulai, $sampai = null): string
     {
         if (empty($mulai)) {
             return '-';
         }
 
-        $awal = Carbon::parse($mulai);
-        $akhir = Carbon::now();
+        $awal  = Carbon::parse($mulai)->startOfDay();
+        $akhir = $sampai ? Carbon::parse($sampai)->startOfDay() : Carbon::today();
 
         if ($awal->greaterThan($akhir)) {
             return '-';
@@ -842,21 +744,14 @@ class MasterKaryawanController extends Controller
         return "{$d->y} tahun {$d->m} bulan {$d->d} hari";
     }
 
-    private function durasiKontrak($mulai, $selesai): string
+    private function guard(): ?JsonResponse
     {
-        if (empty($mulai) || empty($selesai)) {
-            return '-';
+        $hr = app(\App\Http\Controllers\HR\HRController::class);
+
+        if (!$hr->unlocked()) {
+            return response()->json(['message' => 'Terkunci.'], 423);
         }
 
-        $awal = Carbon::parse($mulai);
-        $akhir = Carbon::parse($selesai);
-
-        if ($awal->greaterThan($akhir)) {
-            return '-';
-        }
-
-        $d = $awal->diff($akhir);
-
-        return "{$d->y} tahun {$d->m} bulan {$d->d} hari";
+        return null;
     }
 }
