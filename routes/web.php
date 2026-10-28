@@ -385,7 +385,7 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================================
     // 6. EXAM & SERTIFIKASI
     // =========================================================================
-    Route::get('/exam/manual-create-pengajuan', [examController::class, 'manualCreate'])->name('exam.manualCreate');
+    Route::get('/manual-create-pengajuan/exam', [examController::class, 'manualCreate'])->name('manualCreate.exam');
     Route::get('getExam', [examController::class, 'getExam'])->name('getExam');
     Route::get('getExamKondisi', [examController::class, 'getExamKondisi'])->name('getExamKondisi');
     Route::get('/get-po-exam-sertifa', [examController::class, 'getPoExamSertifa'])->name('getPoExamSertifa');
