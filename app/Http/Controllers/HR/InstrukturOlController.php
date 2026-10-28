@@ -53,7 +53,7 @@ class InstrukturOlController extends Controller
 
     public function index()
     {
-        return view('HR.InstrukturOl.index', [
+        return view('HR.InstrukturOL.index', [
             'kolomList'    => self::KOLOM_LIST,
             'kolomRiwayat' => self::KOLOM_RIWAYAT,
         ]);
@@ -656,7 +656,7 @@ class InstrukturOlController extends Controller
             return Excel::download(new ArrayExport($headings, $rows), $file . '.xlsx');
         }
 
-        return Pdf::loadView('HR.InstrukturOl.export-pdf', compact('judul', 'headings', 'rows'))
+        return Pdf::loadView('HR.InstrukturOL.export-pdf', compact('judul', 'headings', 'rows'))
             ->setPaper('a4', count($headings) > 6 ? 'landscape' : 'portrait')
             ->download($file . '.pdf');
     }
