@@ -10,7 +10,7 @@ use App\Models\souvenir;
 use App\Models\souvenirpeserta;
 use App\Models\souvenirinhouse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Carbon;
 use App\Models\Registrasi;
@@ -181,6 +181,7 @@ class FeedbackAPIController extends Controller
         $id_regist = $request->input('id_regist');
         $id_rkm = $request->input('id_rkm');
         $souveniran = $request->input('souvenir');
+
         if (!$souveniran) {
             return response()->json([
                 'status' => 'error',
@@ -188,14 +189,35 @@ class FeedbackAPIController extends Controller
                 'text' => 'Anda belum mengisi souvenir, silahkan coba kembali!',
             ], 200);
         }
-        $souvenir = Souvenir::where('nama_souvenir', $souveniran)->first();
-        $souvenir->decrement('stok');
 
-        souvenirpeserta::create([
-            'id_souvenir' => $souvenir->id,
-            'id_rkm' => $id_rkm,
-            'id_regist' => $id_regist
-        ]);
+        $result = DB::transaction(function () use ($souveniran, $id_rkm, $id_regist) {
+            $souvenir = souvenir::where('nama_souvenir', $souveniran)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$souvenir || $souvenir->stok < 1) {
+                return false;
+            }
+
+            $souvenir->decrement('stok');
+
+            souvenirpeserta::create([
+                'id_souvenir' => $souvenir->id,
+                'id_rkm' => $id_rkm,
+                'id_regist' => $id_regist,
+            ]);
+
+            return true;
+        });
+
+        if (!$result) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Mohon Maaf!',
+                'text' => 'Stok souvenir habis, silahkan pilih souvenir lain!',
+            ], 200);
+        }
+
         return response()->json([
             'status' => 'success',
             'title' => 'Selamat!',
