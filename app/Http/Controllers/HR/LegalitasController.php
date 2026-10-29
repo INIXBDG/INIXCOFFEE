@@ -16,9 +16,6 @@ use Illuminate\Support\Str;
 
 class LegalitasController extends Controller
 {
-    private const IDLE_MENIT = 5;
-    private const SESSION_KEY = 'legalitas_unlocked_until';
-
     private const SORTABLE = [
         'nama_dokumen'     => 'nama_dokumen',
         'nomor_dokumen'    => 'nomor_dokumen',
@@ -34,73 +31,7 @@ class LegalitasController extends Controller
 
     public function index()
     {
-        $mode = 'main';
-
-        if (!$this->master()) {
-            $mode = $this->isHrd() ? 'create' : 'denied';
-        }
-
-        return view('HR.legalitas.index', [
-            'mode'     => $mode,
-            'unlocked' => $this->unlocked(),
-        ]);
-    }
-
-    public function storeMaster(Request $request)
-    {
-        abort_unless($this->isHrd(), 403);
-
-        if ($this->master()) {
-            return redirect()->route('HR.legalitas.index');
-        }
-
-        $data = $request->validate([
-            'password' => ['required', 'string', 'min:8', 'max:50', 'confirmed'],
-        ], [
-            'password.confirmed' => 'Konfirmasi password tidak sama.',
-            'password.min'       => 'Password minimal 8 karakter.',
-            'password.max'       => 'Password maksimal 50 karakter.',
-        ]);
-
-        DataPassword::create([
-            'judul'    => DataPassword::MASTER_LEGALITAS,
-            'kategori' => DataPassword::MASTER_LEGALITAS,
-            'password' => Crypt::encryptString($data['password']),
-        ]);
-
-        $this->touchSession();
-        Log::info('legalitas: password dibuat', ['user' => auth()->id()]);
-
-        return redirect()->route('HR.legalitas.index');
-    }
-
-    public function unlock(Request $request): JsonResponse
-    {
-        $request->validate(['password' => ['required', 'string']]);
-
-        $master = $this->master();
-
-        if (!$master) {
-            return response()->json(['message' => 'Password Legalitas belum dibuat.'], 409);
-        }
-
-        if (!$master->verifySecret($request->input('password'))) {
-            Log::warning('legalitas: gagal membuka', ['user' => auth()->id()]);
-
-            return response()->json(['message' => 'Password salah.'], 422);
-        }
-
-        $this->touchSession();
-        Log::info('legalitas: dibuka', ['user' => auth()->id()]);
-
-        return response()->json(['message' => 'Terbuka.']);
-    }
-
-    public function lock(): JsonResponse
-    {
-        session()->forget(self::SESSION_KEY);
-
-        return response()->json(['message' => 'Terkunci.']);
+        return view('HR.legalitas.index');
     }
 
     public function getData(Request $request): JsonResponse
@@ -265,39 +196,13 @@ class LegalitasController extends Controller
         return response()->json(['message' => 'Legalitas berhasil dihapus'], 200);
     }
 
-    private function master(): ?DataPassword
-    {
-        return DataPassword::where('kategori', DataPassword::MASTER_LEGALITAS)->first();
-    }
-
-    private function isHrd(): bool
-    {
-        return auth()->check() && auth()->user()->jabatan === 'HRD';
-    }
-
-    private function unlocked(): bool
-    {
-        $until = session(self::SESSION_KEY);
-
-        return $until && now()->timestamp < $until;
-    }
-
-    private function touchSession(): void
-    {
-        session([self::SESSION_KEY => now()->addMinutes(self::IDLE_MENIT)->timestamp]);
-    }
-
     private function guard(): ?JsonResponse
     {
-        if (!$this->master()) {
-            return response()->json(['message' => 'Password Legalitas belum dibuat.'], 409);
-        }
+        $hr = app(\App\Http\Controllers\HR\HRController::class);
 
-        if (!$this->unlocked()) {
+        if (!$hr->unlocked()) {
             return response()->json(['message' => 'Terkunci.'], 423);
         }
-
-        $this->touchSession();
 
         return null;
     }

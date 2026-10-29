@@ -26,17 +26,18 @@ class DataPasswordController extends Controller
 
     private const MIN_RETENSI_HARI = 30;
 
-    private const HAK_AKSES = ['hrd', 'direksi', 'gm', 'direktur'];
-    private const LUPA_MAKS_GAGAL = 5;
-    private const LUPA_BLOKIR_MENIT = 15;
-    private const LUPA_TOKEN_MENIT = 10;
-
     private const STATUS_LUPA = [
-        'gagal' => 'Gagal',
+        'gagal'         => 'Gagal',
         'terverifikasi' => 'Terverifikasi (belum dipakai)',
-        'selesai' => 'Selesai (password diganti)',
-        'kedaluwarsa' => 'Kedaluwarsa',
+        'selesai'       => 'Selesai (password diganti)',
+        'kedaluwarsa'   => 'Kedaluwarsa',
     ];
+
+    private const LUPA_MAKS_GAGAL   = 5;
+    private const LUPA_BLOKIR_MENIT = 15;
+    private const LUPA_TOKEN_MENIT  = 10;
+
+    private const HAK_AKSES = ['hrd', 'direksi', 'gm', 'direktur'];
 
     private const AKSI = [
         'master_dibuat' => 'Password master dibuat',
@@ -55,9 +56,6 @@ class DataPasswordController extends Controller
         'export_log' => 'Export log',
         'import_log' => 'Import log',
         'bersihkan_log' => 'Bersihkan log',
-        'lupa_verifikasi' => 'Lupa password (terverifikasi)',
-        'lupa_gagal' => 'Lupa password (verifikasi gagal)',
-        'lupa_reset' => 'Reset master via lupa password',
     ];
 
     private const KOLOM_LOG = [
@@ -72,110 +70,28 @@ class DataPasswordController extends Controller
         'sumber' => 'Sumber',
     ];
 
+    private function isHrd(): bool
+    {
+        return auth()->check() && in_array(
+            mb_strtolower(trim((string) auth()->user()->jabatan)),
+            self::HAK_AKSES,
+            true
+        );
+    }
+
+    private function master(): ?DataPassword
+    {
+        return DataPassword::where('kategori', DataPassword::MASTER_HR_PASS)->first();
+    }
+
     public function index()
     {
-        if ($this->isProgrammer()) {
-            return view('HR.DataPassword.setup', ['mode' => $this->master() ? 'programmer' : 'denied']);
-        }
-
-        if (!$this->isHrd()) {
-            return view('HR.DataPassword.setup', ['mode' => 'denied']);
-        }
-
-        if (!$this->master()) {
-            return redirect()->route('HR.data-password.setup');
-        }
-
         return view('HR.DataPassword.index', [
-            'kategori' => self::KATEGORI,
-            'unlocked' => $this->unlocked(),
-            'aksiLog' => self::AKSI,
-            'kolomLog' => self::KOLOM_LOG,
-            'lupaAdaData' => $this->dataBiasa()->exists(),
-            'statusLupa' => self::STATUS_LUPA,
+            'kategori'    => self::KATEGORI,
+            'aksiLog'     => self::AKSI,
+            'kolomLog'    => self::KOLOM_LOG,
+            'statusLupa'  => self::STATUS_LUPA ?? [],
         ]);
-    }
-
-    public function setup()
-    {
-        if ($this->isProgrammer()) {
-            return redirect()->route('HR.data-password.index');
-        }
-
-        if (!$this->isHrd()) {
-            return view('HR.DataPassword.setup', ['mode' => 'denied']);
-        }
-
-        if ($this->master()) {
-            return redirect()->route('HR.data-password.index');
-        }
-
-        return view('HR.DataPassword.setup', ['mode' => 'create']);
-    }
-
-    public function storeMaster(Request $request)
-    {
-        abort_unless($this->isHrd(), 403);
-
-        if ($this->master()) {
-            return redirect()->route('HR.data-password.index');
-        }
-
-        $data = $request->validate(
-            [
-                'password' => ['required', 'string', 'min:8', 'max:50', 'confirmed'],
-            ],
-            [
-                'password.confirmed' => 'Konfirmasi password tidak sama.',
-                'password.min' => 'Password minimal 8 karakter.',
-                'password.max' => 'Password maksimal 50 karakter.',
-            ],
-        );
-
-        DataPassword::create([
-            'judul' => DataPassword::MASTER,
-            'kategori' => DataPassword::MASTER,
-            'password' => Crypt::encryptString($data['password']),
-        ]);
-
-        $this->catat('master_dibuat');
-
-        $this->touchSession();
-
-        return redirect()->route('HR.data-password.index');
-    }
-
-    public function unlock(Request $request): JsonResponse
-    {
-        abort_unless($this->isHrd(), 403);
-
-        $request->validate(['password' => ['required', 'string']]);
-
-        $master = $this->master();
-        abort_unless($master, 409, 'Password vault belum dibuat.');
-
-        if (!$master->verifySecret($request->input('password'))) {
-            $this->catat('buka_gagal');
-
-            return response()->json(['message' => 'Password salah.'], 422);
-        }
-
-        $this->touchSession();
-
-        $this->catat('buka_berhasil');
-
-        return response()->json(['message' => 'Terbuka.']);
-    }
-
-    public function lock(Request $request): JsonResponse
-    {
-        if ($this->isHrd() && $this->unlocked()) {
-            $this->catat($request->boolean('auto') ? 'kunci_otomatis' : 'kunci');
-        }
-
-        session()->forget('dp_unlocked_until');
-
-        return response()->json(['message' => 'Terkunci.']);
     }
 
     public function getData(Request $request): JsonResponse
@@ -189,7 +105,11 @@ class DataPasswordController extends Controller
                 });
             })
             ->when($request->kategori, fn($q, $v) => $q->where('kategori', $v))
-            ->orderByRaw('kategori in (?, ?) desc', DataPassword::MASTERS)
+            ->orderByRaw(
+                'CASE WHEN kategori IN (' . 
+                collect(DataPassword::MASTERS)->map(fn() => '?')->implode(',') . 
+                ') THEN 0 ELSE 1 END'
+            , DataPassword::MASTERS)
             ->orderBy('judul')
             ->get(['id', 'judul', 'kategori', 'identifier', 'catatan', 'updated_at'])
             ->map(
@@ -314,35 +234,13 @@ class DataPasswordController extends Controller
         ];
     }
 
-    private function isHrd(): bool
-    {
-        return auth()->check() && in_array(mb_strtolower(trim((string) auth()->user()->jabatan)), self::HAK_AKSES, true);
-    }
-
-    private function master(): ?DataPassword
-    {
-        return DataPassword::where('kategori', DataPassword::MASTER)->first();
-    }
-
-    private function unlocked(): bool
-    {
-        $until = session('dp_unlocked_until');
-
-        return $until && now()->timestamp < $until;
-    }
-
-    private function touchSession(): void
-    {
-        session(['dp_unlocked_until' => now()->addMinutes(self::IDLE_MENIT)->timestamp]);
-    }
-
     private function guard(): void
     {
         abort_unless($this->isHrd(), 403, 'Anda bukan HRD.');
         abort_unless($this->master(), 409, 'Password vault belum dibuat.');
-        abort_unless($this->unlocked(), 423, 'Terkunci.');
 
-        $this->touchSession();
+        $hr = app(\App\Http\Controllers\HR\HRController::class);
+        abort_unless($hr->unlocked(), 423, 'Terkunci.');
     }
 
     public function resetProgrammer(Request $request)

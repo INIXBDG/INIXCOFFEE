@@ -117,6 +117,19 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.lsp-lpk.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.lsp-lpk.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon"
+                    data-icon="mdi:certificate-outline"
+                    data-width="20"
+                    data-height="20"></i>
+                </span>
+                <span>Data LSP/LPK</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">
                 <i class="iconify me-1" data-icon="mdi:tune" data-width="14" data-height="14"></i>
@@ -300,7 +313,6 @@
                 <strong class="text-black">INIX HR</strong><br>
                 <span class="d-none d-lg-inline">
                     Sistem Manajemen SDM<br>
-                    <em>aman, cepat & modern</em>
                 </span>
             </p>
             <a href="/" class="btn btn-footer-custom w-100">

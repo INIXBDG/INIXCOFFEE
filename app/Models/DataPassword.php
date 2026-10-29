@@ -9,9 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DataPassword extends Model
 {
-    public const MASTER = 'Password Fitur Data Password';
-    public const MASTER_LEGALITAS = 'Password Fitur Legalitas';
-    public const MASTER_KARYAWAN = 'master_karyawan';
+    public const MASTER_HR_PASS = 'MASTER HR PASS';
 
     protected $table = 'data_passwords';
 
@@ -19,7 +17,7 @@ class DataPassword extends Model
 
     protected $hidden = ['password'];
 
-    public const MASTERS = [self::MASTER, self::MASTER_LEGALITAS]; 
+    public const MASTERS = [self::MASTER_HR_PASS]; 
 
     public function isMaster(): bool
     {

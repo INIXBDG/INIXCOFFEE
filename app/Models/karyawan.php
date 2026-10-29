@@ -59,7 +59,9 @@ class karyawan extends Model
         'kota',
         'resigned_at',
         'alasan_resign',
-        'nik'
+        'nik',
+        'pendidikan_terakhir',
+        'kejuruan'
     ];
 
     public function user()

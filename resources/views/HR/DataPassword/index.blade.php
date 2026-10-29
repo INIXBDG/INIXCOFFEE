@@ -2,126 +2,6 @@
 
 @section('content_HR')
     <style>
-        #lockOverlay {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: rgba(15, 23, 42, .92);
-            backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        #lockOverlay.d-none {
-            display: none !important;
-        }
-
-        #lockOverlay .lock-card {
-            width: 100%;
-            max-width: 400px;
-            background: #ffffff;
-            color: #1e293b;
-            border: 0;
-            border-radius: 1rem;
-            padding: 2rem 1.75rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, .45);
-            text-align: center;
-        }
-
-        #lockOverlay .lock-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 1rem;
-            border-radius: 50%;
-            background: #eef2ff;
-            color: #4f46e5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #lockOverlay .lock-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: .25rem;
-        }
-
-        #lockOverlay .lock-desc {
-            font-size: .875rem;
-            color: #64748b;
-            margin-bottom: 1.5rem;
-        }
-
-        #lockOverlay .form-control {
-            background: #ffffff;
-            color: #0f172a;
-            border: 1px solid #cbd5e1;
-            height: 44px;
-        }
-
-        #lockOverlay .form-control::placeholder {
-            color: #94a3b8;
-        }
-
-        #lockOverlay .form-control:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 .2rem rgba(79, 70, 229, .15);
-        }
-
-        #lockOverlay .btn-toggle-pw {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-            min-width: 96px;
-        }
-
-        #lockOverlay .btn-toggle-pw:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        #lockOverlay .btn-lock-back,
-        #lockOverlay .btn-lock-open {
-            height: 44px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #lockOverlay .btn-lock-back {
-            background: #f1f5f9;
-            color: #334155;
-            border: 1px solid #cbd5e1;
-        }
-
-        #lockOverlay .btn-lock-back:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        #lockOverlay .btn-lock-open {
-            background: #4f46e5;
-            border: 1px solid #4f46e5;
-            color: #ffffff;
-        }
-
-        #lockOverlay .btn-lock-open:hover {
-            background: #4338ca;
-            border-color: #4338ca;
-        }
-
-        #lockOverlay textarea.form-control {
-            height: auto;
-        }
-
-        #lockOverlay .modal {
-            z-index: 100000;
-        }
-
         .dp-mask {
             letter-spacing: .2em;
             font-family: monospace;
@@ -190,6 +70,40 @@
             border-color: #e2e8f0;
             opacity: 1;
         }
+
+        .rw-ans {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: .4rem;
+            padding: .3rem .6rem;
+            min-width: 180px;
+            max-width: 260px;
+        }
+
+        .rw-ans+.rw-ans {
+            margin-top: .35rem;
+        }
+
+        .rw-ans-label {
+            font-size: .68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #64748b;
+        }
+
+        .rw-ans-val {
+            font-size: .85rem;
+            font-weight: 600;
+            color: #1e293b;
+            word-break: break-word;
+        }
+
+        .rw-ans-val.kosong {
+            font-weight: 400;
+            font-style: italic;
+            color: #94a3b8;
+        }
     </style>
 
     <div class="container-fluid px-4 py-4">
@@ -199,8 +113,6 @@
                 <small class="text-muted">Simpanan informasi akses penting. Password tersamarkan dan terenkripsi.</small>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-light text-dark border" id="lockTimer">05:00</span>
-                <button type="button" class="btn btn-outline-secondary" id="btnLock">Kunci Sekarang</button>
                 <button type="button" class="btn btn-primary" id="btnTambah">+ Tambah Password</button>
             </div>
         </div>
@@ -538,122 +450,6 @@
             </div>
         </div>
     </div>
-
-    <div id="lockOverlay" class="{{ $unlocked ? 'd-none' : '' }}">
-        <div class="lock-card">
-            <div class="lock-icon">
-                <i class="iconify" data-icon="mdi:lock-outline" data-width="36" data-height="36"></i>
-            </div>
-            <div class="lock-title">Area Terproteksi</div>
-            <div class="lock-desc">Masukkan password Data Password untuk melanjutkan.</div>
-            <form id="formUnlock" autocomplete="off">
-                <div class="alert alert-danger py-2 d-none text-start" id="unlockError"></div>
-                <div class="input-group mb-3">
-                    <input type="password" class="form-control" id="unlockPassword" placeholder="Password"
-                        autocomplete="new-password" required>
-                    <button type="button" class="btn btn-toggle-pw" data-target="#unlockPassword">Lihat</button>
-                </div>
-                <div class="d-flex gap-2">
-                    <div class="mb-4">
-                        <a href="{{ route('HR.index') }}" class="btn btn-lock-back flex-fill">Kembali</a>
-                    </div>
-                    <button type="submit" class="btn btn-lock-open flex-fill mb-4" id="btnUnlock">Buka</button>
-                </div>
-
-                <div class="text-end mb-3">
-                    <a href="#" id="linkLupa" class="small">Lupa password?</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalLupa" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-start">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="lupaTitle">Lupa Password Master</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="alert alert-danger py-2 mx-3 mt-3 mb-0 d-none" id="lupaError"></div>
-
-                {{-- Langkah 1: verifikasi --}}
-                <form id="formLupaVerif" autocomplete="off">
-                    <div class="modal-body">
-                        <p class="small text-muted">Jawab pertanyaan berikut untuk memastikan ini benar-benar Anda.
-                            Jawaban dan hasil verifikasi dicatat.</p>
-
-                        <div class="mb-3">
-                            <label class="form-label ol-req">1. Password akun login Anda</label>
-                            <div class="input-group">
-                                <input type="password" name="account_password" id="lupaAkunPw" class="form-control"
-                                    autocomplete="new-password" required>
-                                <button type="button" class="btn btn-toggle-pw" data-target="#lupaAkunPw">Lihat</button>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label ol-req">2. Username akun Anda</label>
-                            <input type="text" name="username" class="form-control" maxlength="255"
-                                autocomplete="off" required>
-                        </div>
-                        @if ($lupaAdaData)
-                            <div class="mb-3">
-                                <label class="form-label ol-req">3. Sebutkan judul salah satu data yang tersimpan di
-                                    vault</label>
-                                <input type="text" name="judul_data" class="form-control" maxlength="255" required>
-                            </div>
-                        @endif
-
-                        <div class="mb-3">
-                            <label class="form-label ol-req">{{ $lupaAdaData ? '4' : '3' }}. Alasan membuat password
-                                baru</label>
-                            <textarea name="alasan" rows="2" class="form-control" minlength="10" maxlength="1000" required></textarea>
-                        </div>
-
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="konfirmasi" value="1"
-                                id="lupaKonfirmasi" required>
-                            <label class="form-check-label small" for="lupaKonfirmasi">
-                                Saya menyatakan bahwa saya adalah pemilik akun ini dan bertanggung jawab atas pembuatan
-                                ulang password.
-                            </label>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Verifikasi</button>
-                    </div>
-                </form>
-
-                {{-- Langkah 2: password baru --}}
-                <form id="formLupaReset" autocomplete="off" class="d-none">
-                    <div class="modal-body">
-                        <p class="small text-muted">Verifikasi berhasil. Buat password master baru (8–50 karakter).</p>
-                        <div class="mb-3">
-                            <label class="form-label ol-req">Password baru</label>
-                            <div class="input-group">
-                                <input type="password" name="password" id="lupaPw1" class="form-control"
-                                    minlength="8" maxlength="50" autocomplete="new-password" required>
-                                <button type="button" class="btn btn-toggle-pw" data-target="#lupaPw1">Lihat</button>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="form-label ol-req">Konfirmasi password baru</label>
-                            <div class="input-group">
-                                <input type="password" name="password_confirmation" id="lupaPw2" class="form-control"
-                                    minlength="8" maxlength="50" autocomplete="new-password" required>
-                                <button type="button" class="btn btn-toggle-pw" data-target="#lupaPw2">Lihat</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Password Baru</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
@@ -667,10 +463,6 @@
                 update: "{{ route('HR.data-password.update', '__ID__') }}",
                 destroy: "{{ route('HR.data-password.destroy', '__ID__') }}",
                 secret: "{{ route('HR.data-password.secret', '__ID__') }}",
-                unlock: "{{ route('HR.data-password.unlock') }}",
-                lock: "{{ route('HR.data-password.lock') }}",
-                lupaVerif: "{{ route('HR.data-password.lupa.verifikasi') }}",
-                lupaReset: "{{ route('HR.data-password.lupa.reset') }}",
                 lupaRiwayat: "{{ route('HR.data-password.lupa.riwayat') }}"
             };
             const KATEGORI_COLOR = {
@@ -681,7 +473,6 @@
                 'Lainnya': 'bg-secondary'
             };
             const REVEAL_MS = 10000;
-            const IDLE_SEC = 300;
             const MASK = '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;';
 
             const LOG_ROUTES = {
@@ -715,10 +506,7 @@
                 $.get(LOG_ROUTES.data, $.extend({
                     page: logPage
                 }, logFilters())).done(renderLog).fail(xhr => {
-                    if (xhr.status === 423) {
-                        showLock('Sesi berakhir. Masukkan password kembali.');
-                        return;
-                    }
+
                     $('#logBody').html(
                         '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat log.</td></tr>'
                     );
@@ -835,10 +623,6 @@
                         loadLog(1);
                     })
                     .fail(xhr => {
-                        if (xhr.status === 423) {
-                            showLock('Sesi berakhir. Masukkan password kembali.');
-                            return;
-                        }
                         const j = xhr.responseJSON;
                         let msg = (j && j.message) || 'Gagal mengimpor.';
                         if (j && j.errors) msg = Object.values(j.errors).flat().join(' ');
@@ -856,13 +640,9 @@
 
             let ITEMS = {};
             let editId = null;
-            let idleLeft = IDLE_SEC;
-            let idleTimer = null;
             let searchTimer = null;
             const revealTimers = {};
 
-            const $overlay = $('#lockOverlay').appendTo('body');
-            $('#modalLupa').appendTo($overlay);
             const $menu = $('<div class="dp-menu" id="dpMenu"></div>').appendTo('body');
             const modal = id => bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
 
@@ -922,12 +702,6 @@
             $(window).on('resize', closeMenu);
             window.addEventListener('scroll', closeMenu, true);
 
-            function setInert(on) {
-                const $others = $('body').children().not($overlay);
-                if (on) $others.attr('inert', '');
-                else $others.removeAttr('inert');
-            }
-
             function clearReveals() {
                 Object.keys(revealTimers).forEach(k => {
                     clearTimeout(revealTimers[k]);
@@ -935,57 +709,7 @@
                 });
             }
 
-            function showLock(message) {
-                clearInterval(idleTimer);
-                clearReveals();
-                closeMenu();
-                $('.modal.show').each(function() {
-                    bootstrap.Modal.getOrCreateInstance(this).hide();
-                });
-                $('#tableBody').empty();
-                $('#logBody').empty();
-                $('#logPagination').empty();
-                $('#logInfo').text('');
-                $('#rwBody').empty();
-                $('#rwPagination').empty();
-                $('#rwInfo').text('');
-                ITEMS = {};
-                $('#unlockPassword').val('').attr('type', 'password');
-                $('.btn-toggle-pw[data-target="#unlockPassword"]').text('Lihat');
-                $('#unlockError').toggleClass('d-none', !message).text(message || '');
-                $overlay.removeClass('d-none');
-                setInert(true);
-                setTimeout(() => $('#unlockPassword').trigger('focus'), 50);
-            }
-
-            function hideLock() {
-                $overlay.addClass('d-none');
-                setInert(false);
-                idleLeft = IDLE_SEC;
-                clearInterval(idleTimer);
-                idleTimer = setInterval(tickIdle, 1000);
-                loadData();
-            }
-
-            function lockNow(message) {
-                $.post(ROUTES.lock, {
-                    auto: message ? 1 : 0
-                }).always(() => showLock(message));
-            }
-
-            function tickIdle() {
-                idleLeft--;
-                const m = String(Math.floor(Math.max(idleLeft, 0) / 60)).padStart(2, '0');
-                const s = String(Math.max(idleLeft, 0) % 60).padStart(2, '0');
-                $('#lockTimer').text(`${m}:${s}`);
-                if (idleLeft <= 0) lockNow('Terkunci otomatis karena tidak ada aktivitas.');
-            }
-
             function handleFail(xhr, fallback) {
-                if (xhr.status === 423) {
-                    showLock('Sesi berakhir. Masukkan password kembali.');
-                    return;
-                }
                 alert((xhr.responseJSON && xhr.responseJSON.message) || fallback);
             }
 
@@ -996,10 +720,6 @@
                     q: $.trim($('#searchQ').val()),
                     kategori: $('#filterKategori').val()
                 }).done(res => renderTable(res.data)).fail(xhr => {
-                    if (xhr.status === 423) {
-                        showLock('Sesi berakhir. Masukkan password kembali.');
-                        return;
-                    }
                     $('#tableBody').html(
                         '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data.</td></tr>'
                     );
@@ -1031,30 +751,6 @@
                 }).join(''));
                 $('#tableInfo').text(`Menampilkan ${rows.length} data`);
             }
-
-            $('#formUnlock').on('submit', function(e) {
-                e.preventDefault();
-                const $btn = $('#btnUnlock').prop('disabled', true).text('Memeriksa...');
-                $('#unlockError').addClass('d-none');
-                $.post(ROUTES.unlock, {
-                        password: $('#unlockPassword').val()
-                    })
-                    .done(() => hideLock())
-                    .fail(xhr => {
-                        const msg = xhr.status === 429 ?
-                            'Terlalu banyak percobaan. Coba lagi sebentar lagi.' :
-                            (xhr.responseJSON && xhr.responseJSON.message) || 'Gagal membuka.';
-                        $('#unlockError').removeClass('d-none').text(msg);
-                        $('#unlockPassword').val('').trigger('focus');
-                    })
-                    .always(() => $btn.prop('disabled', false).text('Buka'));
-            });
-
-            $('#btnLock').on('click', () => lockNow());
-
-            $(document).on('mousemove keydown click', function() {
-                if ($overlay.hasClass('d-none')) idleLeft = IDLE_SEC;
-            });
 
             $(document).on('click', '.btn-toggle-pw', function() {
                 const $i = $($(this).data('target'));
@@ -1173,10 +869,6 @@
                         loadData();
                     })
                     .fail(xhr => {
-                        if (xhr.status === 423) {
-                            showLock('Sesi berakhir. Masukkan password kembali.');
-                            return;
-                        }
                         const j = xhr.responseJSON;
                         let msgs = [];
                         if (j && j.errors) Object.values(j.errors).forEach(a => msgs = msgs.concat(a));
@@ -1228,10 +920,6 @@
                         $('#btnDoCleanup').prop('disabled', res.jumlah === 0);
                     })
                     .fail(xhr => {
-                        if (xhr.status === 423) {
-                            showLock('Sesi berakhir. Masukkan password kembali.');
-                            return;
-                        }
                         const j = xhr.responseJSON;
                         let msg = (j && j.message) || 'Gagal menghitung.';
                         if (j && j.errors) msg = Object.values(j.errors).flat().join(' ');
@@ -1277,82 +965,11 @@
                         cleanupPreview();
                     })
                     .fail(xhr => {
-                        if (xhr.status === 423) {
-                            showLock('Sesi berakhir. Masukkan password kembali.');
-                            return;
-                        }
                         const j = xhr.responseJSON;
                         $('#cleanupError').removeClass('d-none').text((j && j.message) ||
                             'Gagal menghapus log.');
                         $b.prop('disabled', false);
                     });
-            });
-
-            function lupaStep(n, msg) {
-                $('#formLupaVerif').toggleClass('d-none', n !== 1);
-                $('#formLupaReset').toggleClass('d-none', n !== 2);
-                $('#lupaTitle').text(n === 1 ? 'Lupa Password Master' : 'Buat Password Baru');
-                $('#lupaError').toggleClass('d-none', !msg).text(msg || '');
-            }
-
-            function lupaMsg(xhr, fallback) {
-                const j = xhr.responseJSON;
-                if (j && j.errors) return Object.values(j.errors).flat().join(' ');
-                return (j && j.message) || fallback;
-            }
-
-            $('#linkLupa').on('click', function(e) {
-                e.preventDefault();
-                $('#formLupaVerif, #formLupaReset').each(function() {
-                    this.reset();
-                });
-                $('#lupaAkunPw, #lupaPw1, #lupaPw2').attr('type', 'password');
-                $('#modalLupa .btn-toggle-pw').text('Lihat');
-                lupaStep(1);
-                modal('modalLupa').show();
-            });
-
-            $('#modalLupa')
-                .on('show.bs.modal', function() {
-                    $('#lockOverlay .lock-card').addClass('d-none');
-                })
-                .on('hidden.bs.modal', function() {
-                    $('#lockOverlay .lock-card').removeClass('d-none');
-                    $('#unlockPassword').val('').trigger('focus');
-                });
-
-            $('#formLupaVerif').on('submit', function(e) {
-                e.preventDefault();
-                const $b = $(this).find('[type=submit]').prop('disabled', true).text('Memeriksa...');
-                $.post(ROUTES.lupaVerif, $(this).serialize())
-                    .done(() => {
-                        lupaStep(2);
-                        setTimeout(() => $('#lupaPw1').trigger('focus'), 50);
-                    })
-                    .fail(xhr => {
-                        $('#lupaAkunPw').val('');
-                        lupaStep(1, lupaMsg(xhr, 'Verifikasi gagal.'));
-                    })
-                    .always(() => $b.prop('disabled', false).text('Verifikasi'));
-            });
-
-            $('#formLupaReset').on('submit', function(e) {
-                e.preventDefault();
-                const $b = $(this).find('[type=submit]').prop('disabled', true);
-                $.post(ROUTES.lupaReset, $(this).serialize())
-                    .done(() => {
-                        $('#modalLupa').one('hidden.bs.modal', hideLock);
-                        modal('modalLupa').hide();
-                    })
-                    .fail(xhr => {
-                        const j = xhr.responseJSON;
-                        if (j && j.ulang) {
-                            lupaStep(1, j.message);
-                            return;
-                        }
-                        lupaStep(2, lupaMsg(xhr, 'Gagal menyimpan password baru.'));
-                    })
-                    .always(() => $b.prop('disabled', false));
             });
 
             let rwPage = 1;
@@ -1382,23 +999,42 @@
                 return `<span class="badge ${cls}">${esc(label)}</span>`;
             }
 
+            function rwJawaban(r) {
+                const master = String(r.alasan || '').indexOf('[Password Master HR]') === 0;
+                const L1 = master ? 'Jawaban 1' : 'Username';
+                const L2 = master ? 'Jawaban 2' : 'Judul data';
+
+                const baris = (label, nilai) => {
+                    const kosong = !nilai || nilai === '-';
+                    const isi = kosong
+                        ? 'Tidak diisi'
+                        : String(nilai).split('|').map(s => esc($.trim(s))).filter(Boolean).join('<br>');
+                    return `<div class="rw-ans">
+                        <div class="rw-ans-label">${label}</div>
+                        <div class="rw-ans-val ${kosong ? 'kosong' : ''}">${isi}</div>
+                    </div>`;
+                };
+                return baris(L1, r.jawaban_username) + baris(L2, r.jawaban_judul);
+            }
+
             function loadRw(page) {
                 rwPage = page || rwPage || 1;
-                $('#rwBody').html('<tr><td colspan="9" class="text-center text-muted py-4">Memuat data...</td></tr>');
+                $('#rwBody').html(
+                    '<tr><td colspan="9" class="text-center text-muted py-4">Memuat data...</td></tr>');
                 $.get(ROUTES.lupaRiwayat, $.extend({
                     page: rwPage
                 }, rwFilters())).done(renderRw).fail(xhr => {
-                    if (xhr.status === 423) {
-                        showLock('Sesi berakhir. Masukkan password kembali.');
-                        return;
-                    }
-                    $('#rwBody').html('<tr><td colspan="9" class="text-center text-danger py-4">Gagal memuat riwayat.</td></tr>');
+                    $('#rwBody').html(
+                        '<tr><td colspan="9" class="text-center text-danger py-4">Gagal memuat riwayat.</td></tr>'
+                        );
                 });
             }
 
             function renderRw(res) {
                 if (!res.data.length) {
-                    $('#rwBody').html('<tr><td colspan="9" class="text-center text-muted py-4">Belum ada riwayat lupa password.</td></tr>');
+                    $('#rwBody').html(
+                        '<tr><td colspan="9" class="text-center text-muted py-4">Belum ada riwayat lupa password.</td></tr>'
+                        );
                     $('#rwInfo').text('');
                     $('#rwPagination').empty();
                     return;
@@ -1418,7 +1054,7 @@
                             ${r.selesai !== '-' ? `<div class="small text-muted">Selesai: ${esc(r.selesai)}</div>` : ''}</td>
                         <td>${hasil}</td>
                         <td class="dp-note">${esc(r.alasan)}</td>
-                        <td class="small">${esc(r.jawaban_username)}<div class="text-muted">${esc(r.jawaban_judul)}</div></td>
+                        <td>${rwJawaban(r)}</td>
                         <td class="text-nowrap">${esc(r.ip)}</td>
                         <td>${esc(r.perangkat)}</td>
                     </tr>`;
@@ -1431,7 +1067,8 @@
                     return;
                 }
                 const items = res.links.map(l => {
-                    const label = String(l.label).replace('Previous', 'Sebelumnya').replace('Next', 'Berikutnya');
+                    const label = String(l.label).replace('Previous', 'Sebelumnya').replace('Next',
+                        'Berikutnya');
                     const page = l.url ? new URL(l.url).searchParams.get('page') : '';
                     return `<li class="page-item ${l.active ? 'active' : ''} ${l.url ? '' : 'disabled'}"><a class="page-link" href="#" data-page="${page}">${label}</a></li>`;
                 }).join('');
@@ -1456,11 +1093,7 @@
                 if (p) loadRw(parseInt(p, 10));
             });
 
-            @if ($unlocked)
-                hideLock();
-            @else
-                showLock();
-            @endif
+            loadData();
         });
     </script>
 @endpush
