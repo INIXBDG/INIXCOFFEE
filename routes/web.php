@@ -1492,7 +1492,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/card-details', [HRController::class, 'getCardDetails'])->name('dashboard.card');
         Route::get('/dashboard/detail', [HRController::class, 'getDetail'])->name('dashboard.detail');
         Route::get('/dashboard/export', [HRController::class, 'exportDetail'])->name('dashboard.export');
-
+        Route::get('/gate-status', [HRController::class, 'gateStatus'])->name('gate.status');
+        Route::post('/unlock', [HRController::class, 'unlock'])->middleware('throttle:5,1')->name('unlock');
+        Route::post('/lock', [HRController::class, 'lock'])->name('lock');
+        Route::post('/setup', [HRController::class, 'storeMaster'])->name('setup');
+        Route::post('/lupa', [HRController::class, 'lupaPassword'])->middleware('throttle:10,1')->name('lupa');
+        Route::post('/master/setup', [HRController::class, 'storeMaster'])->name('master.setup');
+        
         Route::prefix('instruktur-ol')->name('instruktur-ol.')->group(function () {
             Route::get('/', [InstrukturOlController::class, 'index'])->name('index');
             Route::get('data', [InstrukturOlController::class, 'getData'])->name('data');
