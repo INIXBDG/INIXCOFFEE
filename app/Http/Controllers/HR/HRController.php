@@ -50,7 +50,7 @@ class HRController extends Controller
         $this->presence = app(presenceController::class);
     }
 
-    private const IDLE_MENIT = 5;
+    private const IDLE_MENIT = 30;
     private const SESSION_KEY = 'hr_unlocked_until';
 
     public function master(): ?DataPassword
