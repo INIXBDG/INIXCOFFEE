@@ -97,7 +97,7 @@ class employeeController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'LIKE', "%{$search}%")
+                $q->where('nama_lengkap', 'LIKE', "%{$search}%")
                     ->orWhere('nama_lengkap', 'LIKE', "%{$search}%")
                     ->orWhere('nip', 'LIKE', "%{$search}%")
                     ->orWhere('jabatan', 'LIKE', "%{$search}%")
@@ -112,7 +112,7 @@ class employeeController extends Controller
             ->map(function ($emp) {
                 return [
                     'id' => $emp->id,
-                    'nama_lengkap' => $emp->nama_lengkap ?? ($emp->nama ?? 'Tidak Diketahui'),
+                    'nama_lengkap' => $emp->nama_lengkap,
                     'nip' => $emp->nip ?? '-',
                     'jabatan' => $emp->jabatan ?? '-',
                     'divisi' => $emp->divisi ?? '-',
@@ -448,7 +448,7 @@ class employeeController extends Controller
             ->map(function ($emp) use ($useResignDate) {
                 $date = $useResignDate ? $emp->resigned_at : ($emp->awal_probation ?? $emp->awal_kontrak ?? $emp->awal_tetap);
                 return [
-                    'nama' => $emp->nama_lengkap ?? $emp->nama,
+                    'nama' => $emp->nama_lengkap,
                     'nip' => $emp->nip,
                     'jabatan' => $emp->jabatan,
                     'divisi' => $emp->divisi,
@@ -477,7 +477,7 @@ class employeeController extends Controller
         if (!isset($payload['data'])) abort(400, 'Parameter tidak valid');
 
         $meta = $payload['meta'];
-        $rows = collect($payload['data'])->map(fn ($r) => [$r['nama'], $r['nip'], $r['jabatan'], $r['divisi'], $r['tanggal'], $r['status']])->toArray();
+        $rows = collect($payload['data'])->map(fn ($r) => [$r['nama_lengkap'], $r['nip'], $r['jabatan'], $r['divisi'], $r['tanggal'], $r['status']])->toArray();
 
         return $this->streamExcel("detail_{$meta['type']}_{$meta['label']}_{$meta['dataset']}_".date('Ymd'),
             ['Nama Lengkap', 'NIP', 'Jabatan', 'Divisi', 'Tanggal', 'Status'], $rows, [], "Detail {$meta['dataset']} - {$meta['label']}");
@@ -523,11 +523,11 @@ class employeeController extends Controller
 
         $data = $employees
             ->map(function ($emp) {
-                $namaDepan = explode(' ', trim($emp->nama_lengkap ?? ($emp->nama ?? '')))[0] ?? 'Tidak Diketahui';
+                $namaDepan = explode(' ', trim($emp->nama_lengkap))[0] ?? 'Tidak Diketahui';
                 return [
                     'id' => $emp->id,
                     'nama' => $namaDepan,
-                    'nama_lengkap' => $emp->nama_lengkap ?? ($emp->nama ?? '-'),
+                    'nama_lengkap' => $emp->nama_lengkap,
                     'nip' => $emp->nip ?? '-',
                     'jabatan' => $emp->jabatan ?? '-',
                     'divisi' => $emp->divisi ?? '-',
@@ -560,7 +560,7 @@ class employeeController extends Controller
         $rows = $this->getEmployeeQueryForExport($request)->get()->map(function ($emp) {
             $joinDate = $emp->awal_probation ?? ($emp->awal_kontrak ?? $emp->awal_tetap);
             return [
-                $emp->nama_lengkap ?? $emp->nama, $emp->nip, $emp->jabatan, $emp->divisi,
+                $emp->nama_lengkap, $emp->nip, $emp->jabatan, $emp->divisi,
                 $joinDate ? Carbon::parse($joinDate)->format('d M Y') : '-',
                 $emp->status_aktif == '1' ? 'Aktif' : 'Resign',
                 $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('d M Y') : '-',
@@ -579,7 +579,7 @@ class employeeController extends Controller
             ->map(function ($emp) {
                 $joinDate = $emp->awal_probation ?? ($emp->awal_kontrak ?? $emp->awal_tetap);
                 return [
-                    'nama' => $emp->nama_lengkap ?? $emp->nama,
+                    'nama' => $emp->nama_lengkap,
                     'nip' => $emp->nip,
                     'jabatan' => $emp->jabatan,
                     'divisi' => $emp->divisi,
@@ -598,7 +598,7 @@ class employeeController extends Controller
     {
         $rows = $this->getResignedQueryForExport($request)->get()->map(function ($emp) {
             return [
-                $emp->nama_lengkap ?? $emp->nama, $emp->nip, $emp->jabatan, $emp->divisi,
+                $emp->nama_lengkap, $emp->nip, $emp->jabatan, $emp->divisi,
                 $emp->resigned_at ? Carbon::parse($emp->resigned_at)->format('d M Y') : '-',
                 $emp->alasan_resign ?: '-',
             ];
@@ -614,7 +614,7 @@ class employeeController extends Controller
             ->get()
             ->map(function ($emp) {
                 return [
-                    'nama' => $emp->nama_lengkap ?? $emp->nama,
+                    'nama' => $emp->nama_lengkap,
                     'nip' => $emp->nip,
                     'jabatan' => $emp->jabatan,
                     'divisi' => $emp->divisi,
@@ -1003,7 +1003,7 @@ class employeeController extends Controller
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                    ->orWhere('nama', 'LIKE', "%{$search}%")
+                    ->orWhere('nama_lengkap', 'LIKE', "%{$search}%")
                     ->orWhere('nip', 'LIKE', "%{$search}%")
                     ->orWhere('jabatan', 'LIKE', "%{$search}%")
                     ->orWhere('divisi', 'LIKE', "%{$search}%");
