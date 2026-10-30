@@ -124,7 +124,7 @@
                     <div class="card m-4">
                         <div class="card-body table-responsive">
                             <div class="d-flex justify-content-end align-items-center">
-                                <a class="btn btn-md click-primary mx-4" href="{{ route('exam.manualCreate') }}">
+                                <a class="btn btn-md click-primary mx-4" href="{{ route('manualCreate.exam') }}">
                                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Add Pengajuan
                                 </a>
                             </div>
@@ -639,7 +639,7 @@
                             "render": function (data) {
                                 var actions = "";
                                 actions += '<a href="/pengajuanExam/' + data.id_rkm + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
-                                return actions;                           
+                                return actions;
                             }
                         }
                     ],
