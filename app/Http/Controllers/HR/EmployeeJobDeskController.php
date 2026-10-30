@@ -30,6 +30,26 @@ class EmployeeJobDeskController extends Controller
         return karyawan::where('id', Auth::id())->first();
     }
 
+    private function karyawanValid()
+    {
+        return karyawan::query()
+            ->whereNotNull('nip')
+            ->where(function ($q) {
+                $q->whereNull('resigned_at')->orWhere('resigned_at', '!=', 1);
+            });
+    }
+
+    private function isJabatanOL(?string $jabatan): bool
+    {
+        return (bool) preg_match('/\bOL\b/iu', (string) $jabatan);
+    }
+
+    private function findValid($id): ?karyawan
+    {
+        $k = $this->karyawanValid()->where('id', $id)->first();
+        return ($k && !$this->isJabatanOL($k->jabatan)) ? $k : null;
+    }
+
     private function norm($s): string
     {
         return mb_strtolower(trim(preg_replace('/\s+/u', ' ', (string) $s)));
@@ -118,7 +138,7 @@ class EmployeeJobDeskController extends Controller
     public function showProfile($karyawanId)
     {
         $karyawan = $this->me();
-        $target = karyawan::find($karyawanId);
+        $target = $this->findValid($karyawanId);
         if (!$karyawan || !$target) return $this->deny();
 
         $isSelf = $target->id == $karyawan->id;
@@ -154,9 +174,12 @@ class EmployeeJobDeskController extends Controller
         
         $orgStructures = OrgStructure::whereIn('id', $orgIds)->orderBy('jabatan')->get();
 
-        $allKaryawans = karyawan::with('jobProfile')
+        $allKaryawans = $this->karyawanValid()
+            ->with('jobProfile')
             ->when(!$isPengelola, fn($q) => $q->where('id', $karyawan->id))
-            ->get();
+            ->get()
+            ->reject(fn($k) => $this->isJabatanOL($k->jabatan))
+            ->values();
 
         $orgStructures->each(function ($org) use ($allKaryawans) {
             $normJabatan = $this->norm($org->jabatan);
@@ -356,9 +379,8 @@ class EmployeeJobDeskController extends Controller
             $validated = $request->validate(
                 ['karyawan_id' => 'required|exists:karyawans,id|unique:job_profiles,karyawan_id'] + $this->profileRules()
             );
-            $target = karyawan::findOrFail($validated['karyawan_id']);
-
-            if (!$karyawan || !$this->canWriteProfile($karyawan, $target, false)) {
+            $target = $this->findValid($validated['karyawan_id']);
+            if (!$karyawan || !$target || !$this->canWriteProfile($karyawan, $target, false)) {
                 return $this->deny('Anda tidak berwenang menambah Job Profile ini');
             }
 
@@ -379,7 +401,7 @@ class EmployeeJobDeskController extends Controller
     {
         try {
             $karyawan = $this->me();
-            $target = karyawan::find($karyawanId);
+            $target = $this->findValid($karyawanId);
             $profile = JobProfile::where('karyawan_id', $karyawanId)->first();
 
             if (!$karyawan || !$target || !$this->canWriteProfile($karyawan, $target, (bool) $profile)) {
