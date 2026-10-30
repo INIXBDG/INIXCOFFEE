@@ -203,6 +203,47 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('HR.bonus-tahunan.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.bonus-tahunan.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:gift-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Bonus Tahunan</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+        
+        <li class="menu-item {{ request()->routeIs('HR.thr.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.thr.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:gift-outline" data-width="20" data-height="20"></i>
+                </span>
+                <span>Perhitungan THR</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.perhitungan-tunjangan.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.perhitungan-tunjangan.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:calculator" data-width="20" data-height="20"></i>
+                </span>
+                <span>Perhitungan BPJS</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+        <li class="menu-item {{ request()->routeIs('HR.perhitungan-pph.*') ? 'active' : '' }}">
+            <a href="{{ route('HR.perhitungan-pph.index') }}" class="menu-link">
+                <span class="menu-link-icon">
+                    <i class="iconify menu-icon" data-icon="mdi:file-percent" data-width="20" data-height="20"></i>
+                </span>
+                <span>Perhitungan PPH 21</span>
+                <span class="menu-link-indicator"></span>
+            </a>
+        </li>
+
+
         <li class="menu-item {{ request()->routeIs('HR.rekap_spj.*') ? 'active' : '' }}">
             <a href="{{ route('HR.rekap_spj.index') }}" class="menu-link">
                 <span class="menu-link-icon">
@@ -229,26 +270,6 @@
                     <i class="iconify menu-icon" data-icon="mdi:package-variant-closed" data-width="20" data-height="20"></i>
                 </span>
                 <span>Rekap Inventaris</span>
-                <span class="menu-link-indicator"></span>
-            </a>
-        </li>
-
-        <li class="menu-item {{ request()->routeIs('HR.perhitungan-tunjangan.*') ? 'active' : '' }}">
-            <a href="{{ route('HR.perhitungan-tunjangan.index') }}" class="menu-link">
-                <span class="menu-link-icon">
-                    <i class="iconify menu-icon" data-icon="mdi:calculator" data-width="20" data-height="20"></i>
-                </span>
-                <span>Perhitungan BPJS</span>
-                <span class="menu-link-indicator"></span>
-            </a>
-        </li>
-
-        <li class="menu-item {{ request()->routeIs('HR.perhitungan-pph.*') ? 'active' : '' }}">
-            <a href="{{ route('HR.perhitungan-pph.index') }}" class="menu-link">
-                <span class="menu-link-icon">
-                    <i class="iconify menu-icon" data-icon="mdi:file-percent" data-width="20" data-height="20"></i>
-                </span>
-                <span>Perhitungan PPH 21</span>
                 <span class="menu-link-indicator"></span>
             </a>
         </li>

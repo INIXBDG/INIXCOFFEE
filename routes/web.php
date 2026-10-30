@@ -47,6 +47,7 @@ use App\Http\Controllers\feedbackController;
 use App\Http\Controllers\ForumSSOController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HR\ArsipRekrutmenController;
+use App\Http\Controllers\HR\BonusTahunanController;
 use App\Http\Controllers\HR\DaftarTugasHRController;
 use App\Http\Controllers\HR\employeeController;
 use App\Http\Controllers\HR\EmployeeJobDeskController;
@@ -72,6 +73,7 @@ use App\Http\Controllers\HR\ReportSmartController;
 use App\Http\Controllers\HR\SopController;
 use App\Http\Controllers\HR\StructureInixindoController;
 use App\Http\Controllers\HR\LspLpkController;
+use App\Http\Controllers\HR\ThrController;
 use App\Http\Controllers\IdeInovasiController;
 use App\Http\Controllers\IncomeStatementController;
 use App\Http\Controllers\InstructorDevelopmentController;
@@ -1606,6 +1608,28 @@ Route::middleware(['auth'])->group(function () {
             Route::post('itsm/submit', function () {
                 return response()->json(['success' => true, 'message' => 'Request submitted']);
             })->name('itsm.submit');
+        });
+
+        Route::prefix('bonus-tahunan')->name('bonus-tahunan.')->group(function () {
+            Route::get('/', [BonusTahunanController::class, 'index'])->name('index');
+            Route::get('/data', [BonusTahunanController::class, 'getData'])->name('data');
+            Route::post('/update-skema', [BonusTahunanController::class, 'updateSkema'])->name('update-skema');
+            Route::post('/bulk-update', [BonusTahunanController::class, 'bulkUpdate'])->name('bulk-update');
+            Route::post('/recalculate', [BonusTahunanController::class, 'recalculateAll'])->name('recalculate');
+            Route::get('/export/excel', [BonusTahunanController::class, 'exportExcel'])->name('export.excel');
+            Route::get('/export/pdf', [BonusTahunanController::class, 'exportPdf'])->name('export.pdf');
+        });
+
+        Route::prefix('thr')->name('thr.')->group(function () {
+            Route::get('/', [ThrController::class, 'index'])->name('index');
+            Route::get('/data', [ThrController::class, 'getData'])->name('data');
+            Route::get('/periods', [ThrController::class, 'getPeriods'])->name('periods');
+            Route::post('/generate', [ThrController::class, 'generate'])->name('generate');
+            Route::post('/update-item/{id}', [ThrController::class, 'updateItem'])->name('update-item');
+            Route::post('/update-setting/{periodId}', [ThrController::class, 'updateSetting'])->name('update-setting');
+            Route::delete('/period/{id}', [ThrController::class, 'destroyPeriod'])->name('period.destroy');
+            Route::get('/holiday-date', [ThrController::class, 'getHolidayDate'])->name('holiday-date');
+            Route::get('/export/excel/{periodId}', [ThrController::class, 'exportExcel'])->name('export.excel');
         });
 
         Route::prefix('payroll')->name('payroll.')->group(function () {
