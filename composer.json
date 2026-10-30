@@ -27,6 +27,7 @@
         "pusher/pusher-php-server": "^7.2",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
         "romanzipp/laravel-queue-monitor": "*",
+        "saasscaleup/laravel-log-alarm": "^1.0",
         "sentry/sentry-laravel": "^4.18",
         "setasign/fpdi": "^2.6",
         "smalot/pdfparser": "^2.12",
