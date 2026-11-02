@@ -20,22 +20,39 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ThrController extends Controller
 {
-    /**
-     * Display THR main view.
-     */
     public function index()
     {
         return view('HR.thr.index');
     }
 
-    /**
-     * Get list of all THR periods.
-     */
+    private function eligibleEmployeeQuery()
+    {
+        return karyawan::query()
+            ->whereRaw('LOWER(TRIM(jabatan)) <> ?', ['outsource'])
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNotNull('nip')
+            ->where('status_aktif', '1');
+    }
+
     public function getPeriods()
     {
         try {
-            $periods = ThrPeriod::withCount('items')
-                ->withSum('items as total_anggaran', 'nilai_thr_final')
+            $eligibleIds = $this->eligibleEmployeeQuery()->select('id');
+
+            $periods = ThrPeriod::withCount([
+                'items' => function ($q) use ($eligibleIds) {
+                    $q->whereIn('karyawan_id', $eligibleIds);
+                },
+            ])
+                ->withSum(
+                    [
+                        'items as total_anggaran' => function ($q) use ($eligibleIds) {
+                            $q->whereIn('karyawan_id', $eligibleIds);
+                        },
+                    ],
+                    'nilai_thr_final',
+                )
                 ->orderByDesc('tahun')
                 ->orderByDesc('id')
                 ->get();
@@ -46,33 +63,29 @@ class ThrController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('THR getPeriods error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memuat daftar periode THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal memuat daftar periode THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Get Idul Fitri holiday date and list of holidays for a specific year from hari_liburs table.
-     */
     public function getHolidayDate(Request $request)
     {
         try {
             $year = $request->input('year', date('Y'));
 
-            // Query seluruh hari libur pada tahun tersebut (cek kolom year maupun tahun dari kolom tanggal)
             $holidays = HariLibur::where(function ($q) use ($year) {
-                    $q->where('year', (string)$year)
-                      ->orWhereYear('tanggal', $year);
-                })
+                $q->where('year', (string) $year)->orWhereYear('tanggal', $year);
+            })
                 ->orderBy('tanggal', 'asc')
                 ->get()
                 ->map(function ($item) {
                     $namaLower = strtolower($item->nama);
-                    $isIdulfitri = str_contains($namaLower, 'idul fitri') 
-                                || str_contains($namaLower, 'idulfitri') 
-                                || str_contains($namaLower, 'lebaran');
+                    $isIdulfitri = str_contains($namaLower, 'idul fitri') || str_contains($namaLower, 'idulfitri') || str_contains($namaLower, 'lebaran');
                     $isCutiBersama = str_contains($namaLower, 'cuti');
 
                     return [
@@ -86,27 +99,23 @@ class ThrController extends Controller
                     ];
                 });
 
-            // Cari rekomendasi Idul Fitri terbaik di tahun tersebut:
-            // 1. Hari Raya Idul Fitri (bukan Cuti Bersama)
             $recommended = $holidays->first(function ($h) {
                 return $h['is_idulfitri'] && !$h['is_cuti'];
             });
 
-            // 2. Jika tidak ada, ambil hari libur manapun yang terkait Idul Fitri / Lebaran
             if (!$recommended) {
                 $recommended = $holidays->first(function ($h) {
                     return $h['is_idulfitri'];
                 });
             }
 
-            // 3. Jika tetap belum ada libur Idul Fitri, ambil hari libur pertama di tahun tersebut (jika ada)
             if (!$recommended && $holidays->isNotEmpty()) {
                 $recommended = $holidays->first();
             }
 
             return response()->json([
                 'status' => 'success',
-                'year' => (int)$year,
+                'year' => (int) $year,
                 'total_holidays' => $holidays->count(),
                 'holidays' => $holidays,
                 'recommended' => $recommended,
@@ -115,16 +124,16 @@ class ThrController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('THR getHolidayDate error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal mencari data hari libur: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal mencari data hari libur: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Get THR items and summary statistics for a given period.
-     */
     public function getData(Request $request)
     {
         try {
@@ -156,38 +165,29 @@ class ThrController extends Controller
             $statusFilter = $request->input('status_karyawan');
             $kategoriFilter = $request->input('kategori_thr');
 
-            // Query base for stats — berdasarkan masa kerja periode ini (tanpa batasan minimum masa kerja)
-            $allBaseQuery = ThrItem::where('thr_period_id', $period->id);
-            $totalKaryawan   = (clone $allBaseQuery)->count();
-            $totalAnggaran   = (clone $allBaseQuery)->sum('nilai_thr_final');
-            // Karyawan BERHAK = masa kerja > 0 (semua karyawan yang aktif berhak menerima THR)
-            $totalPenerima   = (clone $allBaseQuery)
-                ->where('total_masa_kerja_bulan', '>', 0)
-                ->count();
-            // Karyawan tersedia data gaji (untuk info anggaran)
+            $eligibleIds = $this->eligibleEmployeeQuery()->select('id');
+
+            $allBaseQuery = ThrItem::where('thr_period_id', $period->id)->whereIn('karyawan_id', $eligibleIds);
+            $totalKaryawan = (clone $allBaseQuery)->count();
+            $totalAnggaran = (clone $allBaseQuery)->sum('nilai_thr_final');
+            $totalPenerima = (clone $allBaseQuery)->where('total_masa_kerja_bulan', '>', 0)->count();
             $totalTersediaGaji = (clone $allBaseQuery)->where('nilai_thr_final', '>', 0)->count();
-            $totalFull = (clone $allBaseQuery)
-                ->where('total_masa_kerja_bulan', '>=', $period->full_masa_kerja_bulan)
-                ->count();
-            $totalProrata = (clone $allBaseQuery)
-                ->where('total_masa_kerja_bulan', '>', 0)
-                ->where('total_masa_kerja_bulan', '<', $period->full_masa_kerja_bulan)
-                ->count();
+            $totalFull = (clone $allBaseQuery)->where('total_masa_kerja_bulan', '>=', $period->full_masa_kerja_bulan)->count();
+            $totalProrata = (clone $allBaseQuery)->where('total_masa_kerja_bulan', '>', 0)->where('total_masa_kerja_bulan', '<', $period->full_masa_kerja_bulan)->count();
             $totalManual = (clone $allBaseQuery)->where('is_manual', 1)->count();
 
-            // Item Query with zero N+1
             $query = ThrItem::where('thr_period_id', $period->id)
+                ->whereIn('karyawan_id', $eligibleIds)
                 ->with(['karyawan:id,nip,foto,divisi,kode_karyawan', 'period:id,full_masa_kerja_bulan,min_masa_kerja_bulan']);
 
             if (!empty($search)) {
                 $query->where(function ($q) use ($search) {
                     $q->where('nama_lengkap', 'LIKE', "%{$search}%")
-                      ->orWhere('jabatan', 'LIKE', "%{$search}%")
-                      ->orWhere('rekening_maybank', 'LIKE', "%{$search}%")
-                      ->orWhereHas('karyawan', function ($sub) use ($search) {
-                          $sub->where('nip', 'LIKE', "%{$search}%")
-                              ->orWhere('divisi', 'LIKE', "%{$search}%");
-                      });
+                        ->orWhere('jabatan', 'LIKE', "%{$search}%")
+                        ->orWhere('rekening_maybank', 'LIKE', "%{$search}%")
+                        ->orWhereHas('karyawan', function ($sub) use ($search) {
+                            $sub->where('nip', 'LIKE', "%{$search}%")->orWhere('divisi', 'LIKE', "%{$search}%");
+                        });
                 });
             }
 
@@ -197,14 +197,10 @@ class ThrController extends Controller
 
             if (!empty($kategoriFilter) && $kategoriFilter !== 'all') {
                 if ($kategoriFilter === 'full') {
-                    // Masa kerja >= threshold penuh (12 bulan atau full_masa_kerja_bulan)
                     $query->where('total_masa_kerja_bulan', '>=', $period->full_masa_kerja_bulan);
                 } elseif ($kategoriFilter === 'prorata') {
-                    // Prorata: masa kerja > 0 dan di bawah threshold penuh
-                    $query->where('total_masa_kerja_bulan', '>', 0)
-                          ->where('total_masa_kerja_bulan', '<', $period->full_masa_kerja_bulan);
+                    $query->where('total_masa_kerja_bulan', '>', 0)->where('total_masa_kerja_bulan', '<', $period->full_masa_kerja_bulan);
                 } elseif ($kategoriFilter === 'ineligible') {
-                    // Masa kerja = 0 (masuk setelah tanggal Idulfitri)
                     $query->where('total_masa_kerja_bulan', '<=', 0);
                 } elseif ($kategoriFilter === 'manual') {
                     $query->where('is_manual', 1);
@@ -217,28 +213,28 @@ class ThrController extends Controller
                 'status' => 'success',
                 'period' => $period,
                 'stats' => [
-                    'total_karyawan'     => $totalKaryawan,
-                    'total_penerima'     => $totalPenerima,       // berhak berdasar masa kerja
-                    'total_tersedia_gaji'=> $totalTersediaGaji,   // punya data gaji (nilai > 0)
-                    'total_anggaran'     => (float) $totalAnggaran,
-                    'total_full'         => $totalFull,
-                    'total_prorata'      => $totalProrata,
-                    'total_manual'       => $totalManual,
+                    'total_karyawan' => $totalKaryawan,
+                    'total_penerima' => $totalPenerima,
+                    'total_tersedia_gaji' => $totalTersediaGaji,
+                    'total_anggaran' => (float) $totalAnggaran,
+                    'total_full' => $totalFull,
+                    'total_prorata' => $totalProrata,
+                    'total_manual' => $totalManual,
                 ],
                 'items' => $items,
             ]);
         } catch (\Exception $e) {
             Log::error('THR getData error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memuat data THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal memuat data THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Generate or recalculate THR for active employees.
-     */
     public function generate(Request $request)
     {
         $validated = $request->validate([
@@ -253,7 +249,6 @@ class ThrController extends Controller
 
         DB::beginTransaction();
         try {
-            // Find or create period
             $period = ThrPeriod::firstOrNew([
                 'tahun' => $validated['tahun'],
                 'nama_periode' => $validated['nama_periode'],
@@ -270,14 +265,12 @@ class ThrController extends Controller
 
             $this->calculateThrItems($period, $forceResetManual);
 
-            // Buat otomatis satu Administrasi Karyawan dengan deadline pada hari Idulfitri
-            // dan keterangan "Pembayaran tunjangan hari raya karyawan"
             try {
                 AdministrasiKaryawan::create([
                     'nama_administrasi' => $period->nama_periode,
-                    'dateline'          => Carbon::parse($period->tanggal_jatuh_tempo)->format('Y-m-d'),
-                    'keterangan'        => 'Pembayaran tunjangan hari raya karyawan',
-                    'status'            => 'proses',
+                    'dateline' => Carbon::parse($period->tanggal_jatuh_tempo)->format('Y-m-d'),
+                    'keterangan' => 'Pembayaran tunjangan hari raya karyawan',
+                    'status' => 'proses',
                 ]);
                 Cache::forget('administrasi_karyawan_progress');
                 Cache::forget('office_dashboard_administrasi');
@@ -295,62 +288,86 @@ class ThrController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('THR generate error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghasilkan perhitungan THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal menghasilkan perhitungan THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Update manual THR value for an individual employee.
-     */
     public function updateItem(Request $request, $id)
     {
         $validated = $request->validate([
+            'nama_lengkap' => 'required|string|max:255',
+            'jabatan' => 'nullable|string|max:255',
+            'status_karyawan' => 'required|in:Tetap,Kontrak,Probation',
+            'rekening_maybank' => 'nullable|string|max:100',
+            'tanggal_join' => 'nullable|date',
+            'total_masa_kerja_bulan' => 'required|numeric|min:0|max:120',
+            'masa_kerja_teks' => 'nullable|string|max:100',
+            'basic_salary' => 'required|numeric|min:0',
             'nilai_thr_final' => 'required|numeric|min:0',
-            'basic_salary' => 'nullable|numeric|min:0',
             'catatan' => 'nullable|string|max:500',
-            'save_to_master' => 'nullable|boolean',
         ]);
 
         try {
             $item = ThrItem::findOrFail($id);
-            $item->nilai_thr_final = (float) $validated['nilai_thr_final'];
-            if (isset($validated['basic_salary'])) {
-                $newBasic = (float) $validated['basic_salary'];
-                $item->basic_salary = $newBasic;
+            $period = ThrPeriod::find($item->thr_period_id);
+            $fullMonths = (float) ($period && $period->full_masa_kerja_bulan ? $period->full_masa_kerja_bulan : 12);
 
-                // Simpan ke data master karyawan agar otomatis auto-fill di semua modul
-                if ($request->boolean('save_to_master', true) && $newBasic > 0) {
-                    $karyawan = karyawan::find($item->karyawan_id);
-                    if ($karyawan) {
-                        $karyawan->gaji = $newBasic;
-                        $karyawan->save();
-                    }
-                }
+            $basic = (float) $validated['basic_salary'];
+            $bulan = (float) $validated['total_masa_kerja_bulan'];
+
+            if ($bulan >= $fullMonths) {
+                $sistem = $basic;
+            } elseif ($bulan > 0) {
+                $sistem = round(($basic / 12) * $bulan);
+            } else {
+                $sistem = 0.0;
             }
+
+            $teks = trim((string) ($validated['masa_kerja_teks'] ?? ''));
+            if ($teks === '') {
+                $teks = $bulan >= 12 ? '12 Bln (Penuh)' : ((int) $bulan) . ' Bln';
+            }
+
+            $item->nama_lengkap = $validated['nama_lengkap'];
+            $item->jabatan = $validated['jabatan'] ?? null;
+            $item->status_karyawan = $validated['status_karyawan'];
+            $item->rekening_maybank = $validated['rekening_maybank'] ?? null;
+            $item->tanggal_join = !empty($validated['tanggal_join']) ? $validated['tanggal_join'] : null;
+            $item->total_masa_kerja_bulan = $bulan;
+            $item->masa_kerja_tahun = intdiv((int) $bulan, 12);
+            $item->masa_kerja_bulan = ((int) $bulan) % 12;
+            $item->masa_kerja_hari = 0;
+            $item->masa_kerja_teks = $teks;
+            $item->basic_salary = $basic;
+            $item->nilai_thr_sistem = $sistem;
+            $item->nilai_thr_final = (float) $validated['nilai_thr_final'];
             $item->catatan = $validated['catatan'] ?? null;
             $item->is_manual = true;
             $item->save();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Nilai THR dan Basic Salary berhasil disimpan.',
+                'message' => 'Data THR berhasil disimpan.',
                 'item' => $item,
             ]);
         } catch (\Exception $e) {
             Log::error('THR updateItem error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memperbarui nilai THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal memperbarui data THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Update settings of a THR period (e.g. Cutoff Date, Minimum Work Period, Full Work Period).
-     */
     public function updateSetting(Request $request, $periodId)
     {
         $validated = $request->validate([
@@ -388,16 +405,16 @@ class ThrController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('THR updateSetting error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal memperbarui ketentuan THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal memperbarui ketentuan THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Delete an entire THR period.
-     */
     public function destroyPeriod($id)
     {
         try {
@@ -410,16 +427,16 @@ class ThrController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('THR destroyPeriod error: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghapus periode THR: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal menghapus periode THR: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    /**
-     * Export THR data to Excel.
-     */
     public function exportExcel($periodId)
     {
         try {
@@ -429,59 +446,42 @@ class ThrController extends Controller
             return Excel::download(new ThrExport($period), $fileName);
         } catch (\Exception $e) {
             Log::error('THR exportExcel error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengunduh Excel: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Gagal mengunduh Excel: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Core calculation engine for THR items.
-     */
     private function calculateThrItems(ThrPeriod $period, bool $forceResetManual = false)
     {
         $cutoffDate = Carbon::parse($period->tanggal_jatuh_tempo)->endOfDay();
         $targetYear = (int) $cutoffDate->format('Y');
         $targetMonth = (int) $cutoffDate->format('m');
 
-        // Fetch eligible active employees in one single query
-        $employees = karyawan::query()
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->where('status_aktif', '1')
-            ->get();
+        $employees = $this->eligibleEmployeeQuery()->get();
 
         $employeeIds = $employees->pluck('id')->toArray();
 
-        // Eager load all LogGaji in ONE single query (no N+1)
-        $allLogGaji = LogGaji::whereIn('id_karyawan', $employeeIds)
-            ->get()
-            ->groupBy('id_karyawan');
+        ThrItem::where('thr_period_id', $period->id)->whereNotIn('karyawan_id', $employeeIds)->delete();
 
-        // Existing THR items for this period (to preserve manual edits)
-        $existingItems = ThrItem::where('thr_period_id', $period->id)
-            ->get()
-            ->keyBy('karyawan_id');
+        $allLogGaji = LogGaji::whereIn('id_karyawan', $employeeIds)->get()->groupBy('id_karyawan');
 
-        $minMonths = (int) $period->min_masa_kerja_bulan;
-        $fullMonths = (int) $period->full_masa_kerja_bulan;
+        $existingItems = ThrItem::where('thr_period_id', $period->id)->get()->keyBy('karyawan_id');
 
-        // End point adalah Idulfitri periode saat ini
-        // Start point untuk karyawan lama adalah Idulfitri periode sebelumnya (atau 12 bulan sebelumnya jika periode pertama)
-        $previousPeriod = ThrPeriod::where('tanggal_jatuh_tempo', '<', $period->tanggal_jatuh_tempo)
-            ->orderByDesc('tanggal_jatuh_tempo')
-            ->first();
+        $previousPeriod = ThrPeriod::where('tanggal_jatuh_tempo', '<', $period->tanggal_jatuh_tempo)->orderByDesc('tanggal_jatuh_tempo')->first();
 
-        $defaultStartPoint = $previousPeriod 
-            ? Carbon::parse($previousPeriod->tanggal_jatuh_tempo)->startOfDay()
-            : $cutoffDate->copy()->subYear()->startOfDay();
+        $defaultStartPoint = $previousPeriod ? Carbon::parse($previousPeriod->tanggal_jatuh_tempo)->startOfDay() : $cutoffDate->copy()->subYear()->startOfDay();
 
         foreach ($employees as $emp) {
-            // 1. Determine join date
-            $joinDateRaw = $emp->awal_probation ?? $emp->awal_kontrak ?? $emp->awal_tetap;
+            $existing = $existingItems->get($emp->id);
+
+            if ($existing && $existing->is_manual && !$forceResetManual) {
+                continue;
+            }
+
+            $joinDateRaw = $emp->awal_probation ?? ($emp->awal_kontrak ?? $emp->awal_tetap);
             $joinDate = $joinDateRaw ? Carbon::parse($joinDateRaw)->startOfDay() : null;
 
-            // 2. Determine Employment Status
             $statusKaryawan = 'Tetap';
             if (!empty($emp->awal_tetap)) {
                 $statusKaryawan = 'Tetap';
@@ -491,35 +491,26 @@ class ThrController extends Controller
                 $statusKaryawan = 'Probation';
             }
 
-            // 3. Determine Basic Salary (gaji pokok + tunjangan jabatan) otomatis diambil langsung dari data (auto-fill)
             $logs = $allLogGaji->get($emp->id, collect());
-            $targetKey = ($targetYear * 12) + $targetMonth;
+            $targetKey = $targetYear * 12 + $targetMonth;
 
             $pastLogs = $logs->filter(function ($l) use ($targetKey) {
-                return (($l->tahun * 12) + $l->bulan) <= $targetKey && !empty($l->gaji) && (float)$l->gaji > 0;
+                return $l->tahun * 12 + $l->bulan <= $targetKey && !empty($l->gaji) && (float) $l->gaji > 0;
             });
 
             $selectedLog = null;
             if ($pastLogs->isNotEmpty()) {
-                $selectedLog = $pastLogs->sortByDesc(fn($l) => ($l->tahun * 12) + $l->bulan)->first();
+                $selectedLog = $pastLogs->sortByDesc(fn($l) => $l->tahun * 12 + $l->bulan)->first();
             } else {
-                $selectedLog = $logs->where('gaji', '>', 0)->sortByDesc(fn($l) => ($l->tahun * 12) + $l->bulan)->first();
+                $selectedLog = $logs->where('gaji', '>', 0)->sortByDesc(fn($l) => $l->tahun * 12 + $l->bulan)->first();
             }
 
-            $gajiPokok = $selectedLog ? (float) $selectedLog->gaji : (float) ($emp->gaji ?? 0);
-            $tunjanganJabatan = $selectedLog ? (float) ($selectedLog->tunjangan_jabatan ?? 0) : (float) ($emp->tunjangan_jabatan ?? 0);
-            $basicSalary = $gajiPokok + $tunjanganJabatan;
+            $basicSalary = $selectedLog ? (float) $selectedLog->gaji : (float) ($emp->gaji ?? 0);
 
-            $existing = $existingItems->get($emp->id);
-            // If employee basic salary in DB is 0 but existing item had a custom entered basic_salary > 0, preserve it
             if ($basicSalary <= 0 && $existing && (float) $existing->basic_salary > 0) {
                 $basicSalary = (float) $existing->basic_salary;
             }
 
-            // 4. Calculate Tenure (Masa Kerja)
-            // End point: tanggal Idulfitri periode ini ($cutoffDate)
-            // Start point: jika karyawan baru masuk setelah Idulfitri sebelumnya -> dihitung dari join date ke Idulfitri saat ini.
-            //              jika karyawan lama (masuk sebelum Idulfitri sebelumnya) -> dihitung dari Idulfitri sebelumnya ke Idulfitri saat ini (12 bulan penuh).
             $years = 0;
             $months = 0;
             $days = 0;
@@ -528,28 +519,23 @@ class ThrController extends Controller
 
             if ($joinDate) {
                 if ($joinDate->gt($cutoffDate)) {
-                    // Masuk setelah tanggal Idulfitri periode ini
                     $totalMonthsFloat = 0.0;
                     $tenureText = '0 Bulan';
                     $calcMonths = 0;
                 } else {
-                    // Tentukan tanggal mulai hitung untuk periode THR ini
-                    $startDate = ($joinDate->gt($defaultStartPoint)) ? $joinDate : $defaultStartPoint;
+                    $startDate = $joinDate->gt($defaultStartPoint) ? $joinDate : $defaultStartPoint;
 
                     $diff = $startDate->diff($cutoffDate);
                     $years = (int) $diff->y;
                     $months = (int) $diff->m;
                     $days = (int) $diff->d;
 
-                    // Hitung total bulan dalam rentang periode ini (maksimal 12 bulan)
-                    $totalCalculatedMonths = ($years * 12) + $months;
+                    $totalCalculatedMonths = $years * 12 + $months;
                     if ($days >= 15) {
-                        $totalCalculatedMonths += 1; // pembulatan bulan jika sisa hari >= 15
+                        $totalCalculatedMonths += 1;
                     }
                     $calcMonths = min(12, $totalCalculatedMonths);
 
-                    // Teks display masa kerja untuk karyawan
-                    // Jika karyawan sudah melewati Idulfitri sebelumnya, maka masa kerja THR adalah 12 Bulan (Penuh)
                     if ($joinDate->lte($defaultStartPoint)) {
                         $calcMonths = 12;
                         $totalMonthsFloat = 12.0;
@@ -557,24 +543,23 @@ class ThrController extends Controller
                     } else {
                         $totalMonthsFloat = round($calcMonths, 2);
                         $parts = [];
-                        if ($years > 0) $parts[] = $years . ' Thn';
-                        if ($months > 0 || $years == 0) $parts[] = $months . ' Bln';
-                        if ($days > 0 && $years == 0 && $months < 3) $parts[] = $days . ' Hr';
-                        $tenureText = implode(' ', $parts) ?: ($calcMonths . ' Bln');
+                        if ($years > 0) {
+                            $parts[] = $years . ' Thn';
+                        }
+                        if ($months > 0 || $years == 0) {
+                            $parts[] = $months . ' Bln';
+                        }
+                        if ($days > 0 && $years == 0 && $months < 3) {
+                            $parts[] = $days . ' Hr';
+                        }
+                        $tenureText = implode(' ', $parts) ?: $calcMonths . ' Bln';
                     }
                 }
             } else {
-                // If join date is not set, treat as 12 months (full)
                 $calcMonths = 12;
                 $totalMonthsFloat = 12.0;
                 $tenureText = '12 Bln (Penuh)';
             }
-
-            // 5. Calculate THR based on revision:
-            // Tidak ada minimal masa kerja.
-            // Rumus: (Basic Salary / 12) * masa kerja
-            // Jika masa kerja >= 12 bulan (atau karyawan lama), dapat 1x basic salary
-            $nilaiThrSistem = 0.0;
 
             if ($calcMonths >= 12) {
                 $nilaiThrSistem = $basicSalary;
@@ -584,22 +569,6 @@ class ThrController extends Controller
                 $nilaiThrSistem = 0.0;
             }
 
-            // Check existing item
-            $existing = $existingItems->get($emp->id);
-            $isManual = false;
-            $nilaiThrFinal = $nilaiThrSistem;
-            $catatan = null;
-
-            if ($existing) {
-                if (!$forceResetManual && $existing->is_manual) {
-                    // Preserve manual override!
-                    $isManual = true;
-                    $nilaiThrFinal = $existing->nilai_thr_final;
-                    $catatan = $existing->catatan;
-                }
-            }
-
-            // Update or create THR Item
             ThrItem::updateOrCreate(
                 [
                     'thr_period_id' => $period->id,
@@ -618,10 +587,10 @@ class ThrController extends Controller
                     'masa_kerja_teks' => $tenureText,
                     'basic_salary' => $basicSalary,
                     'nilai_thr_sistem' => $nilaiThrSistem,
-                    'nilai_thr_final' => $nilaiThrFinal,
-                    'is_manual' => $isManual,
-                    'catatan' => $catatan,
-                ]
+                    'nilai_thr_final' => $nilaiThrSistem,
+                    'is_manual' => false,
+                    'catatan' => null,
+                ],
             );
         }
     }
