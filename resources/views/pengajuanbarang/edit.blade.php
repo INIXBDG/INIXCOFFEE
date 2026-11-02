@@ -1,16 +1,20 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $returnUrl = old('return_url', request('return_url', url()->previous() === url()->current() ? route('pengajuanbarang.index') : url()->previous()));
+@endphp
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body" id="card">
-                <a href="{{ url()->previous() }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
+                <a href="{{ $returnUrl }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                 <h5 class="card-title text-center mb-4">{{ __('Edit Surat Perjalanan') }}</h5>
                     <form method="POST" action="{{ route('pengajuanbarang.update', $pengajuanbarang->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
+                        <input type="hidden" name="return_url" value="{{ $returnUrl }}">
 
                         <div class="row mb-3">
                             <label for="nama_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
