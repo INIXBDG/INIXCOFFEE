@@ -183,9 +183,9 @@ class PengajuanBarangController extends Controller
             'id_karyawan' => 'required|string|max:255',
             'id_kegiatan' => 'nullable|integer',
             'tipe' => 'required|string|max:255',
-            'barang.nama_barang.*' => 'nullable|string|max:255',
-            'barang.qty.*' => 'nullable|string',
-            'barang.harga_barang.*' => 'nullable|string',
+            'barang.nama_barang.*' => 'required|string|max:255',
+            'barang.qty.*' => 'required|string',
+            'barang.harga_barang.*' => 'required|string',
             'barang.keterangan.*' => 'nullable|string',
         ]);
 

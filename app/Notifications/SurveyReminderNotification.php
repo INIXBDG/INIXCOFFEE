@@ -49,7 +49,7 @@ class SurveyReminderNotification extends Notification implements ShouldBroadcast
             'message' => [
                 'tipe'       => $this->type,
                 'judul'      => 'Tiket Selesai - ' . $this->ticket->ticket_id,
-                'deskripsi'  => 'Tiket Anda telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
+                'deskripsi'  => 'Tiket Anda : ' . $this->ticket->detail_kendala . ' telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
             ],
             'path'   => $this->path,
             'status' => 'unread',
@@ -63,7 +63,7 @@ class SurveyReminderNotification extends Notification implements ShouldBroadcast
             'message' => [
                 'tipe'       => $this->type,
                 'judul'      => 'Tiket Selesai - ' . $this->ticket->ticket_id,
-                'deskripsi'  => 'Tiket Anda telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
+                'deskripsi'  => 'Tiket Anda : ' . $this->ticket->detail_kendala . ' telah selesai ditangani. Harap mengisi survei kepuasan terhadap pelayanan ticketing.',
             ],
             'path'   => $this->path,
             'status' => 'unread',

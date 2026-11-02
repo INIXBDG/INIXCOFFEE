@@ -22,7 +22,7 @@ class PerhitunganTunjanganHR extends Model
         'potongan_pph21', 'potongan_kasbon', 'potongan_denda', 'potongan_lain', 'total_potongan_lain',
         'thp_kotor', 'thp_bersih', 'total_biaya_perusahaan',
         'status', 'catatan',
-        'created_by', 'updated_by', 'approved_by', 'approved_at',
+        'created_by', 'updated_by', 'approved_by', 'approved_at', 'biaya_tanggungan'
     ];
 
     protected $casts = [

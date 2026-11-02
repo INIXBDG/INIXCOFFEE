@@ -15,8 +15,22 @@
             </div>
         </div>
 
-        <ul class="navbar-nav flex-row align-items-center ms-auto">
-
+        <ul class="navbar-nav flex-row align-items-center ms-auto gap-2">
+            @if (!empty($isUnlocked) && $isUnlocked)
+                <li class="nav-item">
+                    <div class="d-flex align-items-center gap-2">
+                        <span
+                            class="lock-pill d-inline-flex align-items-center gap-1 px-2 py-1 border rounded bg-white">
+                            <i class="fa-regular fa-clock text-primary"></i>
+                            <span id="lockTimer" class="fw-semibold small">05:00</span>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnLockNow"
+                            title="Kunci sekarang">
+                            <i class="fa-solid fa-lock me-1"></i>Kunci
+                        </button>
+                    </div>
+                </li>
+            @endif
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
@@ -33,7 +47,7 @@
                             </div>
                             <div class="d-flex flex-column">
                                 <span class="fw-semibold small"
-                                    id="userFullName">{{ auth()->user()?->nama_lengkap ?? auth()->user()?->username ?? 'Guest' }}</span>
+                                    id="userFullName">{{ auth()->user()?->nama_lengkap ?? (auth()->user()?->username ?? 'Guest') }}</span>
                                 <span class="small text-muted"
                                     id="userRole">{{ auth()->user()?->jabatan ?? 'Staff' }}</span>
                             </div>
@@ -59,10 +73,52 @@
                     </li>
                 </ul>
             </li>
-
         </ul>
     </div>
 </nav>
+
+{{-- ===== LOCK OVERLAY (app-level) ===== --}}
+<div id="hrLockOverlay" class="d-none">
+    <div class="lock-card">
+        <div class="lock-icon"><i class="fa-solid fa-lock"></i></div>
+        <div class="lock-title">Area Terproteksi</div>
+        <div class="lock-desc">Masukkan password Master untuk mengakses seluruh fitur HR.</div>
+        <form id="formHrUnlock" autocomplete="off">
+            <div class="alert alert-danger py-2 d-none text-start" id="hrUnlockError"></div>
+            <div class="input-group mb-3">
+                <input type="password" class="form-control" id="hrUnlockPassword" placeholder="Password"
+                    autocomplete="new-password" required>
+                <button type="button" class="btn btn-toggle-pw" id="btnHrTogglePw">Lihat</button>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-lock-open flex-fill" id="btnHrUnlock">Buka</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ===== CREATE PASSWORD (jika belum ada) ===== --}}
+<div id="hrCreateGate" class="d-none">
+    <div class="gate-card">
+        <div class="gate-icon"><i class="fa-solid fa-key"></i></div>
+        <h5>Buat Password Master HR</h5>
+        <p>Password ini dipakai untuk membuka seluruh fitur di aplikasi HR. Simpan baik-baik.</p>
+        <form method="POST" action="{{ route('HR.master.setup') }}" autocomplete="off" class="text-start">
+            @csrf
+            <div class="mb-3">
+                <label class="form-label">Password baru <span class="text-danger">*</span></label>
+                <input type="password" name="password" class="form-control" minlength="8" required autofocus>
+                <div class="form-text">Minimal 8 karakter.</div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Ulangi password <span class="text-danger">*</span></label>
+                <input type="password" name="password_confirmation" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Buat Password</button>
+        </form>
+    </div>
+</div>
+
 <div class="modal fade" id="exampleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border-0 shadow">

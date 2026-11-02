@@ -554,6 +554,47 @@
         }
     });
 
+    function ambilDataBPJS(karyawanId) {
+        $.ajax({
+            url: '/getDataBPJS/' + karyawanId,
+            type: 'GET',
+            dataType: 'json',
+            success: function(item) {
+                if (!item || !item.jesKar || !item.jesTK) return;
+
+                var daftar = [
+                    { nama: item.jesKar.nama_tunjangan, val: Number(item.valKar) || 0 },
+                    { nama: item.jesTK.nama_tunjangan,  val: Number(item.valTK)  || 0 },
+                    { nama: item.jesPPH.nama_tunjangan, val: Number(item.pph) || 0 }
+                ];
+
+                daftar.forEach(function(d) {
+                    if ($('#dataPreview input[name="dataTunjangan[' + d.nama + ']"]').length) return;
+
+                    $('#dataPreview').append(
+                        '<tr>' +
+                            '<td>' + d.nama + '</td>' +
+                            '<td>Jumlah Absensi / Satuan:</td>' +
+                            '<td>1 x ' + formatRupiah(d.val) + '</td>' +
+                            '<td> = ' + formatRupiah(-d.val) +
+                                '<input type="hidden" name="dataTunjangan[' + d.nama + ']" value="' + (-d.val) + '">' +
+                            '</td>' +
+                            '<td>' +
+                                '<button type="button" class="btn btn-warning btn-sm" onclick="editRow(this)">Edit</button>' +
+                                '<button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">Hapus</button>' +
+                            '</td>' +
+                        '</tr>'
+                    );
+                });
+
+                updateTotal();
+            },
+            error: function(xhr) {
+                console.error('Gagal mengambil data BPJS:', xhr);
+            }
+        });
+    }
+
     function getTunjangan(divisi, karyawanId) {
         let url = '/getJenisTunjanganIndex';
         $.ajax({
@@ -653,6 +694,8 @@
                 var divisi = data.karyawan.divisi;
                 var absenPulang = data.jumlah_tidak_absen_pulang;
 
+                ambilDataBPJS(karyawanId);                
+
                 getTunjangan(divisi, karyawanId);
                 if(response.success == false){
                     alert(response.message);
@@ -697,6 +740,8 @@
                         $('#generateTunjangan').css('opacity', '1.5');
                         $('#generateTunjangan').css('pointer-events', 'auto');
                 }
+
+                ambilDataBPJS(karyawanId);                
             },
             error: function(xhr, status, error) {
                 console.log("Terjadi kesalahan: " + error);

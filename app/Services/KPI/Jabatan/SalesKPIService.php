@@ -42,7 +42,7 @@ class SalesKPIService
         if ($personId !== null) {
             $personId = detailPersonKPI::where('detailTargetKey', $detail->id)->value('id_karyawan');
             $kodeKaryawan = $personId ? karyawan::where('id', $personId)->value('kode_karyawan') : null;
-            
+
             if (!$kodeKaryawan) {
                 return 0;
             }
@@ -190,7 +190,7 @@ class SalesKPIService
             })->get();
 
             $salesKeys = $allKaryawan->pluck('kode_karyawan')->filter();
-            
+
             // OPTIMASI: Menghilangkan N+1 Query dengan mengambil semua revenue sekaligus
             $salesRevenues = RKM::where('status', '0')
                 ->whereYear('tanggal_awal', $tahun)
@@ -273,7 +273,7 @@ class SalesKPIService
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;
         }
-        
+
         $start = Carbon::create($tahun, 1, 1)->startOfDay();
         $end = Carbon::create($tahun, now()->month, now()->daysInMonth)->endOfDay();
 
@@ -460,7 +460,7 @@ class SalesKPIService
 
         if (empty($allowedUsernames)) return 0;
 
-        $response = Http::get('https://coffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
+        $response = Http::get('https://inixcoffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
         if (!$response->successful()) {
             return 0;
         }
@@ -538,7 +538,7 @@ class SalesKPIService
         }
 
         try {
-            $response = Http::get('https://coffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
+            $response = Http::get('https://inixcoffee.inixindobdg.co.id/api/moodle-grades-sharingknowledge');
             if (!$response->successful()) {
                 return $this->getDefaultDetailResponse();
             }

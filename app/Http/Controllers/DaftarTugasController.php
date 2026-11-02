@@ -40,7 +40,7 @@ class DaftarTugasController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->jabatan === "HRD") {
+        if ($user->jabatan === 'HRD') {
             $dataKategori = KategoriDaftarTugas::with('karyawan')->orderBy('urutan')->get();
         } else {
             $dataKategori = KategoriDaftarTugas::with('karyawan')->where('id_user', $user->id)->orWhereNull('id_user')->orderBy('urutan')->get();
@@ -541,17 +541,20 @@ class DaftarTugasController extends Controller
             'tugas_id' => 'required|exists:kontrol_tugas,id',
             'bukti_before' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'bukti_after' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'waktu_mulai' => 'nullable|string|max:50',
+            'waktu_selesai' => 'nullable|string|max:50',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
-
         $buktiData = $this->parseBukti($tugas->bukti);
+        $nowTime = Carbon::now('Asia/Jakarta')->format('H:i');
 
         if ($request->hasFile('bukti_before')) {
             if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
                 Storage::disk('public')->delete($buktiData['before']);
             }
             $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
+            $buktiData['waktu_mulai'] = $request->filled('waktu_mulai') ? $request->waktu_mulai : $nowTime;
         }
 
         if ($request->hasFile('bukti_after')) {
@@ -568,6 +571,7 @@ class DaftarTugasController extends Controller
                 Storage::disk('public')->delete($buktiData['after']);
             }
             $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
+            $buktiData['waktu_selesai'] = $request->filled('waktu_selesai') ? $request->waktu_selesai : $nowTime;
         }
 
         $tugas->update(['bukti' => json_encode($buktiData)]);
@@ -670,21 +674,22 @@ class DaftarTugasController extends Controller
     {
         $karyawan = auth()->user()->karyawan;
 
-        if (!$karyawan) return response()->json(['pending' => false]);
+        if (!$karyawan) {
+            return response()->json(['pending' => false]);
+        }
 
-        $notification = $karyawan->unreadNotifications()
-            ->where('type', ShiftConfirmationNotification::class)
-            ->latest('created_at')
-            ->first();
+        $notification = $karyawan->unreadNotifications()->where('type', ShiftConfirmationNotification::class)->latest('created_at')->first();
 
-        if (!$notification) return response()->json(['pending' => false]);
+        if (!$notification) {
+            return response()->json(['pending' => false]);
+        }
 
         return response()->json([
-            'pending'         => true,
+            'pending' => true,
             'notification_id' => $notification->id,
-            'shift'           => $notification->data['shift'],
-            'date'            => $notification->data['date'],
-            'message'         => $notification->data['message'] ?? 'Apakah Anda setuju mengambil shift ini?',
+            'shift' => $notification->data['shift'],
+            'date' => $notification->data['date'],
+            'message' => $notification->data['message'] ?? 'Apakah Anda setuju mengambil shift ini?',
         ]);
     }
 
@@ -693,16 +698,13 @@ class DaftarTugasController extends Controller
         $request->validate([
             'notification_id' => 'required|string',
             'shift' => 'required|in:1,2',
-            'date'  => 'required|date',
+            'date' => 'required|date',
         ]);
 
-        $karyawan  = auth()->user()->karyawan;
+        $karyawan = auth()->user()->karyawan;
         $shiftName = 'Shift ' . $request->shift;
 
-        $taken = KontrolTugas::whereDate('Deadline_Date', $request->date)
-            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))
-            ->where('id_karyawan', '!=', $karyawan->id)
-            ->exists();
+        $taken = KontrolTugas::whereDate('Deadline_Date', $request->date)->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))->where('id_karyawan', '!=', $karyawan->id)->exists();
 
         if ($taken) {
             $karyawan->notifications()->where('id', $request->notification_id)->delete();
@@ -718,10 +720,7 @@ class DaftarTugasController extends Controller
 
     public function rejectShift(Request $request)
     {
-        auth()->user()->karyawan
-            ->notifications()
-            ->where('id', $request->notification_id)
-            ->delete();
+        auth()->user()->karyawan->notifications()->where('id', $request->notification_id)->delete();
 
         return response()->json(['success' => true]);
     }
@@ -932,34 +931,27 @@ class DaftarTugasController extends Controller
     private function parseBukti($bukti)
     {
         if (!$bukti) {
-            return ['before' => null, 'after' => null];
+            return [
+                'before' => null,
+                'after' => null,
+                'waktu_mulai' => null,
+                'waktu_selesai' => null,
+            ];
         }
         try {
             if (is_string($bukti) && str_starts_with($bukti, '{')) {
                 $decoded = json_decode($bukti, true);
-                return is_array($decoded) ? $decoded + ['before' => null, 'after' => null] : ['before' => $bukti, 'after' => null];
+                return is_array($decoded) ? $decoded + ['before' => null, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null] : ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
             }
-            return ['before' => $bukti, 'after' => null];
+            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
         } catch (\Exception $e) {
-            return ['before' => $bukti, 'after' => null];
+            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
         }
     }
 
-    // public function perbaikanData()
-    // {
-    //     $officeBoy = karyawan::where('jabatan', 'Office Boy')->select('id', 'nama_lengkap')->get();
-    //     $kategori = KategoriDaftarTugas::select('id', 'judul_kategori', 'Tipe', 'tipe_turunan')->orderBy('Tipe')->orderBy('judul_kategori')->get();
-
-    //     return view('office.daftarTugas.perbaikanData', compact('officeBoy', 'kategori'));
-    // }
-
     public function getForPerbaikan(Request $request)
     {
-        $hasFilter = $request->filled('start_date') 
-                || $request->filled('end_date')
-                || ($request->filled('tipe') && $request->tipe !== 'all')
-                || ($request->filled('kategori') && $request->kategori !== 'all')
-                || ($request->filled('karyawan') && $request->karyawan !== 'all');
+        $hasFilter = $request->filled('start_date') || $request->filled('end_date') || ($request->filled('tipe') && $request->tipe !== 'all') || ($request->filled('kategori') && $request->kategori !== 'all') || ($request->filled('karyawan') && $request->karyawan !== 'all');
 
         if (!$hasFilter) {
             return response()->json([
@@ -970,7 +962,7 @@ class DaftarTugasController extends Controller
         }
 
         $perPage = min((int) $request->get('per_page', 50), 200);
-        $page    = max((int) $request->get('page', 1), 1);
+        $page = max((int) $request->get('page', 1), 1);
 
         $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
 
@@ -987,24 +979,23 @@ class DaftarTugasController extends Controller
             $query->where('id_DaftarTugas', $request->kategori);
         }
         if ($request->filled('karyawan') && $request->karyawan !== 'all') {
-            $request->karyawan === 'null' 
-                ? $query->whereNull('id_karyawan') 
-                : $query->where('id_karyawan', $request->karyawan);
+            $request->karyawan === 'null' ? $query->whereNull('id_karyawan') : $query->where('id_karyawan', $request->karyawan);
         }
 
-        $data = $query->orderBy('Deadline_Date')
-                    ->orderBy('urutan')
-                    ->orderBy('id', 'desc')
-                    ->paginate($perPage, ['*'], 'page', $page);
+        $data = $query
+            ->orderBy('Deadline_Date')
+            ->orderBy('urutan')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
             'data' => $data->items(),
             'pagination' => [
-                'total'        => $data->total(),
-                'per_page'     => $data->perPage(),
+                'total' => $data->total(),
+                'per_page' => $data->perPage(),
                 'current_page' => $data->currentPage(),
-                'last_page'    => $data->lastPage(),
-                'has_more'     => $data->hasMorePages(),
+                'last_page' => $data->lastPage(),
+                'has_more' => $data->hasMorePages(),
             ],
             'requires_filter' => false,
         ]);
@@ -1022,21 +1013,16 @@ class DaftarTugasController extends Controller
         $shiftName = 'Shift ' . $request->shift;
         $date = $request->date;
 
-        $shiftTaken = KontrolTugas::whereDate('Deadline_Date', $date)
-            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))
-            ->exists();
+        $shiftTaken = KontrolTugas::whereDate('Deadline_Date', $date)->whereHas('KategoriDaftarTugas', fn($q) => $q->where('tipe_turunan', $shiftName))->exists();
 
         if ($shiftTaken) {
             return response()->json(['success' => false, 'message' => "Maaf, {$shiftName} sudah diambil oleh karyawan lain."], 422);
         }
 
-        $userHasShift = KontrolTugas::where('id_karyawan', $karyawan->id)
-            ->whereDate('Deadline_Date', $date)
-            ->whereHas('KategoriDaftarTugas', fn($q) => $q->where('Tipe', 'Harian'))
-            ->exists();
+        $userHasShift = KontrolTugas::where('id_karyawan', $karyawan->id)->whereDate('Deadline_Date', $date)->whereHas('KategoriDaftarTugas', fn($q) => $q->where('Tipe', 'Harian'))->exists();
 
         if ($userHasShift) {
-            return response()->json(['success' => false, 'message' => "Anda sudah memiliki tugas shift hari ini."], 422);
+            return response()->json(['success' => false, 'message' => 'Anda sudah memiliki tugas shift hari ini.'], 422);
         }
 
         $this->generateTasksForShift($karyawan->id, $shiftName, $date);
@@ -1189,7 +1175,6 @@ class DaftarTugasController extends Controller
 
             if (!empty($updateKategori)) {
                 $kategori = $tugas->kategoriDaftarTugas;
-                // Mencegah update kategori yang sama berulang kali dalam 1 batch
                 if (!in_array($kategori->id, $updatedCategories)) {
                     $kategori->update($updateKategori);
                     $updatedCategories[] = $kategori->id;
@@ -1214,7 +1199,9 @@ class DaftarTugasController extends Controller
     public function checkPendingShift()
     {
         $karyawanId = auth()->user()->karyawan->id ?? null;
-        if (!$karyawanId) return response()->json(['pending' => false]);
+        if (!$karyawanId) {
+            return response()->json(['pending' => false]);
+        }
 
         $pending = Cache::get("pending_shift_{$karyawanId}");
 
@@ -1223,7 +1210,7 @@ class DaftarTugasController extends Controller
                 'pending' => true,
                 'shift' => $pending['shift'],
                 'date' => $pending['date'],
-                'message' => $pending['message']
+                'message' => $pending['message'],
             ]);
         }
 

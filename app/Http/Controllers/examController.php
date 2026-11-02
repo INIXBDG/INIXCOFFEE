@@ -312,6 +312,25 @@ class examController extends Controller
         ]);
     }
 
+    public function updateStatus(Request $request)
+    {
+        $approval = approvalexam::where('id_exam', $request->input('id'))->first();
+
+        if (!$approval) {
+            return back()->with('error', 'Data approval tidak ditemukan');
+        }
+
+        if ($approval->status === 'Sudah Dikonfirmasi oleh Technical Support') {
+            $approval->update(['status' => 'Proses Checkout']);
+        } elseif ($approval->status === 'Proses Checkout') {
+            $approval->update(['status' => 'Selesai']);
+        } else {
+            return back()->with('error', 'Status tidak bisa diubah');
+        }
+
+        return back()->with('success', 'Status berhasil diupdate');
+    }
+
     public function getPoExamSertifa()
     {
         $data = PoExamSertifa::with(['materi', 'perusahaan'])->latest()->get();

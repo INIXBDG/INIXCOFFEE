@@ -124,7 +124,7 @@
                     <div class="card m-4">
                         <div class="card-body table-responsive">
                             <div class="d-flex justify-content-end align-items-center">
-                                <a class="btn btn-md click-primary mx-4" href="{{ route('exam.manualCreate') }}">
+                                <a class="btn btn-md click-primary mx-4" href="{{ route('manualCreate.exam') }}">
                                     <img src="{{ asset('icon/plus.svg') }}" width="30px"> Add Pengajuan
                                 </a>
                             </div>
@@ -416,24 +416,31 @@
                     {
                         "data": null,
                         "render": function (data) {
-                            if (data.approvalexam) {
-                                var app = data.approvalexam;
-
-                                if (app.technical_support == 1) {
-                                    return '<span class="badge bg-success">Selesai</span>';
-                                }
-
-                                if (app.office_manager == 1) {
-                                    return '<span class="badge bg-info text-dark">Office Manager</span>';
-                                }
-
-                                if (app.spv_sales == 1) {
-                                    return '<span class="badge bg-info text-dark">SPV Sales</span>';
-                                }
-
-                                return '<span class="badge bg-warning text-dark">Belum Approval</span>';
+                            var app = data.approvalexam;
+                            if (!app) {
+                                return '<span class="text-muted">-</span>';
                             }
-                            return '<span class="text-muted">-</span>';
+
+                            // Status akhir dari alur checkout
+                            if (app.status === 'Selesai') {
+                                return '<span class="badge bg-success">Selesai</span>';
+                            }
+                            if (app.status === 'Proses Checkout') {
+                                return '<span class="badge bg-warning text-dark">Proses Checkout</span>';
+                            }
+
+                            // Tahap approval sebelum checkout
+                            if (app.technical_support == 1) {
+                                return '<span class="badge bg-primary">Dikonfirmasi Technical Support</span>';
+                            }
+                            if (app.office_manager == 1) {
+                                return '<span class="badge bg-info text-dark">Office Manager</span>';
+                            }
+                            if (app.spv_sales == 1) {
+                                return '<span class="badge bg-info text-dark">SPV Sales</span>';
+                            }
+
+                            return '<span class="badge bg-warning text-dark">Belum Approval</span>';
                         }
                     },
                     {
@@ -632,7 +639,7 @@
                             "render": function (data) {
                                 var actions = "";
                                 actions += '<a href="/pengajuanExam/' + data.id_rkm + '" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Pengajuan Exam"> Ajukan Exam</a>';
-                                return actions;                           
+                                return actions;
                             }
                         }
                     ],

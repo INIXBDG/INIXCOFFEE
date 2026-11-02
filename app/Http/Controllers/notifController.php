@@ -47,9 +47,9 @@ class notifController extends Controller
             notif::create([
                 'id_user' => auth()->user()->username,
                 'tipe_notifikasi' => 'Libur',
-                'isi_notifikasi' => 'Libur '.$data->nama,
-                'tanggal_awal' => $data->tanggal,
-                'tanggal_akhir' => $data->tanggal,
+                'isi_notifikasi' => $request->isi_notifikasi,
+                'tanggal_awal' => $request->tanggal_awal,
+                'tanggal_akhir' => $request->tanggal_akhir,
             ]);
 
             session()->flash('success_libur', 'Notifikasi Libur berhasil dibuat');

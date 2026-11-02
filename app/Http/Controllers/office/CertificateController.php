@@ -158,22 +158,18 @@ class CertificateController extends Controller
             ->orderBy('pesertas.nama')
             ->get();
 
-        $certificateIds = Certificate::join(
-                'registrasis',
-                'registrasis.id_peserta',
-                '=',
-                'certificates.id_peserta'
-            )
-            ->whereIn('certificates.rkm_id', $rkmIds)
-            ->whereIn('certificates.id_peserta', $peserta->pluck('id_peserta'))
-            ->pluck('registrasis.id_peserta')
-            ->unique()
-            ->toArray();
+        $certificates = Certificate::whereIn('rkm_id', $rkmIds)
+            ->whereIn('id_peserta', $peserta->pluck('id_peserta'))
+            ->get()
+            ->keyBy('id_peserta');
+
+        $certificateIds = $certificates->keys()->toArray();
 
         return view('office.certificate.detail', compact(
             'rkm',
             'peserta',
             'certificateIds',
+            'certificates',
             'perusahaan'
         ));
     }
@@ -388,7 +384,7 @@ class CertificateController extends Controller
 
         $dateColumn = 'created_at';
 
-        // Resolusi rentang tanggal berdasarkan period
+        // Resolusi rentang tanggal berdasrkan period
         if ($period === 'quarter') {
             $startDate = Carbon::create($year, 1, 1)
                 ->addMonths(($quarter - 1) * 3)
@@ -405,10 +401,6 @@ class CertificateController extends Controller
             $endDate   = Carbon::create($year, $month, 1)->endOfMonth();
         }
 
-        // ==========================================
-        // CERTIFICATE SUMMARY
-        // ==========================================
-
         $regDigitalD = CertificateSummary::where('type', 'Reg Digital')
             ->whereBetween($dateColumn, [$startDate, $endDate])
             ->get();
@@ -417,22 +409,16 @@ class CertificateController extends Controller
             ->whereBetween($dateColumn, [$startDate, $endDate])
             ->get();
 
-        // ==========================================
-        // CERTIFICATE BANDUNG
-        // ==========================================
-
-        $bandungD = Certificate::whereBetween($dateColumn, [$startDate, $endDate])
+        $bandungD = Certificate::whereRaw(
+                "STR_TO_DATE(SUBSTRING_INDEX(tanggal_pelatihan, ' - ', 1), '%Y-%m-%d') BETWEEN ? AND ?",
+                [$startDate->toDateString(), $endDate->toDateString()]
+            )
             ->get();
 
         // Certificate yang kategori_exam-nya terisi, dikelompokkan per kategori
         $certByKategori = $bandungD
             ->filter(fn ($c) => !empty($c->kategori_exam))
             ->groupBy('kategori_exam');
-
-        // ==========================================
-        // AUTHORIZED + BNSP + INIXCERT (satu query)
-        // ModelsEksam -> registexam (filter dokumentasiExam.kategori_exam) -> peserta
-        // ==========================================
 
         $semuaExam = $this->getPesertaExam(
             ['Authorize', 'BNSP', 'Inixcert'],
@@ -459,12 +445,6 @@ class CertificateController extends Controller
 
         $internasionalD = collect($certByKategori->get('Internasional', collect()))->values();
 
-        // ==========================================
-        // WORKSHOP
-        // RKM -> registrasi -> peserta
-        // Tanggal (tanggal_awal/tanggal_akhir) ditempel ke tiap peserta dari RKM-nya
-        // ==========================================
-
         $workshopD = RKM::with('registrasi.peserta')
             ->where('status', '0')
             ->where('event', 'Workshop')
@@ -484,10 +464,6 @@ class CertificateController extends Controller
             })
             ->filter()
             ->values();
-
-        // ==========================================
-        // RETURN
-        // ==========================================
 
         return response()->json([
             'filter' => [

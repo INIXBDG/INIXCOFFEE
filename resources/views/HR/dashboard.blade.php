@@ -1,6 +1,7 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -8,406 +9,380 @@
         :root {
             --pri: #4f46e5;
             --pri-light: #eef2ff;
-            --pri-dark: #3730a3;
             --success: #059669;
             --success-light: #d1fae5;
-            --warning: #f59e0b;
+            --warning: #d97706;
             --warning-light: #fef3c7;
             --info: #0284c7;
             --info-light: #e0f2fe;
             --danger: #dc2626;
             --danger-light: #fee2e2;
-            --purple: #8b5cf6;
+            --purple: #7c3aed;
             --purple-light: #ede9fe;
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
             --gray-400: #9ca3af;
             --gray-500: #6b7280;
             --gray-600: #4b5563;
             --gray-700: #374151;
-            --gray-800: #1f2937;
             --gray-900: #111827;
-            --radius: 14px;
-            --shadow: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.05);
-            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,.1);
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .04);
         }
 
         body {
-            background: #f5f7fb;
+            background: #fafbfc;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .dash-header {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
-            border-radius: var(--radius);
-            padding: 2rem 2rem 5rem;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: -3.5rem;
-        }
-
-        .dash-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -10%;
-            width: 400px;
-            height: 400px;
-            background: rgba(255,255,255,.08);
-            border-radius: 50%;
-        }
-
-        .dash-header::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: 20%;
-            width: 250px;
-            height: 250px;
-            background: rgba(255,255,255,.05);
-            border-radius: 50%;
-        }
-
-        .greeting-emoji {
-            font-size: 2.5rem;
-            display: inline-block;
-            animation: wave 2.5s ease-in-out infinite;
-        }
-
-        @keyframes wave {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(15deg); }
-            75% { transform: rotate(-15deg); }
-        }
-
-        .greeting-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0.5rem 0 0.25rem;
-        }
-
-        .greeting-sub {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-
-        .live-clock {
-            background: rgba(255,255,255,.15);
-            backdrop-filter: blur(10px);
-            padding: 0.5rem 1rem;
-            border-radius: 30px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.3); }
-        }
-
-        .card-panel {
-            background: white;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 1.5rem;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card-panel-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .card-panel-title i {
-            color: var(--pri);
-        }
-
-        .big-stat {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .big-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--gray-900);
-            line-height: 1;
-        }
-
-        .big-number .unit {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--gray-500);
-            margin-left: 0.25rem;
-        }
-
-        .trend-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .trend-badge.up { background: var(--success-light); color: var(--success); }
-        .trend-badge.down { background: var(--danger-light); color: var(--danger); }
-        .trend-badge.neutral { background: var(--gray-100); color: var(--gray-600); }
-
-        .mini-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.75rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--gray-200);
-        }
-
-        .mini-stat-item {
-            text-align: center;
-        }
-
-        .mini-stat-value {
-            font-size: 1.25rem;
+        .page-title {
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--gray-900);
-            line-height: 1;
+            margin: 0;
         }
 
-        .mini-stat-label {
-            font-size: 0.7rem;
+        .page-sub {
             color: var(--gray-500);
-            margin-top: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+            font-size: .875rem;
+            margin: .15rem 0 0;
         }
 
-        .composition-bars {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1rem;
-        }
-
-        .comp-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .comp-bar-label {
-            width: 70px;
-            font-size: 0.8rem;
+        .clock {
+            font-variant-numeric: tabular-nums;
             font-weight: 600;
             color: var(--gray-700);
         }
 
-        .comp-bar-track {
-            flex: 1;
-            height: 10px;
-            background: var(--gray-100);
-            border-radius: 5px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .comp-bar-fill {
+        .panel {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.25rem 1.4rem;
             height: 100%;
-            border-radius: 5px;
-            transition: width 1s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 8px;
-            font-size: 0.7rem;
-            color: white;
+        }
+
+        .panel-title {
+            font-size: .875rem;
             font-weight: 700;
-        }
-
-        .comp-bar-count {
-            width: 40px;
-            text-align: right;
-            font-weight: 700;
-            color: var(--gray-900);
-            font-size: 0.9rem;
-        }
-
-        .funnel-item {
+            color: var(--gray-700);
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.65rem;
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-            background: var(--gray-50);
-            transition: all 0.2s;
+            gap: .5rem;
+            flex-wrap: wrap;
         }
 
-        .funnel-item:hover {
-            background: var(--pri-light);
-            transform: translateX(3px);
+        .panel-title i {
+            color: var(--pri);
         }
 
-        .funnel-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+        .panel-title .right {
+            margin-left: auto;
+            font-size: .75rem;
+            font-weight: 500;
+            color: var(--gray-500);
+        }
+
+        .filters {
             display: flex;
+            gap: .5rem;
             align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-            font-size: 0.9rem;
+            flex-wrap: wrap;
         }
 
-        .funnel-info {
-            flex: 1;
-            min-width: 0;
+        .filters select {
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .4rem .75rem;
+            font-size: .85rem;
+            background: #fff;
+            color: var(--gray-700);
         }
 
-        .funnel-label {
-            font-size: 0.85rem;
+        .filters select:focus {
+            border-color: var(--pri);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+        }
+
+        .btn-refresh {
+            background: #fff;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: .4rem .9rem;
+            font-size: .85rem;
+            color: var(--gray-700);
             font-weight: 600;
-            color: var(--gray-800);
+            cursor: pointer;
         }
 
-        .funnel-progress {
-            height: 5px;
-            background: var(--gray-200);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 4px;
+        .btn-refresh:hover {
+            border-color: var(--pri);
+            color: var(--pri);
         }
 
-        .funnel-progress-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.8s ease;
+        .clickable {
+            cursor: pointer;
+            transition: box-shadow .15s, background .15s, transform .15s;
         }
 
-        .funnel-count {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--gray-900);
+        .panel.clickable:hover {
+            box-shadow: 0 4px 14px rgba(79, 70, 229, .15);
+            transform: translateY(-1px);
         }
 
-        .today-status-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
+        .mini.clickable {
+            border-radius: 6px;
+            padding: .2rem .3rem;
+            margin: -.2rem -.3rem;
         }
 
-        .today-status-item {
+        .mini.clickable:hover,
+        .bar-row.clickable:hover,
+        .chip.clickable:hover,
+        .note.clickable:hover {
+            background: var(--pri-light);
+        }
+
+        .lnk {
+            text-decoration: underline dotted;
+            cursor: pointer;
+        }
+
+        .acts {
+            display: inline-flex;
+            gap: .3rem;
+            align-items: center;
+        }
+
+        .btn-detail,
+        .btn-exp {
+            border: 0;
+            border-radius: 6px;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .18rem .55rem;
+            cursor: pointer;
+            line-height: 1.3;
+        }
+
+        .btn-detail {
+            background: var(--pri-light);
+            color: var(--pri);
+        }
+
+        .btn-detail:hover {
+            background: var(--pri);
+            color: #fff;
+        }
+
+        .btn-exp.pdf {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .btn-exp.pdf:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-exp.xls {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .btn-exp.xls:hover {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .formula-box {
             background: var(--gray-50);
-            border-radius: 10px;
-            padding: 1rem;
+            border-left: 4px solid var(--pri);
+            border-radius: 8px;
+            padding: .7rem .9rem;
+            font-size: .82rem;
+            color: var(--gray-700);
+            margin-bottom: .8rem;
+        }
+
+        .dtl-table {
+            font-size: .78rem;
+        }
+
+        .dtl-table th {
+            background: var(--pri-light);
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+
+        /* kartu angka utama */
+        .stat-label {
+            font-size: .8rem;
+            color: var(--gray-500);
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: .5rem;
+        }
+
+        .stat-label i {
+            color: var(--pri);
+        }
+
+        .stat-value {
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1.1;
+            margin: .5rem 0 .2rem;
+        }
+
+        .stat-value small {
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            margin-left: .2rem;
+        }
+
+        .stat-note {
+            font-size: .78rem;
+            color: var(--gray-500);
+        }
+
+        .delta {
+            display: inline-block;
+            font-size: .72rem;
+            font-weight: 700;
+            padding: .15rem .5rem;
+            border-radius: 6px;
+        }
+
+        .delta.up {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .delta.down {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .delta.flat {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        .minis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: .5rem;
+            margin-top: .9rem;
+            padding-top: .9rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .mini-v {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            line-height: 1.1;
+        }
+
+        .mini-l {
+            font-size: .72rem;
+            color: var(--gray-500);
+            margin-top: .15rem;
+        }
+
+        .chips {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: .6rem;
+        }
+
+        .chip {
+            border: 1px solid var(--gray-200);
             border-left: 4px solid;
+            border-radius: 8px;
+            padding: .6rem .8rem;
         }
 
-        .today-status-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .today-status-count {
-            font-size: 1.5rem;
-            font-weight: 800;
+        .chip-n {
+            font-size: 1.4rem;
+            font-weight: 700;
             color: var(--gray-900);
             line-height: 1;
         }
 
-        .today-status-label {
-            font-size: 0.75rem;
+        .chip-l {
+            font-size: .75rem;
             color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            font-weight: 600;
+            margin-top: .2rem;
+        }
+
+        .sub-title {
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--gray-600);
+            margin-bottom: .5rem;
         }
 
         .person-list {
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            max-height: 320px;
+            gap: .25rem;
+            max-height: 260px;
             overflow-y: auto;
         }
 
-        .person-item {
+        .person {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.6rem;
-            border-radius: 10px;
-            transition: background 0.2s;
+            gap: .65rem;
+            padding: .45rem .3rem;
+            border-radius: 8px;
         }
 
-        .person-item:hover {
+        .person:hover {
             background: var(--gray-50);
         }
 
-        .person-avatar {
-            width: 40px;
-            height: 40px;
+        .person.clickable:hover {
+            background: var(--pri-light);
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1, #ec4899);
-            color: white;
+            background: var(--gray-200);
+            color: var(--gray-600);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: .75rem;
             font-weight: 700;
-            font-size: 0.9rem;
             flex-shrink: 0;
             overflow: hidden;
         }
 
-        .person-avatar img {
+        .avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .person-info {
+        .p-info {
             flex: 1;
             min-width: 0;
         }
 
-        .person-name {
-            font-size: 0.875rem;
+        .p-name {
+            font-size: .85rem;
             font-weight: 600;
             color: var(--gray-900);
             white-space: nowrap;
@@ -415,327 +390,1123 @@
             text-overflow: ellipsis;
         }
 
-        .person-meta {
-            font-size: 0.72rem;
+        .p-meta {
+            font-size: .72rem;
             color: var(--gray-500);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .person-badge {
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
+        .tag {
+            font-size: .7rem;
             font-weight: 700;
+            padding: .15rem .55rem;
+            border-radius: 6px;
             flex-shrink: 0;
         }
 
-        .insight-card {
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            display: flex;
-            gap: 0.85rem;
-            align-items: flex-start;
-            border-left: 4px solid;
+        .banner {
+            background: var(--warning-light);
+            color: #92400e;
+            font-size: .82rem;
+            padding: .55rem .8rem;
+            border-radius: 8px;
+            margin-bottom: .9rem;
         }
 
-        .insight-card.success { background: var(--success-light); border-left-color: var(--success); }
-        .insight-card.warning { background: var(--warning-light); border-left-color: var(--warning); }
-        .insight-card.danger { background: var(--danger-light); border-left-color: var(--danger); }
-        .insight-card.info { background: var(--info-light); border-left-color: var(--info); }
-        .insight-card.neutral { background: var(--gray-100); border-left-color: var(--gray-400); }
+        .note {
+            display: flex;
+            gap: .75rem;
+            align-items: flex-start;
+            padding: .75rem .9rem;
+            border: 1px solid var(--gray-200);
+            border-left: 4px solid;
+            border-radius: 8px;
+            margin-bottom: .5rem;
+            background: #fff;
+        }
 
-        .insight-icon-wrap {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+        .note-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             flex-shrink: 0;
+            font-size: .85rem;
         }
 
-        .insight-content { flex: 1; min-width: 0; }
-
-        .insight-title {
-            font-size: 0.875rem;
+        .note-title {
+            font-size: .83rem;
             font-weight: 700;
             color: var(--gray-900);
-            margin-bottom: 0.25rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            gap: .5rem;
         }
 
-        .insight-metric {
-            font-size: 0.8rem;
-            font-weight: 800;
-            padding: 0.15rem 0.5rem;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.7);
-        }
-
-        .insight-message {
-            font-size: 0.8rem;
-            color: var(--gray-700);
-            line-height: 1.5;
-        }
-
-        .event-item {
-            display: flex;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            border-radius: 10px;
-            margin-bottom: 0.5rem;
-            background: var(--gray-50);
-            transition: all 0.2s;
-            border-left: 3px solid;
-        }
-
-        .event-item:hover {
-            background: var(--pri-light);
-            transform: translateX(3px);
-        }
-
-        .event-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
+        .note-title span:last-child {
+            font-weight: 700;
             flex-shrink: 0;
-            font-size: 0.85rem;
         }
 
-        .event-content { flex: 1; min-width: 0; }
-
-        .event-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--gray-900);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .event-sub {
-            font-size: 0.72rem;
-            color: var(--gray-500);
+        .note-msg {
+            font-size: .78rem;
+            color: var(--gray-600);
+            line-height: 1.45;
+            margin-top: .15rem;
         }
 
         .event-date {
-            font-size: 0.7rem;
+            font-size: .72rem;
             font-weight: 700;
-            color: var(--gray-700);
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .empty-state {
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            margin-bottom: .6rem;
+            border-radius: 6px;
+        }
+
+        .bar-label {
+            width: 78px;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 8px;
+            background: var(--gray-100);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .bar-count {
+            width: 34px;
+            text-align: right;
+            font-weight: 700;
+            font-size: .85rem;
+            color: var(--gray-900);
+        }
+
+        .divider {
+            border-top: 1px solid var(--gray-200);
+            margin: .9rem 0;
+        }
+
+        .chart-box {
+            position: relative;
+            height: 240px;
+        }
+
+        .chart-box.sm {
+            height: 150px;
+        }
+
+        .empty {
             text-align: center;
-            padding: 2rem 1rem;
+            padding: 1.5rem .5rem;
             color: var(--gray-400);
+            font-size: .82rem;
         }
 
-        .empty-state i {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            opacity: 0.3;
+        .empty i {
+            display: block;
+            font-size: 1.6rem;
+            opacity: .4;
+            margin-bottom: .4rem;
         }
 
-        .filter-inline {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-inline select {
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 0.5rem 0.85rem;
-            font-size: 0.85rem;
-            background: white;
-            color: var(--gray-700);
-            font-weight: 500;
-        }
-
-        .filter-inline select:focus {
-            border-color: var(--pri);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .filter-inline .filter-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--gray-600);
-            margin-right: 0.25rem;
-        }
-
-        .btn-refresh {
-            background: white;
-            border: 1px solid var(--gray-200);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            color: var(--gray-700);
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .btn-refresh:hover {
-            background: var(--pri);
-            color: white;
-            border-color: var(--pri);
-        }
-
-        .divider-dashed {
-            border-top: 1px dashed var(--gray-200);
-            margin: 1rem 0;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 220px;
-        }
-
-        .chart-container-sm {
-            position: relative;
-            height: 180px;
-        }
-
-        .quick-nav {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        .quick-nav-item {
-            background: white;
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            color: var(--gray-700);
-            transition: all 0.2s;
-        }
-
-        .quick-nav-item:hover {
-            border-color: var(--pri);
-            background: var(--pri-light);
-            color: var(--pri);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        .quick-nav-item i {
-            font-size: 1.25rem;
-        }
-
-        .quick-nav-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .quick-nav-sub {
-            font-size: 0.7rem;
-            color: var(--gray-500);
-        }
-
-        .loading-skeleton {
-            background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+        .skel {
+            background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
             background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+            animation: pulse 1.5s infinite;
             border-radius: 8px;
         }
 
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+        @keyframes pulse {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
         }
 
-        .weekend-banner {
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 10px;
-            margin-bottom: 1rem;
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 767px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .chips {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        #guideModal {
+            --pri: #4f46e5;
+            --pri-light: #eef2ff;
+            --pri-dark: #3730a3;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --warning: #d97706;
+            --warning-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --info: #0284c7;
+            --info-light: #e0f2fe;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        #guideModal .modal-content {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .07);
+        }
+
+        #guideModal .modal-header-custom {
+            background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+            padding: 1.1rem 1.5rem;
+        }
+
+        #guideModal .modal-header-custom .modal-title {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        #guideModal .modal-header-custom .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        #guideModal .nav-tabs-custom {
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        #guideModal .nav-tabs-custom .nav-link {
+            border: none;
+            color: var(--gray-400);
+            font-weight: 600;
+            padding: .85rem 1.25rem;
+            font-size: .875rem;
+            transition: color .2s;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: .5rem;
+            background: transparent;
+        }
+
+        #guideModal .nav-tabs-custom .nav-link:hover {
+            color: var(--pri);
+        }
+
+        #guideModal .nav-tabs-custom .nav-link.active {
+            color: var(--pri);
+            border-bottom: 3px solid var(--pri);
+            background: transparent;
+        }
+
+        #guideModal .guide-section {
+            margin-bottom: 2rem;
+        }
+
+        #guideModal .guide-section h5 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            border-left: 4px solid var(--pri);
+            padding-left: .75rem;
+            margin-bottom: .75rem;
+        }
+
+        #guideModal .guide-section ol,
+        #guideModal .guide-section ul {
+            padding-left: 1.25rem;
+            margin-bottom: .75rem;
+        }
+
+        #guideModal .guide-section li {
+            margin-bottom: .4rem;
+            font-size: .9rem;
+            color: var(--gray-700);
+            line-height: 1.55;
+        }
+
+        #guideModal .guide-section p {
+            font-size: .9rem;
+            color: var(--gray-700);
+            line-height: 1.55;
+        }
+
+        #guideModal .guide-note {
+            background: var(--pri-light);
+            border-left: 4px solid var(--pri);
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            font-size: .85rem;
+            color: var(--gray-700);
+        }
+
+        #guideModal .guide-example {
+            background: var(--gray-50);
+            border: 1px dashed var(--gray-400);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        #guideModal .guide-example ol {
+            margin-bottom: 0;
+        }
+
+        #guideModal .guide-itsm {
+            background: var(--danger-light);
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+
+        #guideModal .guide-qa {
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        #guideModal .guide-qa:last-child {
+            border-bottom: none;
+        }
+
+        #guideModal .guide-qa strong {
+            display: block;
+            font-size: .92rem;
+            color: var(--gray-900);
+            margin-bottom: .4rem;
             font-weight: 600;
-            font-size: 0.9rem;
+        }
+
+        #guideModal .guide-qa span {
+            display: block;
+            font-size: .88rem;
+            color: var(--gray-700);
+            line-height: 1.6;
+        }
+
+        #guideModal .guide-qa ul,
+        #guideModal .guide-qa ol {
+            margin-top: .5rem;
+            margin-bottom: 0;
+        }
+
+        #guideModal .table {
+            margin-bottom: 0;
+            font-size: .85rem;
+        }
+
+        #guideModal .badge {
+            font-weight: 600;
+            padding: .35em .65em;
         }
 
         @media (max-width: 768px) {
-            .big-number { font-size: 2rem; }
-            .greeting-title { font-size: 1.5rem; }
-            .today-status-grid { grid-template-columns: 1fr; }
-            .mini-stats { grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
-            .mini-stat-value { font-size: 1rem; }
-        }
+            #guideModal .modal-dialog {
+                margin: 0.5rem;
+            }
 
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+            #guideModal .nav-tabs-custom .nav-link {
+                padding: .65rem .85rem;
+                font-size: .8rem;
+            }
+
+            #guideModal .guide-section h5 {
+                font-size: .95rem;
+            }
+        }
     </style>
 
-    <div class="container-fluid px-3 px-md-4 py-3">
-        <div class="dash-header">
-            <div class="d-flex justify-content-between align-items-start position-relative" style="z-index:2">
-                <div>
-                    <div class="greeting-emoji" id="greetEmoji">☀️</div>
-                    <h1 class="greeting-title" id="greetText">Selamat Pagi!</h1>
-                    <p class="greeting-sub" id="greetSub">-</p>
-                </div>
-                <div class="text-end">
-                    <div class="live-clock">
-                        <span class="live-dot"></span>
-                        <span id="liveClock">--:--</span>
-                    </div>
-                    <div style="margin-top:0.5rem;font-size:0.85rem;opacity:0.9" id="todayDate">-</div>
-                </div>
+    <div class="container-fluid px-4 py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+            <div>
+                <h1 class="page-title"><i class="fa-solid fa-gauge-high me-2" style="color:var(--pri)"></i>Dashboard HR</h1>
+                <p class="page-sub"><span id="greetText">-</span> · <span id="todayDate">-</span> · <span class="clock"
+                        id="liveClock">--:--:--</span></p>
             </div>
-        </div>
-
-        <div class="filter-inline" style="margin-top: 1rem;">
-            <span class="filter-label"><i class="fa-solid fa-filter me-1"></i>Filter:</span>
-            <select id="filterTahun">
-                @for ($y = date('Y'); $y >= 2023; $y--)
-                    <option value="{{ $y }}" {{ $y == date('Y') ? 'selected' : '' }}>{{ $y }}</option>
-                @endfor
-            </select>
-            <select id="filterDivisi">
-                <option value="all">Semua Divisi</option>
-            </select>
-            <button class="btn-refresh" id="btnRefresh">
-                <i class="fa-solid fa-arrows-rotate"></i> Refresh
-            </button>
-            <div style="margin-left:auto;font-size:0.75rem;color:var(--gray-500)">
-                <i class="fa-regular fa-clock"></i> Update: <span id="lastUpdate">-</span>
+            <div class="filters">
+                <select id="filterTahun">
+                    @for ($y = date('Y'); $y >= 2023; $y--)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endfor
+                </select>
+                <select id="filterPeriode">
+                    <option value="all">Setahun penuh</option>
+                    <optgroup label="Triwulan">
+                        <option value="q1">Triwulan 1 (Jan–Mar)</option>
+                        <option value="q2">Triwulan 2 (Apr–Jun)</option>
+                        <option value="q3">Triwulan 3 (Jul–Sep)</option>
+                        <option value="q4">Triwulan 4 (Okt–Des)</option>
+                    </optgroup>
+                    <optgroup label="Bulan">
+                        <option value="m1">Januari</option>
+                        <option value="m2">Februari</option>
+                        <option value="m3">Maret</option>
+                        <option value="m4">April</option>
+                        <option value="m5">Mei</option>
+                        <option value="m6">Juni</option>
+                        <option value="m7">Juli</option>
+                        <option value="m8">Agustus</option>
+                        <option value="m9">September</option>
+                        <option value="m10">Oktober</option>
+                        <option value="m11">November</option>
+                        <option value="m12">Desember</option>
+                    </optgroup>
+                </select>
+                <select id="filterDivisi">
+                    <option value="all">Semua divisi</option>
+                </select>
+                <button class="btn-refresh" id="btnRefresh"><i class="fa-solid fa-arrows-rotate me-1"></i>Refresh</button>
+                <span style="font-size:.75rem;color:var(--gray-500)">Diperbarui <span id="lastUpdate">-</span></span>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#guideModal">
+                    <i class="fa-solid fa-circle-question me-1"></i>Panduan
+                </button>
             </div>
         </div>
 
         <div id="dashboardContent">
             <div class="row g-3">
-                <div class="col-md-6 col-lg-3"><div class="card-panel"><div class="loading-skeleton" style="height:180px"></div></div></div>
-                <div class="col-md-6 col-lg-3"><div class="card-panel"><div class="loading-skeleton" style="height:180px"></div></div></div>
-                <div class="col-md-6 col-lg-3"><div class="card-panel"><div class="loading-skeleton" style="height:180px"></div></div></div>
-                <div class="col-md-6 col-lg-3"><div class="card-panel"><div class="loading-skeleton" style="height:180px"></div></div></div>
+                @for ($i = 0; $i < 4; $i++)
+                    <div class="col-md-6 col-xl-3">
+                        <div class="skel" style="height:190px"></div>
+                    </div>
+                @endfor
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailTitle">Detail</h5>
+                    <div class="ms-auto me-3 d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-danger" onclick="exportCurrent('pdf')"><i
+                                class="fa-solid fa-file-pdf me-1"></i>PDF</button>
+                        <button class="btn btn-sm btn-outline-success" onclick="exportCurrent('excel')"><i
+                                class="fa-solid fa-file-excel me-1"></i>Excel</button>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="guideModal" tabindex="-1" aria-labelledby="guideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header modal-header-custom border-0">
+                    <h5 class="modal-title" id="guideModalLabel">
+                        <i class="fa-solid fa-book-open me-2"></i>Panduan Dashboard HR Intelligence
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <ul class="nav nav-tabs nav-tabs-custom mb-4">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="guide-tab1" data-bs-toggle="tab"
+                                data-bs-target="#guide-content-1" type="button">
+                                <i class="fa-solid fa-list-ol"></i>Cara Penggunaan
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="guide-tab2" data-bs-toggle="tab"
+                                data-bs-target="#guide-content-2" type="button">
+                                <i class="fa-solid fa-circle-info"></i>Penjelasan & Contoh
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="guide-tab3" data-bs-toggle="tab"
+                                data-bs-target="#guide-content-3" type="button">
+                                <i class="fa-solid fa-circle-question"></i>FAQ
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: CARA PENGGUNAAN -->
+                        <div class="tab-pane fade show active" id="guide-content-1">
+
+                            <div class="guide-section">
+                                <h5>1. Mengenali Dashboard</h5>
+                                <p>Dashboard ini menampilkan ringkasan lengkap data HR perusahaan: karyawan, kehadiran,
+                                    penjualan kelas training, maintenance aset, rekrutmen, dan pengajuan cuti. Semua data
+                                    ditampilkan dalam bentuk kartu angka, grafik, dan tabel yang mudah dibaca.</p>
+                                <div class="guide-note">
+                                    <strong>Tip:</strong> Gunakan filter <strong>Tahun</strong> dan <strong>Divisi</strong>
+                                    di pojok kanan atas untuk melihat data sesuai kebutuhan Anda.
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>2. Filter Data</h5>
+                                <ol>
+                                    <li><strong>Pilih Tahun:</strong> Klik dropdown tahun di pojok kanan atas untuk melihat
+                                        data tahun yang berbeda (tersedia dari 2023 hingga tahun depan).</li>
+                                    <li><strong>Pilih Divisi:</strong> Pilih divisi tertentu atau biarkan "Semua divisi"
+                                        untuk melihat seluruh perusahaan.</li>
+                                    <li><strong>Refresh:</strong> Klik tombol <strong>Refresh</strong> untuk memuat ulang
+                                        data terbaru.</li>
+                                    <li>Setiap kali Anda mengubah filter, seluruh angka, grafik, dan tabel akan otomatis
+                                        menyesuaikan.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>3. Membaca Kartu Statistik Utama</h5>
+                                <p>Di bagian atas dashboard ada 4 kartu besar yang menunjukkan:</p>
+                                <ul>
+                                    <li><strong>Total Karyawan:</strong> Jumlah karyawan aktif, dibagi menjadi Tetap,
+                                        Kontrak, dan Probation. Klik angka untuk melihat detail per kategori.</li>
+                                    <li><strong>Kehadiran:</strong> Persentase kehadiran bulan ini. Klik untuk melihat
+                                        detail kehadiran per orang.</li>
+                                    <li><strong>SPJ (Surat Perjalanan Dinas):</strong> Total pengeluaran perjalanan dinas.
+                                        Klik untuk melihat rincian per bulan.</li>
+                                    <li><strong>Rekrutmen:</strong> Jumlah pelamar yang sedang dalam proses. Klik untuk
+                                        melihat tahapan rekrutmen.</li>
+                                </ul>
+                                <div class="guide-note">
+                                    Setiap kartu memiliki tombol <strong>Detail</strong>, <strong>PDF</strong>, dan
+                                    <strong>Excel</strong> di bagian bawah untuk mengunduh laporan.
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>4. Memahami Panel "Ringkasan Hari Ini"</h5>
+                                <ol>
+                                    <li>Panel ini menunjukkan kondisi hari ini: berapa orang yang hadir tepat waktu,
+                                        terlambat, cuti/sakit, dan sedang interview.</li>
+                                    <li><strong>Kartu warna-warni</strong> di bagian atas menunjukkan jumlah per status:
+                                    </li>
+                                    <ul>
+                                        <li><span class="badge bg-success">Hadir tepat waktu</span> - Karyawan yang masuk
+                                            sesuai jadwal</li>
+                                        <li><span class="badge bg-danger">Terlambat</span> - Karyawan yang terlambat (klik
+                                            untuk lihat siapa saja)</li>
+                                        <li><span class="badge bg-info">Cuti / sakit</span> - Yang mengajukan cuti atau
+                                            sakit</li>
+                                        <li><span class="badge" style="background:#0d9488;color:#fff">Izin 3 jam</span> -
+                                            Izin singkat</li>
+                                    </ul>
+                                    <li>Klik nama karyawan di daftar untuk melihat detail lebih lanjut.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>5. Grafik dan Chart</h5>
+                                <p>Dashboard memiliki beberapa grafik interaktif:</p>
+                                <ul>
+                                    <li><strong>Tren Kehadiran per Bulan:</strong> Garis hijau menunjukkan persentase
+                                        kehadiran, garis merah menunjukkan keterlambatan. Klik titik pada grafik untuk
+                                        melihat detail bulan tersebut.</li>
+                                    <li><strong>Karyawan per Divisi:</strong> Grafik batang horizontal. Klik batang divisi
+                                        untuk melihat daftar karyawan divisi tersebut.</li>
+                                    <li><strong>Komposisi Karyawan:</strong> Grafik donat menunjukkan proporsi karyawan
+                                        Tetap, Kontrak, dan Probation. Klik potongan grafik untuk filter.</li>
+                                    <li><strong>Tahapan Rekrutmen:</strong> Grafik funnel menunjukkan berapa pelamar di
+                                        setiap tahap (Melamar → Screening → Interview → Offer → Diterima).</li>
+                                </ul>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>6. Panel Performa Penjualan Kelas</h5>
+                                <ol>
+                                    <li>Panel ini menampilkan statistik training:</li>
+                                    <ul>
+                                        <li><strong>Total Kelas:</strong> Jumlah kelas yang dilaksanakan tahun ini</li>
+                                        <li><strong>Total Peserta:</strong> Jumlah seluruh peserta (pax)</li>
+                                        <li><strong>Nett Penjualan:</strong> Total pendapatan dari training</li>
+                                    </ul>
+                                    <li><strong>Top 3 Materi:</strong> Grafik batang menunjukkan 3 materi training paling
+                                        populer. Klik tombol "Lihat Semua Materi" untuk detail lengkap.</li>
+                                    <li>Klik setiap kartu angka untuk melihat detail per bulan.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>7. Panel Maintenance Aset</h5>
+                                <ol>
+                                    <li>Menampilkan statistik pemeliharaan aset:</li>
+                                    <ul>
+                                        <li><strong>Total:</strong> Jumlah maintenance yang dijadwalkan</li>
+                                        <li><strong>Sedang Proses:</strong> Yang sedang dikerjakan (On Progress)</li>
+                                        <li><strong>Total Biaya:</strong> Total pengeluaran maintenance</li>
+                                    </ul>
+                                    <li><strong>Top 3 Kategori:</strong> Jenis maintenance yang paling sering dilakukan
+                                        (Hardware, Software, AC, dll).</li>
+                                    <li>Klik tombol <strong>Kelola & Import</strong> untuk masuk ke halaman maintenance
+                                        lengkap (di sana ada fitur import Excel).</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>8. Panel Pengajuan Cuti</h5>
+                                <ol>
+                                    <li>Menampilkan statistik cuti:</li>
+                                    <ul>
+                                        <li>Total pengajuan cuti tahun ini</li>
+                                        <li>Yang disetujui, menunggu, dan ditolak</li>
+                                        <li>Persentase karyawan yang sedang cuti</li>
+                                    </ul>
+                                    <li>Bagian bawah menampilkan <strong>Pengajuan terbaru</strong> dengan nama karyawan,
+                                        tipe cuti, dan tanggal.</li>
+                                    <li>Klik pengajuan untuk melihat detail lengkap.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>9. Panel Agenda dan Reminder</h5>
+                                <ol>
+                                    <li>Menampilkan jadwal penting:</li>
+                                    <ul>
+                                        <li><strong>Interview:</strong> Jadwal interview pelamar (14 hari ke depan)</li>
+                                        <li><strong>Penilaian Karyawan:</strong> Pengingat untuk penilaian kinerja
+                                            (probation/kontrak akan berakhir)</li>
+                                    </ul>
+                                    <li>Label warna menunjukkan urgensi:</li>
+                                    <ul>
+                                        <li><span class="badge bg-danger">Merah</span> - Sudah terlewat</li>
+                                        <li><span class="badge bg-warning text-dark">Kuning</span> - Mendesak (≤7 hari)
+                                        </li>
+                                        <li><span class="badge" style="background:#7c3aed;color:#fff">Ungu</span> - Akan
+                                            datang (≤30 hari)</li>
+                                    </ul>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>10. Panel Insight (Perlu Perhatian)</h5>
+                                <ol>
+                                    <li>Panel ini memberikan peringatan otomatis berdasarkan data:</li>
+                                    <ul>
+                                        <li>Jika retensi karyawan rendah (&lt;60%)</li>
+                                        <li>Jika keterlambatan tinggi</li>
+                                        <li>Jika ada penilaian yang terlewat</li>
+                                        <li>Jika pengeluaran SPJ naik drastis</li>
+                                    </ul>
+                                    <li>Klik insight untuk melihat detail dan tindakan yang perlu diambil.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>11. Mengunduh Laporan (Export)</h5>
+                                <ol>
+                                    <li>Setiap panel memiliki tombol <strong>PDF</strong> dan <strong>Excel</strong>.</li>
+                                    <li><strong>PDF:</strong> Untuk laporan formal yang siap cetak/dibagikan.</li>
+                                    <li><strong>Excel:</strong> Untuk analisis lebih lanjut atau olah data.</li>
+                                    <li>Laporan akan mengikuti filter yang aktif (Tahun dan Divisi).</li>
+                                    <li>Untuk data Maintenance, ada tombol <strong>Import Excel</strong> di panel atau di
+                                        halaman terpisah untuk upload data massal.</li>
+                                </ol>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>12. Melihat Detail Lengkap</h5>
+                                <ol>
+                                    <li>Klik tombol <strong>Detail</strong> atau klik angka/kartu untuk membuka jendela
+                                        modal.</li>
+                                    <li>Modal menampilkan:</li>
+                                    <ul>
+                                        <li>Rumus perhitungan</li>
+                                        <li>Ringkasan angka penting</li>
+                                        <li>Tabel data lengkap yang bisa dicari (ketik di kolom "Cari...")</li>
+                                        <li>Tombol PDF dan Excel di pojok kanan atas modal</li>
+                                    </ul>
+                                    <li>Tutup modal dengan klik tombol X atau klik di luar area modal.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: PENJELASAN & CONTOH -->
+                        <div class="tab-pane fade" id="guide-content-2">
+
+                            <div class="guide-section">
+                                <h5>A. Sumber Data</h5>
+                                <p>Data di dashboard berasal dari sistem yang sudah terintegrasi:</p>
+                                <ul>
+                                    <li><strong>Data Karyawan:</strong> Dari tabel karyawan (status_aktif, tanggal awal
+                                        probation/kontrak/tetap)</li>
+                                    <li><strong>Kehadiran:</strong> Dari sistem absensi (jam masuk, keterlambatan) dan
+                                        pengajuan cuti/sakit/izin</li>
+                                    <li><strong>Penjualan Kelas:</strong> Dari tabel RKM (Rencana Kerja Materi) dan
+                                        analisisrkm (nett penjualan)</li>
+                                    <li><strong>Maintenance:</strong> Dari tabel maintenance (tiket service, biaya, teknisi)
+                                    </li>
+                                    <li><strong>Rekrutmen:</strong> Dari tabel pelamar (tahap rekrutmen, jadwal interview)
+                                    </li>
+                                    <li><strong>Cuti:</strong> Dari tabel pengajuancuti (approval manager)</li>
+                                    <li><strong>SPJ:</strong> Dari tabel surat_perjalanans (total biaya perjalanan dinas)
+                                    </li>
+                                </ul>
+                                <div class="guide-note">
+                                    <strong>Penting:</strong> Dashboard hanya menampilkan dan merangkum data, tidak mengubah
+                                    data apa pun di database.
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>B. Arti Status dan Indikator</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle" style="font-size:.85rem">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:150px">Indikator</th>
+                                                <th>Artinya</th>
+                                                <th style="width:200px">Contoh</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><span class="badge bg-success">Hadir</span></td>
+                                                <td>Karyawan masuk tepat waktu sesuai jadwal</td>
+                                                <td>Masuk 07:55 (jadwal 08:00)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-danger">Telat</span></td>
+                                                <td>Masuk melewati batas toleransi</td>
+                                                <td>Masuk 08:25 (telat 25 menit)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-success">Tetap</span></td>
+                                                <td>Karyawan tetap (permanent)</td>
+                                                <td>Punya tanggal awal_tetap</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-info">Kontrak</span></td>
+                                                <td>Karyawan dengan perjanjian kontrak</td>
+                                                <td>Punya tanggal awal_kontrak</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-warning text-dark">Probation</span></td>
+                                                <td>Karyawan masa percobaan</td>
+                                                <td>Baru bergabung, belum tetap</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="badge bg-secondary">Pending</span></td>
+                                                <td>Menunggu persetujuan atasan</td>
+                                                <td>Cuti diajukan, belum disetujui</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="delta up">+5.2%</span></td>
+                                                <td>Naik dari periode sebelumnya</td>
+                                                <td>Kehadiran naik 5.2% dari bulan lalu</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="delta down">-3.1%</span></td>
+                                                <td>Turun dari periode sebelumnya</td>
+                                                <td>Retensi turun 3.1% dari tahun lalu</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>C. Contoh Penggunaan Nyata</h5>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Kasus 1: HRD ingin mengetahui performa training bulan
+                                            ini</strong></p>
+                                    <ol class="mb-3">
+                                        <li>Pilih <strong>Tahun 2026</strong>, biarkan <strong>Semua divisi</strong>.</li>
+                                        <li>Lihat panel <strong>Performa Penjualan Kelas</strong>:</li>
+                                        <ul>
+                                            <li>Total Kelas: <strong>206 kelas</strong></li>
+                                            <li>Total Peserta: <strong>1.151 pax</strong></li>
+                                            <li>Nett Penjualan: <strong>Rp 114,2 Juta</strong></li>
+                                        </ul>
+                                        <li>Lihat <strong>Top 3 Materi</strong>: Certified Ethical Hacker (9 kelas),
+                                            Database Admin (8 kelas), Pengelolaan Data (7 kelas).</li>
+                                        <li>Klik kartu <strong>Total Kelas</strong> → Muncul detail per bulan: Januari 15
+                                            kelas, Februari 18 kelas, dst.</li>
+                                        <li>Klik <strong>Excel</strong> untuk download data lengkap.</li>
+                                    </ol>
+
+                                    <div class="table-responsive mb-3">
+                                        <table class="table table-sm table-bordered bg-white">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Bulan</th>
+                                                    <th>Jumlah Kelas</th>
+                                                    <th>Total Pax</th>
+                                                    <th>Total Nett</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Januari</td>
+                                                    <td>15</td>
+                                                    <td>89</td>
+                                                    <td>Rp 8.250.000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Februari</td>
+                                                    <td>18</td>
+                                                    <td>102</td>
+                                                    <td>Rp 9.180.000</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Maret</td>
+                                                    <td>22</td>
+                                                    <td>125</td>
+                                                    <td>Rp 11.250.000</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Kasus 2: Manager ingin mengecek maintenance aset yang
+                                            mendesak</strong></p>
+                                    <ol class="mb-3">
+                                        <li>Lihat panel <strong>Ringkasan Maintenance Aset</strong>:</li>
+                                        <ul>
+                                            <li>Total: <strong>45 tiket</strong></li>
+                                            <li>Sedang Proses: <strong>12 tiket</strong> (warna merah)</li>
+                                            <li>Total Biaya: <strong>Rp 23,5 Juta</strong></li>
+                                        </ul>
+                                        <li>Lihat <strong>Top 3 Kategori</strong>: Hardware (15 tiket), Software (10 tiket),
+                                            AC (8 tiket).</li>
+                                        <li>Klik tombol <strong>Kelola & Import</strong> → Masuk ke halaman maintenance.
+                                        </li>
+                                        <li>Di halaman maintenance, pilih tab <strong>Sedang Dikerjakan</strong> untuk lihat
+                                            detail 12 tiket yang on progress.</li>
+                                        <li>Filter berdasarkan <strong>Teknisi</strong> untuk tahu siapa yang menangani.
+                                        </li>
+                                    </ol>
+                                </div>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Kasus 3: HRD perlu menindaklanjuti keterlambatan
+                                            tinggi</strong></p>
+                                    <ol class="mb-3">
+                                        <li>Lihat panel <strong>Perlu Perhatian</strong> (Insights).</li>
+                                        <li>Jika muncul peringatan: <span class="badge bg-warning text-dark">Ketepatan
+                                                waktu menurun</span> - Ketepatan waktu 78% dengan 45 keterlambatan bulan
+                                            ini.</li>
+                                        <li>Klik peringatan tersebut → Muncul detail keterlambatan.</li>
+                                        <li>Lihat panel <strong>Ringkasan Hari Ini</strong> → Klik kartu
+                                            <strong>Terlambat</strong> (warna merah).</li>
+                                        <li>Muncul daftar nama yang terlambat hari ini beserta menit keterlambatan.</li>
+                                        <li>Klik <strong>Detail</strong> → Lihat tabel lengkap: siapa, kapan, berapa menit,
+                                            alasan.</li>
+                                        <li>Download <strong>PDF</strong> untuk bahan pemanggilan karyawan.</li>
+                                    </ol>
+                                </div>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Kasus 4: Direksi ingin tahu retensi karyawan</strong></p>
+                                    <ol class="mb-3">
+                                        <li>Lihat kartu <strong>Total Karyawan</strong> → Ada badge <span
+                                                class="delta up">Retensi 87.5%</span>.</li>
+                                        <li>Klik badge tersebut → Muncul detail retensi:</li>
+                                        <ul>
+                                            <li>Karyawan aktif: 156 orang</li>
+                                            <li>Resign tahun ini: 22 orang</li>
+                                            <li>Rumus: 156 / (156 + 22) × 100 = 87.5%</li>
+                                        </ul>
+                                        <li>Lihat juga <strong>Panel Insight</strong>:</li>
+                                        <ul>
+                                            <li>Jika retensi &lt;60% → <span class="badge bg-danger">Retensi kritis</span>
+                                            </li>
+                                            <li>Jika retensi 60-75% → <span class="badge bg-warning text-dark">Perlu
+                                                    diwaspadai</span></li>
+                                            <li>Jika retensi ≥90% → <span class="badge bg-success">Sangat baik</span></li>
+                                        </ul>
+                                        <li>Klik <strong>Detail</strong> → Lihat daftar karyawan yang resign beserta
+                                            alasannya.</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>D. Interpretasi Grafik</h5>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Grafik Tren Kehadiran (Line Chart)</strong></p>
+                                    <ul>
+                                        <li><strong>Garis Hijau:</strong> Persentase kehadiran (Hadir + Telat + Izin) / Hari
+                                            Kerja</li>
+                                        <li><strong>Garis Merah:</strong> Persentase keterlambatan (Telat / Total Hadir)
+                                        </li>
+                                        <li><strong>Cara baca:</strong> Jika garis hijau turun di bulan Maret, berarti
+                                            kehadiran bulan Maret lebih rendah dari bulan-bulan lain.</li>
+                                        <li><strong>Tindakan:</strong> Klik titik Maret → Lihat detail siapa saja yang tidak
+                                            hadir di bulan tersebut.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Grafik Komposisi Karyawan (Doughnut Chart)</strong></p>
+                                    <ul>
+                                        <li><strong>Hijau:</strong> Karyawan Tetap</li>
+                                        <li><strong>Biru:</strong> Karyawan Kontrak</li>
+                                        <li><strong>Kuning:</strong> Karyawan Probation</li>
+                                        <li><strong>Abu-abu:</strong> Belum diisi (data tanggal awal kosong)</li>
+                                        <li><strong>Cara baca:</strong> Jika potongan kuning (Probation) terlalu besar
+                                            (&gt;25%), artinya banyak karyawan baru bergabung atau banyak yang belum naik
+                                            status.</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-example">
+                                    <p class="mb-2"><strong>Grafik Funnel Rekrutmen</strong></p>
+                                    <ul>
+                                        <li>Bentuk corong menunjukkan penyaringan pelamar:</li>
+                                        <ul>
+                                            <li>Melamar: 150 orang</li>
+                                            <li>Screening: 80 orang (yang lolos administrasi)</li>
+                                            <li>Interview: 40 orang (yang dipanggil interview)</li>
+                                            <li>Offer: 15 orang (yang diberi penawaran)</li>
+                                            <li>Diterima: 10 orang (yang menerima offer)</li>
+                                        </ul>
+                                        <li><strong>Conversion Rate:</strong> 10/150 × 100 = 6.7% (hanya 6.7% pelamar yang
+                                            akhirnya diterima)</li>
+                                        <li><strong>Interpretasi:</strong> Jika conversion rate terlalu rendah (&lt;3%),
+                                            mungkin proses seleksi terlalu ketat atau kriteria tidak sesuai.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>E. Tips dan Trik</h5>
+                                <ul>
+                                    <li><strong>Shortcut:</strong> Tekan F5 untuk refresh data cepat.</li>
+                                    <li><strong>Search:</strong> Di setiap tabel detail, ada kolom "Cari..." - ketik nama
+                                        atau kata kunci untuk filter instan.</li>
+                                    <li><strong>Export:</strong> Selalu export ke Excel dulu jika ingin olah data lebih
+                                        lanjut, baru ke PDF untuk presentasi.</li>
+                                    <li><strong>Bookmark:</strong> Setelah pilih filter (misal: Divisi IT, Tahun 2026),
+                                        bookmark halaman untuk akses cepat.</li>
+                                    <li><strong>Mobile:</strong> Dashboard responsive - bisa dibuka di HP, tapi untuk export
+                                        lebih baik pakai laptop/PC.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: FAQ -->
+                        <div class="tab-pane fade" id="guide-content-3">
+
+                            <div class="guide-section">
+                                <h5>Pertanyaan Umum (FAQ)</h5>
+
+                                <div class="guide-qa">
+                                    <strong>Mengapa angka di dashboard berbeda dengan laporan manual saya?</strong>
+                                    <span>Dashboard menghitung data secara real-time dari database. Pastikan:</span>
+                                    <ul>
+                                        <li>Filter Tahun dan Divisi sudah sesuai</li>
+                                        <li>Data di sistem sudah terupdate (misal: absen sudah masuk, cuti sudah disetujui)
+                                        </li>
+                                        <li>Tidak ada data duplikat atau error di database</li>
+                                        <li>Jika masih berbeda, klik tombol Detail untuk lihat perhitungan per item</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Bagaimana cara mengembalikan filter ke kondisi awal?</strong>
+                                    <span>Klik tombol <strong>Refresh</strong> di pojok kanan atas. Dashboard akan kembali
+                                        ke:</span>
+                                    <ul>
+                                        <li>Tahun: Tahun berjalan (2026)</li>
+                                        <li>Divisi: Semua divisi</li>
+                                        <li>Data: Hari ini / bulan ini</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Mengapa grafik tidak muncul atau kosong?</strong>
+                                    <span>Beberapa kemungkinan:</span>
+                                    <ul>
+                                        <li>Belum ada data untuk periode yang dipilih (misal: pilih tahun 2023 tapi data
+                                            baru ada dari 2024)</li>
+                                        <li>Filter divisi terlalu spesifik sehingga tidak ada data</li>
+                                        <li>Koneksi internet lambat - coba refresh halaman</li>
+                                        <li>Browser perlu di-clear cache (tekan Ctrl+F5)</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Kenapa ada karyawan dengan status "Belum diisi"?</strong>
+                                    <span>Artinya data tanggal awal (probation/kontrak/tetap) belum diisi di database.
+                                        Solusi:</span>
+                                    <ul>
+                                        <li>Masuk ke modul Data Karyawan</li>
+                                        <li>Cari karyawan tersebut</li>
+                                        <li>Isi field "Tanggal Awal Probation" atau "Tanggal Awal Kontrak"</li>
+                                        <li>Simpan, lalu refresh dashboard</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Bagaimana cara import data maintenance dari Excel?</strong>
+                                    <span>Ada 2 cara:</span>
+                                    <ol>
+                                        <li><strong>Dari Dashboard:</strong> Klik panel Maintenance → tombol "Kelola &
+                                            Import" → di halaman maintenance klik "Import Excel"</li>
+                                        <li><strong>Langsung:</strong> Masuk menu Maintenance → Import Excel</li>
+                                    </ol>
+                                    <span>Pastikan format Excel sesuai template (download template dulu). Kolom wajib: Nama
+                                        Barang, Kategori, Tanggal Mulai, Biaya.</span>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Apa arti "Nett Penjualan" di panel training?</strong>
+                                    <span>Nett Penjualan adalah pendapatan bersih dari training setelah dikurangi diskon
+                                        atau penyesuaian. Rumusnya:</span>
+                                    <ul>
+                                        <li>Harga Jual × Jumlah Pax = Total Harga Jual (Gross)</li>
+                                        <li>Total Harga Jual - Diskon/Potongan = Nett Penjualan</li>
+                                        <li>Data ini diambil dari tabel "analisisrkm" yang diisi setelah training selesai
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Kenapa data cuti tidak muncul?</strong>
+                                    <span>Pastikan:</span>
+                                    <ul>
+                                        <li>Pengajuan cuti sudah disetujui manager (approval_manager = approved)</li>
+                                        <li>Tanggal cuti masuk dalam periode yang dipilih (filter tahun)</li>
+                                        <li>Karyawan yang mengajukan masih status aktif</li>
+                                        <li>Jika cuti masih "Pending", akan muncul di kategori "Menunggu persetujuan"</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Bisa export data dalam format lain selain PDF dan Excel?</strong>
+                                    <span>Saat ini hanya tersedia PDF dan Excel. Jika butuh format lain (CSV, Word,
+                                        PowerPoint), silakan:</span>
+                                    <ul>
+                                        <li>Export ke Excel dulu</li>
+                                        <li>Buka di Excel/Google Sheets</li>
+                                        <li>Save As ke format yang diinginkan</li>
+                                        <li>Atau hubungi Tim ITSM untuk request fitur tambahan</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Bagaimana jika ada data yang salah atau error?</strong>
+                                    <span>Jangan ubah data langsung di dashboard (tidak bisa). Lakukan:</span>
+                                    <ol>
+                                        <li>Catat detail error (tanggal, nama, angka yang salah)</li>
+                                        <li>Cek sumber data di modul terkait (misal: data karyawan salah → edit di modul
+                                            Karyawan)</li>
+                                        <li>Setelah diperbaiki, refresh dashboard</li>
+                                        <li>Jika error sistem (bukan data), klik tombol "Hubungi Tim ITSM" di bawah</li>
+                                    </ol>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Apakah dashboard ini update otomatis?</strong>
+                                    <span>Tidak real-time. Dashboard update saat:</span>
+                                    <ul>
+                                        <li>Halaman pertama kali dibuka</li>
+                                        <li>Tombol Refresh diklik</li>
+                                        <li>Filter diubah (tahun/divisi)</li>
+                                        <li>Jika ada data baru masuk (misal: absen baru), klik Refresh untuk melihatnya</li>
+                                    </ul>
+                                </div>
+
+                                <div class="guide-qa">
+                                    <strong>Bisa akses dashboard dari HP?</strong>
+                                    <span>Ya, dashboard responsive. Tapi untuk:</span>
+                                    <ul>
+                                        <li><strong>Melihat data:</strong> Bisa dari HP dengan nyaman</li>
+                                        <li><strong>Export/Print:</strong> Lebih baik pakai laptop/PC</li>
+                                        <li><strong>Input data:</strong> Harus lewat modul masing-masing (tidak bisa dari
+                                            dashboard)</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="guide-section">
+                                <h5>Laporan Error & Permintaan Fitur</h5>
+                                <div class="guide-itsm">
+                                    <p class="mb-2"><strong>Jika Anda menemukan:</strong></p>
+                                    <ul class="mb-3">
+                                        <li>Error sistem (halaman tidak bisa dibuka, tombol tidak berfungsi)</li>
+                                        <li>Data tidak sesuai atau hilang</li>
+                                        <li>Ingin tambahan fitur baru</li>
+                                        <li>Ingin perubahan tampilan</li>
+                                    </ul>
+
+                                    <p class="mb-2"><strong>Silakan hubungi Tim ITSM dengan langkah:</strong></p>
+                                    <ol class="mb-3">
+                                        <li>Klik tombol <strong>"Hubungi Tim ITSM"</strong> di bawah</li>
+                                        <li>Pilih kategori:
+                                            <ul>
+                                                <li><strong>Laporan Error</strong> - untuk bug/kerusakan</li>
+                                                <li><strong>Permintaan Fitur</strong> - untuk fitur baru</li>
+                                                <li><strong>Permintaan Data</strong> - untuk report khusus</li>
+                                            </ul>
+                                        </li>
+                                        <li>Tuliskan detail:
+                                            <ul>
+                                                <li>Judul: "Dashboard HR - [masalah Anda]"</li>
+                                                <li>Deskripsi: Jelaskan apa yang terjadi</li>
+                                                <li>Langkah: Bagaimana cara reproduce error</li>
+                                                <li>Filter: Tahun/divisi apa yang dipakai</li>
+                                                <li>Screenshot: Lampirkan gambar jika perlu</li>
+                                            </ul>
+                                        </li>
+                                        <li>Klik Submit, tim ITSM akan merespon dalam 1×24 jam</li>
+                                    </ol>
+
+                                    <a href="{{ route('tickets.index') }}" class="btn btn-danger btn-sm" target="_blank">
+                                        <i class="fa-solid fa-ticket me-1"></i>Hubungi Tim ITSM
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark me-1"></i>Tutup
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -744,579 +1515,570 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let charts = {};
+        let detailCtx = {
+            type: null,
+            filter: '',
+            bulan: 0
+        };
 
-        $(document).ready(function() {
-            loadDivisions();
-            loadDashboard();
-            startClock();
-            $('#btnRefresh').on('click', loadDashboard);
-            $('#filterTahun, #filterDivisi').on('change', loadDashboard);
+        const esc = v => $('<div>').text(v ?? '').html().replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const int = v => Math.round(Number(v) || 0).toLocaleString('id-ID');
+        const pct = v => (Math.round((Number(v) || 0) * 10) / 10).toLocaleString('id-ID');
+
+        const filterParams = () => ({
+            tahun: $('#filterTahun').val(),
+            periode: $('#filterPeriode').val(),
+            divisi: $('#filterDivisi').val()
         });
 
-        function startClock() {
-            const update = () => {
-                const now = new Date();
-                $('#liveClock').text(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-            };
-            update();
-            setInterval(update, 1000);
-        }
-
-        function loadDivisions() {
-            $.get("{{ route('HR.dashboard.divisions') }}", function(data) {
-                data.forEach(d => $('#filterDivisi').append(`<option value="${d}">${d}</option>`));
+        function refreshPeriodOptions() {
+            const thn = +$('#filterTahun').val(), now = new Date();
+            const curY = now.getFullYear(), curM = now.getMonth() + 1;
+            $('#filterPeriode option').each(function() {
+                const v = this.value;
+                let startMonth = null;
+                if (/^q[1-4]$/.test(v)) startMonth = (+v[1] - 1) * 3 + 1;
+                else if (/^m\d+$/.test(v)) startMonth = +v.slice(1);
+                this.disabled = startMonth !== null && thn === curY && startMonth > curM;
             });
+            if ($('#filterPeriode option:selected').prop('disabled')) $('#filterPeriode').val('all');
         }
 
         function formatRp(n) {
-            if (n >= 1000000000) return 'Rp ' + (n / 1000000000).toFixed(1) + ' M';
-            if (n >= 1000000) return 'Rp ' + (n / 1000000).toFixed(1) + ' Jt';
-            if (n >= 1000) return 'Rp ' + (n / 1000).toFixed(0) + ' Rb';
-            return 'Rp ' + Number(n).toLocaleString('id-ID');
+            n = Number(n) || 0;
+            if (n >= 1e9) return 'Rp ' + pct(n / 1e9) + ' M';
+            if (n >= 1e6) return 'Rp ' + pct(n / 1e6) + ' Jt';
+            if (n >= 1e3) return 'Rp ' + int(n / 1e3) + ' Rb';
+            return 'Rp ' + int(n);
         }
 
-        function getInitial(name) {
-            if (!name) return '?';
-            return name.split(' ').slice(0, 2).map(n => n[0] || '').join('').toUpperCase();
+        function delta(v, unit) {
+            const cls = v > 0 ? 'up' : (v < 0 ? 'down' : 'flat');
+            const sign = v > 0 ? '+' : '';
+            return `<span class="delta ${cls}">${sign}${pct(v)}${unit}</span>`;
         }
 
-        function renderAvatar(foto, nama) {
-            if (foto) return `<img src="/storage/${foto}" alt="${nama}">`;
-            return getInitial(nama);
+        function avatar(foto, nama) {
+            if (foto) return `<img src="/storage/${esc(foto)}" alt="">`;
+            return esc((nama || '?').split(' ').slice(0, 2).map(n => n[0] || '').join('').toUpperCase());
         }
 
-        function loadDashboard() {
-            $('#btnRefresh i').addClass('fa-spin');
-            $.get("{{ route('HR.dashboard.data') }}", {
-                tahun: $('#filterTahun').val(),
-                divisi: $('#filterDivisi').val()
-            }, function(res) {
-                if (!res.success) { alert(res.message); return; }
-                renderDashboard(res);
-                $('#lastUpdate').text(new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }));
-            }).fail(() => alert('Gagal memuat dashboard')).always(() => {
-                $('#btnRefresh i').removeClass('fa-spin');
+        const dattr = (type, filter = '', bulan = 0) =>
+            `data-detail="${esc(type)}" data-filter="${esc(filter)}" data-bulan="${Number(bulan) || 0}"`;
+
+        const actions = (type, filter = '', bulan = 0) => {
+            const a = `data-type="${esc(type)}" data-filter="${esc(filter)}" data-bulan="${Number(bulan) || 0}"`;
+            return `<span class="acts">
+                <button class="btn-detail" ${dattr(type, filter, bulan)}><i class="fa-solid fa-list-ul me-1"></i>Detail</button>
+                <button class="btn-exp pdf" data-export="pdf" ${a}><i class="fa-solid fa-file-pdf me-1"></i>PDF</button>
+                <button class="btn-exp xls" data-export="excel" ${a}><i class="fa-solid fa-file-excel me-1"></i>Excel</button>
+            </span>`;
+        };
+
+        function exportUrl(c, format) {
+            return "{{ route('HR.dashboard.export') }}?" + $.param({
+                type: c.type,
+                filter: c.filter || '',
+                bulan: c.bulan || 0,
+                ...filterParams(),
+                format: format
             });
         }
 
-        function renderDashboard(d) {
-            $('#greetEmoji').text(d.header.greeting.emoji);
-            $('#greetText').text(d.header.greeting.text + '!');
-            $('#greetSub').text(d.header.greeting.sub);
+        function exportCurrent(format) {
+            if (detailCtx.type) window.open(exportUrl(detailCtx, format), '_blank');
+        }
+
+        $(document).on('click', '[data-export]', function(e) {
+            e.stopPropagation();
+            const el = $(this);
+            window.open(exportUrl({
+                type: el.attr('data-type'),
+                filter: el.attr('data-filter') || '',
+                bulan: el.attr('data-bulan') || 0
+            }, el.attr('data-export')), '_blank');
+        });
+
+        $(document).on('click', '[data-detail]', function(e) {
+            e.stopPropagation();
+            const el = $(this);
+            openDetail(el.attr('data-detail'), el.attr('data-filter') || '', el.attr('data-bulan') || 0);
+        });
+
+        function openDetail(type, filter = '', bulan = 0) {
+            detailCtx = {
+                type: type,
+                filter: filter || '',
+                bulan: Number(bulan) || 0
+            };
+            $('#detailTitle').text('Memuat...');
+            $('#detailBody').html('<div class="skel" style="height:300px"></div>');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('detailModal')).show();
+
+            $.get("{{ route('HR.dashboard.detail') }}", {
+                type: type,
+                filter: detailCtx.filter,
+                bulan: detailCtx.bulan,
+                ...filterParams()
+            }, res => {
+                if (!res.success) {
+                    $('#detailBody').html(`<div class="empty">${esc(res.message)}</div>`);
+                    return;
+                }
+                $('#detailTitle').text(res.title);
+
+                const sums = res.summary.map(s => `<div class="chip" style="border-left-color:var(--pri)">
+                    <div class="chip-n" style="font-size:1.1rem">${esc(s.value)}</div>
+                    <div class="chip-l">${esc(s.label)}${s.note ? ' · ' + esc(s.note) : ''}</div></div>`).join('');
+
+                const head = res.columns.map(c => `<th>${esc(c)}</th>`).join('');
+                const body = res.rows.length ?
+                    res.rows.map((r, i) => `<tr><td>${i + 1}</td>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`)
+                    .join('') :
+                    `<tr><td colspan="${res.columns.length + 1}" class="text-center text-muted py-4">Tidak ada data</td></tr>`;
+
+                $('#detailBody').html(
+                    `
+                    <div class="formula-box"><b>Rumus:</b> ${esc(res.formula)}<br><b>Penjelasan:</b> ${esc(res.explanation)}</div>
+                    ${sums ? `<div class="chips mb-3">${sums}</div>` : ''}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="sub-title mb-0">Rincian data (${int(res.rows.length)} baris)</div>
+                        <input type="search" id="detailSearch" class="form-control form-control-sm" style="max-width:240px" placeholder="Cari...">
+                    </div>
+                    <div style="max-height:380px;overflow:auto"><table class="table table-sm table-hover dtl-table" id="detailTable">
+                        <thead><tr><th>No</th>${head}</tr></thead><tbody>${body}</tbody></table></div>`
+                );
+
+                $('#detailSearch').on('input', function() {
+                    const q = this.value.toLowerCase();
+                    $('#detailTable tbody tr').each(function() {
+                        $(this).toggle($(this).text().toLowerCase().includes(q));
+                    });
+                });
+            }).fail(() => $('#detailBody').html('<div class="empty">Gagal memuat detail</div>'));
+        }
+
+        $(function() {
+            const clock = () => $('#liveClock').text(new Date().toLocaleTimeString('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }));
+            clock();
+            setInterval(clock, 1000);
+
+            $.get("{{ route('HR.dashboard.divisions') }}", d => d.forEach(x => $('#filterDivisi').append(
+                `<option value="${esc(x)}">${esc(x)}</option>`)));
+            refreshPeriodOptions();
+            loadDashboard();
+            $('#btnRefresh').on('click', loadDashboard);
+            $('#filterTahun').on('change', function() { refreshPeriodOptions(); loadDashboard(); });
+            $('#filterPeriode, #filterDivisi').on('change', loadDashboard);
+        });
+
+        function loadDashboard() {
+            $('#btnRefresh i').addClass('fa-spin');
+                $.get("{{ route('HR.dashboard.data') }}", filterParams(), function(res) {
+                    if (!res.success) {
+                        alert(res.message);
+                        return;
+                    }
+                    render(res);
+                    $('#lastUpdate').text(new Date().toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }));
+                }).fail(() => alert('Gagal memuat dashboard'))
+                .always(() => $('#btnRefresh i').removeClass('fa-spin'));
+        }
+
+        function render(d) {
+            $('#greetText').text(d.header.greeting.text);
             $('#todayDate').text(d.header.today);
 
-            let html = '';
-            html += renderMainStats(d);
-            html += '<div class="row g-3 mt-3">';
-            html += renderComposition(d.composition);
-            html += renderRecruitment(d.recruitment);
-            html += '</div>';
-            html += '<div class="row g-3 mt-3">';
-            html += renderTodayDigest(d.today);
-            html += renderInsights(d.insights);
-            html += '</div>';
-            html += '<div class="row g-3 mt-3">';
-            html += renderMonthlyAttendance(d.attendance_trend);
-            html += renderDivisionChart(d.divisions);
-            html += '</div>';
-            html += '<div class="row g-3 mt-3">';
-            html += renderRecentHires(d.recent_hires);
-            html += renderRecentResigns(d.recent_resigns);
-            html += renderUpcoming(d.upcoming);
-            html += '</div>';
-            html += renderQuickNav();
-
-            $('#dashboardContent').html(html);
-            setTimeout(() => initCharts(d), 100);
+            $('#dashboardContent').html(`
+                ${statCards(d)}
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-8">${todayPanel(d.today)}</div>
+                    <div class="col-lg-4">${insightsPanel(d.insights)}</div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-7"><div class="panel"><div class="panel-title"><i class="fa-solid fa-chart-line"></i>Tren kehadiran per bulan${actions('tren')}<span class="right">Tahun ${esc($('#filterTahun').val())}</span></div><div class="chart-box"><canvas id="chartTrend"></canvas></div><div class="stat-note mt-2">Klik titik bulan pada grafik untuk melihat rincian per karyawan</div></div></div>
+                    <div class="col-lg-5"><div class="panel"><div class="panel-title"><i class="fa-solid fa-building"></i>Karyawan per divisi${actions('divisi')}<span class="right">${d.divisions.total_categories} divisi</span></div><div class="chart-box"><canvas id="chartDivision"></canvas></div><div class="stat-note mt-2">Klik batang divisi untuk melihat daftar karyawannya</div></div></div>
+                </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-4">${compositionPanel(d.composition)}</div>
+                    <div class="col-lg-4">${funnelPanel(d.recruitment)}</div>
+                    <div class="col-lg-4">${agendaPanel(d.upcoming)}</div>
+                </div>
+                <div class="row g-3 mt-1"><div class="col-12">${leavePanel(d.leave)}</div></div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-6">${movementPanel('Karyawan baru terbaru', 'fa-user-plus', 'var(--success)', d.recent_hires, false, 'hires')}</div>
+                    <div class="col-lg-6">${movementPanel('Karyawan resign terbaru', 'fa-user-minus', 'var(--danger)', d.recent_resigns, true, 'resigns')}</div>
+                </div>
+                <div class="row g-3 mt-1"><div class="col-12">${olPanel(d.instruktur_ol)}</div></div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-6">${salesPanel(d.sales_overview)}</div>
+                    <div class="col-lg-6">${maintenancePanel(d.maintenance_overview)}</div>
+                </div>
+            `);
+            setTimeout(() => initCharts(d), 50);
         }
 
-        function renderMainStats(d) {
+        function stat(icon, title, value, note, badge, minis, type, bulan) {
+            return `
+                <div class="col-md-6 col-xl-3"><div class="panel clickable" ${dattr(type, '', bulan || 0)}>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="stat-label"><i class="fa-solid ${icon}"></i>${title}</div>${badge}
+                    </div>
+                    <div class="stat-value">${value}</div>
+                    <div class="stat-note">${note}</div>
+                    <div class="minis">${minis.map(m => `<div class="mini clickable" ${dattr(m[3] || type, m[4] || '', m[5] || 0)}><div class="mini-v" style="color:${m[2] || 'var(--gray-900)'}">${m[0]}</div><div class="mini-l">${m[1]}</div></div>`).join('')}</div>
+                    <div class="mt-3">${actions(type, '', bulan || 0)}</div>
+                </div></div>`;
+        }
+
+        function statCards(d) {
             const c = d.composition, a = d.attendance, f = d.financial, r = d.recruitment;
+            return `<div class="row g-3">
+                ${stat('fa-users', 'Total karyawan', `${int(c.total)}<small>orang</small>`,
+                    `<span class="lnk" style="color:var(--success)" ${dattr('hires')}>${int(c.new_this_year)} baru</span> · <span class="lnk" style="color:var(--danger)" ${dattr('resigns')}>${int(c.resign_this_year)} resign</span> pada periode ini`,
+                    `<span class="delta clickable ${c.retention_rate >= 85 ? 'up' : 'flat'}" ${dattr('retensi')}>Retensi ${pct(c.retention_rate)}%</span>`,
+                    [[int(c.tetap), 'Tetap', 'var(--success)', 'karyawan', 'Tetap'], [int(c.kontrak), 'Kontrak', 'var(--info)', 'karyawan', 'Kontrak'], [int(c.probation), 'Probation', 'var(--warning)', 'karyawan', 'Probation']],
+                    'karyawan')}
+                ${stat('fa-user-check', `Kehadiran ${esc(a.month_name)}`, `${pct(a.attendance_rate)}<small>%</small>`,
+                    `${int(a.attended)} dari ${int(a.expected)} hari kerja`,
+                    delta(a.vs_last_month, ' poin'),
+                    [[pct(a.punctuality_rate) + '%', 'Tepat waktu', 'var(--success)', 'ketepatan'], [int(a.telat), 'Telat', 'var(--warning)', 'ketepatan'], [int(a.avg_late_minutes) + ' mnt', 'Rata-rata telat', 'var(--danger)', 'ketepatan']],
+                    'kehadiran')}
+                ${stat('fa-file-invoice-dollar', `SPJ ${esc(f.label)}`, formatRp(f.total_period),
+                    `${int(f.count_period)} transaksi pada periode ini`,
+                    delta(f.change, '%'),
+                    [[int(f.count_period), 'Jumlah SPJ', null, 'spj'], [formatRp(f.avg_per_spj), 'Rata-rata', null, 'spj'], [formatRp(f.prev_total), 'Periode lalu', null, 'spj']],
+                    'spj')}
+                ${stat('fa-user-plus', 'Rekrutmen', `${int(r.aktif)}<small>proses</small>`,
+                    `<span class="lnk" ${dattr('rekrutmen')}>${int(r.this_period)} pelamar pada periode ini</span>`,
+                    delta(r.trend_percent, '%'),
+                    [[int(r.total), 'Total', null, 'rekrutmen'], [int(r.hired), 'Diterima', 'var(--success)', 'rekrutmen', 'hired'], [int(r.rejected), 'Ditolak', 'var(--danger)', 'rekrutmen', 'rejected']],
+                    'rekrutmen')}
+            </div>`;
+        }
 
-            const attTrendClass = a.vs_last_month >= 0 ? 'up' : 'down';
-            const attTrendIcon = a.vs_last_month >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-            const finTrendClass = f.month_change >= 0 ? 'up' : 'down';
-            const finTrendIcon = f.month_change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+        function personRow(e, tagHtml, metaText, attr = '') {
+            return `<div class="person ${attr ? 'clickable' : ''}" ${attr}><div class="avatar">${avatar(e.foto, e.nama)}</div>
+                <div class="p-info"><div class="p-name">${esc(e.nama)}</div><div class="p-meta">${metaText}</div></div>${tagHtml}</div>`;
+        }
 
-            return `
+        const emptyBox = (icon, text) => `<div class="empty"><i class="fa-solid ${icon}"></i>${text}</div>`;
+
+        function todayPanel(t) {
+            const banner = t.is_holiday ?
+                '<div class="banner">Hari ini libur nasional. Hanya karyawan yang tetap masuk yang tercatat.</div>' :
+                (t.is_weekend ?
+                    `<div class="banner">Hari ini ${esc(t.day_name)}. Hanya karyawan yang bekerja di akhir pekan yang dihitung.</div>` :
+                    '');
+
+            const chips = [
+                ['Hadir tepat waktu', t.total_hadir, 'var(--success)', 'hadir'],
+                ['Terlambat', t.total_telat, 'var(--danger)', 'telat'],
+                ['Cuti / sakit', t.total_cuti, 'var(--info)', 'cuti_sakit'],
+                ['Izin 3 jam', t.total_izin, '#0d9488', 'izin'],
+                ['Menunggu persetujuan', t.total_pending, '#f97316', 'pending'],
+                ['Tanpa keterangan', t.total_tidak_hadir, '#374151', 'tidak_hadir'],
+            ].map(c =>
+                `<div class="chip clickable" style="border-left-color:${c[2]}" ${dattr('hari_ini', c[3])}><div class="chip-n">${int(c[1])}</div><div class="chip-l">${c[0]}</div></div>`
+            ).join('');
+
+            const telat = t.telat_list.length ? t.telat_list.map(e =>
+                    personRow(e,
+                        `<span class="tag" style="background:var(--danger-light);color:var(--danger)">+${int(e.late_minutes)} mnt</span>`,
+                        `${esc(e.jabatan)} · masuk ${esc(e.jam_masuk || '-')}`, dattr('hari_ini', 'telat'))).join('') :
+                emptyBox('fa-circle-check', 'Tidak ada keterlambatan');
+
+            const cuti = t.cuti_list.length ? t.cuti_list.map(e =>
+                    personRow(e,
+                        `<span class="tag" style="background:var(--info-light);color:var(--info)">${esc(e.tipe)}</span>`,
+                        esc(e.jabatan), dattr('hari_ini', 'cuti_sakit'))).join('') :
+                emptyBox('fa-calendar', 'Tidak ada cuti atau sakit');
+
+            const interview = t.interview_list.length ? t.interview_list.map(i =>
+                `<div class="person clickable" ${dattr('rekrutmen', 'interview')}><div class="avatar"><i class="fa-solid fa-user-tie"></i></div>
+                <div class="p-info"><div class="p-name">${esc(i.nama)}</div><div class="p-meta">${esc(i.jabatan)} · ${esc(i.metode)}</div></div>
+                <span class="tag" style="background:var(--purple-light);color:var(--purple)">${esc(i.waktu)}</span></div>`
+            ).join('') : emptyBox('fa-calendar-check', 'Tidak ada interview');
+
+            return `<div class="panel">
+                <div class="panel-title"><i class="fa-solid fa-calendar-day"></i>${t.is_today ? 'Ringkasan hari ini' : 'Ringkasan akhir periode'}${actions('hari_ini')}<span class="right">${esc(t.day_name)}, ${esc(t.date)}</span></div>
+                ${banner}
+                <div class="chips">${chips}</div>
+                <div class="divider"></div>
                 <div class="row g-3">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card-panel">
-                            <div class="card-panel-title"><i class="fa-solid fa-users"></i> Total Karyawan</div>
-                            <div class="big-stat">
-                                <div>
-                                    <div class="big-number">${c.total}<span class="unit">org</span></div>
-                                    <div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.25rem">
-                                        <span style="color:var(--success)">+${c.new_this_year} baru</span> · 
-                                        <span style="color:var(--danger)">${c.resign_this_year} resign</span>
-                                    </div>
-                                </div>
-                                <span class="trend-badge ${c.retention_rate >= 85 ? 'up' : 'neutral'}">
-                                    <i class="fa-solid fa-shield"></i> ${c.retention_rate}%
-                                </span>
-                            </div>
-                            <div class="mini-stats">
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--success)">${c.tetap}</div>
-                                    <div class="mini-stat-label">Tetap</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--info)">${c.kontrak}</div>
-                                    <div class="mini-stat-label">Kontrak</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--warning)">${c.probation}</div>
-                                    <div class="mini-stat-label">Probation</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card-panel">
-                            <div class="card-panel-title"><i class="fa-solid fa-user-check"></i> Kehadiran ${a.month_name}</div>
-                            <div class="big-stat">
-                                <div>
-                                    <div class="big-number">${a.attendance_rate}<span class="unit">%</span></div>
-                                    <div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.25rem">
-                                        ${a.total_hadir} dari ${a.expected_records} shift kerja
-                                    </div>
-                                </div>
-                                <span class="trend-badge ${attTrendClass}">
-                                    <i class="fa-solid ${attTrendIcon}"></i> ${Math.abs(a.vs_last_month)}%
-                                </span>
-                            </div>
-                            <div class="mini-stats">
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--success)">${a.punctuality_rate}%</div>
-                                    <div class="mini-stat-label">Tepat Waktu</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--warning)">${a.telat}</div>
-                                    <div class="mini-stat-label">Telat</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--danger)">${a.avg_late_minutes}<span style="font-size:0.7rem">m</span></div>
-                                    <div class="mini-stat-label">Rata² Telat</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card-panel">
-                            <div class="card-panel-title"><i class="fa-solid fa-file-invoice-dollar"></i> SPJ ${f.month_name}</div>
-                            <div class="big-stat">
-                                <div>
-                                    <div class="big-number" style="font-size:1.8rem">${formatRp(f.total_month)}</div>
-                                    <div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.25rem">
-                                        ${f.count_month} transaksi · Avg ${formatRp(f.avg_per_spj)}
-                                    </div>
-                                </div>
-                                <span class="trend-badge ${finTrendClass}">
-                                    <i class="fa-solid ${finTrendIcon}"></i> ${Math.abs(f.month_change)}%
-                                </span>
-                            </div>
-                            <div class="mini-stats">
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="font-size:1rem">${formatRp(f.total_year)}</div>
-                                    <div class="mini-stat-label">Total Tahun Ini</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value">${f.count_year}</div>
-                                    <div class="mini-stat-label">Total SPJ</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="font-size:1rem">${formatRp(f.last_month)}</div>
-                                    <div class="mini-stat-label">Bulan Lalu</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card-panel">
-                            <div class="card-panel-title">
-                                <i class="fa-solid fa-user-plus"></i> Recruitment Pipeline
-                                <span class="trend-badge ${r.trend_percent >= 0 ? 'up' : 'down'}" style="margin-left:auto">
-                                    <i class="fa-solid ${r.trend_percent >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${Math.abs(r.trend_percent)}%
-                                </span>
-                            </div>
-                            <div class="big-stat">
-                                <div>
-                                    <div class="big-number">${r.aktif}<span class="unit">aktif</span></div>
-                                    <div style="font-size:0.75rem;color:var(--gray-500);margin-top:0.25rem">
-                                        ${r.this_month} pelamar baru bulan ini
-                                    </div>
-                                </div>
-                                <span class="trend-badge up" style="background:var(--success-light);color:var(--success)">
-                                    <i class="fa-solid fa-bullseye"></i> ${r.conversion_rate}%
-                                </span>
-                            </div>
-                            <div class="mini-stats">
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value">${r.total}</div>
-                                    <div class="mini-stat-label">Total</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--success)">${r.stages[4].count}</div>
-                                    <div class="mini-stat-label">Hired</div>
-                                </div>
-                                <div class="mini-stat-item">
-                                    <div class="mini-stat-value" style="color:var(--danger)">${r.rejected}</div>
-                                    <div class="mini-stat-label">Ditolak</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+                    <div class="col-md-4"><div class="sub-title">Terlambat</div><div class="person-list">${telat}</div></div>
+                    <div class="col-md-4"><div class="sub-title">Cuti dan sakit</div><div class="person-list">${cuti}</div></div>
+                    <div class="col-md-4"><div class="sub-title">Interview</div><div class="person-list">${interview}</div></div>
+                </div></div>`;
         }
 
-        function renderComposition(c) {
-            const total = c.total || 1;
-            const bars = [
-                { label: 'Tetap', count: c.tetap, color: '#059669' },
-                { label: 'Kontrak', count: c.kontrak, color: '#0284c7' },
-                { label: 'Probation', count: c.probation, color: '#f59e0b' },
-            ];
-
-            const tenureYears = Math.floor(c.avg_tenure_months / 12);
-            const tenureMonths = c.avg_tenure_months % 12;
-            const tenureStr = tenureYears > 0 ? `${tenureYears} thn ${tenureMonths} bln` : `${tenureMonths} bln`;
-
-            return `
-                <div class="col-lg-5">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-chart-pie"></i> Komposisi Karyawan</div>
-                        <div class="row align-items-center">
-                            <div class="col-5">
-                                <div class="chart-container-sm"><canvas id="chartComposition"></canvas></div>
-                            </div>
-                            <div class="col-7">
-                                <div class="composition-bars">
-                                    ${bars.map(b => {
-                                        const pct = Math.round((b.count / total) * 100);
-                                        return `
-                                            <div class="comp-bar">
-                                                <div class="comp-bar-label">${b.label}</div>
-                                                <div class="comp-bar-track">
-                                                    <div class="comp-bar-fill" style="width:${pct}%;background:${b.color}">${pct > 15 ? pct + '%' : ''}</div>
-                                                </div>
-                                                <div class="comp-bar-count">${b.count}</div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                                <div class="divider-dashed"></div>
-                                <div style="display:flex;justify-content:space-between;font-size:0.8rem">
-                                    <div>
-                                        <div style="color:var(--gray-500);font-size:0.7rem;text-transform:uppercase">Avg Masa Kerja</div>
-                                        <div style="font-weight:700;color:var(--gray-900)">${tenureStr}</div>
-                                    </div>
-                                    <div style="text-align:right">
-                                        <div style="color:var(--gray-500);font-size:0.7rem;text-transform:uppercase">Retention</div>
-                                        <div style="font-weight:700;color:var(--success)">${c.retention_rate}%</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderRecruitment(r) {
-            return `
-                <div class="col-lg-7">
-                    <div class="card-panel">
-                        <div class="card-panel-title">
-                            <i class="fa-solid fa-filter"></i> Recruitment Funnel
-                            <span style="margin-left:auto;font-size:0.75rem;color:var(--gray-500)">Conversion: <strong style="color:var(--success)">${r.conversion_rate}%</strong></span>
-                        </div>
-                        ${r.stages.map(s => `
-                            <div class="funnel-item">
-                                <div class="funnel-icon" style="background:${s.color}">
-                                    <i class="fa-solid ${s.icon}"></i>
-                                </div>
-                                <div class="funnel-info">
-                                    <div class="funnel-label">${s.label}</div>
-                                    <div class="funnel-progress">
-                                        <div class="funnel-progress-fill" style="width:${s.percentage}%;background:${s.color}"></div>
-                                    </div>
-                                </div>
-                                <div class="funnel-count">${s.count}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderTodayDigest(t) {
-            const banner = t.is_weekend ? `
-                <div class="weekend-banner">
-                    <i class="fa-solid fa-mug-hot" style="font-size:1.3rem"></i>
-                    <div>Hari ini ${t.day_name} — Weekend. Data menunjukkan aktivitas minimal.</div>
-                </div>
-            ` : (t.is_holiday ? `
-                <div class="weekend-banner" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
-                    <i class="fa-solid fa-calendar-xmark" style="font-size:1.3rem"></i>
-                    <div>Hari ini libur nasional. Tidak ada aktivitas kerja.</div>
-                </div>
-            ` : '');
-
-            const statusItems = [
-                { label: 'Hadir', count: t.total_hadir, icon: 'fa-user-check', color: 'var(--success)', bg: 'var(--success-light)', border: 'var(--success)' },
-                { label: 'Terlambat', count: t.total_telat, icon: 'fa-clock', color: 'var(--warning)', bg: 'var(--warning-light)', border: 'var(--warning)' },
-                { label: 'Cuti / Sakit', count: t.total_cuti, icon: 'fa-umbrella-beach', color: 'var(--info)', bg: 'var(--info-light)', border: 'var(--info)' },
-                { label: 'Izin 3 Jam', count: t.total_izin, icon: 'fa-hourglass-half', color: 'var(--purple)', bg: 'var(--purple-light)', border: 'var(--purple)' },
-            ];
-
-            const telatList = t.telat_list.length > 0 ? t.telat_list.map(e => `
-                <div class="person-item">
-                    <div class="person-avatar">${renderAvatar(e.foto, e.nama)}</div>
-                    <div class="person-info">
-                        <div class="person-name">${e.nama}</div>
-                        <div class="person-meta">${e.jabatan} · Masuk ${e.jam_masuk || '-'}</div>
-                    </div>
-                    <span class="person-badge" style="background:var(--warning-light);color:var(--warning)">+${e.late_minutes}m</span>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-solid fa-check-circle"></i><p>Tidak ada keterlambatan hari ini</p></div>';
-
-            const cutiList = t.cuti_list.length > 0 ? t.cuti_list.map(c => `
-                <div class="person-item">
-                    <div class="person-avatar">${renderAvatar(c.foto, c.nama)}</div>
-                    <div class="person-info">
-                        <div class="person-name">${c.nama}</div>
-                        <div class="person-meta">${c.jabatan}</div>
-                    </div>
-                    <span class="person-badge" style="background:var(--info-light);color:var(--info)">${c.tipe}</span>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-regular fa-calendar"></i><p>Tidak ada cuti hari ini</p></div>';
-
-            const interviewList = t.interview_list.length > 0 ? t.interview_list.map(i => `
-                <div class="person-item">
-                    <div class="person-avatar" style="background:linear-gradient(135deg,#0284c7,#3b82f6)"><i class="fa-solid fa-user-tie"></i></div>
-                    <div class="person-info">
-                        <div class="person-name">${i.nama}</div>
-                        <div class="person-meta">${i.jabatan} · ${i.metode}</div>
-                    </div>
-                    <span class="person-badge" style="background:var(--info-light);color:var(--info)">${i.waktu}</span>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-regular fa-calendar-check"></i><p>Tidak ada interview</p></div>';
-
-            return `
-                <div class="col-lg-8">
-                    <div class="card-panel">
-                        <div class="card-panel-title">
-                            <i class="fa-solid fa-calendar-day"></i> Ringkasan Hari Ini
-                            <span style="margin-left:auto;font-size:0.8rem;color:var(--gray-500);font-weight:600">${t.day_name}, ${t.date}</span>
-                        </div>
-                        ${banner}
-                        <div class="today-status-grid">
-                            ${statusItems.map(s => `
-                                <div class="today-status-item" style="border-left-color:${s.border}">
-                                    <div class="today-status-icon" style="background:${s.color}"><i class="fa-solid ${s.icon}"></i></div>
-                                    <div>
-                                        <div class="today-status-count" style="color:${s.color}">${s.count}</div>
-                                        <div class="today-status-label">${s.label}</div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="divider-dashed"></div>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div style="font-size:0.75rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin-bottom:0.5rem">
-                                    <i class="fa-solid fa-clock" style="color:var(--warning)"></i> Yang Telat
-                                </div>
-                                <div class="person-list">${telatList}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div style="font-size:0.75rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin-bottom:0.5rem">
-                                    <i class="fa-solid fa-umbrella-beach" style="color:var(--info)"></i> Cuti Hari Ini
-                                </div>
-                                <div class="person-list">${cutiList}</div>
-                            </div>
-                            <div class="col-md-4">
-                                <div style="font-size:0.75rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;margin-bottom:0.5rem">
-                                    <i class="fa-solid fa-calendar-check" style="color:var(--info)"></i> Interview Hari Ini
-                                </div>
-                                <div class="person-list">${interviewList}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderInsights(insights) {
-            const colorMap = {
-                success: { bg: 'var(--success)', light: 'var(--success-light)', text: 'var(--success)' },
-                warning: { bg: 'var(--warning)', light: 'var(--warning-light)', text: 'var(--warning)' },
-                danger: { bg: 'var(--danger)', light: 'var(--danger-light)', text: 'var(--danger)' },
-                info: { bg: 'var(--info)', light: 'var(--info-light)', text: 'var(--info)' },
-                neutral: { bg: 'var(--gray-500)', light: 'var(--gray-100)', text: 'var(--gray-700)' },
+        function insightsPanel(list) {
+            const map = {
+                danger: ['var(--danger)', 'var(--danger-light)'],
+                warning: ['var(--warning)', 'var(--warning-light)'],
+                info: ['var(--info)', 'var(--info-light)'],
+                success: ['var(--success)', 'var(--success-light)'],
+                neutral: ['var(--gray-500)', 'var(--gray-100)'],
             };
+            const body = list.length ? list.map(i => {
+                const [c, bg] = map[i.type] || map.neutral;
+                const attr = i.detail ? dattr(i.detail[0], i.detail[1]) : '';
+                return `<div class="note ${attr ? 'clickable' : ''}" style="border-left-color:${c}" ${attr}>
+                    <div class="note-icon" style="background:${bg};color:${c}"><i class="fa-solid ${esc(i.icon)}"></i></div>
+                    <div style="min-width:0"><div class="note-title"><span>${esc(i.title)}</span><span style="color:${c}">${esc(i.metric)}</span></div>
+                    <div class="note-msg">${esc(i.message)}</div></div></div>`;
+            }).join('') : emptyBox('fa-circle-check', 'Semua metrik dalam kondisi baik');
 
-            const body = insights.length > 0 ? insights.map(i => {
-                const c = colorMap[i.type] || colorMap.neutral;
-                return `
-                    <div class="insight-card ${i.type}">
-                        <div class="insight-icon-wrap" style="background:${c.bg}"><i class="fa-solid ${i.icon}"></i></div>
-                        <div class="insight-content">
-                            <div class="insight-title">
-                                <span>${i.title}</span>
-                                <span class="insight-metric" style="color:${c.text}">${i.metric}</span>
-                            </div>
-                            <div class="insight-message">${i.message}</div>
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid fa-lightbulb"></i>Perlu perhatian<span class="right">Klik untuk detail</span></div>${body}</div>`;
+        }
+
+        function compositionPanel(c) {
+            const total = c.total || 1;
+            const rows = c.composition_chart.labels.map((l, i) => {
+                const n = c.composition_chart.data[i],
+                    color = c.composition_chart.colors[i];
+                return `<div class="bar-row clickable" ${dattr('karyawan', l)}><div class="bar-label">${esc(l)}</div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(n / total * 100)}%;background:${color}"></div></div>
+                    <div class="bar-count">${int(n)}</div></div>`;
+            }).join('');
+
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid fa-chart-pie"></i>Komposisi karyawan${actions('komposisi')}</div>
+                <div class="chart-box sm mb-3"><canvas id="chartComposition"></canvas></div>
+                ${rows}
+                <div class="divider"></div>
+                <div class="d-flex justify-content-between">
+                    <div class="clickable" ${dattr('karyawan')}><div class="mini-l">Rata-rata masa kerja</div><div class="mini-v">${esc(c.avg_tenure_label)}</div></div>
+                    <div class="text-end clickable" ${dattr('retensi')}><div class="mini-l">Retensi periode ini</div><div class="mini-v" style="color:var(--success)">${pct(c.retention_rate)}%</div></div>
+                </div></div>`;
+        }
+
+        function funnelPanel(r) {
+            const rows = r.stages.map(s => `<div class="bar-row clickable" ${dattr('rekrutmen', s.stage)}><div class="bar-label" style="width:84px">${esc(s.label)}</div>
+                <div class="bar-track"><div class="bar-fill" style="width:${Math.min(s.percentage, 100)}%;background:${s.color}"></div></div>
+                <div class="bar-count">${int(s.count)}</div></div>`).join('');
+
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid fa-filter"></i>Tahapan rekrutmen${actions('rekrutmen')}<span class="right">Diterima ${pct(r.conversion_rate)}%</span></div>
+                ${r.total ? rows : emptyBox('fa-inbox', 'Belum ada pelamar')}
+                <div class="divider"></div>
+                <div class="stat-note">Persentase tiap tahap dihitung dari seluruh pelamar aktif (${int(r.total)}), termasuk yang ditolak.</div></div>`;
+        }
+
+        function agendaPanel(events) {
+            const body = events.length ? events.map(e =>
+                    `<div class="note clickable" style="border-left-color:${e.color}" ${dattr('agenda')}>
+                    <div class="note-icon" style="background:${e.color}1a;color:${e.color}"><i class="fa-solid ${esc(e.icon)}"></i></div>
+                    <div style="min-width:0;flex:1"><div class="note-title" style="display:block"><span>${esc(e.title)}</span></div><div class="note-msg">${esc(e.subtitle)}</div></div>
+                    <div class="event-date" style="color:${e.color}">${esc(e.datetime)}</div></div>`).join('') :
+                emptyBox('fa-calendar', 'Tidak ada agenda atau reminder');
+
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid fa-calendar-week"></i>Agenda dan reminder${actions('agenda')}</div>
+                <div class="person-list" style="max-height:330px">${body}</div></div>`;
+        }
+
+        function leavePanel(l) {
+            const chips = [
+                ['Total pengajuan', l.total, 'var(--pri)', ''],
+                ['Disetujui', l.disetujui, 'var(--success)', 'Disetujui'],
+                ['Menunggu', l.menunggu, 'var(--warning)', 'Menunggu'],
+                ['Ditolak', l.ditolak, 'var(--danger)', 'Ditolak'],
+                ['Karyawan yang cuti', pct(l.rate_pegawai) + '%', 'var(--info)', 'Disetujui'],
+                ['Hari cuti disetujui', l.hari_cuti, '#0d9488', 'Disetujui'],
+            ].map(c =>
+                `<div class="chip clickable" style="border-left-color:${c[2]}" ${dattr('cuti', c[3])}><div class="chip-n">${typeof c[1] === 'number' ? int(c[1]) : c[1]}</div><div class="chip-l">${c[0]}</div></div>`
+            ).join('');
+
+            const recent = l.recent.length ? l.recent.map(r => `<div class="person clickable" ${dattr('cuti', r[8])}><div class="avatar">${avatar(null, r[0])}</div>
+                <div class="p-info"><div class="p-name">${esc(r[0])}</div><div class="p-meta">${esc(r[3])} · ${esc(r[4])} s/d ${esc(r[5])} · ${esc(r[6])}</div></div>
+                <span class="tag" style="background:var(--info-light);color:var(--info)">${esc(r[8])}</span></div>`)
+                .join('') :
+                emptyBox('fa-calendar', 'Belum ada pengajuan cuti');
+
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid fa-umbrella-beach"></i>Pengajuan cuti${actions('cuti')}
+                <span class="right">${int(l.pegawai_cuti)} dari ${int(l.aktif)} karyawan aktif = ${pct(l.rate_pegawai)}% · persetujuan ${pct(l.rate_approval)}%</span></div>
+                <div class="chips">${chips}</div><div class="divider"></div>
+                <div class="sub-title">Pengajuan terbaru</div><div class="person-list">${recent}</div></div>`;
+        }
+
+        function olPanel(ol) {
+            const maxCore = ol.top_cores.length > 0 ? Math.max(...ol.top_cores.map(c => c.value)) : 1;
+            const coreBars = ol.top_cores.map(core => {
+                const pct = Math.round((core.value / maxCore) * 100);
+                return `<div class="bar-row clickable" ${dattr('instruktur_ol', 'core:' + core.label)}>
+                    <div class="bar-label" style="width:100px" title="${esc(core.label)}">${esc(core.label.length > 12 ? core.label.substring(0,12)+'...' : core.label)}</div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--purple)"></div></div>
+                    <div class="bar-count">${int(core.value)}</div>
+                </div>`;
+            }).join('') || '<div class="empty">Belum ada data core</div>';
+
+            return `<div class="panel">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chalkboard-user" style="color:var(--purple)"></i>
+                    Ringkasan Instruktur OL
+                    ${actions('instruktur_ol')}
+                    <span class="right" title="Data instruktur OL tidak punya tanggal periode">Snapshot saat ini</span>
+                </div>
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3" style="background:var(--purple-light);border-radius:8px">
+                            <div class="stat-label" style="justify-content:center"><i class="fa-solid fa-users"></i>Total Instruktur</div>
+                            <div class="stat-value" style="color:var(--purple)">${int(ol.total)}<small>orang</small></div>
                         </div>
                     </div>
-                `;
-            }).join('') : '<div class="empty-state"><i class="fa-solid fa-sparkles"></i><p>Semua metrik terlihat baik!</p></div>';
-
-            return `
-                <div class="col-lg-4">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-lightbulb"></i> Insights & Rekomendasi</div>
-                        ${body}
+                    <div class="col-md-4">
+                        <div class="text-center p-3" style="background:var(--info-light);border-radius:8px">
+                            <div class="stat-label" style="justify-content:center"><i class="fa-solid fa-file-check"></i>Kelengkapan Berkas</div>
+                            <div class="stat-value" style="color:var(--info)">${pct(ol.doc_completion_rate)}<small>%</small></div>
+                            <div class="stat-note">Berdasarkan CV & KTP</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="chart-box sm" style="height:120px"><canvas id="chartOlLsp"></canvas></div>
                     </div>
                 </div>
-            `;
+
+                <div class="divider"></div>
+                <div class="sub-title">Top 5 Keahlian (Core) Instruktur</div>
+                ${coreBars}
+                <div class="stat-note mt-2">Klik batang "Core" atau potongan chart untuk melihat detail instruktur terkait.</div>
+            </div>`;
         }
 
-        function renderMonthlyAttendance(data) {
-            return `
-                <div class="col-lg-7">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-chart-line"></i> Tren Kehadiran 12 Bulan</div>
-                        <div class="chart-container"><canvas id="chartAttendanceTrend"></canvas></div>
+        function salesPanel(sales) {
+            const topMateri = sales.topMateri || [];
+            const maxMateri = topMateri.length > 0 ? Math.max(...topMateri.map(m => m.value)) : 1;
+
+            const materiBars = topMateri.map(m => {
+                const pct = Math.round((m.value / maxMateri) * 100);
+                return `<div class="bar-row clickable" ${dattr('penjualan_materi', 'materi:' + m.label)}>
+                    <div class="bar-label" style="width:110px" title="${esc(m.label)}">${esc(m.label.length > 14 ? m.label.substring(0,14)+'...' : m.label)}</div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--success)"></div></div>
+                    <div class="bar-count">${int(m.value)}</div>
+                </div>`;
+            }).join('') || '<div class="empty">Belum ada data materi</div>';
+
+            const manageUrl = "{{ route('HR.rekap-penjualan.index') ?? '#' }}";
+
+            return `<div class="panel">
+                <div class="panel-title">
+                    <i class="fa-solid fa-chart-line" style="color:var(--success)"></i>Performa Penjualan Kelas
+                    <div class="right" style="display:flex; gap:.5rem; align-items:center;">
+                        <a href="${manageUrl}" class="btn btn-sm btn-outline-success" style="font-size:.7rem; padding:.2rem .5rem; border-radius:6px;"><i class="fa-solid fa-external-link-alt me-1"></i>Kelola</a>
                     </div>
                 </div>
-            `;
+                <div class="row g-3 mb-3">
+                    <div class="col-4 text-center p-2 clickable" style="background:var(--success-light);border-radius:8px" ${dattr('penjualan_kelas')}>
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Total Kelas</div>
+                        <div class="stat-value" style="font-size:1.4rem;color:var(--success)">${int(sales.totalKelas)}</div>
+                        <div style="font-size:.7rem;color:var(--gray-500);margin-top:4px">Klik untuk detail</div>
+                    </div>
+                    <div class="col-4 text-center p-2 clickable" style="background:var(--info-light);border-radius:8px" ${dattr('penjualan_peserta')}>
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Total Peserta</div>
+                        <div class="stat-value" style="font-size:1.4rem;color:var(--info)">${int(sales.totalPax)}</div>
+                        <div style="font-size:.7rem;color:var(--gray-500);margin-top:4px">Klik untuk detail</div>
+                    </div>
+                    <div class="col-4 text-center p-2 clickable" style="background:var(--purple-light);border-radius:8px" ${dattr('penjualan_nett')}>
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Nett Penjualan</div>
+                        <div class="stat-value" style="font-size:1.1rem;color:var(--purple)">${formatRp(sales.totalNett)}</div>
+                        <div style="font-size:.7rem;color:var(--gray-500);margin-top:4px">Klik untuk detail</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+                    <div class="sub-title mb-0">Top 3 Materi Terpopuler (Jumlah Kelas)</div>
+                    <button class="btn btn-sm btn-outline-primary" ${dattr('penjualan_materi')}><i class="fa-solid fa-list me-1"></i>Lihat Semua Materi</button>
+                </div>
+                ${materiBars}
+            </div>`;
         }
 
-        function renderDivisionChart(d) {
-            return `
-                <div class="col-lg-5">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-building"></i> Distribusi per Divisi (${d.total_categories})</div>
-                        <div class="chart-container"><canvas id="chartDivision"></canvas></div>
+        function maintenancePanel(mnt) {
+            const maxKat = mnt.top_kategori.length > 0 ? Math.max(...mnt.top_kategori.map(k => k.value)) : 1;
+            const katBars = mnt.top_kategori.map(k => {
+                const pct = Math.round((k.value / maxKat) * 100);
+                return `<div class="bar-row clickable" ${dattr('maintenance', 'kategori:' + k.label)}>
+                    <div class="bar-label" style="width:110px" title="${esc(k.label)}">${esc(k.label.length > 14 ? k.label.substring(0,14)+'...' : k.label)}</div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--warning)"></div></div>
+                    <div class="bar-count">${int(k.value)}</div>
+                </div>`;
+            }).join('') || '<div class="empty">Belum ada data kategori</div>';
+
+            // Ganti URL route di href berikut sesuai nama route Anda yang sebenarnya
+            const manageUrl = "{{ route('HR.maintenance.index') ?? '#' }}";
+
+            return `<div class="panel">
+                <div class="panel-title">
+                    <i class="fa-solid fa-screwdriver-wrench" style="color:var(--warning)"></i>Ringkasan Maintenance
+                    <div class="right" style="display:flex; gap:.5rem; align-items:center;">
+                        <a href="${manageUrl}" class="btn btn-sm btn-outline-warning" style="font-size:.7rem; padding:.2rem .5rem; border-radius:6px;"><i class="fa-solid fa-external-link-alt me-1"></i>Kelola & Import</a>
+                        ${actions('maintenance')}
                     </div>
                 </div>
-            `;
+                <div class="row g-3 mb-3">
+                    <div class="col-4 text-center p-2" style="background:var(--warning-light);border-radius:8px">
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Total Tiket</div>
+                        <div class="stat-value" style="font-size:1.4rem;color:var(--warning)">${int(mnt.total_tiket)}</div>
+                    </div>
+                    <div class="col-4 text-center p-2" style="background:var(--danger-light);border-radius:8px">
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Sedang Proses</div>
+                        <div class="stat-value" style="font-size:1.4rem;color:var(--danger)">${int(mnt.on_progress)}</div>
+                    </div>
+                    <div class="col-4 text-center p-2" style="background:var(--gray-100);border-radius:8px">
+                        <div class="stat-label" style="justify-content:center;font-size:.75rem">Total Biaya</div>
+                        <div class="stat-value" style="font-size:1.1rem;color:var(--gray-700)">${formatRp(mnt.total_biaya)}</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="sub-title">Top 3 Jenis Maintenance (Frekuensi)</div>
+                ${katBars}
+            </div>`;
         }
 
-        function renderRecentHires(list) {
-            const body = list.length > 0 ? list.map(e => `
-                <div class="person-item">
-                    <div class="person-avatar">${renderAvatar(e.foto, e.nama)}</div>
-                    <div class="person-info">
-                        <div class="person-name">${e.nama}</div>
-                        <div class="person-meta">${e.jabatan} · ${e.divisi}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-size:0.75rem;font-weight:700;color:var(--success)">${e.tanggal}</div>
-                        <div style="font-size:0.68rem;color:var(--gray-500)">${e.days_ago} hari lalu</div>
-                    </div>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-solid fa-user-plus"></i><p>Belum ada karyawan baru</p></div>';
+        function movementPanel(title, icon, color, list, isResign, type) {
+            const body = list.length ? list.map(e => {
+                const meta = isResign ?
+                    `${esc(e.jabatan)} · ${esc(e.alasan !== '-' ? e.alasan.substring(0, 30) : 'Tanpa alasan')}` :
+                    `${esc(e.jabatan)} · ${esc(e.divisi)}`;
+                const right =
+                    `<div class="text-end"><div style="font-size:.75rem;font-weight:700;color:${color}">${esc(e.tanggal)}</div><div class="p-meta">${int(e.days_ago)} hari lalu</div></div>`;
+                return personRow(e, right, meta, dattr(type));
+            }).join('') : emptyBox(icon, 'Belum ada data');
 
-            return `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-user-plus" style="color:var(--success)"></i> Karyawan Baru Terbaru</div>
-                        <div class="person-list">${body}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderRecentResigns(list) {
-            const body = list.length > 0 ? list.map(e => `
-                <div class="person-item">
-                    <div class="person-avatar" style="background:linear-gradient(135deg,#dc2626,#991b1b)">${renderAvatar(e.foto, e.nama)}</div>
-                    <div class="person-info">
-                        <div class="person-name">${e.nama}</div>
-                        <div class="person-meta">${e.jabatan} · ${e.alasan !== '-' ? e.alasan.substring(0, 30) : 'Tidak ada alasan'}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-size:0.75rem;font-weight:700;color:var(--danger)">${e.tanggal}</div>
-                        <div style="font-size:0.68rem;color:var(--gray-500)">${e.days_ago} hari lalu</div>
-                    </div>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-solid fa-user-minus"></i><p>Tidak ada yang resign</p></div>';
-
-            return `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-user-minus" style="color:var(--danger)"></i> Karyawan Resign Terbaru</div>
-                        <div class="person-list">${body}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderUpcoming(events) {
-            const body = events.length > 0 ? events.map(e => `
-                <div class="event-item" style="border-left-color:${e.color}">
-                    <div class="event-icon" style="background:${e.color}"><i class="fa-solid ${e.icon}"></i></div>
-                    <div class="event-content">
-                        <div class="event-title">${e.title}</div>
-                        <div class="event-sub">${e.subtitle}</div>
-                    </div>
-                    <div class="event-date">${e.datetime}</div>
-                </div>
-            `).join('') : '<div class="empty-state"><i class="fa-regular fa-calendar"></i><p>Tidak ada agenda mendatang</p></div>';
-
-            return `
-                <div class="col-md-12 col-lg-4">
-                    <div class="card-panel">
-                        <div class="card-panel-title"><i class="fa-solid fa-calendar-week" style="color:var(--purple)"></i> Agenda 14 Hari ke Depan</div>
-                        <div class="person-list">${body}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderQuickNav() {
-            const items = [
-                { title: 'Data Karyawan', sub: 'Kelola data SDM', icon: 'fa-users', url: '/HR-dashboard/employee/index' },
-                { title: 'Kehadiran', sub: 'Absensi & analitik', icon: 'fa-calendar-check', url: '/HR-dashboard/absensi' },
-                { title: 'Recruitment', sub: 'Pipeline pelamar', icon: 'fa-user-plus', url: '/HR-dashboard/hire' },
-                { title: 'Rekap SPJ', sub: 'Pengeluaran dinas', icon: 'fa-file-invoice-dollar', url: '/HR-dashboard/rekap-spj' },
-            ];
-
-            return `
-                <div class="quick-nav">
-                    ${items.map(i => `
-                        <a href="${i.url}" class="quick-nav-item">
-                            <i class="fa-solid ${i.icon}"></i>
-                            <div>
-                                <div class="quick-nav-title">${i.title}</div>
-                                <div class="quick-nav-sub">${i.sub}</div>
-                            </div>
-                        </a>
-                    `).join('')}
-                </div>
-            `;
+            return `<div class="panel"><div class="panel-title"><i class="fa-solid ${icon}" style="color:${color}"></i>${title}${actions(type)}</div><div class="person-list">${body}</div></div>`;
         }
 
         function initCharts(d) {
             Object.values(charts).forEach(c => c?.destroy());
             charts = {};
+            const font = {
+                family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto",
+                size: 11
+            };
+            const grid = {
+                color: 'rgba(0,0,0,0.05)'
+            };
+            const hover = (evt, els) => {
+                evt.native.target.style.cursor = els.length ? 'pointer' : 'default';
+            };
 
-            const chartFont = { family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto", size: 11 };
-
-            if (document.getElementById('chartComposition')) {
-                charts.composition = new Chart(document.getElementById('chartComposition'), {
+            const comp = document.getElementById('chartComposition');
+            if (comp) {
+                const cc = d.composition.composition_chart;
+                const has = cc.data.some(v => v > 0);
+                charts.comp = new Chart(comp, {
                     type: 'doughnut',
                     data: {
-                        labels: d.composition.composition_chart.labels,
+                        labels: has ? cc.labels : ['Belum ada data'],
                         datasets: [{
-                            data: d.composition.composition_chart.data,
-                            backgroundColor: d.composition.composition_chart.colors,
+                            data: has ? cc.data : [1],
+                            backgroundColor: has ? cc.colors : ['#e5e7eb'],
                             borderWidth: 3,
                             borderColor: '#fff'
                         }]
@@ -1324,46 +2086,44 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '70%',
+                        cutout: '68%',
+                        onHover: hover,
+                        onClick: (e, els) => {
+                            openDetail('karyawan', has && els.length ? cc.labels[els[0].index] : '');
+                        },
                         plugins: {
-                            legend: { display: false },
+                            legend: {
+                                display: false
+                            },
                             tooltip: {
-                                callbacks: {
-                                    label: ctx => {
-                                        const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                        const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
-                                        return `${ctx.label}: ${ctx.raw} (${pct}%)`;
-                                    }
-                                }
+                                enabled: has
                             }
                         }
                     }
                 });
             }
 
-            if (document.getElementById('chartAttendanceTrend')) {
-                charts.trend = new Chart(document.getElementById('chartAttendanceTrend'), {
+            const trend = document.getElementById('chartTrend');
+            if (trend) {
+                charts.trend = new Chart(trend, {
                     type: 'line',
                     data: {
                         labels: d.attendance_trend.map(t => t.month),
-                        datasets: [
-                            {
-                                label: 'Tepat Waktu',
-                                data: d.attendance_trend.map(t => t.hadir),
+                        datasets: [{
+                                label: 'Kehadiran (%)',
+                                data: d.attendance_trend.map(t => t.rate),
                                 borderColor: '#059669',
-                                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                                backgroundColor: '#05966914',
                                 fill: true,
-                                tension: 0.4,
+                                tension: .35,
                                 borderWidth: 2.5,
                                 pointRadius: 3
                             },
                             {
-                                label: 'Terlambat',
-                                data: d.attendance_trend.map(t => t.telat),
+                                label: 'Keterlambatan (%)',
+                                data: d.attendance_trend.map(t => t.late_rate),
                                 borderColor: '#dc2626',
-                                backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                                fill: true,
-                                tension: 0.4,
+                                tension: .35,
                                 borderWidth: 2.5,
                                 pointRadius: 3
                             }
@@ -1372,38 +2132,156 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        onHover: hover,
+                        onClick: (e, els) => {
+                            openDetail(els.length ? 'kehadiran' : 'tren', '', els.length ? els[0].index + 1 :
+                                0);
+                        },
                         plugins: {
-                            legend: { position: 'bottom', labels: { font: chartFont, usePointStyle: true, padding: 15 } }
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font,
+                                    usePointStyle: true,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${pct(ctx.parsed.y)}%`
+                                }
+                            }
                         },
                         scales: {
-                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: chartFont } },
-                            x: { grid: { display: false }, ticks: { font: chartFont } }
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid,
+                                ticks: {
+                                    font,
+                                    callback: v => v + '%'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font
+                                }
+                            }
                         }
                     }
                 });
             }
 
-            if (document.getElementById('chartDivision')) {
-                charts.division = new Chart(document.getElementById('chartDivision'), {
+            const div = document.getElementById('chartDivision');
+            if (div) {
+                charts.div = new Chart(div, {
                     type: 'bar',
                     data: {
                         labels: d.divisions.labels,
                         datasets: [{
-                            label: 'Jumlah Karyawan',
                             data: d.divisions.data,
-                            backgroundColor: d.divisions.colors,
-                            borderRadius: 8,
-                            borderSkipped: false
+                            backgroundColor: '#4f46e5',
+                            borderRadius: 4
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        onHover: hover,
+                        onClick: (e, els) => {
+                            if (!els.length) {
+                                openDetail('divisi');
+                                return;
+                            }
+                            const label = d.divisions.labels[els[0].index];
+                            openDetail('karyawan', 'divisi:' + (label === 'Tanpa divisi' ? '' : label));
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${int(ctx.parsed.x)} orang`
+                                }
+                            }
+                        },
                         scales: {
-                            x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: chartFont } },
-                            y: { grid: { display: false }, ticks: { font: { ...chartFont, weight: '600' } } }
+                            x: {
+                                beginAtZero: true,
+                                grid,
+                                ticks: {
+                                    font,
+                                    precision: 0
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const olLsp = document.getElementById('chartOlLsp');
+            if (olLsp && d.instruktur_ol) {
+                const olData = d.instruktur_ol.lsp_distribution;
+                const hasData = olData.length > 0 && olData.some(v => v.value > 0);
+
+                charts.olLsp = new Chart(olLsp, {
+                    type: 'doughnut',
+                    data: {
+                        labels: hasData ? olData.map(d => d.label) : ['Belum ada data'],
+                        datasets: [{
+                            data: hasData ? olData.map(d => d.value) : [1],
+                            backgroundColor: hasData ? ['#4f46e5', '#0284c7', '#059669', '#d97706',
+                                '#7c3aed', '#ec4899'
+                            ] : ['#e5e7eb'],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: {
+                                        family: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto",
+                                        size: 10
+                                    },
+                                    boxWidth: 10,
+                                    padding: 8
+                                }
+                            },
+                            tooltip: {
+                                enabled: hasData,
+                                callbacks: {
+                                    label: ctx => ` ${ctx.label}: ${int(ctx.parsed)} afiliasi`
+                                }
+                            }
+                        },
+                        onClick: (e, els) => {
+                            if (hasData && els.length) {
+                                const selectedLabel = olData[els[0].index].label;
+                                openDetail('instruktur_ol', 'lsp:' + selectedLabel);
+                            }
                         }
                     }
                 });

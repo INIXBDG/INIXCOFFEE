@@ -13,10 +13,25 @@ use Illuminate\Support\Facades\DB;
 
 class RekapSJPController extends Controller
 {
+    private const STATUS_ORDER = [
+        'Menunggu Manager Divisi',
+        'Menunggu HRD',
+        'Menunggu GM & Direksi',
+        'Menunggu Isi Rate SPJ',
+        'Menunggu Upload Bukti dari Karyawan',
+        'Selesai',
+        'Ditolak',
+    ];
+
     public function index()
     {
         $divisis = karyawan::whereNotNull('divisi')->distinct()->pluck('divisi');
-        return view('HR.RekapSPJ.index', compact('divisis'));
+        $jenisDinas = SuratPerjalanan::whereNotNull('jenis_dinas')
+            ->where('jenis_dinas', '!=', '')
+            ->distinct()
+            ->orderBy('jenis_dinas')
+            ->pluck('jenis_dinas');
+        return view('HR.RekapSPJ.index', compact('divisis', 'jenisDinas'));
     }
 
     public function getJabatan($divisi)
@@ -43,6 +58,47 @@ class RekapSJPController extends Controller
         });
     }
 
+    /**
+     * Status SPJ diturunkan dari kolom approval, ratespj, dan bukti_transfer.
+     * Logikanya sama dengan badge status di halaman data SPJ.
+     */
+    private function resolveStatus($item): string
+    {
+        // 1. Ditolak di tahap mana pun
+        if ($item->approval_manager == '2' || $item->approval_hrd == '2'
+            || $item->approval_gm == '2' || $item->approval_direksi == '2') {
+            return 'Ditolak';
+        }
+
+        // 2. Menunggu Manager
+        if ($item->approval_manager == '0') {
+            return 'Menunggu Manager Divisi';
+        }
+
+        // 3. Menunggu HRD
+        if ($item->approval_hrd == '0') {
+            return 'Menunggu HRD';
+        }
+
+        // 4. Menunggu GM & Direksi (hanya Internasional)
+        if ($item->tipe == 'Internasional' && $item->approval_gm == '0') {
+            return 'Menunggu GM & Direksi';
+        }
+
+        // 5. Menunggu isi Rate SPJ
+        if (!$item->ratespj || (float) $item->ratespj == 0) {
+            return 'Menunggu Isi Rate SPJ';
+        }
+
+        // 6. Menunggu upload bukti transfer
+        if (empty($item->bukti_transfer)) {
+            return 'Menunggu Upload Bukti dari Karyawan';
+        }
+
+        // 7. Selesai
+        return 'Selesai';
+    }
+
     public function getRekapData(Request $request)
     {
         $baseQuery = SuratPerjalanan::with('karyawan');
@@ -55,6 +111,9 @@ class RekapSJPController extends Controller
         }
         if ($request->filled('karyawan')) {
             $baseQuery->where('id_karyawan', $request->karyawan);
+        }
+        if ($request->filled('jenis_dinas')) {
+            $baseQuery->where('jenis_dinas', $request->jenis_dinas);
         }
 
         $tahun = $request->input('tahun', date('Y'));
@@ -81,6 +140,9 @@ class RekapSJPController extends Controller
         }
         if ($request->filled('karyawan')) {
             $prevQuery->where('id_karyawan', $request->karyawan);
+        }
+        if ($request->filled('jenis_dinas')) {
+            $prevQuery->where('jenis_dinas', $request->jenis_dinas);
         }
 
         if ($mode == 'bulan' && $request->filled('bulan')) {
@@ -118,65 +180,22 @@ class RekapSJPController extends Controller
             ->values()
             ->all();
 
-        $tab2 = [];
-        if ($mode == 'semua' || $mode == 'tahun') {
-            $tab2 = $data
-                ->groupBy(fn($item) => ceil(Carbon::parse($item->tanggal_berangkat)->month / 3))
-                ->map(fn($items, $q) => [
-                    'periode' => "Quartal {$q} - {$tahun}",
-                    'total' => $this->calculateTotal($items),
-                    'jumlah_spj' => $items->count(),
-                    'filter_mode' => 'quartal',
-                    'filter_value' => $q,
-                ])
-                ->values()
-                ->all();
-        } elseif ($mode == 'quartal') {
-            $tab2 = $data
-                ->groupBy(fn($item) => Carbon::parse($item->tanggal_berangkat)->translatedFormat('F'))
-                ->map(fn($items, $month) => [
-                    'periode' => $month,
-                    'total' => $this->calculateTotal($items),
-                    'jumlah_spj' => $items->count(),
-                    'filter_mode' => 'bulan',
-                    'filter_value' => Carbon::parse($items->first()->tanggal_berangkat)->month,
-                ])
-                ->values()
-                ->all();
-        } elseif ($mode == 'bulan') {
-            $tab2 = $data
-                ->groupBy(fn($item) => Carbon::parse($item->tanggal_berangkat)->translatedFormat('d F Y'))
-                ->map(fn($items, $date) => [
-                    'periode' => $date,
-                    'total' => $this->calculateTotal($items),
-                    'jumlah_spj' => $items->count(),
-                    'filter_mode' => 'tanggal',
-                    'filter_value' => Carbon::parse($items->first()->tanggal_berangkat)->format('Y-m-d'),
-                ])
-                ->values()
-                ->all();
-        }
-
-        $tabJenis = $data
-            ->groupBy(function ($item) {
-                return $item->jenis_dinas ?? 'Lain Lain (tidak terdata)';
-            })
-            ->map(function ($items, $jenis) {
-                return [
-                    'jenis_dinas' => $jenis,
-                    'total'       => $this->calculateTotal($items),
-                    'jumlah_spj'  => $items->count(),
-                ];
-            })
-            ->sortByDesc('total')
-            ->values()
-            ->all();
-
-        $prevGroupedByJenis = $prevData->groupBy('jenis_dinas')->map(function ($items) {
-            return $this->calculateTotal($items);
-        });
-
         $totalAll = $this->calculateTotal($data);
+
+        // ===== Rekap Per Status SPJ =====
+        $groupedStatus = $data->groupBy(fn($item) => $this->resolveStatus($item));
+
+        $tabStatus = collect(self::STATUS_ORDER)->map(function ($status) use ($groupedStatus, $totalAll) {
+            $items = $groupedStatus->get($status, collect());
+            $total = $this->calculateTotal($items);
+            return [
+                'status'     => $status,
+                'jumlah_spj' => $items->count(),
+                'total'      => $total,
+                'persentase' => $totalAll > 0 ? round(($total / $totalAll) * 100, 2) : 0,
+            ];
+        })->values()->all();
+
         $tab3Collection = $data
             ->groupBy('tipe')
             ->map(function ($items, $tipe) use ($totalAll, $prevGroupedByTipe) {
@@ -225,44 +244,14 @@ class RekapSJPController extends Controller
             'percentages' => $tab3Collection->pluck('persentase')->map(fn($v) => (float) $v)->toArray(),
         ];
 
-        $tabJenisStat = $data
-            ->groupBy('jenis_dinas')
-            ->map(function ($items, $jenis) use ($totalAll, $prevGroupedByJenis) {
-                $totalJenis = $this->calculateTotal($items);
-                $percentage = $totalAll > 0 ? ($totalJenis / $totalAll) * 100 : 0;
-                $prevTotal = $prevGroupedByJenis[$jenis] ?? 0;
-                $gap = 0;
-                if ($prevTotal > 0) {
-                    $gap = round((($totalJenis - $prevTotal) / $prevTotal) * 100, 2);
-                } elseif ($totalJenis > 0) {
-                    $gap = 100;
-                }
-                return [
-                    'kategori'    => $jenis ?? 'Tidak Ada Jenis',
-                    'total'       => $totalJenis,
-                    'prev_total'  => $prevTotal,
-                    'persentase'  => round($percentage, 2),
-                    'gap'         => $gap,
-                ];
-            })
-            ->sortByDesc('total');
-
-        $chartJenis = [
-            'labels'    => $tabJenisStat->pluck('kategori')->toArray(),
-            'current'   => $tabJenisStat->pluck('total')->map(fn($v) => (float)$v)->toArray(),
-            'previous'  => $tabJenisStat->pluck('prev_total')->map(fn($v) => (float)$v)->toArray(),
-        ];
-
         return response()->json([
             'success' => true,
             'tab1' => $tab1,
-            'tab2' => $tab2,
             'tab3' => $tab3,
-            'tabJenis'     => $tabJenis,
+            'tabStatus' => $tabStatus,
             'chart' => $chartData,
             'chart_divisi' => $chartDivisi,
             'grand_total' => $totalAll,
-            'chart_jenis'  => $chartJenis,    
         ]);
     }
 
@@ -273,50 +262,40 @@ class RekapSJPController extends Controller
         if ($request->filled('divisi')) $query->whereHas('karyawan', fn($q) => $q->where('divisi', $request->divisi));
         if ($request->filled('jabatan')) $query->whereHas('karyawan', fn($q) => $q->where('jabatan', $request->jabatan));
         if ($request->filled('karyawan')) $query->where('id_karyawan', $request->karyawan);
+
         $tipe = $request->input('tipe');
 
         $tahun = $request->input('tahun', date('Y'));
         $query->whereYear('tanggal_berangkat', $tahun);
 
-        $tipe = $request->input('tipe');
-        
+        if ($request->filled('jenis_dinas')) $query->where('jenis_dinas', $request->jenis_dinas);
+
+        // Filter periode (bulan/quartal)
+        $mode = $request->input('mode_periode', 'semua');
+        if ($mode == 'bulan' && $request->filled('bulan')) {
+            $query->whereMonth('tanggal_berangkat', $request->bulan);
+        } elseif ($mode == 'quartal' && $request->filled('quartal')) {
+            $startMonth = ($request->quartal - 1) * 3 + 1;
+            $endMonth = $startMonth + 2;
+            $query->whereBetween(DB::raw('MONTH(tanggal_berangkat)'), [$startMonth, $endMonth]);
+        }
+
         if ($tipe == 'divisi') {
             $query->whereHas('karyawan', fn($q) => $q->where('divisi', $request->nilai));
-            
-            $mode = $request->input('mode_periode', 'semua');
-            if ($mode == 'bulan' && $request->filled('bulan')) {
-                $query->whereMonth('tanggal_berangkat', $request->bulan);
-            } elseif ($mode == 'quartal' && $request->filled('quartal')) {
-                $startMonth = ($request->quartal - 1) * 3 + 1;
-                $endMonth = $startMonth + 2;
-                $query->whereBetween(DB::raw('MONTH(tanggal_berangkat)'), [$startMonth, $endMonth]);
-            }
-        } elseif ($tipe == 'periode') {
-            $filterMode = $request->input('filter_mode');
-            $filterValue = $request->input('filter_value');
-            
-            if ($filterMode == 'quartal') {
-                $startMonth = ($filterValue - 1) * 3 + 1;
-                $endMonth = $startMonth + 2;
-                $query->whereBetween(DB::raw('MONTH(tanggal_berangkat)'), [$startMonth, $endMonth]);
-            } elseif ($filterMode == 'bulan') {
-                $query->whereMonth('tanggal_berangkat', $filterValue);
-            } elseif ($filterMode == 'tanggal') {
-                $query->whereDate('tanggal_berangkat', $filterValue);
-            }
-        } elseif ($tipe == 'jenis_dinas') {
-            if ($request->filled('nilai')) {
-                $query->where('jenis_dinas', $request->nilai);
-            }
         }
 
         $data = $query->orderBy('tanggal_berangkat', 'desc')->get();
 
-        $result = $data->map(function($item) {
+        // Status diturunkan di PHP, jadi difilter setelah get()
+        if ($tipe == 'status') {
+            $data = $data->filter(fn($i) => $this->resolveStatus($i) === $request->nilai)->values();
+        }
+
+        $result = $data->map(function ($item) {
             $namaLengkap = $item->karyawan->nama_lengkap ?? 'Unknown';
             return [
                 'tanggal' => Carbon::parse($item->tanggal_berangkat)->translatedFormat('d F Y'),
-                'nama' => explode(' ', $namaLengkap)[0],
+                'nama' => $namaLengkap,
                 'divisi' => $item->karyawan->divisi ?? '-',
                 'jabatan' => $item->karyawan->jabatan ?? '-',
                 'tipe' => $item->tipe ?? '-',
@@ -338,9 +317,8 @@ class RekapSJPController extends Controller
         $data = json_decode($response->getContent(), true);
 
         $tab1 = $data['tab1'];
-        $tab2 = $data['tab2'];
         $tab3 = $data['tab3'];
-        $tabJenis = $data['tabJenis'] ?? [];
+        $tabStatus = $data['tabStatus'] ?? [];
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -360,7 +338,7 @@ class RekapSJPController extends Controller
         $sheet->getStyle('A' . $currentRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
         $currentRow += 2;
 
-        // Tab 1: Rekap Per Divisi
+        // 1. Rekap Per Divisi
         $sheet->mergeCells('A' . $currentRow . ':D' . $currentRow);
         $sheet->setCellValue('A' . $currentRow, '1. Rekap Per Divisi');
         $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true);
@@ -387,34 +365,39 @@ class RekapSJPController extends Controller
         $sheet->getStyle('C' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
         $currentRow += 2;
 
-        // Tab 2: Rekap Per Periode
-        $sheet->mergeCells('A' . $currentRow . ':D' . $currentRow);
-        $sheet->setCellValue('A' . $currentRow, '2. Rekap Per Periode');
+        // 2. Rekap Per Status SPJ
+        $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
+        $sheet->setCellValue('A' . $currentRow, '2. Rekap Per Status SPJ');
         $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true);
         $currentRow++;
 
         $sheet->setCellValue('A' . $currentRow, 'No');
-        $sheet->setCellValue('B' . $currentRow, 'Periode');
+        $sheet->setCellValue('B' . $currentRow, 'Status');
         $sheet->setCellValue('C' . $currentRow, 'Jumlah SPJ');
         $sheet->setCellValue('D' . $currentRow, 'Total Pengeluaran');
-        $sheet->getStyle('A' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
+        $sheet->setCellValue('E' . $currentRow, 'Persentase');
+        $sheet->getStyle('A' . $currentRow . ':E' . $currentRow)->getFont()->setBold(true);
         $currentRow++;
 
-        $total2 = 0;
-        foreach ($tab2 as $index => $item) {
-            $total2 += $item['total'];
+        $totalStatus = 0;
+        $countStatus = 0;
+        foreach ($tabStatus as $index => $item) {
+            $totalStatus += $item['total'];
+            $countStatus += $item['jumlah_spj'];
             $sheet->setCellValue('A' . $currentRow, $index + 1);
-            $sheet->setCellValue('B' . $currentRow, $item['periode']);
+            $sheet->setCellValue('B' . $currentRow, $item['status']);
             $sheet->setCellValue('C' . $currentRow, $item['jumlah_spj']);
             $sheet->setCellValue('D' . $currentRow, $item['total']);
+            $sheet->setCellValue('E' . $currentRow, $item['persentase'] . '%');
             $currentRow++;
         }
-        $sheet->setCellValue('C' . $currentRow, 'TOTAL:');
-        $sheet->setCellValue('D' . $currentRow, $total2);
-        $sheet->getStyle('C' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
+        $sheet->setCellValue('B' . $currentRow, 'TOTAL:');
+        $sheet->setCellValue('C' . $currentRow, $countStatus);
+        $sheet->setCellValue('D' . $currentRow, $totalStatus);
+        $sheet->getStyle('B' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
         $currentRow += 2;
 
-        // Tab 3: Statistik
+        // 3. Statistik Pengeluaran
         $sheet->mergeCells('A' . $currentRow . ':E' . $currentRow);
         $sheet->setCellValue('A' . $currentRow, '3. Statistik Pengeluaran');
         $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true);
@@ -427,33 +410,6 @@ class RekapSJPController extends Controller
         $sheet->setCellValue('E' . $currentRow, 'Gap');
         $sheet->getStyle('A' . $currentRow . ':E' . $currentRow)->getFont()->setBold(true);
         $currentRow++;
-
-        // Tab 4: Rekap Per Jenis Dinas
-        $sheet->mergeCells('A' . $currentRow . ':D' . $currentRow);
-        $sheet->setCellValue('A' . $currentRow, '4. Rekap Per Jenis Dinas');
-        $sheet->getStyle('A' . $currentRow)->getFont()->setBold(true);
-        $currentRow++;
-
-        $sheet->setCellValue('A' . $currentRow, 'No');
-        $sheet->setCellValue('B' . $currentRow, 'Jenis Dinas');
-        $sheet->setCellValue('C' . $currentRow, 'Jumlah SPJ');
-        $sheet->setCellValue('D' . $currentRow, 'Total Pengeluaran');
-        $sheet->getStyle('A' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
-        $currentRow++;
-
-        $totalJenis = 0;
-        foreach ($tabJenis as $index => $item) {
-            $totalJenis += $item['total'];
-            $sheet->setCellValue('A' . $currentRow, $index + 1);
-            $sheet->setCellValue('B' . $currentRow, $item['jenis_dinas']);
-            $sheet->setCellValue('C' . $currentRow, $item['jumlah_spj']);
-            $sheet->setCellValue('D' . $currentRow, $item['total']);
-            $currentRow++;
-        }
-        $sheet->setCellValue('C' . $currentRow, 'TOTAL:');
-        $sheet->setCellValue('D' . $currentRow, $totalJenis);
-        $sheet->getStyle('C' . $currentRow . ':D' . $currentRow)->getFont()->setBold(true);
-        $currentRow += 2;
 
         $total3 = 0;
         foreach ($tab3 as $index => $item) {
@@ -476,7 +432,7 @@ class RekapSJPController extends Controller
         }
 
         $fileName = 'Rekap_SPJ_' . now()->format('Y-m-d') . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
@@ -492,11 +448,28 @@ class RekapSJPController extends Controller
         $data = json_decode($response->getContent(), true);
 
         $tab1 = $data['tab1'];
-        $tab2 = $data['tab2'];
+        $tabStatus = $data['tabStatus'] ?? [];
         $tab3 = $data['tab3'];
         $grand_total = $data['grand_total'];
 
-        $pdf = Pdf::loadView('HR.RekapSPJ.export_pdf', compact('tab1', 'tab2', 'tab3', 'grand_total'));
+        // Info filter yang sedang aktif, ditampilkan di header PDF
+        $mode = $request->input('mode_periode', 'semua');
+        if ($mode == 'bulan' && $request->filled('bulan')) {
+            $periode = Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
+        } elseif ($mode == 'quartal' && $request->filled('quartal')) {
+            $periode = 'Quartal ' . $request->quartal;
+        } else {
+            $periode = 'Seluruh Tahun';
+        }
+
+        $filter = [
+            'tahun'       => $request->input('tahun', date('Y')),
+            'periode'     => $periode,
+            'jenis_dinas' => $request->input('jenis_dinas') ?: 'Semua Jenis Dinas',
+            'divisi'      => $request->input('divisi') ?: 'Semua Divisi',
+        ];
+
+        $pdf = Pdf::loadView('HR.RekapSPJ.export_pdf', compact('tab1', 'tabStatus', 'tab3', 'grand_total', 'filter'));
         $pdf->setPaper('A4', 'portrait');
 
         return $pdf->download('Rekap_SPJ_' . now()->format('Y-m-d') . '.pdf');
