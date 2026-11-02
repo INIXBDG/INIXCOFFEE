@@ -504,8 +504,10 @@ class AbsensiKaryawanController extends Controller
         // Tambahkan query izin tiga jam
         $izinTigaJam = izinTigaJam::where('id_karyawan', $id_karyawan)
             ->whereMonth('tanggal_pengajuan', $month)
+            ->whereYear('tanggal_pengajuan', $year) 
             ->orderBy('tanggal_pengajuan', 'desc')
             ->get();
+            
         // return $totalketerlambatan;
         return view('absensi.absensi', compact(
             'absen',
