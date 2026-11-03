@@ -334,51 +334,54 @@ class BonusTahunanController extends Controller
         $this->ensureTableExists();
 
         $tahun = (int) $request->input('year', now()->year);
-        $dataset = $this->generateBonusData($tahun);
 
         DB::beginTransaction();
+
         try {
-            foreach ($dataset['items'] as $item) {
-                if (!$item['berhak']) {
+            $bonuses = BonusTahunan::where('tahun', $tahun)
+                ->where('bulan', 12)
+                ->get();
+
+            foreach ($bonuses as $bonus) {
+                $emp = karyawan::find($bonus->karyawan_id);
+
+                if (!$emp) {
                     continue;
                 }
 
-                BonusTahunan::updateOrCreate(
-                    [
-                        'karyawan_id' => $item['karyawan_id'],
-                        'tahun' => $tahun,
-                        'bulan' => 12,
-                    ],
-                    [
-                        'nama_lengkap' => $item['nama_lengkap'],
-                        'nip' => $item['nip'] === '-' ? null : $item['nip'],
-                        'divisi' => $item['divisi'] === '-' ? null : $item['divisi'],
-                        'jabatan' => $item['jabatan'],
-                        'basic_salary' => $item['basic_salary'],
-                        'rekening_maybank' => $item['rekening_maybank'] === '-' ? null : $item['rekening_maybank'],
-                        'status_karyawan' => $item['status_karyawan'],
-                        'tanggal_bergabung' => $item['tanggal_bergabung_raw'],
-                        'masa_kerja_bulan' => $item['masa_kerja_bulan'],
-                        'masa_kerja_teks' => $item['masa_kerja'],
-                        'skema_bonus' => $item['skema_bonus'],
-                        'multiplier' => $item['multiplier'],
-                        'nominal_bonus' => $item['nominal_bonus'],
-                    ]
-                );
+                $basicSalary = (float) ($emp->gaji ?? 0);
+
+                if ($basicSalary <= 0) {
+                    continue;
+                }
+
+                $bulanKerja = (int) ($bonus->masa_kerja_bulan ?? 12);
+                $bulanKerja = max(1, min(12, $bulanKerja));
+
+                $multiplier = (float) ($bonus->multiplier ?? 1);
+
+                $nominalBonus = ($basicSalary / 12) * $bulanKerja * $multiplier;
+
+                $bonus->update([
+                    'basic_salary' => $basicSalary,
+                    'nominal_bonus' => round($nominalBonus),
+                ]);
             }
+
             DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Seluruh data bonus tahunan {$tahun} berhasil dihitung ulang menggunakan gaji terbaru.",
+            ]);
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghitung ulang: ' . $e->getMessage(),
             ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Data bonus tahunan pencairan Desember {$tahun} berhasil dihitung ulang dan disimpan.",
-        ]);
     }
 
     public function exportExcel(Request $request)
