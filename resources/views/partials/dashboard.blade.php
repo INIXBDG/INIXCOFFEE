@@ -440,7 +440,7 @@
                             aria-selected="false">Penjualan Per Sales Per Tahun</button>
                     </li>
                 </ul>
-                <div class="tab-content" id="pills-tabContent">
+                <div class="tab-content" id="sales-pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-perquartal" role="tabpanel"
                         aria-labelledby="pills-perquartal-tab" tabindex="0">
                         <div class="col-12" id="chartjs">
@@ -485,7 +485,7 @@
                             aria-controls="pills-souvenir" aria-selected="false">Rekap Souvenir</button>
                     </li>
                 </ul>
-                <div class="tab-content" id="pills-tabContent">
+                <div class="tab-content" id="office-pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-analisiskelas" role="tabpanel"
                         aria-labelledby="pills-analisiskelas-tab" tabindex="0">
                         <div class="row justify-content-center">
@@ -700,7 +700,7 @@
                         </button>
                     </li>
                 </ul>
-                <div class="tab-content" id="pills-tabContent">
+                <div class="tab-content" id="feedback-pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-nilaifeedbackperbulan"
                         role="tabpanel" aria-labelledby="pills-nilaifeedbackperbulan-tab" tabindex="0">
                         <div class="row justify-content-center">
@@ -990,7 +990,7 @@
                     </li>
                 </ul>
 
-                <div class="tab-content" id="pills-tabContent">
+                <div class="tab-content" id="itsm-pills-tabContent">
                     <div class="tab-pane fade show" style="height:auto;" id="pills-jumlah-pic" role="tabpanel"
                         aria-labelledby="pills-jumlah-pic-tab" tabindex="0">
                         <div class="row justify-content-center">
@@ -1689,117 +1689,77 @@
                                 </div>
                             </div>
 
-                            <div id="uptime-loading" class="text-center py-5">
+                            <div id="uptime-loading" class="text-center py-4 d-none">
                                 <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+                                    <span class="visually-hidden">Memuat data uptime...</span>
                                 </div>
-                                <p class="mt-3 text-muted">Memuat data uptime...</p>
                             </div>
 
-                            <div id="uptime-content" class="d-none">
+                            <div id="uptime-content">
+                                <ul class="nav nav-tabs uptime-tabs mb-3" id="uptimeServiceTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active fw-bold" id="uptime-coffee-tab"
+                                            data-bs-toggle="tab" data-bs-target="#uptime-coffee"
+                                            type="button" role="tab" aria-controls="uptime-coffee" aria-selected="true">
+                                            Inixcoffee
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link fw-bold" id="uptime-latte-tab"
+                                            data-bs-toggle="tab" data-bs-target="#uptime-latte"
+                                            type="button" role="tab" aria-controls="uptime-latte" aria-selected="false">
+                                            Inixlatte
+                                        </button>
+                                    </li>
+                                </ul>
 
-                                <h5 class="mb-4 text-primary fw-bold">Inixcoffee</h5>
-                                <div class="row mb-5">
-
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card border-0 shadow-sm rounded-4 h-100">
-                                            <div class="card-body p-4">
-                                                <h6 class="card-title text-muted mb-3">Uptime Minggu Ini (7 Hari
-                                                    Terakhir)</h6>
-
-                                                <h2 class="mb-3 fw-bold" id="coffee-weekly-uptime">0.00%</h2>
-
-                                                <div class="progress mb-4" style="height: 12px;">
-                                                    <div class="progress-bar" role="progressbar"
-                                                        id="coffee-weekly-uptime-bar" style="width: 0%"></div>
+                                <div class="tab-content" id="uptimeServiceTabContent">
+                                    @foreach(['coffee' => 'Inixcoffee', 'latte' => 'Inixlatte'] as $service => $serviceLabel)
+                                    <div class="tab-pane fade {{ $service === 'coffee' ? 'show active' : '' }}"
+                                        id="uptime-{{ $service }}" role="tabpanel"
+                                        aria-labelledby="uptime-{{ $service }}-tab">
+                                        <div class="d-flex align-items-center justify-content-end mb-2">
+                                            <small class="text-muted" id="{{ $service }}-data-source"></small>
+                                        </div>
+                                        <div class="row g-3">
+                                            @foreach(['weekly' => '7 Hari Terakhir', 'monthly' => 'Bulan Ini'] as $period => $periodLabel)
+                                            <div class="col-lg-3 col-md-6">
+                                                <div class="card border-0 shadow-sm rounded-4 h-100">
+                                                    <div class="card-body p-3">
+                                                        <small class="text-muted d-block mb-1">Uptime {{ $periodLabel }}</small>
+                                                        <h3 class="mb-2 fw-bold" id="{{ $service }}-{{ $period }}-uptime">0.00%</h3>
+                                                        <div class="progress mb-2" style="height:8px;">
+                                                            <div class="progress-bar" role="progressbar"
+                                                                id="{{ $service }}-{{ $period }}-uptime-bar" style="width:0%"></div>
+                                                        </div>
+                                                        <small class="text-muted">Downtime:
+                                                            <span id="{{ $service }}-{{ $period }}-downtime-mins">0</span> menit
+                                                        </small>
+                                                        <small class="text-muted d-block mt-1">
+                                                            Rata-rata: <strong id="{{ $service }}-{{ $period }}-ms">0</strong> ms
+                                                        </small>
+                                                        <div class="progress mt-2" style="height:6px;">
+                                                            <div class="progress-bar bg-danger" role="progressbar"
+                                                                id="{{ $service }}-{{ $period }}-downtime-bar" style="width:0%"></div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-
-                                                <small class="text-muted d-block mb-2">Downtime: <span
-                                                        id="coffee-weekly-downtime-mins">0</span> menit</small>
-
-                                                <div class="progress" style="height:12px;">
-                                                    <div class="progress-bar bg-danger" role="progressbar"
-                                                        id="coffee-weekly-downtime-bar" style="width: 0%"></div>
+                                            </div>
+                                            @endforeach
+                                            <div class="col-lg-6 col-md-12">
+                                                <div class="card border-0 shadow-sm rounded-4 h-100">
+                                                    <div class="card-body p-3">
+                                                        <small class="text-muted d-block mb-2 fw-semibold">Response Time & Status</small>
+                                                        <div style="position: relative; height: 190px;">
+                                                            <canvas id="{{ $service === 'coffee' ? 'uptimeChartInixcoffee' : 'uptimeChartInixlatte' }}"></canvas>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card border-0 shadow-sm rounded-4 h-100">
-                                            <div class="card-body p-4">
-                                                <h6 class="card-title text-muted mb-3">Uptime Bulan Ini</h6>
-
-                                                <h2 class="mb-3 fw-bold" id="coffee-monthly-uptime">0.00%</h2>
-
-                                                <div class="progress mb-4" style="height: 12px;">
-                                                    <div class="progress-bar" role="progressbar"
-                                                        id="coffee-monthly-uptime-bar" style="width: 0%"></div>
-                                                </div>
-
-                                                <small class="text-muted d-block mb-2">Downtime: <span
-                                                        id="coffee-monthly-downtime-mins">0</span> menit</small>
-
-                                                <div class="progress" style="height: 12px;">
-                                                    <div class="progress-bar bg-danger" role="progressbar"
-                                                        id="coffee-monthly-downtime-bar" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    @endforeach
                                 </div>
-
-                                <h5 class="mb-4 text-primary fw-bold">Inixlatte</h5>
-                                <div class="row mb-4">
-
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card border-0 shadow-sm rounded-4 h-100">
-                                            <div class="card-body p-4">
-                                                <h6 class="card-title text-muted mb-3">Uptime Minggu Ini (7 Hari
-                                                    Terakhir)</h6>
-
-                                                <h2 class="mb-3 fw-bold" id="latte-weekly-uptime">0.00%</h2>
-
-                                                <div class="progress mb-4" style="height: 12px;">
-                                                    <div class="progress-bar" role="progressbar"
-                                                        id="latte-weekly-uptime-bar" style="width: 0%"></div>
-                                                </div>
-
-                                                <small class="text-muted d-block mb-2">Downtime: <span
-                                                        id="latte-weekly-downtime-mins">0</span> menit</small>
-
-                                                <div class="progress" style="height: 12px;">
-                                                    <div class="progress-bar bg-danger" role="progressbar"
-                                                        id="latte-weekly-downtime-bar" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6 mb-4">
-                                        <div class="card border-0 shadow-sm rounded-4 h-100">
-                                            <div class="card-body p-4">
-                                                <h6 class="card-title text-muted mb-3">Uptime Bulan Ini</h6>
-
-                                                <h2 class="mb-3 fw-bold" id="latte-monthly-uptime">0.00%</h2>
-
-                                                <div class="progress mb-4" style="height: 12px;">
-                                                    <div class="progress-bar" role="progressbar"
-                                                        id="latte-monthly-uptime-bar" style="width: 0%"></div>
-                                                </div>
-
-                                                <small class="text-muted d-block mb-2">Downtime: <span
-                                                        id="latte-monthly-downtime-mins">0</span> menit</small>
-
-                                                <div class="progress" style="height: 12px;">
-                                                    <div class="progress-bar bg-danger" role="progressbar"
-                                                        id="latte-monthly-downtime-bar" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                             </div>
                         </div>
                     </div>
@@ -1809,6 +1769,30 @@
     </div>
 </div>
 <style>
+    #pills-uptime-presentase,
+    #pills-uptime-presentase #sla-digital-container {
+        overflow: visible;
+    }
+
+    #uptime-content {
+        min-height: auto;
+    }
+
+    #uptimeServiceTabs {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    #uptimeServiceTabs .nav-link {
+        min-width: 120px;
+        text-align: center;
+        color: #0d6efd;
+    }
+
+    #uptimeServiceTabs .nav-link.active {
+        color: #212529;
+        border-color: #dee2e6 #dee2e6 #fff;
+    }
+
     @media only screen and (min-width:501px) {
         #containerCanvasPenjualanPerSalesPerTahun {
             width: 75vw;

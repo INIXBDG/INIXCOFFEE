@@ -60,6 +60,7 @@ use App\Http\Controllers\HR\InstrukturOlController;
 use App\Http\Controllers\HR\KaryawanProfileController;
 use App\Http\Controllers\HR\KaryawanTaskController;
 use App\Http\Controllers\HR\LegalitasController;
+use App\Http\Controllers\HR\LspLpkController;
 use App\Http\Controllers\HR\MaintenanceController;
 use App\Http\Controllers\HR\MasterKaryawanController;
 use App\Http\Controllers\HR\payrollController;

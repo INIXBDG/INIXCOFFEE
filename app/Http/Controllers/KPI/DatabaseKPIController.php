@@ -188,16 +188,17 @@ class DatabaseKPIController extends Controller
             $cctvOk = false;
         }
 
-        $buildLogPercent = function ($url) use ($weekStart, $weekEnd, $monthStart, $monthEnd) {
+        $buildLogPercent = function ($urls) use ($weekStart, $weekEnd, $monthStart, $monthEnd) {
+            $urls = (array) $urls;
             $stats = activityLog::selectRaw("
                 COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as week_total,
-                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
+                SUM(CASE WHEN (status = '200' OR is_up = 1) AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
                 COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as month_total,
-                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
+                SUM(CASE WHEN (status = '200' OR is_up = 1) AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
             ", [
                 $weekStart, $weekEnd, $weekStart, $weekEnd,
                 $monthStart, $monthEnd, $monthStart, $monthEnd
-            ])->where('url', $url)->first();
+            ])->whereIn('url', $urls)->first();
 
             $weekTotal = $stats->week_total ?? 0;
             $weekUp = $stats->week_up ?? 0;
@@ -211,15 +212,42 @@ class DatabaseKPIController extends Controller
         };
 
         if (!$cctvOk) {
-            $coffeeStats = $buildLogPercent('https://coffee.inixindobdg.co.id/');
-            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
+            $coffeeStats = $buildLogPercent([
+                'https://inixcoffee.inixindobdg.co.id/',
+                'https://inixcoffee.inixindobdg.co.id',
+                'https://192.168.95.60:8001/',
+                'https://192.168.95.60:8001',
+                'http://192.168.95.60:8001/',
+                'http://192.168.95.60:8001',
+                'https://coffee.inixindobdg.co.id/',
+                'https://coffee.inixindobdg.co.id',
+                'https://inixcoffe.inixindobdg.co.id/',
+                'https://inixcoffe.inixindobdg.co.id',
+                'https://coffeinix.inixindobdg.co.id/',
+                'https://coffeinix.inixindobdg.co.id',
+            ]);
+            $latteStats = $buildLogPercent([
+                'https://latte.inixindobdg.co.id/',
+                'https://latte.inixindobdg.co.id',
+                'http://192.168.95.60:8002/',
+                'http://192.168.95.60:8002',
+                'https://192.168.95.60:8002/',
+                'https://192.168.95.60:8002',
+            ]);
 
             $apkWeekPercent = $coffeeStats['week'];
             $apkMonthPercent = $coffeeStats['month'];
             $latteWeekPercent = $latteStats['week'];
             $latteMonthPercent = $latteStats['month'];
         } else {
-            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
+            $latteStats = $buildLogPercent([
+                'https://latte.inixindobdg.co.id/',
+                'https://latte.inixindobdg.co.id',
+                'http://192.168.95.60:8002/',
+                'http://192.168.95.60:8002',
+                'https://192.168.95.60:8002/',
+                'https://192.168.95.60:8002',
+            ]);
             $latteWeekPercent = $latteStats['week'];
             $latteMonthPercent = $latteStats['month'];
         }
@@ -243,23 +271,101 @@ class DatabaseKPIController extends Controller
             }
 
             $urls = is_array($rawUrls) ? $rawUrls : array_filter(array_map('trim', explode(',', $rawUrls)));
+            $urls = array_values(array_unique(array_map(
+                fn($url) => rtrim(trim($url), '/') . '/',
+                $urls
+            )));
+            $aliases = [
+                'https://inixcoffee.inixindobdg.co.id/' => [
+                    'https://inixcoffee.inixindobdg.co.id/',
+                    'https://inixcoffee.inixindobdg.co.id',
+                    'https://192.168.95.60:8001/',
+                    'https://192.168.95.60:8001',
+                    'http://192.168.95.60:8001/',
+                    'http://192.168.95.60:8001',
+                    'https://coffee.inixindobdg.co.id/',
+                    'https://coffee.inixindobdg.co.id',
+                    'https://inixcoffe.inixindobdg.co.id/',
+                    'https://inixcoffe.inixindobdg.co.id',
+                    'https://coffeinix.inixindobdg.co.id/',
+                    'https://coffeinix.inixindobdg.co.id',
+                ],
+                'https://latte.inixindobdg.co.id/' => [
+                    'https://latte.inixindobdg.co.id/',
+                    'https://latte.inixindobdg.co.id',
+                    'http://192.168.95.60:8002/',
+                    'http://192.168.95.60:8002',
+                    'https://192.168.95.60:8002/',
+                    'https://192.168.95.60:8002',
+                ],
+            ];
+            $canonicalUrls = array_keys($aliases);
+            $lookupUrls = array_values(array_unique(array_merge(
+                $urls,
+                array_merge(...array_values($aliases))
+            )));
 
             // OPTIMASI: Mengambil semua data sekaligus, bukan query di dalam loop
-            $allChecks = activityLog::whereIn('url', $urls)
-                ->where('status', 'uptime')
+            $allChecks = activityLog::whereIn('url', $lookupUrls)
+                ->whereNotNull('is_up')
                 ->orderBy('created_at', 'desc')
-                ->limit(100 * count($urls))
+                ->limit(100 * count($lookupUrls))
                 ->get()
                 ->groupBy('url');
 
             $result = [];
-            foreach ($urls as $url) {
-                $checks = $allChecks->get($url, collect())->take(100);
-                
+            foreach ($canonicalUrls as $url) {
+                $checks = collect();
+                foreach ($aliases[$url] as $aliasUrl) {
+                    $checks = $checks->concat($allChecks->get($aliasUrl, collect()));
+                }
+                $checks = $checks->sortByDesc(fn($log) => Carbon::parse($log->checked_at ?? $log->created_at ?? now())->timestamp)->take(100);
+                $isDummy = $checks->isEmpty();
+
+                if ($isDummy) {
+                    $labels = [];
+                    $timestamps = [];
+                    $responseTimes = [];
+                    $statuses = [];
+
+                    for ($i = 47; $i >= 0; $i--) {
+                        $checkedAt = Carbon::now()->subMinutes($i * 30);
+                        $isUp = !in_array($i, [11, 35], true);
+                        $labels[] = $checkedAt->format('d M H:i');
+                        $timestamps[] = $checkedAt->toIso8601String();
+                        $responseTimes[] = $isUp ? random_int(85, 260) : random_int(300, 900);
+                        $statuses[] = $isUp;
+                    }
+                } else {
+                    $labels = [];
+                    $timestamps = [];
+                    $responseTimes = [];
+                    $statuses = [];
+
+                    foreach ($checks->reverse() as $log) {
+                        $checkedAt = Carbon::parse($log->checked_at ?? $log->created_at ?? now());
+                        $labels[] = $checkedAt->format('d M H:i');
+                        $timestamps[] = $checkedAt->toIso8601String();
+                        // Sertakan response_time_ms untuk semua record (UP maupun DOWN)
+                        $responseTimes[] = (int) ($log->response_time_ms ?? 0);
+                        $statuses[] = (bool) $log->is_up;
+                    }
+                }
+
+                // Hitung rata-rata response_time_ms dari SEMUA check (UP + DOWN)
+                // yang memiliki nilai response_time_ms (tidak null/0)
+                $allMs = array_filter($responseTimes, fn($v) => $v > 0);
+                $avgResponseMs = count($allMs) > 0
+                    ? (int) round(array_sum($allMs) / count($allMs))
+                    : 0;
+
                 $result[$url] = [
-                    'labels' => $checks->map(fn($log) => $log->created_at->format('d M H:i'))->values(),
-                    'response_times' => $checks->map(fn($log) => $log->response_time_ms ?? 0)->values(),
-                    'statuses' => $checks->map(fn($log) => (bool) $log->is_up)->values(),
+                    'labels'          => $labels,
+                    'timestamps'      => $timestamps,
+                    'response_times'  => $responseTimes,
+                    'statuses'        => $statuses,
+                    'is_dummy'        => $isDummy,
+                    'avg_response_ms' => $avgResponseMs, // rata-rata dari semua URL alias, UP+DOWN
                 ];
             }
 
