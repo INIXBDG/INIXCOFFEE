@@ -40,6 +40,9 @@
     <!-- 3. Pemanggilan Aset Hasil Kompilasi Produksi Vite -->
     {{-- @vite(['resources/js/app.js']) --}}
 
+    <script src="{{ asset('assets/vendor/js/helpers.js') }}" defer></script>
+    <script src="{{ asset('assets/js/config.js') }}" defer></script>
+
     <style>
         .avatar {
             width: 40px;
@@ -254,8 +257,6 @@
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/bootstrap.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}" defer></script>
-    <script src="{{ asset('assets/vendor/js/helpers.js') }}" defer></script>
-    <script src="{{ asset('assets/js/config.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/menu.js') }}" defer></script>
     <!-- Custom JS -->
     <script src="{{ asset('assets/js/main.js') }}" defer></script>
@@ -366,32 +367,6 @@
                     });
                 }, 300);
             }
-        });
-
-        const menuToggleBtn = document.querySelector('.layout-menu-toggle .nav-link');
-        const overlay = document.querySelector('.layout-overlay');
-        const html = document.documentElement;
-
-        if (menuToggleBtn) {
-            menuToggleBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                html.classList.toggle('layout-menu-expanded');
-            });
-        }
-
-        // Klik di area overlay (backdrop gelap) buat nutup sidebar lagi
-        if (overlay) {
-            overlay.addEventListener('click', function () {
-                html.classList.remove('layout-menu-expanded');
-            });
-        }
-
-        document.querySelectorAll('#layout-menu .menu-link').forEach(function (link) {
-            link.addEventListener('click', function () {
-                if (window.innerWidth < 1200) { // breakpoint xl
-                    html.classList.remove('layout-menu-expanded');
-                }
-            });
         });
     </script>
 
