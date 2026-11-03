@@ -577,49 +577,46 @@ class CertificateController extends Controller
         ]);
     }
 
-    private function getPesertaExam(array $kategori, $dateColumn, $startDate, $endDate)
+   private function getPesertaExam(array $kategori, $dateColumn, $startDate, $endDate)
     {
         return ModelsEksam::with([
                 'rkm.materi',
                 'registexam.peserta',
                 'registexam.dokumentasiExam',
             ])
-            ->where(function ($q) use ($kategori) {
-                // kategori dari materi
-                $q->whereHas('rkm.materi', fn ($m) => $m->whereIn('kategori_exam', $kategori))
-                // kategori dari dokumentasi exam
-                ->orWhereHas('registexam.dokumentasiExam', fn ($d) => $d->whereIn('kategori_exam', $kategori));
-            })
+            // hanya eksam yang punya dokumentasi exam berkategori sesuai
+            ->whereHas('registexam.dokumentasiExam', fn ($d) => $d->whereIn('kategori_exam', $kategori))
             ->whereBetween($dateColumn, [$startDate, $endDate])
             ->get()
             ->flatMap(function ($eksam) use ($kategori) {
-                $materi         = $eksam->rkm->materi ?? null;
-                $kategoriMateri = $materi->kategori_exam ?? null;
-    
-                return $eksam->registexam->map(function ($reg) use ($materi, $kategori, $kategoriMateri) {
+                $materi = $eksam->rkm->materi ?? null;
+
+                return $eksam->registexam->map(function ($reg) use ($materi, $kategori, $eksam) {
                     if (!$reg->peserta) {
                         return null;
                     }
-    
-                    // prioritas: dokumentasi, fallback: materi
-                    $kategoriReg = $reg->dokumentasiExam->kategori_exam ?? $kategoriMateri;
-    
+
+                    // hanya dari dokumentasi exam, tanpa fallback ke materi
+                    $kategoriReg = $reg->dokumentasiExam->kategori_exam ?? null;
+
                     if (!in_array($kategoriReg, $kategori, true)) {
                         return null;
                     }
-    
+
                     $peserta = clone $reg->peserta;
                     $peserta->tanggal_exam  = $reg->tanggal_exam ?? null;
-                    $peserta->materi        = $materi; // objek Materi, bukan id
+                    $peserta->materi        = $materi;
                     $peserta->kategori_exam = $kategoriReg;
-    
+                    $peserta->eksam_id      = $eksam->id;   // bantu debug
+                    $peserta->source        = 'eksam';      // bantu debug
+
                     return $peserta;
                 });
             })
             ->filter()
             ->values();
     }
-
+    
     public function storeSummary(Request $request)
     {
         $validated = $request->validate([
