@@ -3537,7 +3537,7 @@
 
             $('#pills-home-tab').click(function() {
                 $('#loadingModal').modal('show');
-                $('.tab-pane.show').fadeOut(100, function() {
+                $('#pills-tabContent > .tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
                     $('#pills-home').fadeIn(100).addClass('show active');
                 });
@@ -3554,7 +3554,7 @@
 
             $('#pills-admin-tab').click(function() {
                 $('#loadingModal').modal('show');
-                $('.tab-pane.show').fadeOut(100, function() {
+                $('#pills-tabContent > .tab-pane.show').fadeOut(100, function() {
                     $(this).removeClass('show active');
 
                     $('#pills-admin').fadeIn(100).addClass('show active');
@@ -3567,55 +3567,68 @@
             $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
                 const target = $(e.target).attr('data-bs-target');
                 if (target === '#nav-inixcoffee') {
-                    ajaxUptime(target, 'https://192.168.95.60:8001/');
+                    ajaxUptime(target, 'https://inixcoffee.inixindobdg.co.id/');
                 } else if (target === '#nav-inixlatte') {
-                    ajaxUptime(target, 'http://192.168.95.60:8002/');
+                    ajaxUptime(target, 'https://latte.inixindobdg.co.id/');
                 }
             });
 
             let uptimeCharts = {};
+            let uptimeLoadStarted = false;
 
             const services = {
-                coffee: 'https://192.168.95.60:8001/',
-                latte: 'https://192.168.95.61:8002/'
+                coffee: 'https://inixcoffee.inixindobdg.co.id/',
+                latte: 'https://latte.inixindobdg.co.id/'
             };
 
 
-            // loadUptimePercentage();
+            function loadUptimePercentage() {
+                if (uptimeLoadStarted) return;
+                uptimeLoadStarted = true;
+                const $content = $('#uptime-content');
+                const $loading = $('#uptime-loading');
 
-            // function loadUptimePercentage() {
-            //     const $content = $('#uptime-content');
-            //     const $loading = $('#uptime-loading');
+                $loading.removeClass('d-none');
+                $content.addClass('d-none');
 
-            //     $loading.removeClass('d-none');
-            //     $content.addClass('d-none');
+                $.ajax({
+                    url: "/activity-log/data",
+                    method: "GET",
+                    dataType: "json",
+                    success: function(response) {
+                        if (!response || typeof response !== 'object' || response.error) {
+                            showError("Respons dari server tidak valid.");
+                            uptimeLoadStarted = false;
+                            return;
+                        }
 
-            //     $.ajax({
-            //         url: "/activity-log/data",
-            //         method: "GET",
-            //         dataType: "json",
-            //         success: function(response) {
-            //             if (!response || typeof response !== 'object') {
-            //                 showError("Respons dari server tidak valid.");
-            //                 return;
-            //             }
+                        processService('coffee', response[services.coffee] || null);
+                        processService('latte', response[services.latte] || null);
+                        chartDataCache = response;
+                        renderChartIfNeeded('uptimeChartInixcoffee', services.coffee);
+                        renderChartIfNeeded('uptimeChartInixlatte', services.latte);
 
-            //             processService('coffee', response[services.coffee] || null);
-
-            //             processService('latte', response[services.latte] || null);
-
-            //             $loading.addClass('d-none');
-            //             $content.removeClass('d-none');
-            //         },
-            //         error: function(xhr) {
-            //             showError(`Koneksi gagal: Error ${xhr.status}`);
-            //         }
-            //     });
-            // }
+                        $loading.addClass('d-none');
+                        $content.removeClass('d-none');
+                    },
+                    error: function(xhr) {
+                        uptimeLoadStarted = false;
+                        $('#coffee-data-source').text(`Gagal memuat data: HTTP ${xhr.status}`);
+                        $('#latte-data-source').text(`Gagal memuat data: HTTP ${xhr.status}`);
+                        $loading.addClass('d-none');
+                        $content.removeClass('d-none');
+                    }
+                });
+            }
 
             function processService(type, data) {
                 // Prefix ID untuk elemen (coffee atau latte)
                 const prefix = type;
+                if (data && data.is_dummy) {
+                    $(`#${prefix}-data-source`).text('Data dummy');
+                } else if (data) {
+                    $(`#${prefix}-data-source`).text('Activity log');
+                }
 
                 if (!data || !Array.isArray(data.labels) || !Array.isArray(data.statuses) || data.labels.length ===
                     0) {
@@ -3639,52 +3652,56 @@
             }
 
             function calculateWeeklyUptime(data) {
-                const recent = data.statuses.slice(-7);
-                const upCount = recent.filter(s => s === true).length;
-                const percentage = recent.length > 0 ? (upCount / recent.length) * 100 : 0;
-                const downtimeMinutes = (recent.length - upCount) * 5;
+                const weekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                const recentIndexes = data.statuses.map((_, i) => i).filter(i => {
+                    const timestamp = data.timestamps && data.timestamps[i]
+                        ? Date.parse(data.timestamps[i])
+                        : NaN;
+                    return isNaN(timestamp) || timestamp >= weekAgo;
+                });
+                const recentStatuses = recentIndexes.map(i => data.statuses[i]);
+                // Rata-rata ms dari SEMUA check (UP + DOWN) yang punya nilai > 0
+                const recentTimes = recentIndexes.map(i => Number(data.response_times[i] || 0)).filter(v => v > 0);
+                const upCount = recentStatuses.filter(s => s === true).length;
+                const percentage = recentStatuses.length > 0 ? (upCount / recentStatuses.length) * 100 : 0;
+                const downtimeMinutes = (recentStatuses.length - upCount) * 5;
+                // Gunakan avg_response_ms dari server (sudah mencakup semua URL alias + UP+DOWN)
+                // jika tidak ada, hitung sendiri dari data period ini
+                const averageMs = (typeof data.avg_response_ms === 'number' && data.avg_response_ms > 0)
+                    ? data.avg_response_ms
+                    : (recentTimes.length
+                        ? Math.round(recentTimes.reduce((sum, v) => sum + v, 0) / recentTimes.length)
+                        : 0);
 
                 return {
                     overall: percentage.toFixed(2),
-                    downtime: downtimeMinutes
+                    downtime: downtimeMinutes,
+                    averageMs: averageMs
                 };
             }
 
             function calculateMonthlyUptime(data) {
-                const monthly = {};
-                data.labels.forEach((label, i) => {
-                    const date = new Date(label);
-                    const key = date.toLocaleString('id-ID', {
-                        month: 'short',
-                        year: 'numeric'
-                    });
-                    if (!monthly[key]) monthly[key] = {
-                        up: 0,
-                        total: 0
-                    };
-                    monthly[key].total++;
-                    if (data.statuses[i] === true) monthly[key].up++;
+                const now = new Date();
+                const monthlyIndexes = data.statuses.map((_, i) => i).filter(i => {
+                    const timestamp = data.timestamps && data.timestamps[i] ? new Date(data.timestamps[i]) : null;
+                    return !timestamp || (timestamp.getFullYear() === now.getFullYear() && timestamp.getMonth() === now.getMonth());
                 });
-
-                // Ambil bulan terakhir yang ada data
-                const sortedKeys = Object.keys(monthly).sort((a, b) => new Date('1 ' + a) - new Date('1 ' + b));
-                const lastMonth = sortedKeys[sortedKeys.length - 1];
-
-                if (!lastMonth) {
-                    return {
-                        overall: 0,
-                        downtime: 0
-                    };
-                }
-
-                const perc = (monthly[lastMonth].up / monthly[lastMonth].total) * 100;
-                const totalUpAll = Object.values(monthly).reduce((sum, m) => sum + m.up, 0);
-                const totalAll = Object.values(monthly).reduce((sum, m) => sum + m.total, 0);
-                const downtimeAll = (totalAll - totalUpAll) * 5;
+                const monthlyStatuses = monthlyIndexes.map(i => data.statuses[i]);
+                // Rata-rata ms dari SEMUA check (UP + DOWN) yang punya nilai > 0
+                const monthlyTimes = monthlyIndexes.map(i => Number(data.response_times[i] || 0)).filter(v => v > 0);
+                const upCount = monthlyStatuses.filter(s => s === true).length;
+                const percentage = monthlyStatuses.length > 0 ? (upCount / monthlyStatuses.length) * 100 : 0;
+                // Hitung rata-rata dari data bulan ini; fallback ke avg_response_ms dari server
+                const averageMs = monthlyTimes.length
+                    ? Math.round(monthlyTimes.reduce((sum, v) => sum + v, 0) / monthlyTimes.length)
+                    : ((typeof data.avg_response_ms === 'number' && data.avg_response_ms > 0)
+                        ? data.avg_response_ms
+                        : 0);
 
                 return {
-                    overall: perc.toFixed(2),
-                    downtime: Math.round((monthly[lastMonth].total - monthly[lastMonth].up) * 5)
+                    overall: percentage.toFixed(2),
+                    downtime: (monthlyStatuses.length - upCount) * 5,
+                    averageMs: averageMs
                 };
             }
 
@@ -3695,6 +3712,7 @@
 
                 $(`#${prefix}-${period}-uptime`).text(uptimePerc.toFixed(2) + '%');
                 $(`#${prefix}-${period}-downtime-mins`).text(data.downtime);
+                $(`#${prefix}-${period}-ms`).text(data.averageMs || 0);
 
                 const uptimeBar = $(`#${prefix}-${period}-uptime-bar`);
                 const downtimeBar = $(`#${prefix}-${period}-downtime-bar`);
@@ -3727,20 +3745,62 @@
             }
 
             function showError(message) {
-                $('#uptime-loading').html(`
+                const $loading = $('#uptime-loading');
+                $loading.removeClass('d-none').html(`
             <div class="text-center py-5">
                 <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
                 <h5>Gagal Memuat Data</h5>
                 <p class="text-muted">${message}</p>
             </div>
         `);
+                $('#uptime-content').addClass('d-none');
             }
 
-            // Event: hanya jalankan sekali saat tab pertama kali ditampilkan
+            window.loadUptimePercentage = loadUptimePercentage;
+
+            // Event: tampilkan dan muat uptime saat tab dibuka
             $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
-                if ($(this).data('loaded') !== true) {
-                    loadUptimePercentage();
-                    $(this).data('loaded', true);
+                loadUptimePercentage();
+                let activeBtn = $('#uptimeServiceTabs button.active');
+                if (!activeBtn.length) {
+                    $('#uptime-coffee-tab').addClass('active').attr('aria-selected', 'true');
+                    $('#uptime-coffee').addClass('show active');
+                    activeBtn = $('#uptime-coffee-tab');
+                }
+                const activeTarget = activeBtn.attr('data-bs-target') || '#uptime-coffee';
+                $(activeTarget).addClass('show active').css('display', '');
+
+                const canvasId = activeTarget === '#uptime-coffee' ? 'uptimeChartInixcoffee' : 'uptimeChartInixlatte';
+                const serviceUrl = activeTarget === '#uptime-coffee' ? services.coffee : services.latte;
+                const canvas = document.getElementById(canvasId);
+                if (canvas && canvas.chartInstance) {
+                    canvas.chartInstance.resize();
+                } else if (chartDataCache) {
+                    renderChartIfNeeded(canvasId, serviceUrl);
+                }
+            });
+
+            if ($('#pills-uptime-presentase').hasClass('show') &&
+                $('#pills-uptime-presentase').hasClass('active')) {
+                loadUptimePercentage();
+            }
+
+            setTimeout(function() {
+                loadUptimePercentage();
+            }, 500);
+
+            $(document).on('shown.bs.tab', '#uptimeServiceTabs button[data-bs-toggle="tab"]', function(e) {
+                const isCoffee = e.target.id === 'uptime-coffee-tab';
+                const canvasId = isCoffee ? 'uptimeChartInixcoffee' : 'uptimeChartInixlatte';
+                const serviceUrl = isCoffee ? services.coffee : services.latte;
+                const targetSelector = $(e.target).attr('data-bs-target') || (isCoffee ? '#uptime-coffee' : '#uptime-latte');
+                $(targetSelector).addClass('show active').css('display', '');
+
+                const canvas = document.getElementById(canvasId);
+                if (canvas && canvas.chartInstance) {
+                    canvas.chartInstance.resize();
+                } else if (chartDataCache) {
+                    renderChartIfNeeded(canvasId, serviceUrl);
                 }
             });
         });
@@ -3761,9 +3821,9 @@
                     // Coba render chart yang aktif saat ini
                     const activeTab = $('.nav-link.active').attr('data-bs-target');
                     if (activeTab === '#nav-inixcoffee') {
-                        renderChartIfNeeded('uptimeChartInixcoffee', 'https://192.168.95.60:8001/');
+                        renderChartIfNeeded('uptimeChartInixcoffee', 'https://inixcoffee.inixindobdg.co.id/');
                     } else if (activeTab === '#nav-inixlatte') {
-                        renderChartIfNeeded('uptimeChartInixlatte', 'http://192.168.95.60:8002/');
+                        renderChartIfNeeded('uptimeChartInixlatte', 'https://latte.inixindobdg.co.id/');
                     }
                 },
                 error: function(xhr) {
@@ -3775,9 +3835,6 @@
 
         function renderChartIfNeeded(canvasId, url) {
             const ctx = document.getElementById(canvasId);
-            console.log(ctx);
-            console.log(chartDataCache);
-            console.log(chartDataCache[url]);
             if (!ctx || !chartDataCache || !chartDataCache[url]) {
                 return;
             }
@@ -3934,8 +3991,8 @@
 
             return new Promise((resolve, reject) => {
                 // tunggu semua fadeOut selesai
-                $('.tab-pane.show').fadeOut(100).promise().done(function() {
-                    $('.tab-pane.show').removeClass('show active');
+                $('#pills-tabContent > .tab-pane.show').fadeOut(100).promise().done(function() {
+                    $('#pills-tabContent > .tab-pane.show').removeClass('show active');
 
                     const $contentContainer = $('#dashboard-content');
 
@@ -4257,15 +4314,7 @@
             }
         }
         $('#modalPemberitahuan').on('click', '.btn-danger', handleNotificationDismissal);
-
-
-        $(document).on('shown.bs.tab', '#pills-uptime-presentase-tab', function() {
-            if ($(this).data('loaded') === 'false') {
-                loadUptimePercentage();
-                $(this).data('loaded', 'true');
-            }
-        });
-        let uptimeCharts = {};
+        // uptimeCharts handled above
     </script>
     @if(session('success') || session('error') || $errors->any())
     @php

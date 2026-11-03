@@ -1534,6 +1534,11 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
 }
 
 function fetchUptimePresentase() {
+    if (typeof window.loadUptimePercentage === 'function') {
+        window.loadUptimePercentage();
+        return;
+    }
+
     $.ajax({
         url: '/dashboard/uptime/monitoring',
         type: 'GET',
@@ -1562,8 +1567,8 @@ function fetchUptimePresentase() {
 
             var coffeeWeekDowntimePerc = 100 - parseFloat(data.coffee_week);
             var coffeeMonthDowntimePerc = 100 - parseFloat(data.coffee_month);
-            $('#coffee-weekly-downtime-bar').css('width', coffeeWeekDowntimePerc);
-            $('#coffee-monthly-downtime-bar').css('width', coffeeMonthDowntimePerc);
+            $('#coffee-weekly-downtime-bar').css('width', coffeeWeekDowntimePerc + '%');
+            $('#coffee-monthly-downtime-bar').css('width', coffeeMonthDowntimePerc + '%');
 
             // Sembunyikan loading, tampilkan content
             $('#uptime-loading').addClass('d-none');
