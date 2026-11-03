@@ -1,15 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $returnUrl = old('return_url', url()->previous() === url()->current() ? route('pengajuanbarang.index') : url()->previous());
+@endphp
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body" id="card">
-                <a href="/pengajuanbarang" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
+                <a href="{{ $returnUrl }}" class="btn click-primary my-2"><img src="{{ asset('icon/arrow-left.svg') }}" class="img-responsive" width="20px"> Back</a>
                 <h5 class="card-title text-center mb-4">{{ __('Pengajuan Barang') }}</h5>
                     <form method="POST" action="{{ route('pengajuanbarang.store') }}" enctype="multipart/form-data">
                         @csrf
+                        <input type="hidden" name="return_url" value="{{ $returnUrl }}">
                         <!-- ID Karyawan -->
                         <div class="row mb-3">
                             <label for="id_karyawan" class="col-md-4 col-form-label text-md-start">{{ __('Nama Karyawan') }}</label>
@@ -161,39 +165,40 @@
          let itemIndex = 1;  
   
     function addItem() {  
-        const newItem = `  
-            <div class="row">  
-                    <label for="barang[nama_barang][]" class="col-md-4 col-form-label text-md-start">Nama Barang</label>  
-                    <div class="col-md-6">  
-                        <input type="text" class="form-control" name="barang[nama_barang][]" required>  
+        const newItem = `
+            <div class="item mb-3">
+                <div class="row">
+                    <label class="col-md-4 col-form-label text-md-start">Nama Barang</label>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="barang[nama_barang][]" required>
                     </div>
                     <div class="col-md-2">
                         <button type="button" class="btn btn-danger removeItemButton">Hapus</button>
                     </div>
                 </div>
-                <div class="row">  
-                    <label for="barang[qty][]" class="col-md-4 col-form-label text-md-start">Qty</label>  
-                    <div class="col-md-6">  
-                        <input type="number" class="form-control" name="barang[qty][]" required>  
+                <div class="row">
+                    <label class="col-md-4 col-form-label text-md-start">Jumlah</label>
+                    <div class="col-md-6">
+                        <input type="number" class="form-control" name="barang[qty][]" required>
                     </div>
                 </div>
-                <div class="row">  
-                    <label for="barang[harga][]" class="col-md-4 col-form-label text-md-start">Besarnya (Rp.)</label>  
-                    <div class="col-md-6">  
-                        <div class="input-group mb-3">  
-                            <span class="input-group-text">Rp.</span>  
-                            <input type="text" class="form-control" name="barang[harga_barang][]" required>  
-                        </div>  
-                    </div>  
-                </div>
-                <div class="row">  
-                    <label for="barang[keterangan][]" class="col-md-4 col-form-label text-md-start">Keterangan</label>  
-                    <div class="col-md-6">  
-                        <textarea class="form-control" name="barang[keterangan][]" required></textarea>  
+                <div class="row">
+                    <label class="col-md-4 col-form-label text-md-start">Harga Barang (dalam Rp.)</label>
+                    <div class="col-md-6">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">Rp.</span>
+                            <input type="text" class="form-control" name="barang[harga_barang][]" required>
+                        </div>
                     </div>
                 </div>
-                <br>
-        `;  
+                <div class="row">
+                    <label class="col-md-4 col-form-label text-md-start">Keterangan (Optional)</label>
+                    <div class="col-md-6">
+                        <textarea class="form-control" name="barang[keterangan][]"></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
         $('#itemContainer').append(newItem);  
         $('#itemContainer').find('input[name="barang[harga_barang][]"]').last().on('input', function() {    
             $(this).val(formatRupiah(this.value));    

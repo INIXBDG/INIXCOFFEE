@@ -196,7 +196,7 @@ class PengajuanBarangController extends Controller
 
         for ($i = 0; $i < count($hargaBarang); $i++) {
             if (strpos($hargaBarang[$i], ',') !== false) {
-                return redirect()->back()->with('error', 'Jangan menggunakan koma saat mengisi harga barang!');
+                return redirect()->back()->withInput()->with('error', 'Jangan menggunakan koma saat mengisi harga barang!');
             }
         }
 
@@ -330,8 +330,12 @@ class PengajuanBarangController extends Controller
             Log::error('Gagal kirim notifikasi pengajuan barang: ' . $e->getMessage());
         }
 
-        return redirect()->route('pengajuanbarang.index')
-            ->with('success', 'Pengajuan Barang berhasil dibuat.');
+        $returnUrl = $request->input('return_url');
+        if (!$returnUrl || !str_starts_with($returnUrl, url('/pengajuanbarang'))) {
+            $returnUrl = route('pengajuanbarang.index');
+        }
+
+        return redirect($returnUrl)->with('success', 'Pengajuan Barang berhasil dibuat.');
     }
 
     /**
@@ -702,7 +706,7 @@ class PengajuanBarangController extends Controller
         // Hapus data pengajuan barang
         $data->delete();
 
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Pengajuan Barang berhasil dihapus!');
+        return redirect(url()->previous(route('pengajuanbarang.index')))->with('success', 'Pengajuan Barang berhasil dihapus!');
     }
 
     public function uploadInvoice($id)
@@ -779,7 +783,12 @@ class PengajuanBarangController extends Controller
             ]);
         }
 
-        return redirect()->route('pengajuanbarang.index')->with('success', 'Data berhasil disimpan.');
+        $returnUrl = $request->input('return_url');
+        if (!$returnUrl || !str_starts_with($returnUrl, url('/pengajuanbarang'))) {
+            $returnUrl = route('pengajuanbarang.index');
+        }
+
+        return redirect($returnUrl)->with('success', 'Data berhasil disimpan.');
     }
 
     public function updateBarang(Request $request, $id)
@@ -869,7 +878,14 @@ class PengajuanBarangController extends Controller
             ]);
         }
 
-        return redirect()->route('pengajuanbarang.show', $id)->with('success', 'Data Berhasil diperbarui.');
+        $returnUrl = $request->input('return_url');
+        if (!$returnUrl || !str_starts_with($returnUrl, url('/pengajuanbarang'))) {
+            $returnUrl = null;
+        }
+
+        return redirect()
+            ->route('pengajuanbarang.show', array_filter(['id' => $id, 'return_url' => $returnUrl]))
+            ->with('success', 'Data Berhasil diperbarui.');
     }
 
     public function exportPDF($id)
