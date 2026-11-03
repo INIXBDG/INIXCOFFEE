@@ -154,8 +154,7 @@
                                         @endif
                                     </td>
                                     <td class="text-center pe-4">
-                                        @if($hasCertificate)
-                                        <!-- Select Kategori Exam -->
+                                        <!-- Select Kategori Exam (bisa dipilih sebelum maupun sesudah sertifikat di-generate) -->
                                         <select class="form-select form-select-sm d-inline-block w-auto me-1 kategori-exam-select"
                                                 data-url="{{ route('office.certificate.updateKategoriExam', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                                 data-previous="{{ $kategoriSaatIni }}">
@@ -167,6 +166,7 @@
                                             @endforeach
                                         </select>
 
+                                        @if($hasCertificate)
                                         <!-- Tombol Download -->
                                         <a href="{{ route('office.certificate.downloadByPeserta', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                            class="btn btn-sm btn-success shadow-sm hover-scale">
