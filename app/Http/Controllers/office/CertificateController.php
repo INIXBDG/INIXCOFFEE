@@ -158,12 +158,19 @@ class CertificateController extends Controller
             ->orderBy('pesertas.nama')
             ->get();
 
-        $certificates = Certificate::whereIn('rkm_id', $rkmIds)
+        $allCertificates = Certificate::whereIn('rkm_id', $rkmIds)
             ->whereIn('id_peserta', $peserta->pluck('id_peserta'))
-            ->get()
-            ->keyBy('id_peserta');
+            ->get();
 
-        $certificateIds = $certificates->keys()->toArray();
+        $certificates = $allCertificates->keyBy('id_peserta');
+
+        // Hanya hitung sebagai "Sudah Generate" jika nomor_sertifikat dan tanggal_pelatihan sudah terisi
+        $certificateIds = $allCertificates
+            ->filter(fn ($cert) => !empty($cert->nomor_sertifikat) && !empty($cert->tanggal_pelatihan))
+            ->pluck('id_peserta')
+            ->unique()
+            ->values()
+            ->toArray();
 
         return view('office.certificate.detail', compact(
             'rkm',
@@ -196,7 +203,10 @@ class CertificateController extends Controller
 
         $initialNumber = 26082;
 
-        $lastCert = Certificate::orderBy('nomor_sertifikat', 'desc')->first();
+        $lastCert = Certificate::whereNotNull('nomor_sertifikat')
+            ->where('nomor_sertifikat', '!=', '')
+            ->orderBy('nomor_sertifikat', 'desc')
+            ->first();
 
         if ($lastCert && !empty($lastCert->nomor_sertifikat)) {
             $lastNumber = (int) substr($lastCert->nomor_sertifikat, -6);
@@ -224,16 +234,41 @@ class CertificateController extends Controller
             'tanggal_akhir2' => 'nullable|date|after_or_equal:tanggal_awal2',
         ]);
 
+        // Cek apakah sudah ada record sertifikat yang baru berisi kategori_exam (belum di-generate)
+        $certificate = Certificate::where('rkm_id', $request->rkm_id)
+            ->where('id_peserta', $request->id_peserta)
+            ->where(function ($query) {
+                $query->whereNull('nomor_sertifikat')
+                    ->orWhereNull('tanggal_pelatihan');
+            })
+            ->first();
 
-        $certificate = Certificate::create([
+        $data = [
             'nomor_sertifikat' => $request->nomor_sertifikat,
             'rkm_id' => $request->rkm_id,
             'id_peserta' => $request->id_peserta,
             'nama_peserta' => $request->nama_peserta,
             'nama_materi' => $request->nama_materi,
             'tanggal_pelatihan' => $request->tanggal_awal . ' - ' . $request->tanggal_akhir,
-            'tanggal_pelatihan2' => $request->filled('tanggal_awal2') && $request->filled('tanggal_akhir2') ? $request->tanggal_awal2 . ' - ' . $request->tanggal_akhir2 : null,
-        ]);
+            'tanggal_pelatihan2' => $request->filled('tanggal_awal2') && $request->filled('tanggal_akhir2')
+                ? $request->tanggal_awal2 . ' - ' . $request->tanggal_akhir2
+                : null,
+        ];
+
+        if ($certificate) {
+            $certificate->update($data);
+        } else {
+            $existingKategori = Certificate::where('rkm_id', $request->rkm_id)
+                ->where('id_peserta', $request->id_peserta)
+                ->whereNotNull('kategori_exam')
+                ->value('kategori_exam');
+
+            if ($existingKategori) {
+                $data['kategori_exam'] = $existingKategori;
+            }
+
+            $certificate = Certificate::create($data);
+        }
 
         $penandatangan = karyawan::find(4);
 
@@ -306,6 +341,8 @@ class CertificateController extends Controller
     {
         $certificates = Certificate::where('rkm_id', $rkm_id)
             ->where('id_peserta', $peserta_id)
+            ->whereNotNull('nomor_sertifikat')
+            ->whereNotNull('tanggal_pelatihan')
             ->get();
 
         if ($certificates->count() === 0) {
@@ -403,22 +440,44 @@ class CertificateController extends Controller
 
         $regDigitalD = CertificateSummary::where('type', 'Reg Digital')
             ->whereBetween($dateColumn, [$startDate, $endDate])
-            ->get();
+            ->get()
+            ->each(fn ($r) => $r->setAttribute('source', 'summary'));
 
         $webinarD = CertificateSummary::where('type', 'Webinar')
             ->whereBetween($dateColumn, [$startDate, $endDate])
-            ->get();
+            ->get()
+            ->each(fn ($r) => $r->setAttribute('source', 'summary'));
 
-        $bandungD = Certificate::whereRaw(
+        $summaryByKategori = $regDigitalD
+            ->concat($webinarD)
+            ->filter(fn ($s) => !empty($s->kategori))
+            ->groupBy('kategori');
+
+        $bandungD = Certificate::whereNotNull('nomor_sertifikat')
+            ->whereNotNull('tanggal_pelatihan')
+            ->whereRaw(
                 "STR_TO_DATE(SUBSTRING_INDEX(tanggal_pelatihan, ' - ', 1), '%Y-%m-%d') BETWEEN ? AND ?",
                 [$startDate->toDateString(), $endDate->toDateString()]
             )
             ->get();
 
-        // Certificate yang kategori_exam-nya terisi, dikelompokkan per kategori
+        $unGeneratedCertWithKategori = Certificate::where(function ($query) {
+                $query->whereNull('nomor_sertifikat')
+                    ->orWhereNull('tanggal_pelatihan');
+            })
+            ->whereNotNull('kategori_exam')
+            ->whereBetween($dateColumn, [$startDate, $endDate])
+            ->get();
+
         $certByKategori = $bandungD
+            ->concat($unGeneratedCertWithKategori)
             ->filter(fn ($c) => !empty($c->kategori_exam))
             ->groupBy('kategori_exam');
+
+        // Bandung = Certificate asli + summary berkategori 'Bandung' (+1)
+        $bandungD = $bandungD
+            ->concat($summaryByKategori->get('Bandung', collect()))
+            ->values();
 
         $semuaExam = $this->getPesertaExam(
             ['Authorize', 'BNSP', 'Inixcert'],
@@ -429,18 +488,19 @@ class CertificateController extends Controller
 
         $byKategori = $semuaExam->groupBy('kategori_exam');
 
-        // Gabungkan: data exam + certificate yang kategori_exam-nya terisi (+1 per certificate)
-        // concat() dipakai (bukan merge) supaya model dari tabel berbeda tidak saling menimpa karena primary key sama.
         $authorizedD = collect($byKategori->get('Authorize', collect()))
             ->concat($certByKategori->get('Authorize', collect()))
+            ->concat($summaryByKategori->get('Authorize', collect()))
             ->values();
 
         $bnspD = collect($byKategori->get('BNSP', collect()))
             ->concat($certByKategori->get('BNSP', collect()))
+            ->concat($summaryByKategori->get('BNSP', collect()))
             ->values();
 
         $inixcertD = collect($byKategori->get('Inixcert', collect()))
             ->concat($certByKategori->get('Inixcert', collect()))
+            ->concat($summaryByKategori->get('Inixcert', collect()))
             ->values();
 
         $internasionalD = collect($certByKategori->get('Internasional', collect()))->values();
@@ -571,6 +631,7 @@ class CertificateController extends Controller
             'awal_training' => 'required|date',
             'akhir_training' => 'required|date|after_or_equal:awal_training',
             'keterangan' => 'nullable|string|max:1000',
+            'kategori' => 'nullable|in:BNSP,Inixcert,Authorize,Bandung'
         ]);
 
         CertificateSummary::create($validated);
@@ -590,6 +651,7 @@ class CertificateController extends Controller
             'awal_training' => 'required|date',
             'akhir_training' => 'required|date|after_or_equal:awal_training',
             'keterangan' => 'nullable|string|max:1000',
+            'kategori' => 'nullable|in:BNSP,Inixcert,Authorize,Bandung'
         ]);
 
         $summary = CertificateSummary::findOrFail($id);
@@ -615,20 +677,33 @@ class CertificateController extends Controller
             'kategori_exam' => 'required|in:BNSP,Internasional,Authorize,Inixcert',
         ]);
 
-        $certificate = Certificate::where('rkm_id', $rkm_id)
+        $rkm = RKM::with('materi')->findOrFail($rkm_id);
+        $peserta = Peserta::findOrFail($peserta_id);
+
+        $certificates = Certificate::where('rkm_id', $rkm_id)
             ->where('id_peserta', $peserta_id)
-            ->first();
+            ->get();
 
-        if (!$certificate) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sertifikat tidak ditemukan.',
-            ], 404);
+        if ($certificates->isEmpty()) {
+            $certificate = Certificate::create([
+                'nomor_sertifikat' => null,
+                'rkm_id' => $rkm->id,
+                'id_peserta' => $peserta->id,
+                'nama_peserta' => $peserta->nama,
+                'nama_materi' => $rkm->materi->nama_materi ?? '-',
+                'tanggal_pelatihan' => null,
+                'kategori_exam' => $validated['kategori_exam'],
+            ]);
+        } else {
+            Certificate::where('rkm_id', $rkm_id)
+                ->where('id_peserta', $peserta_id)
+                ->update([
+                    'kategori_exam' => $validated['kategori_exam'],
+                ]);
+
+            $certificate = $certificates->first();
+            $certificate->kategori_exam = $validated['kategori_exam'];
         }
-
-        $certificate->update([
-            'kategori_exam' => $validated['kategori_exam'],
-        ]);
 
         return response()->json([
             'success' => true,

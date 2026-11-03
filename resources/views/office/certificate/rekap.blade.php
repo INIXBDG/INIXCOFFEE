@@ -73,12 +73,25 @@
                                     <input type="date" name="akhir_training" class="form-control" required>
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label class="form-label fw-medium">Type</label>
                                     <select name="type" class="form-select" required>
                                         <option value="">Pilih Type</option>
                                         <option value="Reg Digital">Reg Digital</option>
                                         <option value="Webinar">Webinar</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Kategori
+                                        <span class="text-muted small">(opsional)</span>
+                                    </label>
+                                    <select name="kategori" class="form-select">
+                                        <option value="">Tanpa kategori</option>
+                                        <option value="BNSP">BNSP</option>
+                                        <option value="Inixcert">Inixcert</option>
+                                        <option value="Authorize">Authorize</option>
+                                        <option value="Bandung">Bandung</option>
                                     </select>
                                 </div>
 
@@ -160,17 +173,17 @@
         const PER_PAGE = 20;
 
         // Konfigurasi tiap kategori: key harus sama persis dengan key di response JSON.
-        // 'actions: true' cuma dipasang di kategori yang datanya benar-benar row
-        // CertificateSummary (regDigital, webinar) sehingga punya 'id' yang bisa
-        // dikirim ke route updateSummary/deleteSummary. Kategori lain
-        // (authorized/bnsp/inixcert/workshop) datanya berupa baris peserta hasil
-        // pluck, bukan record yang diedit di sini.
+        // 'actions: true' artinya tab itu punya kolom Aksi. Tombol edit/hapus cuma
+        // dirender untuk row yang berasal dari CertificateSummary (row.source === 'summary'),
+        // karena kategori authorized/bandung/bnsp/inixcert sekarang berisi campuran:
+        // baris peserta/certificate (read-only) + baris CertificateSummary yang
+        // kategori-nya diisi (bisa diedit/dihapus).
         const CATEGORIES = [
             { key: 'regDigital', label: 'Reg Digital', color: '#0d6efd', actions: true },
-            { key: 'authorized', label: 'Authorized', color: '#ffc107' },
-            { key: 'bandung', label: 'Bandung', color: '#20c997' },
-            { key: 'bnsp', label: 'BNSP', color: '#6f42c1' },
-            { key: 'inixcert', label: 'Inixcert', color: '#fd7e14' },
+            { key: 'authorized', label: 'Authorized', color: '#ffc107', actions: true },
+            { key: 'bandung', label: 'Bandung', color: '#20c997', actions: true },
+            { key: 'bnsp', label: 'BNSP', color: '#6f42c1', actions: true },
+            { key: 'inixcert', label: 'Inixcert', color: '#fd7e14', actions: true },
             { key: 'workshop', label: 'Workshop', color: '#0dcaf0' },
             { key: 'webinar', label: 'Webinar', color: '#d63384', actions: true },
         ];
@@ -262,8 +275,10 @@
 
         // Buka modal dalam mode edit, isi form dari data row yang sudah ada di tableState.
         // Mencari dari rows asli (bukan hasil filter search), jadi aman.
+        // Wajib cek row.source === 'summary' karena di tab kategori (authorized/bnsp/dll)
+        // ada baris peserta/certificate yang id-nya bisa sama dengan id summary.
         function editSertifikat(key, id) {
-            const row = (tableState[key].rows || []).find(r => r.id === id);
+            const row = (tableState[key].rows || []).find(r => r.id === id && r.source === 'summary');
             if (!row) return;
 
             formMode = 'edit';
@@ -278,6 +293,7 @@
             form.querySelector('[name="awal_training"]').value = row.awal_training ? String(row.awal_training).substring(0, 10) : '';
             form.querySelector('[name="akhir_training"]').value = row.akhir_training ? String(row.akhir_training).substring(0, 10) : '';
             form.querySelector('[name="type"]').value = row.type || '';
+            form.querySelector('[name="kategori"]').value = row.kategori || '';
             form.querySelector('[name="keterangan"]').value = row.keterangan || '';
 
             setSelect2Value($('#selectPerusahaan'), row.perusahaan);
@@ -330,6 +346,8 @@
         // - regDigital / webinar -> CertificateSummary (punya 'type', id, 'materi' teks)
         // - bandung -> Certificate
         // - authorized / bnsp / inixcert / workshop -> baris peserta (hasil pluck('peserta'))
+        // - authorized / bnsp / inixcert / bandung juga bisa berisi CertificateSummary
+        //   yang kategori-nya diisi (source === 'summary')
         function extractDisplay(row) {
             const nama =
                 row.nama_peserta || row.peserta_nama || row.nama || row.name ||
@@ -486,7 +504,7 @@
                                         <div class="input-group input-group-sm">
                                             <span class="input-group-text"><i class="bx bx-search"></i></span>
                                             <input type="text" class="form-control" id="search-${cat.key}"
-                                                placeholder="Cari nama, materi, info, periode..."
+                                                placeholder="Cari nama, materi, info, periode, kategori..."
                                                 oninput="onSearchInput('${cat.key}', this.value)">
                                         </div>
                                     </div>
@@ -588,7 +606,7 @@
 
             return state.rows.filter((row) => {
                 const d = extractDisplay(row);
-                const haystack = [d.nama, d.materi, d.info, formatPeriode(row), row.no_sertifikat, row.perusahaan]
+                const haystack = [d.nama, d.materi, d.info, formatPeriode(row), row.no_sertifikat, row.perusahaan, row.kategori]
                     .filter(Boolean)
                     .join(' ')
                     .toLowerCase();
@@ -621,20 +639,35 @@
             tbody.innerHTML = pageRows.map((row, idx) => {
                 const d = extractDisplay(row);
                 const periode = formatPeriode(row);
+                const isSummary = row.source === 'summary';
+
+                // Tombol aksi cuma untuk row CertificateSummary. Row peserta/certificate
+                // di tab yang sama dibiarkan kosong (read-only).
                 const aksiCell = catConfig.actions ? `
                     <td class="text-end">
+                        ${isSummary ? `
                         <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick='editSertifikat("${key}", ${row.id})'>
                             <i class="bx bx-edit"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick='deleteSertifikat("${key}", ${row.id})'>
                             <i class="bx bx-trash"></i>
-                        </button>
+                        </button>` : ''}
                     </td>` : '';
+
+                // Di tab Reg Digital/Webinar: badge = kategori tujuan (kalau ada).
+                // Di tab kategori lain: badge = asal type (Reg Digital/Webinar).
+                const isTypeTab = key === 'regDigital' || key === 'webinar';
+                let badge = '';
+                if (isSummary && isTypeTab && row.kategori) {
+                    badge = ` <span class="badge bg-light text-dark border ms-1">${row.kategori}</span>`;
+                } else if (isSummary && !isTypeTab && row.type) {
+                    badge = ` <span class="badge bg-secondary-subtle text-secondary ms-1">${row.type}</span>`;
+                }
 
                 return `
                     <tr>
                         <td>${start + idx + 1}</td>
-                        <td>${d.nama}</td>
+                        <td>${d.nama}${badge}</td>
                         <td>${d.materi}</td>
                         <td>${d.info}</td>
                         <td>${periode}</td>
