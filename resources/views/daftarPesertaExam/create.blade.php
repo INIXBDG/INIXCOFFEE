@@ -5,6 +5,9 @@
     // Variabel dikirim dari controller
     $daftarPeserta = $perusahaan ? $perusahaan->peserta : [];
     $idPerusahaan = $perusahaan ? $perusahaan->id : '';
+
+    // ID peserta yang sudah terdaftar di exam ini (sesuaikan nama kolom jika berbeda)
+    $pesertaTerdaftar = $exam->registexam->pluck('id_peserta')->map(fn($v) => (int) $v)->all();
 @endphp
 
 <div class="container-fluid">
@@ -106,6 +109,7 @@
                                             name="peserta_id[]"
                                             value="{{ $peserta->id }}"
                                             id="peserta_{{ $peserta->id }}"
+                                            {{ in_array($peserta->id, $pesertaTerdaftar) ? 'checked' : '' }}
                                         >
                                         <label class="form-check-label" for="peserta_{{ $peserta->id }}">
                                             {{ $peserta->nama }}
@@ -168,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     attachCheckboxEvents();
+    updateSelectAllState(); // sinkronkan "Pilih Semua" dengan checkbox yang sudah tercentang
 
     let barisIndex = 1;
 
