@@ -252,19 +252,19 @@ class RegisApiController extends Controller
         return response()->json(['rkm' => $peserta]);
     }
 
+
     public function store(Request $request, $id)
     {
         Log::info('Store registration started', [
             'request_data' => $request->all(),
-            'id' => $id,
+            'id'           => $id,
         ]);
 
-        // Normalisasi email agar spasi atau huruf besar/kecil tidak memicu duplikasi peserta
         $email = strtolower(trim((string) $request->email));
 
-        // Guard 1: Atomic Lock per kelas + email agar request ganda yang masuk bersamaan tidak bertabrakan
-        $lockKey = 'registrasi_store_lock:' . $id . ':' . md5($email);
-        $lock = Cache::lock($lockKey, 30);
+        // Guard 1: Atomic Lock per email (lintas request)
+        $lockKey = 'registrasi_store_lock:' . md5($email);
+        $lock = Cache::lock($lockKey, 60);
 
         if (!$lock->get()) {
             Log::warning('Duplicate concurrent registration request blocked by lock', [
@@ -280,33 +280,17 @@ class RegisApiController extends Controller
         }
 
         try {
-            // Inisialisasi MoodleService (ubah menjadi null jika ingin dimatikan sementara)
-            $moodle = app(MoodleService::class);
-            // $moodle = null;
+            // 1. Cari peserta awal (untuk menentukan perusahaan_key jika dari request kosong)
+            $pesertaAwal = Peserta::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
+            $perusahaan_key = $request->perusahaan_key ?? ($pesertaAwal->perusahaan_key ?? null);
 
-            Log::info('Searching participant by email', ['email' => $email]);
-
-            $peserta = Peserta::with('perusahaan')
-                ->whereRaw('LOWER(TRIM(email)) = ?', [$email])
-                ->first();
-
-            Log::info('Participant search result', [
-                'found' => $peserta ? true : false,
-                'participant' => $peserta ? ['id' => $peserta->id, 'email' => $peserta->email] : null,
-            ]);
-
-            $perusahaan_key = $request->perusahaan_key ?? ($peserta->perusahaan_key ?? null);
-
-            Log::info('Company key determined', ['company_key' => $perusahaan_key]);
-
-            // ✅ 1. Ambil RKM dari id_rkm jika ada
+            // 2. Cari RKM dari id_rkm atau fallback kode URL $id
             $rkm = null;
             if ($request->filled('id_rkm')) {
                 $rkm = RKM::with('perusahaan', 'materi', 'sales', 'instruktur')
                     ->find($request->id_rkm);
             }
 
-            // ✅ 2. Fallback jika id_rkm kosong, cari berdasarkan kode $id URL + perusahaan_key
             if (!$rkm && $perusahaan_key) {
                 $array = explode('ib', $id);
                 $materi_key = $array[0] ?? null;
@@ -322,23 +306,29 @@ class RegisApiController extends Controller
                         $tahun = $tanggal_rkm[1];
                         $bulan = str_pad($tanggal_rkm[2], 2, '0', STR_PAD_LEFT);
 
-                        $tanggal_awal = Carbon::createFromFormat('Y-m-d', "$tahun-$bulan-$hari");
-                        $tanggal_awal_str = $tanggal_awal->format('Y-m-d');
-                        $tanggal_akhir_str = $tanggal_awal->copy()->addDays(2)->format('Y-m-d');
+                        try {
+                            $tanggal_awal = Carbon::createFromFormat('Y-m-d', "$tahun-$bulan-$hari");
+                            $tanggal_awal_str = $tanggal_awal->format('Y-m-d');
+                            $tanggal_akhir_str = $tanggal_awal->copy()->addDays(2)->format('Y-m-d');
 
-                        $rkm = RKM::with('perusahaan', 'materi', 'sales', 'instruktur')
-                            ->where('materi_key', $materi_key)
-                            ->where('perusahaan_key', $perusahaan_key)
-                            ->whereBetween('tanggal_awal', [$tanggal_awal_str, $tanggal_akhir_str])
-                            ->when($metode, function ($q) use ($metode) {
-                                $q->whereRaw('LOWER(REPLACE(metode_kelas, " ", "")) = ?', [$metode]);
-                            })
-                            ->first();
+                            $rkm = RKM::with('perusahaan', 'materi', 'sales', 'instruktur')
+                                ->where('materi_key', $materi_key)
+                                ->where('perusahaan_key', $perusahaan_key)
+                                ->whereBetween('tanggal_awal', [$tanggal_awal_str, $tanggal_akhir_str])
+                                ->when($metode, function ($q) use ($metode) {
+                                    $q->whereRaw('LOWER(REPLACE(metode_kelas, " ", "")) = ?', [$metode]);
+                                })
+                                ->first();
+                        } catch (\Exception $e) {
+                            Log::warning('Format tanggal pada parameter URL RKM tidak valid', [
+                                'id_url' => $id,
+                                'error'  => $e->getMessage(),
+                            ]);
+                        }
                     }
                 }
             }
 
-            // ✅ Pastikan RKM ditemukan sebelum lanjut
             if (!$rkm) {
                 Log::error('RKM tidak ditemukan saat store registrasi', [
                     'id_rkm_request' => $request->id_rkm,
@@ -353,64 +343,64 @@ class RegisApiController extends Controller
                 ], 404);
             }
 
-            Log::info('RKM found', [
-                'rkm_id'     => $rkm->id,
-                'isi_pax'    => $rkm->isi_pax,
-                'materi_key' => $rkm->materi_key,
-            ]);
-
-            // ✅ Cek lebih awal apakah peserta sudah terdaftar di RKM ini sebelum cek kapasitas / panggil Moodle
-            if ($peserta) {
-                $existingReg = Registrasi::where('id_peserta', $peserta->id)
-                    ->where('id_rkm', $rkm->id)
-                    ->first();
-
-                if ($existingReg) {
-                    Log::warning('Participant already registered for this class', [
-                        'participant_id'  => $peserta->id,
-                        'rkm_id'          => $rkm->id,
-                        'registration_id' => $existingReg->id,
-                    ]);
-
-                    return response()->json([
-                        'status' => 'error',
-                        'title'  => 'Mohon Maaf',
-                        'text'   => 'Anda sudah terdaftar di kelas ini',
-                    ], 500);
-                }
-            }
-
-            // ✅ Cek kapasitas
-            if ($rkm->isi_pax <= 0) {
-                Log::warning('Capacity full', ['rkm_id' => $rkm->id, 'current_pax' => $rkm->isi_pax]);
+            // Validasi kelengkapan data relasi RKM untuk mencegah QueryException (Column cannot be null)
+            if (empty($rkm->instruktur_key) || empty($rkm->materi_key) || empty($rkm->sales_key)) {
+                Log::warning('Registrasi ditolak: Data atribut wajib RKM belum lengkap', [
+                    'id_rkm'         => $rkm->id,
+                    'materi_key'     => $rkm->materi_key,
+                    'instruktur_key' => $rkm->instruktur_key,
+                    'sales_key'      => $rkm->sales_key,
+                ]);
 
                 return response()->json([
                     'status' => 'error',
-                    'title'  => 'Mohon Maaf',
-                    'text'   => 'Kapasitas peserta sudah penuh',
-                ], 500);
+                    'title'  => 'Kelas Belum Siap',
+                    'text'   => 'Jadwal kelas ini belum memiliki kelengkapan data instruktur/materi. Silakan hubungi admin.',
+                ], 422);
             }
 
-            // Siapkan variabel penampung ID Moodle
-            $moodleUserId = $peserta?->moodle_user_id;
+            // =========================================================================
+            // 3. SATU TRANSAKSI CEPAT (< 100ms): KUNCI RKM, BUAT PESERTA & REGISTRASI
+            // =========================================================================
+            $hasil = DB::transaction(function () use ($request, $email, $perusahaan_key, $rkm) {
+                // Kunci baris RKM terlebih dahulu sebagai gerbang utama
+                $lockedRkm = RKM::where('id', $rkm->id)->lockForUpdate()->first();
 
-            // ===============================
-            // ✅ JIKA PESERTA BARU
-            // ===============================
-            if (!$peserta) {
-                Log::info('Creating new participant', ['email' => $email]);
+                if (!$lockedRkm) {
+                    return ['status' => 'not_found'];
+                }
 
-                // Guard 2: Gunakan transaksi + lockForUpdate saat membuat peserta baru agar tidak terduplikasi
-                $peserta = DB::transaction(function () use ($request, $email, $perusahaan_key) {
-                    $existing = Peserta::whereRaw('LOWER(TRIM(email)) = ?', [$email])
-                        ->lockForUpdate()
+                // Cek ulang kelengkapan instruktur di dalam lock untuk antisipasi race condition perubahan RKM
+                if (empty($lockedRkm->instruktur_key)) {
+                    return ['status' => 'incomplete_rkm'];
+                }
+
+                // Ambil semua ID peserta yang memiliki email ini
+                $pesertaList = Peserta::whereRaw('LOWER(TRIM(email)) = ?', [$email])
+                    ->lockForUpdate()
+                    ->get();
+
+                $peserta = $pesertaList->first();
+
+                // Cek apakah SALAH SATU dari ID peserta ber-email ini sudah terdaftar di RKM ini
+                if ($pesertaList->isNotEmpty()) {
+                    $sudahAda = Registrasi::whereIn('id_peserta', $pesertaList->pluck('id'))
+                        ->where('id_rkm', $lockedRkm->id)
                         ->first();
 
-                    if ($existing) {
-                        return $existing;
+                    if ($sudahAda) {
+                        return ['status' => 'duplicate', 'registrasi' => $sudahAda];
                     }
+                }
 
-                    return Peserta::create([
+                // Cek kapasitas kelas
+                if ($lockedRkm->isi_pax <= 0) {
+                    return ['status' => 'full'];
+                }
+
+                // Buat peserta baru jika belum ada, atau update jika sudah ada
+                if (!$peserta) {
+                    $peserta = Peserta::create([
                         'nama'           => $request->nama,
                         'jenis_kelamin'  => $request->jenis_kelamin,
                         'email'          => $email,
@@ -420,174 +410,14 @@ class RegisApiController extends Controller
                         'tanggal_lahir'  => $request->tanggal_lahir,
                         'checkregist'    => $request->checkregist,
                     ]);
-                });
-
-                $moodleUserId = $peserta->moodle_user_id;
-
-                Log::info('New participant created', [
-                    'participant_id' => $peserta->id,
-                    'email'          => $peserta->email,
-                    'name'           => $peserta->nama,
-                ]);
-
-                // Sync ke Moodle (Hanya jalan jika $moodle tidak null dan belum punya moodle_user_id)
-                if ($moodle && !$moodleUserId) {
-                    try {
-                        Log::info('Starting Moodle sync for new participant', [
-                            'participant_id' => $peserta->id,
-                            'email'          => $peserta->email,
-                        ]);
-
-                        $moodleUserId = $moodle->syncUser($peserta);
-
-                        if ($moodleUserId) {
-                            $peserta->moodle_user_id = $moodleUserId;
-                            $peserta->save();
-
-                            Log::info('Local participant record updated with moodle_user_id', [
-                                'participant_id' => $peserta->id,
-                                'moodle_user_id' => $moodleUserId,
-                            ]);
-                        } else {
-                            Log::warning('Moodle sync failed for new participant', [
-                                'participant_id' => $peserta->id,
-                                'email'          => $peserta->email,
-                            ]);
-                        }
-                    } catch (\Throwable $e) {
-                        Log::error('Moodle sync error for new participant: '.$e->getMessage(), [
-                            'participant_id' => $peserta->id,
-                            'email'          => $peserta->email,
-                        ]);
-                    }
-                }
-            }
-            // ===============================
-            // ✅ JIKA PESERTA SUDAH ADA
-            // ===============================
-            else {
-                Log::info('Existing participant found', [
-                    'participant_id' => $peserta->id,
-                    'email'          => $peserta->email,
-                    'has_moodle_id'  => $moodleUserId ? true : false,
-                ]);
-
-                $peserta->update([
-                    'perusahaan_key' => $perusahaan_key,
-                ]);
-
-                // Lazy sync (Hanya jalan jika $moodle tidak null dan belum ada moodle_user_id)
-                if ($moodle && !$moodleUserId) {
-                    Log::info('Lazy sync required for existing participant', [
-                        'participant_id' => $peserta->id,
-                        'email'          => $peserta->email,
-                    ]);
-
-                    try {
-                        $moodleUserId = $moodle->syncUser($peserta);
-
-                        if ($moodleUserId) {
-                            $peserta->moodle_user_id = $moodleUserId;
-                            $peserta->save();
-
-                            Log::info('Local participant record updated with moodle_user_id after lazy sync', [
-                                'participant_id' => $peserta->id,
-                                'moodle_user_id' => $moodleUserId,
-                            ]);
-                        } else {
-                            Log::warning('Lazy Moodle sync failed for existing participant', [
-                                'participant_id' => $peserta->id,
-                                'email'          => $peserta->email,
-                            ]);
-                        }
-                    } catch (\Throwable $e) {
-                        Log::error('Moodle lazy sync error: '.$e->getMessage(), [
-                            'participant_id' => $peserta->id,
-                            'email'          => $peserta->email,
-                        ]);
-                    }
-                }
-            }
-
-            // ===============================
-            // ✅ CARI & ENROLL KE MOODLE COURSE
-            // ===============================
-            $courseId = null;
-            if ($moodle) {
-                try {
-                    $courseId = $moodle->findCourse(
-                        $rkm->materi?->nama_materi ?? '',
-                        $rkm->perusahaan?->nama_perusahaan
-                    );
-
-                    Log::info('Moodle findCourse result', [
-                        'materi'     => $rkm->materi?->nama_materi,
-                        'perusahaan' => $rkm->perusahaan?->nama_perusahaan,
-                        'course_id'  => $courseId,
-                    ]);
-
-                    if ($moodleUserId && $courseId !== null) {
-                        Log::info('Starting Moodle enrollment', [
-                            'participant_id' => $peserta->id,
-                            'moodle_user_id' => $moodleUserId,
-                            'course_id'      => $courseId,
-                        ]);
-
-                        $enrolled = $moodle->enroll((int) $moodleUserId, (int) $courseId);
-
-                        Log::info('Moodle enrollment result', [
-                            'participant_id' => $peserta->id,
-                            'success'        => $enrolled,
-                        ]);
-                    } else {
-                        Log::warning('Enroll dilewati karena moodleUserId atau courseId kosong', [
-                            'participant_id' => $peserta->id,
-                            'moodle_user_id' => $moodleUserId,
-                            'course_id'      => $courseId,
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    Log::error('Moodle enrollment error: '.$e->getMessage(), [
-                        'participant_id' => $peserta->id,
+                } else {
+                    $peserta->update([
+                        'perusahaan_key' => $perusahaan_key,
+                        'checkregist'    => $request->checkregist,
                     ]);
                 }
-            }
 
-            // ===============================
-            // ✅ BUAT REGISTRASI (DENGAN TRANSAKSI & ROW LOCK TANPA UNIQUE DB CONSTRAINT)
-            // ===============================
-            Log::info('Creating registration record', [
-                'rkm_id'         => $rkm->id,
-                'participant_id' => $peserta->id,
-                'materi_key'     => $rkm->materi_key,
-                'instruktur_key' => $rkm->instruktur_key,
-                'sales_key'      => $rkm->sales_key,
-            ]);
-
-            // Guard 3: Kunci baris RKM (lockForUpdate) tepat saat cek ulang & insert Registrasi
-            // sehingga meskipun proses Moodle di atas memakan waktu lama, tidak akan pernah ada 2 baris registrasi yang terbuat
-            $hasilRegistrasi = DB::transaction(function () use ($rkm, $peserta, $courseId, $request) {
-                $lockedRkm = RKM::where('id', $rkm->id)->lockForUpdate()->first();
-
-                $sudahAda = Registrasi::where('id_peserta', $peserta->id)
-                    ->where('id_rkm', $lockedRkm->id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($sudahAda) {
-                    return [
-                        'status'     => 'duplicate',
-                        'registrasi' => $sudahAda,
-                    ];
-                }
-
-                if ($lockedRkm->isi_pax <= 0) {
-                    return [
-                        'status'     => 'full',
-                        'registrasi' => null,
-                    ];
-                }
-
+                // Buat Registrasi sekarang juga (sebelum panggil Moodle)
                 $registrasi = Registrasi::create([
                     'id_rkm'        => $lockedRkm->id,
                     'id_peserta'    => $peserta->id,
@@ -596,71 +426,385 @@ class RegisApiController extends Controller
                     'id_sales'      => $lockedRkm->sales_key,
                 ]);
 
-                $registrasi->moodle_course_id = $courseId;
-                $registrasi->save();
-
-                $peserta->update([
-                    'checkregist' => $request->checkregist,
-                ]);
-
                 $lockedRkm->decrement('isi_pax');
 
                 return [
                     'status'     => 'created',
+                    'peserta'    => $peserta,
                     'registrasi' => $registrasi,
                     'sisa_pax'   => $lockedRkm->fresh()->isi_pax,
                 ];
             });
 
-            if ($hasilRegistrasi['status'] === 'duplicate') {
-                Log::warning('Participant already registered for this class (caught in transaction)', [
-                    'participant_id'  => $peserta->id,
-                    'rkm_id'          => $rkm->id,
-                    'registration_id' => $hasilRegistrasi['registrasi']->id,
-                ]);
+            // Tangani hasil validasi transaksi
+            if ($hasil['status'] === 'not_found') {
+                return response()->json([
+                    'status' => 'error',
+                    'title'  => 'Mohon Maaf',
+                    'text'   => 'Data kelas (RKM) tidak ditemukan.',
+                ], 404);
+            }
 
+            if ($hasil['status'] === 'incomplete_rkm') {
+                return response()->json([
+                    'status' => 'error',
+                    'title'  => 'Kelas Belum Siap',
+                    'text'   => 'Jadwal kelas ini belum memiliki instruktur yang ditugaskan. Silakan hubungi admin.',
+                ], 422);
+            }
+
+            if ($hasil['status'] === 'duplicate') {
                 return response()->json([
                     'status' => 'error',
                     'title'  => 'Mohon Maaf',
                     'text'   => 'Anda sudah terdaftar di kelas ini',
-                ], 500);
+                ], 422);
             }
 
-            if ($hasilRegistrasi['status'] === 'full') {
-                Log::warning('Capacity full (caught in transaction)', ['rkm_id' => $rkm->id]);
-
+            if ($hasil['status'] === 'full') {
                 return response()->json([
                     'status' => 'error',
                     'title'  => 'Mohon Maaf',
                     'text'   => 'Kapasitas peserta sudah penuh',
-                ], 500);
+                ], 422);
             }
 
-            $registrasi = $hasilRegistrasi['registrasi'];
+            $peserta    = $hasil['peserta'];
+            $registrasi = $hasil['registrasi'];
+            $idKaryawan = $request->id_karyawan;
 
-            if ($registrasi) {
-                $this->kirimNotifikasi($rkm, $peserta, $request->id_karyawan);
-
-                Log::info('Registration record updated with Moodle enrollment status', [
-                    'registration_id'  => $registrasi->id,
-                    'moodle_course_id' => $courseId,
-                ]);
-            }
-
-            Log::info('RKM capacity decremented', [
-                'rkm_id'       => $rkm->id,
-                'new_capacity' => $hasilRegistrasi['sisa_pax'],
+            Log::info('Registration created swiftly, scheduling background Moodle & Notification', [
+                'registration_id' => $registrasi->id,
+                'participant_id'  => $peserta->id,
+                'sisa_pax'        => $hasil['sisa_pax'],
             ]);
 
+            // =========================================================================
+            // 4. JALANKAN MOODLE & NOTIFIKASI SETELAH RESPONSE DIKIRIM KE USER
+            // =========================================================================
+            dispatch(function () use ($rkm, $peserta, $registrasi, $idKaryawan) {
+                // A. Proses Moodle
+                try {
+                    $moodle = app(MoodleService::class);
+                    if ($moodle) {
+                        $moodleUserId = $peserta->moodle_user_id;
+
+                        if (!$moodleUserId) {
+                            $moodleUserId = $moodle->syncUser($peserta);
+                            if ($moodleUserId) {
+                                $peserta->update(['moodle_user_id' => $moodleUserId]);
+                            }
+                        }
+
+                        $courseId = $moodle->findCourse(
+                            $rkm->materi?->nama_materi ?? '',
+                            $rkm->perusahaan?->nama_perusahaan
+                        );
+
+                        if ($moodleUserId && $courseId !== null) {
+                            $moodle->enroll((int) $moodleUserId, (int) $courseId);
+                            $registrasi->update(['moodle_course_id' => $courseId]);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Background Moodle sync/enroll error: ' . $e->getMessage(), [
+                        'participant_id'  => $peserta->id,
+                        'registration_id' => $registrasi->id,
+                        'exception'       => get_class($e),
+                    ]);
+                }
+
+                // B. Proses Kirim Notifikasi
+                try {
+                    $this->kirimNotifikasi($rkm, $peserta, $idKaryawan);
+                } catch (\Throwable $e) {
+                    Log::error('Background kirimNotifikasi error: ' . $e->getMessage(), [
+                        'registration_id' => $registrasi->id,
+                        'exception'       => get_class($e),
+                    ]);
+                }
+            })->afterResponse();
+
+            // Response langsung dikirim detik ini juga
             return response()->json([
                 'status' => 'success',
                 'title'  => 'Selamat!',
                 'text'   => 'Anda telah berhasil mendaftar kelas ini',
             ], 200);
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Database QueryException saat store registrasi', [
+                'email'      => $email,
+                'id_url'     => $id,
+                'sql_state'  => $e->errorInfo[0] ?? null,
+                'error_code' => $e->errorInfo[1] ?? null,
+                'message'    => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'title'  => 'Gagal Menyimpan Data',
+                'text'   => 'Terjadi kesalahan pada basis data saat memproses pendaftaran. Silakan hubungi admin.',
+            ], 500);
+
+        } catch (\Throwable $e) {
+            Log::error('Unhandled exception saat store registrasi', [
+                'email'     => $email,
+                'id_url'    => $id,
+                'exception' => get_class($e),
+                'message'   => $e->getMessage(),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'title'  => 'Mohon Maaf',
+                'text'   => 'Terjadi kesalahan sistem internal. Silakan coba beberapa saat lagi.',
+            ], 500);
+
         } finally {
             $lock->release();
         }
     }
+
+    // public function store(Request $request, $id)
+    // {
+    //     Log::info('Store registration started', [
+    //         'request_data' => $request->all(),
+    //         'id'           => $id,
+    //     ]);
+
+    //     $email = strtolower(trim((string) $request->email));
+
+    //     // Guard 1: Atomic Lock per email (lintas request)
+    //     $lockKey = 'registrasi_store_lock:' . md5($email);
+    //     $lock = Cache::lock($lockKey, 60);
+
+    //     if (!$lock->get()) {
+    //         Log::warning('Duplicate concurrent registration request blocked by lock', [
+    //             'email' => $email,
+    //             'id'    => $id,
+    //         ]);
+
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'title'  => 'Mohon Tunggu',
+    //             'text'   => 'Pendaftaran Anda sedang diproses, mohon tidak menekan tombol berulang kali.',
+    //         ], 429);
+    //     }
+
+    //     try {
+    //         // 1. Cari peserta awal (untuk menentukan perusahaan_key jika dari request kosong)
+    //         $pesertaAwal = Peserta::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
+    //         $perusahaan_key = $request->perusahaan_key ?? ($pesertaAwal->perusahaan_key ?? null);
+
+    //         // 2. Cari RKM dari id_rkm atau fallback kode URL $id
+    //         $rkm = null;
+    //         if ($request->filled('id_rkm')) {
+    //             $rkm = RKM::with('perusahaan', 'materi', 'sales', 'instruktur')
+    //                 ->find($request->id_rkm);
+    //         }
+
+    //         if (!$rkm && $perusahaan_key) {
+    //             $array = explode('ib', $id);
+    //             $materi_key = $array[0] ?? null;
+
+    //             if (isset($array[1])) {
+    //                 $parts = explode('im', $array[1], 2);
+    //                 $tanggal_part = $parts[0];
+    //                 $metode = $parts[1] ?? null;
+    //                 $tanggal_rkm = explode('ie', $tanggal_part);
+
+    //                 if (count($tanggal_rkm) >= 3) {
+    //                     $hari  = str_pad($tanggal_rkm[0], 2, '0', STR_PAD_LEFT);
+    //                     $tahun = $tanggal_rkm[1];
+    //                     $bulan = str_pad($tanggal_rkm[2], 2, '0', STR_PAD_LEFT);
+
+    //                     $tanggal_awal = Carbon::createFromFormat('Y-m-d', "$tahun-$bulan-$hari");
+    //                     $tanggal_awal_str = $tanggal_awal->format('Y-m-d');
+    //                     $tanggal_akhir_str = $tanggal_awal->copy()->addDays(2)->format('Y-m-d');
+
+    //                     $rkm = RKM::with('perusahaan', 'materi', 'sales', 'instruktur')
+    //                         ->where('materi_key', $materi_key)
+    //                         ->where('perusahaan_key', $perusahaan_key)
+    //                         ->whereBetween('tanggal_awal', [$tanggal_awal_str, $tanggal_akhir_str])
+    //                         ->when($metode, function ($q) use ($metode) {
+    //                             $q->whereRaw('LOWER(REPLACE(metode_kelas, " ", "")) = ?', [$metode]);
+    //                         })
+    //                         ->first();
+    //                 }
+    //             }
+    //         }
+
+    //         if (!$rkm) {
+    //             Log::error('RKM tidak ditemukan saat store registrasi', [
+    //                 'id_rkm_request' => $request->id_rkm,
+    //                 'perusahaan_key' => $perusahaan_key,
+    //                 'id_url'         => $id,
+    //             ]);
+
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'title'  => 'Mohon Maaf',
+    //                 'text'   => 'Data kelas (RKM) tidak ditemukan.',
+    //             ], 404);
+    //         }
+
+    //         // =========================================================================
+    //         // ✅ 3. SATU TRANSAKSI CEPAT (< 100ms): KUNCI RKM, BUAT PESERTA & REGISTRASI
+    //         // =========================================================================
+    //         // Karena RKM sudah PASTI ADA di database, lockForUpdate() pada RKM akan memaksa
+    //         // semua request ke kelas yang sama mengantre satu per satu di level Database!
+    //         $hasil = DB::transaction(function () use ($request, $email, $perusahaan_key, $rkm) {
+    //             // Kunci baris RKM terlebih dahulu sebagai gerbang utama
+    //             $lockedRkm = RKM::where('id', $rkm->id)->lockForUpdate()->first();
+
+    //             // Ambil semua ID peserta yang memiliki email ini (antisipasi jika di DB sudah terlanjur ada email kembar)
+    //             $pesertaList = Peserta::whereRaw('LOWER(TRIM(email)) = ?', [$email])
+    //                 ->lockForUpdate()
+    //                 ->get();
+
+    //             $peserta = $pesertaList->first();
+
+    //             // Cek apakah SALAH SATU dari ID peserta ber-email ini sudah terdaftar di RKM ini
+    //             if ($pesertaList->isNotEmpty()) {
+    //                 $sudahAda = Registrasi::whereIn('id_peserta', $pesertaList->pluck('id'))
+    //                     ->where('id_rkm', $lockedRkm->id)
+    //                     ->first();
+
+    //                 if ($sudahAda) {
+    //                     return ['status' => 'duplicate', 'registrasi' => $sudahAda];
+    //                 }
+    //             }
+
+    //             // Cek kapasitas kelas
+    //             if ($lockedRkm->isi_pax <= 0) {
+    //                 return ['status' => 'full'];
+    //             }
+
+    //             // Buat peserta baru jika belum ada, atau update jika sudah ada
+    //             if (!$peserta) {
+    //                 $peserta = Peserta::create([
+    //                     'nama'           => $request->nama,
+    //                     'jenis_kelamin'  => $request->jenis_kelamin,
+    //                     'email'          => $email,
+    //                     'no_hp'          => $request->no_hp,
+    //                     'alamat'         => $request->alamat,
+    //                     'perusahaan_key' => $perusahaan_key,
+    //                     'tanggal_lahir'  => $request->tanggal_lahir,
+    //                     'checkregist'    => $request->checkregist,
+    //                 ]);
+    //             } else {
+    //                 $peserta->update([
+    //                     'perusahaan_key' => $perusahaan_key,
+    //                     'checkregist'    => $request->checkregist,
+    //                 ]);
+    //             }
+
+    //             // Buat Registrasi sekarang juga (sebelum panggil Moodle!)
+    //             $registrasi = Registrasi::create([
+    //                 'id_rkm'        => $lockedRkm->id,
+    //                 'id_peserta'    => $peserta->id,
+    //                 'id_materi'     => $lockedRkm->materi_key,
+    //                 'id_instruktur' => $lockedRkm->instruktur_key,
+    //                 'id_sales'      => $lockedRkm->sales_key,
+    //             ]);
+
+    //             $lockedRkm->decrement('isi_pax');
+
+    //             return [
+    //                 'status'     => 'created',
+    //                 'peserta'    => $peserta,
+    //                 'registrasi' => $registrasi,
+    //                 'sisa_pax'   => $lockedRkm->fresh()->isi_pax,
+    //             ];
+    //         });
+
+    //         // Tangani hasil validasi transaksi
+    //         if ($hasil['status'] === 'duplicate') {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'title'  => 'Mohon Maaf',
+    //                 'text'   => 'Anda sudah terdaftar di kelas ini',
+    //             ], 422);
+    //         }
+
+    //         if ($hasil['status'] === 'full') {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'title'  => 'Mohon Maaf',
+    //                 'text'   => 'Kapasitas peserta sudah penuh',
+    //             ], 422);
+    //         }
+
+    //         $peserta    = $hasil['peserta'];
+    //         $registrasi = $hasil['registrasi'];
+    //         $idKaryawan = $request->id_karyawan;
+
+    //         Log::info('Registration created swiftly, scheduling background Moodle & Notification', [
+    //             'registration_id' => $registrasi->id,
+    //             'participant_id'  => $peserta->id,
+    //             'sisa_pax'        => $hasil['sisa_pax'],
+    //         ]);
+
+    //         // =========================================================================
+    //         // ✅ 4. JALANKAN MOODLE & NOTIFIKASI SETELAH RESPONSE DIKIRIM KE USER
+    //         // =========================================================================
+    //         // Dengan dispatch()->afterResponse(), user langsung mendapat pesan "Selamat!"
+    //         // dalam < 0.5 detik tanpa menunggu Moodle selesai loading.
+    //         dispatch(function () use ($rkm, $peserta, $registrasi, $idKaryawan) {
+    //             // A. Proses Moodle
+    //             try {
+    //                 $moodle = app(MoodleService::class);
+    //                 if ($moodle) {
+    //                     $moodleUserId = $peserta->moodle_user_id;
+
+    //                     if (!$moodleUserId) {
+    //                         $moodleUserId = $moodle->syncUser($peserta);
+    //                         if ($moodleUserId) {
+    //                             $peserta->update(['moodle_user_id' => $moodleUserId]);
+    //                         }
+    //                     }
+
+    //                     $courseId = $moodle->findCourse(
+    //                         $rkm->materi?->nama_materi ?? '',
+    //                         $rkm->perusahaan?->nama_perusahaan
+    //                     );
+
+    //                     if ($moodleUserId && $courseId !== null) {
+    //                         $moodle->enroll((int) $moodleUserId, (int) $courseId);
+    //                         $registrasi->update(['moodle_course_id' => $courseId]);
+    //                     }
+    //                 }
+    //             } catch (\Throwable $e) {
+    //                 Log::error('Background Moodle sync/enroll error: ' . $e->getMessage(), [
+    //                     'participant_id'  => $peserta->id,
+    //                     'registration_id' => $registrasi->id,
+    //                 ]);
+    //             }
+
+    //             // B. Proses Kirim Notifikasi
+    //             try {
+    //                 $this->kirimNotifikasi($rkm, $peserta, $idKaryawan);
+    //             } catch (\Throwable $e) {
+    //                 Log::error('Background kirimNotifikasi error: ' . $e->getMessage(), [
+    //                     'registration_id' => $registrasi->id,
+    //                 ]);
+    //             }
+    //         })->afterResponse();
+
+    //         // Response langsung dikirim detik ini juga!
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'title'  => 'Selamat!',
+    //             'text'   => 'Anda telah berhasil mendaftar kelas ini',
+    //         ], 200);
+
+    //     } finally {
+    //         $lock->release();
+    //     }
+    // }
 
     private function kirimNotifikasi($rkm, $peserta, $idKaryawan): void
     {
