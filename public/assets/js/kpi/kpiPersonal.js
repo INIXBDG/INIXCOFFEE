@@ -550,6 +550,7 @@
                         const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
                         const allowedAssistantRoutesForPemasukanBersih = ['pemasukan bersih'];
                         const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
+                        const allowedinovationAdaptionRateRoutes = ['inovation adaption rate'];
 
                         let ContentTrafikSales = '';
                         if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
@@ -718,6 +719,44 @@
                         let contentStatisticChart = '';
                         if (allowedDetailAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = '';
+                        } else if (allowedinovationAdaptionRateRoutes.includes(data.condition)) {
+                            const item = data.data_detail || {};
+                            const dataInovasi = item.dataInovasi || [];
+
+                            contentStatisticChart = `
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-bordered table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 30%;">Judul</th>
+                                                <th>Deskripsi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${
+                                                dataInovasi.length
+                                                    ? dataInovasi.map(inovasi => `
+                                                        <tr>
+                                                            <td class="fw-semibold">
+                                                                ${inovasi.judul ?? '-'}
+                                                            </td>
+                                                            <td>
+                                                                ${inovasi.deskripsi ?? '-'}
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')
+                                                    : `
+                                                        <tr>
+                                                            <td colspan="2" class="text-center text-muted">
+                                                                Tidak ada data inovasi
+                                                            </td>
+                                                        </tr>
+                                                    `
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
                         } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(data.condition)) {
                             const bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                             contentStatisticChart = `<div class="row g-4">${(data.data_detail.analisa_data || []).map(item => `<div class="col-md-4 mt-5"><div class="card border-0 shadow-sm h-100"><div class="mb-2 p-3"><h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month] || '-'}</h5><small class="text-muted">Laporan Analisis Bulanan</small></div><div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;"><div class="mb-3"><p class="mb-0" style="text-align: justify;">${item.description || ''}</p></div></div><div class="mt-auto p-3"><a href="/storage/${item.file_paths || ''}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}><i class="fa-solid fa-file-alt"></i></a></div></div></div>`).join('')}</div>`;

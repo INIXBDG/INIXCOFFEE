@@ -195,6 +195,8 @@
 
                     $isOverload = $totalRealisasi > $totalBudget;
 
+                    $isOverload = $totalRealisasi > $totalBudget;
+
                     if ($totalBudget > 0) {
                         if ($isOverload) {
                             $kelebihan = $totalRealisasi - $totalBudget;
@@ -202,7 +204,7 @@
 
                             $percentage = max(100 - $percentageKelebihan, 0);
                         } else {
-                            $percentage = ($totalRealisasi / $totalBudget) * 100;
+                            $percentage = 100;
                         }
                     } else {
                         $percentage = 0;

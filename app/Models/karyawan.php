@@ -51,6 +51,7 @@ class karyawan extends Model
         'gaji',
         'tunjangan_jabatan',
         'alamat_lengkap',
+        'alamat_ktp',
         'gender',
         'tempat_lahir',
         'tanggal_lahir',

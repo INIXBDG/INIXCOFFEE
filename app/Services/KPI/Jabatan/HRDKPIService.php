@@ -213,13 +213,28 @@ class HRDKPIService
         $bpjs = (float) $bpjsQuery->sum('total');
 
         $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
-        $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
-
+        $scoreBpjs = 0;
+        if ($bpjsBudget > 0) {
+            if ($bpjs <= $bpjsBudget) {
+                $scoreBpjs = 25;
+            } else {
+                $overPercentage = (($bpjs - $bpjsBudget) / $bpjsBudget) * 100;
+                $scoreBpjs = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
         $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
         $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
         $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
-        $scoreRekrutmen = ($rekrutmen > 0 && $rekrutmenBudget > 0 && $rekrutmen <= $rekrutmenBudget) ? ($rekrutmen / $rekrutmenBudget) * 25 : 0;
+        $scoreRekrutmen = 0;
+        if ($rekrutmenBudget > 0) {
+            if ($rekrutmen <= $rekrutmenBudget) {
+                $scoreRekrutmen = 25;
+            } else {
+                $overPercentage = (($rekrutmen - $rekrutmenBudget) / $rekrutmenBudget) * 100;
+                $scoreRekrutmen = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
@@ -237,7 +252,15 @@ class HRDKPIService
                 }
             }
         }
-        $scoreKegiatan = ($kegiatanRealisasi > 0 && $kegiatanBudget > 0 && $kegiatanRealisasi <= $kegiatanBudget) ? ($kegiatanRealisasi / $kegiatanBudget) * 25 : 0;
+        $scoreKegiatan = 0;
+        if ($kegiatanBudget > 0) {
+            if ($kegiatanRealisasi <= $kegiatanBudget) {
+                $scoreKegiatan = 25;
+            } else {
+                $overPercentage = (($kegiatanRealisasi - $kegiatanBudget) / $kegiatanBudget) * 100;
+                $scoreKegiatan = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
 
         $progress = $scoreGaji + $scoreBpjs + $scoreRekrutmen + $scoreKegiatan;
 
@@ -275,13 +298,29 @@ class HRDKPIService
         $bpjs = (float) $bpjsQuery->sum('total');
 
         $bpjsBudget = (float) TunjanganKaryawan::whereBetween('created_at', [$startOfYear, $endOfYear])->whereIn('jenis_tunjangan', $bpjsIds)->sum('total');
-        $scoreBpjs = ($bpjs > 0 && $bpjsBudget > 0 && $bpjs <= $bpjsBudget) ? ($bpjs / $bpjsBudget) * 25 : 0;
+        $scoreBpjs = 0;
+        if ($bpjsBudget > 0) {
+            if ($bpjs <= $bpjsBudget) {
+                $scoreBpjs = 25;
+            } else {
+                $overPercentage = (($bpjs - $bpjsBudget) / $bpjsBudget) * 100;
+                $scoreBpjs = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
 
         $rekrutmenQuery = Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment');
         $rekrutmen = (float) $rekrutmenQuery->sum('realisasi');
 
         $rekrutmenBudget = (float) Kegiatan::whereBetween('created_at', [$startOfYear, $endOfYear])->where('tipe', 'rekrutment')->sum('realisasi');
-        $scoreRekrutmen = ($rekrutmen > 0 && $rekrutmenBudget > 0 && $rekrutmen <= $rekrutmenBudget) ? ($rekrutmen / $rekrutmenBudget) * 25 : 0;
+        $scoreRekrutmen = 0;
+        if ($rekrutmenBudget > 0) {
+            if ($rekrutmen <= $rekrutmenBudget) {
+                $scoreRekrutmen = 25;
+            } else {
+                $overPercentage = (($rekrutmen - $rekrutmenBudget) / $rekrutmenBudget) * 100;
+                $scoreRekrutmen = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
 
         $kegiatanBudget = 0;
         $kegiatanRealisasi = 0;
@@ -299,7 +338,15 @@ class HRDKPIService
                 }
             }
         }
-        $scoreKegiatan = ($kegiatanRealisasi > 0 && $kegiatanBudget > 0 && $kegiatanRealisasi <= $kegiatanBudget) ? ($kegiatanRealisasi / $kegiatanBudget) * 25 : 0;
+        $scoreKegiatan = 0;
+        if ($kegiatanBudget > 0) {
+            if ($kegiatanRealisasi <= $kegiatanBudget) {
+                $scoreKegiatan = 25;
+            } else {
+                $overPercentage = (($kegiatanRealisasi - $kegiatanBudget) / $kegiatanBudget) * 100;
+                $scoreKegiatan = max(100 - $overPercentage, 0) / 100 * 25;
+            }
+        }
 
         $progress = round($scoreGaji + $scoreBpjs + $scoreRekrutmen + $scoreKegiatan, 1);
         $gap = ($progress <= $nilaiTarget) ? ($progress - $nilaiTarget) : 0;

@@ -186,36 +186,59 @@ class DivisiITSMKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $start = "$tahun-01-01";
-        $end = "$tahun-12-31";
+        $start = "$tahun-01-01 00:00:00";
+        $end = "$tahun-12-31 23:59:59";
 
-        $ideInovasi = IdeInovasi::selectRaw('DATE(created_at) as tanggal')
+        $ideInovasi = IdeInovasi::select(
+                'judul',
+                'deskripsi',
+                'created_at'
+            )
             ->whereBetween('created_at', [$start, $end])
-            ->groupBy('tanggal')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         if ($ideInovasi->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalDays = $ideInovasi->count();
+        $tanggalInovasi = $ideInovasi
+            ->map(function ($row) {
+                return Carbon::parse($row->created_at)->format('Y-m-d');
+            })
+            ->unique()
+            ->values();
+
+        $totalDays = $tanggalInovasi->count();
+
         $progress = 100.0;
+
         $gapRaw = $progress - $nilaiTarget;
-        $gap = $progress > $nilaiTarget ? 0 : rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
+
+        $gap = $progress > $nilaiTarget
+            ? 0
+            : rtrim(
+                rtrim(sprintf('%.1f', $gapRaw), '0'),
+                '.'
+            );
 
         $monthlyData = [];
         $dailyBreakdownPerMonth = [];
         $monthlyProgress = [];
         $dailyProgressPerMonth = [];
 
-        foreach ($ideInovasi as $row) {
-            $date = Carbon::parse($row->tanggal);
+        foreach ($tanggalInovasi as $tanggal) {
+            $date = Carbon::parse($tanggal);
+
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
             $monthlyData[$monthKey][] = 100;
+
             $dailyBreakdownPerMonth[$monthKey][$dayKey] = 100;
+
             $monthlyProgress[$monthKey][] = 100;
+
             $dailyProgressPerMonth[$monthKey][$dayKey] = 100;
         }
 
@@ -237,15 +260,28 @@ class DivisiITSMKPIService
 
         return [
             'progress' => $progress,
+
             'gap' => $gap,
+
             'pie_chart' => [
                 'above' => $totalDays,
                 'below' => 0,
             ],
+
             'monthly_data' => $monthlyAverages,
+
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
+
             'monthly_progress' => $monthlyProgressAvg,
+
             'daily_progress_per_month' => $dailyProgressPerMonth,
+
+            'dataInovasi' => $ideInovasi->map(function ($row) {
+                return [
+                    'judul' => $row->judul ?? 'N/A',
+                    'deskripsi' => $row->deskripsi ?? 'N/A',
+                ];
+            })->values(),
         ];
     }
 }

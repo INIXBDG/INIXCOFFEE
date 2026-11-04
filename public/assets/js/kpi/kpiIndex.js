@@ -182,23 +182,38 @@ $(document).ready(function() {
                 response.routes.forEach(function(route) {
                     routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
                 });
+                routeSelect.trigger('change');
             }
+
             const jabatanSelect = $('#jabatan');
             if (jabatanSelect.length && response.jabatan_list) {
+                const currentSelectedJabatan = jabatanSelect.val() || [];
+                
                 jabatanSelect.empty();
                 response.jabatan_list.forEach(function(jab) {
                     jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
                 });
+                
+                jabatanSelect.val(currentSelectedJabatan);
+                
                 jabatanSelect.trigger('change');
             }
         }
     });
 
     $('#jabatan').off('change').on('change', function() {
-        const selectedJabatans = $(this).val() || [];
+        const selectedJabatans = $(this).val() || []; // Array karena multiple select
         const karyawanSelect = $('#karyawan');
+        const assistantRouteSelect = $('#assistant_route');
+
         karyawanSelect.empty().trigger('change');
-        if (selectedJabatans.length === 0) return;
+        assistantRouteSelect.empty().prop('disabled', true).html('<option selected disabled>-- Memuat routes... --</option>').trigger('change');
+        $('#detail_jangka_container').empty();
+
+        if (selectedJabatans.length === 0) {
+            assistantRouteSelect.html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>').trigger('change');
+            return;
+        }
 
         $.ajax({
             url: window.KPI_CONFIG.getKaryawanByJabatan,
@@ -206,14 +221,41 @@ $(document).ready(function() {
             data: { jabatan: selectedJabatans },
             success: function(response) {
                 karyawanSelect.empty();
-                response.forEach(function(emp) {
-                    karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
-                });
+                if (response && response.length > 0) {
+                    response.forEach(function(emp) {
+                        karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
+                    });
+                }
                 karyawanSelect.trigger('change');
             }
         });
-    });
 
+        $.ajax({
+            url: window.KPI_CONFIG.getRoutesByJabatan,
+            type: 'GET',
+            data: { jabatan: selectedJabatans },
+            success: function(response) {
+                assistantRouteSelect.empty();
+                assistantRouteSelect.append('<option value="" selected disabled>-- Pilih Assistant Route --</option>');
+
+                if (response && response.length > 0) {
+                    response.forEach(route => {
+                        assistantRouteSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
+                    });
+                    assistantRouteSelect.prop('disabled', false);
+                } else {
+                    assistantRouteSelect.append('<option disabled>-- Tidak ada route tersedia untuk jabatan ini --</option>');
+                    assistantRouteSelect.prop('disabled', true);
+                }
+                
+                assistantRouteSelect.trigger('change'); 
+            },
+            error: function() {
+                assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>').trigger('change');
+                if (typeof Swal !== 'undefined') Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
+            }
+        });
+    });
     // Load Content Form (Initial Load)
     loadContentForm();
 
@@ -753,6 +795,7 @@ $(document).ready(function() {
                 const allowedAssistantRoutesForPerformaKPIDepartemen = ['performa kpi departemen'];
                 const allowedAssistantRoutesForKepuasanPelanggan = ['Kepuasan Pelanggan', 'kepuasan pelanggan'];
                 const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
+                const allowedinovationAdaptionRateRoutes = ['inovation adaption rate'];
 
                 let ContentTrafikSales = '';
                 const condition = data.condition || '';
@@ -836,6 +879,44 @@ $(document).ready(function() {
                     const divisionHtml = Object.entries(item.division_breakdown || {}).map(([div, val]) => `<div class="col mb-3"><div class="p-2 border rounded-3"><small class="text-muted d-block">${div}</small><h5 class="fw-bold mb-0">${val ?? 0}%</h5></div></div>`).join('');
                     const riskHtml = (item.risk_divisions && item.risk_divisions.length > 0) ? `<div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-danger mb-3">DIVISI BERISIKO</h6><div class="row">${item.risk_divisions.map(risk => `<div class="col mb-2"><div class="p-2 border rounded-3 text-center"><small class="text-muted d-block">${risk.name || '-'}</small><span class="fw-bold text-danger">${risk.value ?? 0}%</span></div></div>`).join('')}</div></div></div></div>` : '';
                     contentStatisticChart = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total KPI</span><span class="fw-bold">${item.total_kpi ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Divisi</span><span class="fw-bold">${item.total_division ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Progress</span><span class="fw-bold text-primary">${item.progress ?? 0}%</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA DIVISI</h6><div class="mb-3"><small class="text-muted d-block">Top Division</small><span class="fw-bold text-success">${item.top_division?.name ?? '-'} (${item.top_division?.value ?? 0}%)</span></div><div><small class="text-muted d-block">Lowest Division</small><span class="fw-bold text-danger">${item.lowest_division?.name ?? '-'} (${item.lowest_division?.value ?? 0}%)</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${trendColor}">Trend: ${trend} (${trendValue})</span></div><div class="mb-2"><span class="badge bg-${consistencyColor}">Konsistensi: ${consistency}</span></div><div><span class="badge bg-${targetColor}">Target: ${targetStatus}</span></div></div></div></div><div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">BREAKDOWN DIVISI</h6><div class="row text-center">${divisionHtml}</div></div></div></div>${riskHtml}<div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
+                } else if (allowedinovationAdaptionRateRoutes.includes(condition)) {
+                    const item = dataDetail || {};
+                    const dataInovasi = item.dataInovasi || [];
+
+                    contentStatisticChart = `
+                        <div class="table-responsive mt-3">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 30%;">Judul</th>
+                                        <th>Deskripsi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${
+                                        dataInovasi.length
+                                            ? dataInovasi.map(inovasi => `
+                                                <tr>
+                                                    <td class="fw-semibold">
+                                                        ${inovasi.judul ?? '-'}
+                                                    </td>
+                                                    <td>
+                                                        ${inovasi.deskripsi ?? '-'}
+                                                    </td>
+                                                </tr>
+                                            `).join('')
+                                            : `
+                                                <tr>
+                                                    <td colspan="2" class="text-center text-muted">
+                                                        Tidak ada data inovasi
+                                                    </td>
+                                                </tr>
+                                            `
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
                 } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(condition)) {
                     const bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                     const analisaData = dataDetail.analisa_data || [];
@@ -1314,7 +1395,7 @@ $(document).ready(function() {
             success: function(response) {
                 $('#modalBuatTarget').modal('hide');
                 form[0].reset();
-                $('.select2').val(null).trigger('change');
+                form.find('.select2').val(null).trigger('change');
                 $('#detail_jangka_container').empty();
                 $('#jangka_target_display, #tipe_target_display, #nilai_target_display').val('');
                 $('#jangka_target_hidden, #tipe_target_hidden, #nilai_target_hidden').val('');
@@ -1337,30 +1418,33 @@ $(document).ready(function() {
     });
 
     // Document Preview Logic
-    document.getElementById('manual_document').addEventListener('change', function(e) {
-        const preview = document.getElementById('documentPreview');
-        preview.innerHTML = '';
-        const file = e.target.files[0];
-        if (!file) return;
-        const fileType = file.type;
-        if (fileType.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.classList.add('img-fluid', 'rounded');
-                img.style.maxHeight = '300px';
-                preview.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        } else if (fileType === 'application/pdf') {
-            const pdfInfo = document.createElement('div');
-            pdfInfo.innerHTML = `<p class="mb-2"><strong>PDF:</strong> ${file.name}</p><embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">`;
-            preview.appendChild(pdfInfo);
-        } else {
-            preview.innerHTML = `<p><strong>File:</strong> ${file.name}</p>`;
-        }
-    });
+    const manualDoc = document.getElementById('manual_document');
+    if (manualDoc) {
+        manualDoc.addEventListener('change', function(e) {
+            const preview = document.getElementById('documentPreview');
+            preview.innerHTML = '';
+            const file = e.target.files[0];
+            if (!file) return;
+            const fileType = file.type;
+            if (fileType.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.classList.add('img-fluid', 'rounded');
+                    img.style.maxHeight = '300px';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            } else if (fileType === 'application/pdf') {
+                const pdfInfo = document.createElement('div');
+                pdfInfo.innerHTML = `<p class="mb-2"><strong>PDF:</strong> ${file.name}</p><embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">`;
+                preview.appendChild(pdfInfo);
+            } else {
+                preview.innerHTML = `<p><strong>File:</strong> ${file.name}</p>`;
+            }
+        });
+    }
 
     // Import Form Logic (Fetch API)
     const formImport = document.getElementById('formImport');

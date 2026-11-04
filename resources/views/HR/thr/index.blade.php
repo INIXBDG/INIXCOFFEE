@@ -1419,6 +1419,44 @@
                     }
                 }
 
+                function formatLamaKerja(tanggalJoin, tanggalAkhir) {
+                    if (!tanggalJoin) return '-';
+
+                    const start = new Date(tanggalJoin);
+                    const end = tanggalAkhir ? new Date(tanggalAkhir) : new Date();
+
+                    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+                        return '-';
+                    }
+
+                    let years = end.getFullYear() - start.getFullYear();
+                    let months = end.getMonth() - start.getMonth();
+                    let days = end.getDate() - start.getDate();
+
+                    if (days < 0) {
+                        months--;
+                    }
+
+                    if (months < 0) {
+                        years--;
+                        months += 12;
+                    }
+
+                    if (years > 0 && months > 0) {
+                        return `${years} Thn ${months} Bln`;
+                    }
+
+                    if (years > 0) {
+                        return `${years} Thn`;
+                    }
+
+                    if (months > 0) {
+                        return `${months} Bln`;
+                    }
+
+                    return 'Kurang dari 1 Bln';
+                }
+
                 function escapeHtml(text) {
                     if (text === null || text === undefined) return '';
                     return String(text)
@@ -1555,10 +1593,30 @@
                             {
                                 data: 'total_masa_kerja_bulan',
                                 render: function(d, type, row) {
-                                    if (type !== 'display') return parseFloat(d) || 0;
+                                    if (type !== 'display') {
+                                        return parseFloat(d) || 0;
+                                    }
+
+                                    const tanggalAkhir = currentPeriod?.tanggal_jatuh_tempo || null;
+                                    const lamaKerja = formatLamaKerja(row.tanggal_join, tanggalAkhir);
+                                    const tanggalJoin = formatTanggalIndo(row.tanggal_join);
+                                    const bulanDihitung = parseFloat(row.total_masa_kerja_bulan) || 0;
+
                                     return `
-                                    <span class="fw-bold text-gray-800">${escapeHtml(row.masa_kerja_teks || '-')}</span>
-                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Masuk: ${formatTanggalIndo(row.tanggal_join)}</small>`;
+                                        <div class="text-center">
+                                            <div class="fw-bold text-gray-800">
+                                                ${escapeHtml(lamaKerja)}
+                                            </div>
+
+                                            <small class="text-muted d-block" style="font-size: 0.72rem;">
+                                                Gabung ${escapeHtml(tanggalJoin)}
+                                            </small>
+
+                                            <small class="text-primary d-block" style="font-size: 0.72rem;">
+                                                Dihitung: ${bulanDihitung} bulan
+                                            </small>
+                                        </div>
+                                    `;
                                 }
                             },
                             {
