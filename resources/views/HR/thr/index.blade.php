@@ -1303,7 +1303,7 @@
                             <label class="form-label small fw-bold text-gray-900 mb-1">Basic Salary (Gaji)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">Rp</span>
-                                <input type="number" step="1000" class="form-control" id="edit-basic-salary"
+                                <input type="number"  class="form-control" id="edit-basic-salary"
                                     placeholder="0">
                             </div>
                         </div>
@@ -1317,7 +1317,7 @@
                             </div>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text bg-primary text-white fw-bold">Rp</span>
-                                <input type="number" step="1000" class="form-control fw-bold fs-5 text-primary"
+                                <input type="number"  class="form-control fw-bold fs-5 text-primary"
                                     id="edit-nilai-thr-final" required>
                             </div>
                             <div class="mt-1 d-flex justify-content-between align-items-center">

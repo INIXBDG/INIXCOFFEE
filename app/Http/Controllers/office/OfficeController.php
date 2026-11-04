@@ -526,6 +526,8 @@ class OfficeController extends Controller
 
             $query->whereYear('created_at', $tahun)
                 ->whereBetween(DB::raw('MONTH(created_at)'), [$bulanMulai, $bulanSelesai]);
+        } else {
+            $query->whereYear('created_at', $tahun);
         }
 
         $feedbacks = $query->get();
@@ -744,12 +746,19 @@ class OfficeController extends Controller
     {
         Carbon::setLocale('id');
 
-        $filter = $request->filter;
-        $value = $request->value;
-
         $tahun = is_numeric($request->tahun)
             ? (int) $request->tahun
             : now()->year;
+        $filter = $request->filter ?: 'tahun';
+        $value = $request->value;
+
+        if (!in_array($filter, ['tahun', 'bulan', 'triwulan'], true)) {
+            $filter = 'tahun';
+        }
+
+        if (!is_numeric($value)) {
+            $value = $filter === 'tahun' ? $tahun : null;
+        }
 
         $query = pengajuancuti::join('karyawans', 'pengajuancutis.id_karyawan', '=', 'karyawans.id')
             ->where('pengajuancutis.approval_manager', '1');
@@ -822,9 +831,17 @@ class OfficeController extends Controller
     {
         Carbon::setLocale('id');
 
-        $filter = $request->filter;
-        $value  = $request->value;
         $tahun  = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
+        $filter = $request->filter ?: 'tahun';
+        $value  = $request->value;
+
+        if (!in_array($filter, ['tahun', 'bulan', 'triwulan'], true)) {
+            $filter = 'tahun';
+        }
+
+        if (!is_numeric($value)) {
+            $value = $filter === 'tahun' ? $tahun : null;
+        }
 
         // Skip cache jika export PDF
         if (!$request->boolean('exportTotalMengajar')) {
