@@ -1345,11 +1345,12 @@
                             <div class="col">
                                 <label for="filterCutiTahun" class="mb-1 ms-1">Tahun</label>
                                 <select id="filterCutiTahun" class="form-select mb-3">
-                                    <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                    <option value="default">Berdasarkan Tahun</option>
                                     @php
                                         $tahun_sekarang = now()->year;
                                         for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                            echo "<option value=\"$tahun\">$tahun</option>";
+                                            $selected = ($tahun == $tahun_sekarang) ? 'selected' : '';
+                                            echo "<option value=\"$tahun\" $selected>$tahun</option>";
                                         }
                                     @endphp
                                 </select>
@@ -1357,7 +1358,7 @@
                             <div class="col">
                                 <label for="filterCutiBulan" class="mb-1 ms-1">Bulan</label>
                                 <select id="filterCutiBulan" class="form-select mb-3">
-                                    <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                    <option value="default" selected>Berdasarkan Bulan</option>
                                     @php
                                         $bulan_sekarang = now()->month;
                                         $nama_bulan = [
@@ -1438,11 +1439,12 @@
                             <div class="col">
                                 <label for="filterMengajarPerTahun" class="mb-1 ms-1">Tahun</label>
                                 <select id="filterMengajarPerTahun" class="form-select mb-3">
-                                    <option value="default" selected>Berdasarkan Tahun</option>
+                                    <option value="default">Berdasarkan Tahun</option>
                                     @php
                                         $tahun_sekarang = now()->year;
                                         for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                            echo "<option value=\"$tahun\">$tahun</option>";
+                                            $selected = ($tahun == $tahun_sekarang) ? 'selected' : '';
+                                            echo "<option value=\"$tahun\" $selected>$tahun</option>";
                                         }
                                     @endphp
                                 </select>
@@ -1543,11 +1545,12 @@
                         <div class="col">
                             <label for="filterFeedbackTahun" class="mb-1 ms-1">Tahun</label>
                             <select id="filterFeedbackTahun" class="form-select mb-3">
-                                <option value="default" disabled selected>Berdasarkan Tahun</option>
+                                <option value="default">Berdasarkan Tahun</option>
                                 @php
                                     $tahun_sekarang = now()->year;
                                     for ($tahun = 2023; $tahun <= $tahun_sekarang + 2; $tahun++) {
-                                        echo "<option value=\"$tahun\">$tahun</option>";
+                                        $selected = ($tahun == $tahun_sekarang) ? 'selected' : '';
+                                        echo "<option value=\"$tahun\" $selected>$tahun</option>";
                                     }
                                 @endphp
                             </select>
@@ -1555,7 +1558,7 @@
                         <div class="col">
                             <label for="filterFeedbackBulan" class="mb-1 ms-1">Bulan</label>
                             <select id="filterFeedbackBulan" class="form-select mb-3">
-                                <option value="default" disabled selected>Berdasarkan Bulan</option>
+                                <option value="default" selected>Berdasarkan Bulan</option>
                                 @php
                                     $bulan_sekarang = now()->month;
                                     $nama_bulan = [
@@ -1704,7 +1707,16 @@
                                                 <td><div class="skeleton-box" style="width: 110px; height: 18px;"></div></td>
                                                 <td><div class="skeleton-box" style="width: 80px; height: 18px;"></div></td>
                                                 <td><div class="skeleton-box" style="width: 40px; height: 18px;"></div></td>
-                                                <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 12px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 50px; height: 24px; border-radius: 12px;"></div></td>
+                                                <td><div class="skeleton-box" style="width: 80px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 60px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 20px; height: 18px;"></div></td>
+                                                <td class="text-center"><div class="skeleton-box" style="width: 40px; height: 18px;"></div></td>
+                                                <td class="text-center pe-4"><div class="skeleton-box" style="width: 60px; height: 24px; border-radius: 6px;"></div></td>
                                             </tr>
                                             @endfor
                                         </tbody>
@@ -2447,10 +2459,9 @@
                     }
                 });
 
-                let cuti = document.getElementById('dataCuti')?.getContext('2d');
-                if (!cuti) return;
-
                 let cutiChart = null;
+                // cuti canvas di-resolve lazily agar tidak menghentikan DOMContentLoaded
+                function getCutiCtx() { return document.getElementById('dataCuti')?.getContext('2d'); }
                 let currentFilterCuti = {
                     filter: null,
                     value: null,
@@ -2476,12 +2487,19 @@
                         },
                         success: function(res) {
 
+                            // Pastikan canvas visible sebelum create/update chart
+                            if (res.labelCuti.length > 0) {
+                                $('#cutiEmpty').addClass('d-none');
+                                $('#dataCuti').removeClass('d-none');
+                            }
                             if (cutiChart) {
                                 cutiChart.data.labels = res.labelCuti;
                                 cutiChart.data.datasets[0].data = res.totalCuti;
                                 cutiChart.update();
                             } else {
-                                cutiChart = new Chart(cuti, {
+                                const cutiCtx = getCutiCtx();
+                                if (cutiCtx) {
+                                cutiChart = new Chart(cutiCtx, {
                                     type: 'pie',
                                     data: {
                                         labels: res.labelCuti,
@@ -2510,6 +2528,7 @@
                                         }
                                     }
                                 });
+                                } // end if(cutiCtx)
                             }
 
                             $('#rentangWaktu').text(res.rentangWaktu);
@@ -2522,8 +2541,7 @@
                             }
 
                             $('#exportCuti').prop('disabled', false);
-                            $('#cutiEmpty').addClass('d-none');
-                            $('#dataCuti').removeClass('d-none');
+                            // canvas sudah di-show sebelum chart dibuat (di atas)
 
                             currentFilterCuti.filter = filterType;
                             currentFilterCuti.value = value;
@@ -2539,18 +2557,29 @@
                 // reset filter per tahun
                 $('#filterCutiTahun').change(function() {
                     $('#filterCutiBulan, #filterCutiTriwulan').val('default');
-                    loadDataCuti('tahun', $(this).val());
+                    const tahun = $(this).val() === 'default'
+                        ? new Date().getFullYear()
+                        : $(this).val();
+                    loadDataCuti('tahun', tahun);
                 });
 
                 // reset Filter per bulan
                 $('#filterCutiBulan').change(function() {
                     $('#filterCutiTriwulan').val('default');
+                    if ($(this).val() === 'default') {
+                        loadDataCuti('tahun', $('#filterCutiTahun').val());
+                        return;
+                    }
                     loadDataCuti('bulan', $(this).val());
                 });
 
                 // reset filter per triwulan
                 $('#filterCutiTriwulan').change(function() {
                     $('#filterCutiBulan').val('default');
+                    if ($(this).val() === 'default') {
+                        loadDataCuti('tahun', $('#filterCutiTahun').val());
+                        return;
+                    }
                     loadDataCuti('triwulan', $(this).val());
                 });
 
@@ -2955,6 +2984,8 @@
                         }, 400);
                     });
 
+                    loadOutstanding();
+
                     function renderPotongan(jenis, jumlah) {
                         if (!jenis || jenis === '-' || !jumlah || jumlah === '-') {
                             return '-';
@@ -3330,7 +3361,10 @@
                 // reset filter per tahun
                 $('#filterMengajarPerTahun').change(function() {
                     $('#filterMengajarPerBulan, #filterMengajarPerTriwulan').val('default');
-                    loadDataMengajar('tahun', $(this).val());
+                    const tahun = $(this).val() === 'default'
+                        ? new Date().getFullYear()
+                        : $(this).val();
+                    loadDataMengajar('tahun', tahun);
                 });
 
                 // reset Filter per bulan
@@ -3393,19 +3427,20 @@
                 });
 
                 // Load semua AJAX
-                $(document).ready(function() {
-                    loadOutstanding();
-
-                    setTimeout(function() {
-                        loadDataMengajar('bulan', new Date().getMonth() + 1);
-                    }, 500);
-
-                    observeOnce(document.getElementById('dataCuti'), function() {
-                        setTimeout(function() {
-                            loadDataCuti('bulan', new Date().getMonth() + 1);
-                        }, 500);
-                    });
-                });
+                const defaultTahunMengajar = $('#filterMengajarPerTahun').val();
+                loadDataMengajar(
+                    'tahun',
+                    defaultTahunMengajar && defaultTahunMengajar !== 'default'
+                        ? defaultTahunMengajar
+                        : new Date().getFullYear()
+                );
+                const defaultTahunCuti = $('#filterCutiTahun').val();
+                loadDataCuti(
+                    'tahun',
+                    defaultTahunCuti && defaultTahunCuti !== 'default'
+                        ? defaultTahunCuti
+                        : new Date().getFullYear()
+                );
 
                 //-------------- FEEDBACK INSTRUKTUR --------------//
                 // Script Chart Feedback
@@ -3415,7 +3450,8 @@
                     observeOnce(document.getElementById('feedbackChart'), function() {
                         setTimeout(function() {
                             initFeedbackChart();
-                            loadFeedback();
+                            const defaultTahunFeedback = $('#filterFeedbackTahun').val() || new Date().getFullYear();
+                            loadFeedback('tahun', defaultTahunFeedback);
                         }, 500);
                     });
 
@@ -3427,11 +3463,19 @@
 
                     $('#filterFeedbackBulan').change(function() {
                         resetSelect('#filterFeedbackTriwulan');
+                        if ($(this).val() === 'default') {
+                            loadFeedback('tahun', $('#filterFeedbackTahun').val());
+                            return;
+                        }
                         loadFeedback('bulan', $(this).val());
                     });
 
                     $('#filterFeedbackTriwulan').change(function() {
                         resetSelect('#filterFeedbackBulan');
+                        if ($(this).val() === 'default') {
+                            loadFeedback('tahun', $('#filterFeedbackTahun').val());
+                            return;
+                        }
                         loadFeedback('triwulan', $(this).val());
                     });
                 });
@@ -3525,15 +3569,22 @@
 
                 // Load data dengan filter (logika tetap sama seperti kode pertama)
                 function loadFeedback(filter = null, value = null) {
-                    const tahun = $('#filterFeedbackTahun').val();
+                    let tahun = $('#filterFeedbackTahun').val();
+                    if (!tahun || tahun === 'default') {
+                        tahun = new Date().getFullYear();
+                    }
+                    if (!filter) {
+                        filter = 'tahun';
+                        value = tahun;
+                    }
 
                     $.ajax({
-                        url: "{{ route('office.feedback.get') }}",
+                        url: "{{ route('office.feedback.chartFeedback') }}",
                         type: "GET",
                         data: {
                             filter: filter,
                             value: value,
-                            tahun: tahun !== 'default' ? tahun : null
+                            tahun: tahun
                         },
                         beforeSend: function() {
                             $('#nilaiInstrukturEmpty')
@@ -3562,9 +3613,13 @@
                             const data = [];
 
                             res.forEach(item => {
-                                if (item?.nama_instruktur && item?.nilai_instruktur !== undefined) {
-                                    labels.push(item.nama_instruktur.trim());
-                                    data.push(parseFloat(item.nilai_instruktur) || 0);
+                                const nama = (item?.nama_instruktur || item?.nama || '').trim();
+                                const nilai = item?.nilai_instruktur !== undefined
+                                    ? parseFloat(item.nilai_instruktur)
+                                    : (item?.nilai_rata_rata !== undefined ? parseFloat(item.nilai_rata_rata) : 0);
+                                if (nama && !isNaN(nilai) && nilai > 0) {
+                                    labels.push(nama);
+                                    data.push(nilai);
                                 }
                             });
 
@@ -3579,7 +3634,11 @@
                                 feedbackChart.update();
                             } else {
                                 resetChart();
-                                $('#nilaiInstrukturEmpty').removeClass('d-none');
+                                $('#nilaiInstrukturEmpty')
+                                    .html(
+                                        '<i class="bx bx-x-circle text-muted" style="font-size:3rem;"></i><p class="text-muted mt-2 mb-0">Tidak ada data Nilai Instruktur</p>'
+                                    )
+                                    .removeClass('d-none');
                             }
                         },
                         error: function(xhr) {
@@ -3618,8 +3677,12 @@
                     let bulan = $('#filterFeedbackBulan').val();
                     let triwulan = $('#filterFeedbackTriwulan').val();
 
-                    let filter = '';
-                    let value = '';
+                    if (!tahun || tahun === 'default') {
+                        tahun = new Date().getFullYear();
+                    }
+
+                    let filter = 'tahun';
+                    let value = tahun;
 
                     if (bulan && bulan !== 'default') {
                         filter = 'bulan';
@@ -4760,34 +4823,119 @@
                 }
 
                 function renderRKMTable(data) {
-                    if (!data || data.length === 0) {
-                        return '<tr><td colspan="10" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada RKM untuk ditampilkan</td></tr>';
+                    if (!data || !Array.isArray(data) || data.length === 0) {
+                        return '<tr><td colspan="19" class="text-center py-4 text-muted"><i class="bx bx-message-square-x d-block mb-2" style="font-size:2rem;"></i>Tidak ada RKM untuk ditampilkan</td></tr>';
                     }
                     return data.map((item, idx) => {
-                        const namaMateri = item.materi?.nama_materi || '-';
+                        const namaMateri = item.materi?.nama_materi || item.materi_key || '-';
                         const harga = item.harga_jual ? 'Rp ' + fmtRupiah(item.harga_jual) : '-';
                         const tglAwal = item.tanggal_awal ? fmtDate(item.tanggal_awal) : '-';
                         const tglAkhir = item.tanggal_akhir ? fmtDate(item.tanggal_akhir) : '-';
-                        const tglStr = tglAwal === tglAkhir ? tglAwal : `${tglAwal} - ${tglAkhir}`;
-                        const perusahaanList = (item.perusahaan || []).map(p => p.nama_perusahaan).join(', ') || '-';
-                        const sales = item.sales_key || '-';
-                        const instruktur = [item.instruktur_key, item.instruktur_key2, item.asisten_key].filter(x => x && x !== '-').join(', ') || '-';
+                        const tglStr = (tglAwal === tglAkhir || !item.tanggal_akhir) ? tglAwal : `${tglAwal} - ${tglAkhir}`;
+
+                        let perusahaanList = '-';
+                        if (Array.isArray(item.perusahaan)) {
+                            perusahaanList = item.perusahaan.map(p => p?.nama_perusahaan || p).filter(Boolean).join(', ') || '-';
+                        } else if (item.perusahaan && typeof item.perusahaan === 'object') {
+                            perusahaanList = item.perusahaan.nama_perusahaan || '-';
+                        } else if (item.perusahaan) {
+                            perusahaanList = item.perusahaan;
+                        }
+
+                        const sales = item.sales?.nama_sales || item.sales?.nama_lengkap || item.sales_key || '-';
+                        const instruktur = [
+                            item.instruktur?.nama_lengkap || item.instruktur_key,
+                            item.instruktur_key2,
+                            item.asisten_key
+                        ].filter(x => x && x !== '-').join(', ') || '-';
                         const ruang = item.ruang || 'Belum Ditentukan';
                         const pax = item.pax ? fmtRupiah(item.pax) : '0';
-                        const examBadge = item.exam === '1' ? '<span class="badge bg-success-subtle text-success px-3 py-2">Ya</span>' : '<span class="badge bg-secondary-subtle text-secondary px-3 py-2">Tidak</span>';
+                        const examBadge = (item.exam === '1' || item.exam === 1)
+                            ? '<span class="badge bg-success-subtle text-success px-3 py-2">Ya</span>'
+                            : '<span class="badge bg-secondary-subtle text-secondary px-3 py-2">Tidak</span>';
 
-                        return `<tr class="border-bottom">
-                            <td class="ps-4">${idx + 1}</td>
-                            <td>${namaMateri}</td>
-                            <td><span class="text-success fw-semibold">${harga}</span></td>
-                            <td>${tglStr}</td>
-                            <td>${perusahaanList}</td>
-                            <td>${sales}</td>
-                            <td>${instruktur}</td>
-                            <td>${ruang}</td>
-                            <td><span class="badge bg-info-subtle text-info px-3 py-2">${pax}</span></td>
-                            <td>${examBadge}</td>
-                        </tr>`;
+                        let makananText = 'Belum Ditentukan';
+                        if (item.makanan) {
+                            const makananList = typeof item.makanan === 'string' ? item.makanan.split(', ') : [item.makanan];
+                            const makananVal = makananList[0];
+                            if (makananVal == '0' || makananVal === 'Tidak Ada') makananText = 'Tidak Ada';
+                            else if (makananVal == '1' || makananVal === 'Nasi Box') makananText = 'Nasi Box';
+                            else if (makananVal == '2' || makananVal === 'Prasmanan') makananText = 'Prasmanan';
+                            else makananText = makananVal;
+                        }
+
+                        const rawChecklists = item.checklists_data || item.checklists;
+                        let checklists = [];
+                        if (rawChecklists) {
+                            if (Array.isArray(rawChecklists)) {
+                                checklists = rawChecklists;
+                            } else if (typeof rawChecklists === 'object') {
+                                checklists = Object.entries(rawChecklists).map(([tgl, val]) => {
+                                    return Object.assign({ tanggal_keperluan: tgl }, val);
+                                });
+                            }
+                        }
+
+                        const rowspan = checklists.length > 0 ? checklists.length : 1;
+                        const exportButtons = `
+                            <a href="/export-checklist/pdf/${item.id}" class="btn btn-outline-danger btn-sm mb-1 d-block">PDF</a>
+                            <a href="/export-checklist/excel/${item.id}" class="btn btn-outline-success btn-sm d-block">Excel</a>
+                        `;
+
+                        const mainCols = `
+                            <td class="ps-4" ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${idx + 1}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${namaMateri}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}><span class="text-success fw-semibold text-nowrap">${harga}</span></td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''} class="text-nowrap">${tglStr}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${perusahaanList}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${sales}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${instruktur}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${ruang}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}><span class="badge bg-info-subtle text-info px-3 py-2">${pax}</span></td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''} class="text-center">${examBadge}</td>
+                            <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''}>${makananText}</td>
+                        `;
+
+                        if (checklists.length === 0) {
+                            return `<tr class="border-bottom">
+                                ${mainCols}
+                                <td colspan="7" class="text-center text-muted">Tidak ada checklist</td>
+                                <td class="text-center align-middle">${exportButtons}</td>
+                            </tr>`;
+                        }
+
+                        return checklists.map((chk, cIdx) => {
+                            const tglKep = chk.tanggal_keperluan ? fmtDate(chk.tanggal_keperluan) : '-';
+                            const checkMateri = (chk.materi || chk.sub_checklist_keperluans?.materi_module) ? 'checked' : '';
+                            const isOffline = item.metode_kelas === 'Offline';
+                            const checkKelas = isOffline ? `<input type="checkbox" class="custom-check" ${chk.kelas ? 'checked' : ''} disabled>` : '-';
+                            const checkCb = `<input type="checkbox" class="custom-check" ${chk.cb ? 'checked' : ''} disabled>`;
+                            const checkMaksi = `<input type="checkbox" class="custom-check" ${chk.maksi ? 'checked' : ''} disabled>`;
+                            const checkKepKelas = isOffline ? `<input type="checkbox" class="custom-check" ${chk.keperluan_kelas ? 'checked' : ''} disabled>` : '-';
+                            const progress = (chk.progress !== undefined ? chk.progress : (item.progress || 0)) + '%';
+
+                            const checklistCols = `
+                                <td class="text-center">${tglKep}</td>
+                                <td class="text-center"><input type="checkbox" class="custom-check" ${checkMateri} disabled></td>
+                                <td class="text-center">${checkKelas}</td>
+                                <td class="text-center">${checkCb}</td>
+                                <td class="text-center">${checkMaksi}</td>
+                                <td class="text-center">${checkKepKelas}</td>
+                                <td class="text-center">${progress}</td>
+                            `;
+
+                            if (cIdx === 0) {
+                                return `<tr class="border-bottom">
+                                    ${mainCols}
+                                    ${checklistCols}
+                                    <td ${rowspan > 1 ? `rowspan="${rowspan}"` : ''} class="text-center align-middle">${exportButtons}</td>
+                                </tr>`;
+                            } else {
+                                return `<tr class="border-bottom">
+                                    ${checklistCols}
+                                </tr>`;
+                            }
+                        }).join('');
                     }).join('');
                 }
 
@@ -4847,10 +4995,10 @@
                             var cRkm = $('#rkm-container');
                             cRkm.html(renderRKMTable(res));
                             reinitBootstrap(cRkm.closest('table'));
-                        } catch(e) { console.error(e); $('#rkm-container').html('<tr><td colspan="10" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
+                        } catch(e) { console.error(e); $('#rkm-container').html('<tr><td colspan="19" class="text-center text-danger">Gagal memuat data (Error UI)</td></tr>'); }
                     }
                 }).fail(function() {
-                    $('#rkm-container').html('<tr><td colspan="10" class="text-center text-danger">Gagal memuat data server</td></tr>');
+                    $('#rkm-container').html('<tr><td colspan="19" class="text-center text-danger">Gagal memuat data server</td></tr>');
                 });
 
                 // Ticket
