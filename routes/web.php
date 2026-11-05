@@ -1737,6 +1737,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/folder-list', [HireController::class, 'getFolderList'])->name('folder-list');
             Route::post('/penilaian', [HireController::class, 'storePenilaian'])->name('penilaian.store');
             Route::get('/{pelamar}/cv', [HireController::class, 'lihatCV'])->name('cv');
+            Route::post('/scan-dokumen', [HireController::class, 'scanDokumen'])->name('scan-dokumen');
+            Route::post('/{pelamar}/update', [HireController::class, 'update'])->name('update');
         });
 
         Route::prefix('folders')->name('folders.')->group(function () {

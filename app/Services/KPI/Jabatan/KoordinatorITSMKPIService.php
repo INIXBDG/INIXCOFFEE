@@ -288,13 +288,13 @@ class KoordinatorITSMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-            return 0;
+            return null; // bukan 0, karena 0 = gap nol = "sempurna"
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
-            return 0;
+            return null;
         }
 
         $detailIds = $item->detailTargetKPI->pluck('id');
@@ -305,20 +305,19 @@ class KoordinatorITSMKPIService
             $query->where('id_karyawan', $personId);
         }
 
+        // Gap dihitung per baris; kelebihan skill tidak menutup kekurangan orang lain
         $stats = $query->where('presentase_standar', '>', 0)
-            ->selectRaw('SUM(presentase_kemampuan) as total_kemampuan, SUM(presentase_standar) as total_standar')
+            ->selectRaw('SUM(GREATEST(presentase_standar - presentase_kemampuan, 0)) as total_gap, SUM(presentase_standar) as total_standar')
             ->first();
 
-        $totalKemampuan = (float) ($stats->total_kemampuan ?? 0);
+        $totalGap = (float) ($stats->total_gap ?? 0);
         $totalStandar = (float) ($stats->total_standar ?? 0);
 
         if ($totalStandar <= 0) {
-            return 0;
+            return null; // belum ada data standar
         }
 
-        $progress = ($totalKemampuan / $totalStandar) * 100;
-
-        return round(min($progress, 100), 1);
+        return round(min(max(($totalGap / $totalStandar) * 100, 0), 100), 1);
     }
 
     public function calculatePersentaseGapKompetensiDetail($itemDetail, $personId = null)
@@ -330,7 +329,7 @@ class KoordinatorITSMKPIService
         }
 
         $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target;
+        $nilaiTarget = (float) $firstDetail->nilai_target; // batas maksimal gap, mis. 10
         $tahun = (int) $firstDetail->detail_jangka;
 
         if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
@@ -353,16 +352,16 @@ class KoordinatorITSMKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $totalKemampuan = 0;
+        $totalGap = 0;
         $totalStandar = 0;
-        $above = 0;
-        $below = 0;
+        $above = 0; // sudah memenuhi standar
+        $below = 0; // masih di bawah standar
 
         foreach ($detailPersons as $dp) {
             $kemampuan = (float) $dp->presentase_kemampuan;
             $standar = (float) $dp->presentase_standar;
 
-            $totalKemampuan += $kemampuan;
+            $totalGap += max($standar - $kemampuan, 0);
             $totalStandar += $standar;
 
             if ($kemampuan >= $standar) {
@@ -372,12 +371,13 @@ class KoordinatorITSMKPIService
             }
         }
 
-        $progress = ($totalStandar > 0) ? round(min(($totalKemampuan / $totalStandar) * 100, 100), 1) : 0;
-        $gap = round(100 - $progress, 1);
+        $gap = ($totalStandar > 0) ? round(min(($totalGap / $totalStandar) * 100, 100), 1) : 0;
 
         return [
-            'progress' => $progress,
+            'progress' => $gap,                 // nilai KPI = gap % (semakin kecil semakin bagus)
             'gap' => $gap,
+            'target_maks' => $nilaiTarget,
+            'tercapai' => $gap < $nilaiTarget,  // sesuai target "<10%"
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],

@@ -161,6 +161,7 @@ class DivisiITSMKPIService
         }
 
         $tahun = (int) $detail->detail_jangka;
+        $target = (int) $detail->nilai_target;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
             return 0;

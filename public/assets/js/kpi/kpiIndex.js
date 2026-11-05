@@ -152,6 +152,132 @@ $(document).ready(function() {
     // Mencegah event bubbling
     $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) { e.stopPropagation(); });
 
+    $(document).on('click', '.buttonPanduan', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const route = ($(this).data('route') || '').toString().toLowerCase().trim();
+    const judul = $(this).data('judul') || 'Target KPI';
+
+    // Mapping assistant_route → key panduan
+    const panduanMap = {
+        'pelaksanaan kegiatan karyawan': 'pelaksanaan_kegiatan_karyawan',
+        'pengeluaran biaya karyawan': 'pengeluaran_biaya_karyawan',
+        'administrasi karyawan': 'administrasi_karyawan',
+        'mengukur kualitas aplikasi agar minim bug': 'mengukur_kualitas_aplikasi_agar_minim_bug',
+        'ketepatan waktu penyelesaian fitur': 'ketepatan_waktu_penyelesaian_fitur',
+        'keberhasilan support memenuhi sla': 'tingkat_keberhasilan_support_memenuhi_sla',
+        'kualitas layanan exam': 'kualitas_layanan_exam',
+        'meningkatkan kepuasan dan loyalitas peserta/client': 'meningkatkan_kepuasan_dan_loyalitas_peserta',
+        'availability sistem internal kritis': 'availability_sistem_internal_kritis',
+        'persentase gap kompetensi tim terhadap standar skill': 'persentase_gap_kompetensi',
+        'konsistensi campaign digital': 'konsistensi_campaign_digital',
+        'ketepatan waktu po': 'ketepatan_waktu_po',
+        'kualitas dokumentasi support dan proctor': 'kualitas_dokumentasi_support_dan_proctor',
+        'laporan mom': 'laporan_mom',
+        'akurasi kelengkapan data penjualan': 'akurasi_kelengkapan_data_penjualan',
+        'todo administrasi': 'todo_administrasi',
+        'peserta puas dengan pelayanan dan fasilitas training': 'peserta_puas_dengan_pelayanan_dan_fasilitas_training',
+        'dorong inovasi pelayanan': 'dorong_inovasi_pelayanan',
+        'penanganan komplain perseta': 'penanganan_komplain_peserta',
+        'report persiapan kelas': 'report_persiapan_kelas',
+        'kepuasan client itsm': 'kepuasan_client_itsm',
+        'inovation adaption rate': 'inovation_adaption_rate',
+        'perbaikan kendaraan': 'perbaikan_kendaraan',
+        'kontrol pengeluaran transportasi': 'kontrol_pengeluaran_transportasi',
+        'report kondisi kendaraan': 'report_kondisi_kendaraan',
+        'feedback kenyamanan berkendaran': 'feedback_kenyamanan_berkendara',
+        'pengembangan kurikulum pelatihan': 'pengembangan_kurikulum_pelatihan',
+        'peningkatan knowledge sharing': 'peningkatan_knowledge_sharing',
+        'peningkatan kontribusi pelatihan': 'peningkatan_kontribusi_pelatihan',
+        'evaluasi kinerja instruktur': 'evaluasi_kinerja_instruktur',
+        'pembuatan artikel': 'pembuatan_artikel',
+        'outstanding': 'outstanding',
+        'inisiatif efisiensi keuangan': 'inisiatif_efisiensi_keuangan',
+        'mengurangi manual work dan error': 'mengurangi_manual_work_dan_error',
+        'laporan analisis keuangan': 'laporan_analisis_keuangan',
+        'pencairan biaya operasional': 'pencairan_biaya_operasional',
+        'penyelesaian tagihan perusahaan': 'penyelesaian_tagihan_perusahaan',
+        'akurasi pencatatan masuk': 'akurasi_pencatatan_masuk',
+        'pemasukan kotor': 'pemasukan_kotor',
+        'pemasukan bersih': 'pemasukan_bersih',
+        'target penjualan project tahunan': 'target_penjualan_project_tahunan',
+        'kepuasan pelanggan': 'kepuasan_pelanggan',
+        'rasio biaya operasional terhadap revenue': 'rasio_biaya_operasional_terhadap_revenue',
+        'performa kpi departemen': 'performa_kpi_departemen',
+        'feedback kebersihan dan kenyamanan': 'feedback_kebersihan_dan_kenyamanan',
+        'penyelesaian tugas harian': 'penyelesaian_tugas_harian',
+        'efektifitas digital marketing': 'efektifitas_digital_marketing',
+        'timeline webinar': 'timeline_webinar',
+        'presentase kinerja instruktur': 'presentase_kinerja_instruktur',
+        'kepuasan peserta pelatihan': 'kepuasan_peserta_pelatihan',
+        'upseling lanjutan materi': 'upseling_lanjutan_materi',
+        'sertifikasi kompetensi internal': 'sertifikasi_kompetensi_internal',
+        'pelatihan kompetensi eksternal': 'pelatihan_kompetensi_eksternal',
+        'target penjualan tahunan': 'target_penjualan_tahunan',
+        'biaya akuisisi perclient': 'biaya_akuisisi_perclient',
+        'peningkatan kemampuan kompetensi sales': 'peningkatan_kemampuan_kompetensi_sales',
+        'meningkatkan revenue perusahaan': 'meningkatkan_revenue_perusahaan',
+        'customer acquisition cost': 'customer_acquisition_cost',
+        'evaluasi kinerja sales': 'evaluasi_kinerja_sales',
+        'pendapatan penjualan project': 'pendapatan_penjualan_project',
+        'leads project': 'leads_project',
+    };
+
+    const key = panduanMap[route] || null;
+
+    const $modal = $('#modalPanduan');
+    const $body  = $('#bodyContentPanduan');
+    const $title = $('#panduanTitle');
+
+    $title.text('Panduan: ' + judul);
+    $body.html(`
+        <div class="text-center py-5">
+            <i class="fa-solid fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+            <p class="text-muted mb-0">Memuat panduan...</p>
+        </div>
+    `);
+
+    // Tampilkan modal
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPanduan')).show();
+    } else {
+        $modal.modal('show');
+    }
+
+    if (!key) {
+        $body.html(`
+            <div class="alert alert-secondary text-center py-5 mb-0">
+                <i class="fa-solid fa-book-open fa-2x mb-3 text-muted"></i>
+                <p class="mb-0">Panduan untuk target ini belum tersedia.</p>
+                <small class="text-muted d-block mt-2">Route: <code>${route || '-'}</code></small>
+            </div>
+        `);
+        return;
+    }
+
+    // Load konten panduan dari server
+    $.ajax({
+        url: `/kpi-data/panduan/${key}`,
+        type: 'GET',
+        dataType: 'json',
+        success: function (res) {
+            $body.html(res.html || '<div class="alert alert-warning">Konten panduan kosong.</div>');
+            if (res.title) {
+                $title.text('Panduan: ' + res.title);
+            }
+        },
+        error: function () {
+            $body.html(`
+                <div class="alert alert-danger text-center py-4 mb-0">
+                    <i class="fa-solid fa-circle-exclamation fa-2x mb-3"></i>
+                    <p class="mb-0">Gagal memuat panduan. Silakan coba lagi.</p>
+                </div>
+            `);
+        }
+    });
+});
+
     // Handle Session Import Errors
     if (window.KPI_CONFIG && window.KPI_CONFIG.importErrors && window.KPI_CONFIG.importErrors.length > 0) {
         const errors = window.KPI_CONFIG.importErrors;
@@ -201,6 +327,7 @@ $(document).ready(function() {
         }
     });
 
+    let xhrKaryawan = null, xhrRoutes = null;
     $('#jabatan').off('change').on('change', function() {
         const selectedJabatans = $(this).val() || []; // Array karena multiple select
         const karyawanSelect = $('#karyawan');
@@ -215,7 +342,8 @@ $(document).ready(function() {
             return;
         }
 
-        $.ajax({
+        if (xhrKaryawan) xhrKaryawan.abort();
+        xhrKaryawan = $.ajax({
             url: window.KPI_CONFIG.getKaryawanByJabatan,
             type: 'GET',
             data: { jabatan: selectedJabatans },
@@ -230,7 +358,8 @@ $(document).ready(function() {
             }
         });
 
-        $.ajax({
+        if (xhrRoutes) xhrRoutes.abort();
+        xhrRoutes = $.ajax({
             url: window.KPI_CONFIG.getRoutesByJabatan,
             type: 'GET',
             data: { jabatan: selectedJabatans },
@@ -250,7 +379,8 @@ $(document).ready(function() {
                 
                 assistantRouteSelect.trigger('change'); 
             },
-            error: function() {
+            error: function(xhr, status) {
+                if (status === 'abort') return;
                 assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>').trigger('change');
                 if (typeof Swal !== 'undefined') Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
             }
@@ -277,42 +407,6 @@ $(document).ready(function() {
     // Setup Form Listeners for Create Target Modal
     const $assistantRoute = $('#assistant_route');
     $assistantRoute.prop('disabled', true).html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
-
-    $('#jabatan').on('change', function() {
-        const selectedJabatan = $(this).val();
-        const assistantRouteSelect = $('#assistant_route');
-        
-        assistantRouteSelect.empty().prop('disabled', true).html('<option selected disabled>-- Memuat routes... --</option>');
-        $('#detail_jangka_container').empty();
-
-        if (!selectedJabatan || selectedJabatan.length === 0) {
-            assistantRouteSelect.html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
-            return;
-        }
-
-        $.ajax({
-            url: window.KPI_CONFIG.getRoutesByJabatan,
-            type: 'GET',
-            data: { jabatan: selectedJabatan },
-            success: function(response) {
-                assistantRouteSelect.empty();
-                assistantRouteSelect.append('<option selected disabled>-- Pilih Assistant Route --</option>');
-                if (response.length === 0) {
-                    assistantRouteSelect.append('<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>');
-                    assistantRouteSelect.prop('disabled', true);
-                    return;
-                }
-                response.forEach(route => {
-                    assistantRouteSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
-                });
-                assistantRouteSelect.prop('disabled', false);
-            },
-            error: function() {
-                assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>');
-                if (typeof Swal !== 'undefined') Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
-            }
-        });
-    });
 
     $(document).on('change', '#assistant_route', function() {
         const selectedRoute = $(this).val();
@@ -1654,7 +1748,7 @@ function processRawData(details) {
             processed.push({
                 id: item.id, judul: item.judul, jangkaDisplay, statusText, badgeClass, formattedTarget, jabatanDisplay,
                 divisi: item.divisi || '-', pembuat: item.pembuat || '-', lengthProgress, progressValueDisplay, progressBg,
-                tenggat_waktu: item.tenggat_waktu, buttonIsiForm, routeUrl
+                tenggat_waktu: item.tenggat_waktu, buttonIsiForm, routeUrl, asistant_route: item.asistant_route
             });
         });
     });
@@ -1691,8 +1785,24 @@ function renderTable() {
                         <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
                         <ul class="dropdown-menu">
                             ${item.buttonIsiForm}
-                            <li><a href="${item.routeUrl}" class="dropdown-item text-dark" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Lihat Detail KPI</a></li>
-                            <li><button type="button" class="dropdown-item text-danger buttonHapusTarget" data-id="${item.id}"><i class="fa-solid fa-trash-can me-2"></i> Hapus</button></li>
+                            <li>
+                                <a href="${item.routeUrl}" class="dropdown-item text-dark" target="_blank">
+                                    <i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Lihat Detail KPI
+                                </a>
+                            </li>
+                            <li>
+                                <button type="button" 
+                                        class="dropdown-item text-info buttonPanduan" 
+                                        data-route="${item.asistant_route || ''}"
+                                        data-judul="${item.judul || ''}">
+                                    <i class="fa-solid fa-book-open me-2"></i> Panduan
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item text-danger buttonHapusTarget" data-id="${item.id}">
+                                    <i class="fa-solid fa-trash-can me-2"></i> Hapus
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </td>
@@ -1729,3 +1839,178 @@ window.changePage = function(page) {
     loadContentForm(page, searchVal);
     $('html, body').animate({ scrollTop: $('#content_target').offset().top - 100 }, 300);
 };
+
+function escHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+function syncPanduanPdfState() {
+    const $jabatan = $('#panduanPdfOpsi .cek-jabatan');
+    const total = $jabatan.length;
+    const checked = $jabatan.filter(':checked').length;
+
+    $('#cekSemuaPanduan')
+        .prop('checked', total > 0 && checked === total)
+        .prop('indeterminate', checked > 0 && checked < total);
+
+    $('#panduanPdfOpsi .cek-divisi').each(function () {
+        const grup = $(this).data('grup');
+        const $items = $('#panduanPdfOpsi .cek-jabatan[data-grup="' + grup + '"]');
+        const dipilih = $items.filter(':checked').length;
+        $(this)
+            .prop('checked', dipilih > 0 && dipilih === $items.length)
+            .prop('indeterminate', dipilih > 0 && dipilih < $items.length);
+    });
+
+    $('#btnDownloadPanduanPdf').prop('disabled', checked === 0);
+    $('#infoPanduanPdf').text(checked + ' jabatan dipilih');
+}
+
+function renderPanduanPdfOpsi(groups) {
+    if (!groups || groups.length === 0) {
+        $('#panduanPdfOpsi').html('<div class="alert alert-secondary mb-0">Belum ada panduan yang tersedia.</div>');
+        syncPanduanPdfState();
+        return;
+    }
+
+    let html = '';
+    groups.forEach(function (g, i) {
+        html += `<div class="border rounded-3 p-3 mb-3">
+            <div class="form-check mb-2">
+                <input class="form-check-input cek-divisi" type="checkbox" id="cekDivisi${i}" data-grup="${i}">
+                <label class="form-check-label fw-semibold" for="cekDivisi${i}">${escHtml(g.divisi)}</label>
+            </div>
+            <div class="row g-2 ps-3">`;
+
+        (g.items || []).forEach(function (it, j) {
+            const id = `cekJabatan${i}_${j}`;
+            html += `<div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input cek-jabatan" type="checkbox" name="jabatan[]" value="${escHtml(it.value)}" id="${id}" data-grup="${i}">
+                    <label class="form-check-label" for="${id}">${escHtml(it.label)} <span class="badge bg-light text-muted border">${it.total} panduan</span></label>
+                </div>
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    $('#panduanPdfOpsi').html(html);
+    syncPanduanPdfState();
+}
+
+function loadPanduanPdfOpsi() {
+    $('#panduanPdfOpsi').html('<div class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat pilihan...</div>');
+    $('#cekSemuaPanduan').prop('checked', false).prop('indeterminate', false);
+    $('#btnDownloadPanduanPdf').prop('disabled', true);
+    $('#infoPanduanPdf').text('0 jabatan dipilih');
+
+    const url = (window.KPI_CONFIG && window.KPI_CONFIG.panduanOpsi) ? window.KPI_CONFIG.panduanOpsi : null;
+
+    if (!url) {
+        $('#panduanPdfOpsi').html('<div class="alert alert-danger mb-0">URL panduanOpsi tidak ditemukan di KPI_CONFIG.</div>');
+        return;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function (res) {
+            renderPanduanPdfOpsi(res.groups || []);
+        },
+        error: function (xhr) {
+            console.error('Gagal load panduan opsi', xhr.status, xhr.responseText);
+            $('#panduanPdfOpsi').html(
+                '<div class="alert alert-danger mb-0">Gagal memuat pilihan (' + xhr.status + '). Silakan coba lagi.</div>'
+            );
+        }
+    });
+}
+
+// Pakai click tombol + event modal (lebih andal)
+$(document).on('click', '[data-bs-target="#modalPanduanPdf"]', function () {
+    // delay sedikit biar modal sempat buka
+    setTimeout(loadPanduanPdfOpsi, 50);
+});
+
+$(document).on('show.bs.modal', '#modalPanduanPdf', function () {
+    loadPanduanPdfOpsi();
+});
+
+$(document).on('change', '#cekSemuaPanduan', function () {
+    $('#panduanPdfOpsi .cek-jabatan').prop('checked', $(this).is(':checked'));
+    syncPanduanPdfState();
+});
+
+$(document).on('change', '#panduanPdfOpsi .cek-divisi', function () {
+    const grup = $(this).data('grup');
+    $('#panduanPdfOpsi .cek-jabatan[data-grup="' + grup + '"]').prop('checked', $(this).is(':checked'));
+    syncPanduanPdfState();
+});
+
+$(document).on('change', '#panduanPdfOpsi .cek-jabatan', function () {
+    syncPanduanPdfState();
+});
+
+$(document).on('submit', '#formPanduanPdf', function (e) {
+    if ($('#panduanPdfOpsi .cek-jabatan:checked').length === 0) {
+        e.preventDefault();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Peringatan', 'Pilih minimal satu jabatan.', 'warning');
+        } else {
+            alert('Pilih minimal satu jabatan.');
+        }
+        return;
+    }
+
+    const $btn = $('#btnDownloadPanduanPdf');
+    const originalHtml = '<i class="fa-solid fa-download"></i> <span>Download PDF</span>';
+
+    $btn.prop('disabled', true)
+        .html('<i class="fa-solid fa-spinner fa-spin me-1"></i><span>Menyiapkan PDF...</span>');
+
+    setTimeout(function () {
+        $btn.html(originalHtml);
+        syncPanduanPdfState();
+    }, 2500);
+});
+
+$(document).on('hidden.bs.modal', '#modalPanduanPdf', function () {
+    const $btn = $('#btnDownloadPanduanPdf');
+    $btn.html('<i class="fa-solid fa-download"></i> <span>Download PDF</span>');
+    syncPanduanPdfState();
+});
+
+// ==========================================================================
+// SAFEGUARD MODAL PANDUAN (agar selalu bisa ditutup)
+// ==========================================================================
+// 1) Pindahkan modal ke <body> supaya tidak tertutup backdrop akibat stacking context
+//    (parent dengan transform / position / overflow / z-index).
+$(function () {
+    ['modalPanduan', 'modalPanduanPdf'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) document.body.appendChild(el);
+    });
+});
+
+// 2) Tombol tutup eksplisit (mendukung data-bs-dismiss Bootstrap 5 maupun data-dismiss Bootstrap 4)
+$(document).on('click', '#modalPanduan [data-bs-dismiss="modal"], #modalPanduan [data-dismiss="modal"], #modalPanduanPdf [data-bs-dismiss="modal"], #modalPanduanPdf [data-dismiss="modal"]', function (e) {
+    e.preventDefault();
+    const el = $(this).closest('.modal')[0];
+    if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(el).hide();
+    } else {
+        $(el).modal('hide');
+    }
+});
+
+// 3) Bersihkan backdrop yang tersangkut setelah modal panduan tertutup
+$(document).on('hidden.bs.modal', '#modalPanduan, #modalPanduanPdf', function () {
+    if ($('.modal.show').length === 0) {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css({ overflow: '', 'padding-right': '' });
+    }
+});

@@ -36,6 +36,9 @@ use App\Services\KPI\Dashboard\OverviewDashboardService;
 use App\Traits\KPIFormatTrait;
 use App\Traits\KPIResolverTrait;
 
+// support
+use App\Support\KPI\PanduanData;
+
 class TargetKPIController extends Controller
 {
     use KPIFormatTrait, KPIResolverTrait;
@@ -74,7 +77,7 @@ class TargetKPIController extends Controller
 
         if (empty($jabatanList)) return response()->json([]);
 
-        $jabatanList = array_map('strtolower', $jabatanList);
+        $jabatanList = array_map(fn($jabatan) => trim(strtolower($jabatan)), $jabatanList);
 
         $routeMapping = [
             'gm' => [
@@ -257,53 +260,52 @@ class TargetKPIController extends Controller
         if (!$dataTarget) return response()->json(['message' => 'Konfigurasi target tidak ditemukan'], 404);
 
         $jabatans = array_unique($validated['jabatan']);
-
         return DB::transaction(function () use ($validated, $dataTarget, $jabatans) {
             $createTarget = targetKPI::create([
                 'id_pembuat'     => $validated['id_pembuat'],
                 'id_data_target' => $dataTarget->id,
                 'judul'          => $validated['judul_kpi'],
-                'deskripsi'      => $validated['deskripsi_kpi'],
+                'deskripsi'      => $validated['deskripsi_kpi'] ?? null,
                 'status'         => '0',
             ]);
 
+            $detail_jangka_value = ($dataTarget->jangka_target === 'Tahunan' && !empty($validated['detail_jangka']))
+                ? $validated['detail_jangka'] : null;
+
             foreach ($jabatans as $jabatan) {
-                $dataDivisi = karyawan::where('jabatan', $jabatan)->where('divisi', '!=', 'Direksi')->value('divisi');
+                $query = $this->baseKaryawanAktif()->where('jabatan', $jabatan);
 
-                $detail_jangka_value = ($dataTarget->jangka_target === 'Tahunan' && !empty($validated['detail_jangka'])) ? $validated['detail_jangka'] : null;
-
-                $detailStore = DetailTargetKPI::create([
-                    'id_targetKPI'   => $createTarget->id,
-                    'jabatan'        => $jabatan,
-                    'divisi'         => $dataDivisi,
-                    'id_data_target' => $dataTarget->id,
-                    'jangka_target'  => $dataTarget->jangka_target,
-                    'detail_jangka'  => $detail_jangka_value,
-                    'tipe_target'    => $dataTarget->tipe_target,
-                    'nilai_target'   => $dataTarget->nilai_target,
-                ]);
-
-                $karyawanQuery = karyawan::where('jabatan', $jabatan)
-                    ->where('status_aktif', '1')
-                    ->where('jabatan', '!=', 'Outsource')
-                    ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-                    ->where('jabatan', '!=', 'Pilih Jabatan')
-                    ->whereNotNull('nip')
-                    ->where('divisi', '!=', 'Direksi')
-                    ->distinct();
-
+                // Jika karyawan dipilih manual, batasi ke yang dipilih
                 if (!empty($validated['karyawan'])) {
-                    $karyawanQuery->whereIn('id', $validated['karyawan']);
+                    $query->whereIn('id', $validated['karyawan']);
                 }
 
-                $karyawanIds = $karyawanQuery->pluck('id')->toArray();
+                $karyawanList = $query->get(['id', 'divisi']);
 
-                foreach ($karyawanIds as $karyawanId) {
-                    detailPersonKPI::create([
-                        'id_target'       => $createTarget->id,
-                        'detailTargetKey' => $detailStore->id,
-                        'id_karyawan'     => $karyawanId,
+                if ($karyawanList->isEmpty()) {
+                    continue; // atau throw/log jika ingin dianggap error
+                }
+
+                // Kelompokkan per divisi supaya divisi dan karyawan selalu konsisten
+                foreach ($karyawanList->groupBy('divisi') as $divisi => $anggota) {
+                    $detailStore = DetailTargetKPI::create([
+                        'id_targetKPI'   => $createTarget->id,
+                        'jabatan'        => $jabatan,
+                        'divisi'         => $divisi,
+                        'id_data_target' => $dataTarget->id,
+                        'jangka_target'  => $dataTarget->jangka_target,
+                        'detail_jangka'  => $detail_jangka_value,
+                        'tipe_target'    => $dataTarget->tipe_target,
+                        'nilai_target'   => $dataTarget->nilai_target,
                     ]);
+
+                    foreach ($anggota->pluck('id')->unique() as $karyawanId) {
+                        detailPersonKPI::create([
+                            'id_target'       => $createTarget->id,
+                            'detailTargetKey' => $detailStore->id,
+                            'id_karyawan'     => $karyawanId,
+                        ]);
+                    }
                 }
             }
 
@@ -1147,5 +1149,297 @@ class TargetKPIController extends Controller
             'data' => [['evaluated' => $evaluated, 'dataAbsen' => $dataAbsen, 'data' => ['evaluator' => $evaluatorList, 'dataKriteria' => $dataKriteria], 'chart' => ['quartal' => $chartData, 'all' => []]]],
             'karyawan' => ['nama' => $karyawan->nama_lengkap, 'jabatan' => $karyawan->jabatan, 'divisi' => $karyawan->divisi, 'foto' => $karyawan->foto ? asset('storage/' . $karyawan->foto) : asset('assets/img/avatars/1.png')]
         ]);
+    }
+
+    public function getPanduan($key)
+    {
+        $semua = PanduanData::all();
+
+        if (!array_key_exists($key, $semua)) {
+            return response()->json([
+                'html' => '<div class="alert alert-warning">Panduan tidak ditemukan.</div>'
+            ]);
+        }
+
+        $html = view('KPIdata.panduan.panduan_data', ['key' => $key])->render();
+
+        return response()->json([
+            'html'  => $html,
+            'title' => $semua[$key]['judul'] ?? ucwords(str_replace('_', ' ', $key)),
+        ]);
+    }
+
+    private function panduanJabatanMap(): array
+    {
+        return [
+            'gm' => [
+                'label' => 'GM',
+                'keys' => [
+                    'rasio_biaya_operasional_terhadap_revenue',
+                ],
+            ],
+            'customer care' => [
+                'label' => 'Customer Care',
+                'keys' => [
+                    'peserta_puas_dengan_pelayanan_dan_fasilitas_training',
+                    'dorong_inovasi_pelayanan',
+                    'penanganan_komplain_peserta',
+                    'report_persiapan_kelas',
+                ],
+            ],
+            'finance & accounting' => [
+                'label' => 'Finance & Accounting',
+                'keys' => [
+                    'inisiatif_efisiensi_keuangan',
+                    'mengurangi_manual_work_dan_error',
+                ],
+            ],
+            'hrd' => [
+                'label' => 'HRD',
+                'keys' => [
+                    'pelaksanaan_kegiatan_karyawan',
+                    'pengeluaran_biaya_karyawan',
+                    'administrasi_karyawan',
+                ],
+            ],
+            'koordinator itsm' => [
+                'label' => 'Koordinator ITSM',
+                'keys' => [
+                    'meningkatkan_kepuasan_dan_loyalitas_peserta',
+                    'availability_sistem_internal_kritis',
+                    'persentase_gap_kompetensi',
+                ],
+            ],
+            'programmer' => [
+                'label' => 'Programmer',
+                'keys' => [
+                    'ketepatan_waktu_penyelesaian_fitur',
+                    'mengukur_kualitas_aplikasi_agar_minim_bug',
+                ],
+            ],
+            'tim digital' => [
+                'label' => 'Tim Digital',
+                'keys' => [
+                    'konsistensi_campaign_digital',
+                ],
+            ],
+            'technical support' => [
+                'label' => 'Technical Support',
+                'keys' => [
+                    'tingkat_keberhasilan_support_memenuhi_sla',
+                    'kualitas_layanan_exam',
+                ],
+            ],
+            'adm sales' => [
+                'label' => 'Adm Sales',
+                'keys' => [
+                    'laporan_mom',
+                    'akurasi_kelengkapan_data_penjualan',
+                    'todo_administrasi',
+                ],
+            ],
+            'admin holding' => [
+                'label' => 'Admin Holding',
+                'keys' => [
+                    'ketepatan_waktu_po',
+                    'kualitas_dokumentasi_support_dan_proctor',
+                ],
+            ],
+            'IT Service Management' => [
+                'label' => 'Divisi ITSM',
+                'keys' => [
+                    'kepuasan_client_itsm',
+                    'inovation_adaption_rate',
+                ],
+            ],
+
+            'driver' => [
+                'label' => 'Driver',
+                'keys' => [
+                    'perbaikan_kendaraan',
+                    'kontrol_pengeluaran_transportasi',
+                    'report_kondisi_kendaraan',
+                    'feedback_kenyamanan_berkendara',
+                ],
+            ],
+
+            'education manager' => [
+                'label' => 'Education Manager',
+                'keys' => [
+                    'pengembangan_kurikulum_pelatihan',
+                    'peningkatan_knowledge_sharing',
+                    'peningkatan_kontribusi_pelatihan',
+                    'evaluasi_kinerja_instruktur',
+                    'pembuatan_artikel',
+                ],
+            ],
+
+            'finance & accounting' => [
+                'label' => 'Finance & Accounting',
+                'keys' => [
+                    'outstanding',
+                    'inisiatif_efisiensi_keuangan',
+                    'mengurangi_manual_work_dan_error',
+                    'laporan_analisis_keuangan',
+                    'pencairan_biaya_operasional',
+                    'penyelesaian_tagihan_perusahaan',
+                    'akurasi_pencatatan_masuk',
+                ],
+            ],
+
+            'gm' => [
+                'label' => 'GM',
+                'keys' => [
+                    'pemasukan_kotor',
+                    'pemasukan_bersih',
+                    'target_penjualan_project_tahunan',
+                    'kepuasan_pelanggan',
+                    'rasio_biaya_operasional_terhadap_revenue',
+                    'performa_kpi_departemen',
+                ],
+            ],
+
+            'office boy' => [
+                'label' => 'Office Boy',
+                'keys' => ['feedback_kebersihan_dan_kenyamanan', 'penyelesaian_tugas_harian'],
+            ],
+            'project administrator & business support' => [
+                'label' => 'Project Administrator & Business Support',
+                'keys' => ['efektifitas_digital_marketing', 'timeline_webinar'],
+            ],
+            'instruktur' => [
+                'label' => 'Instruktur',
+                'keys' => [
+                    'presentase_kinerja_instruktur',
+                    'kepuasan_peserta_pelatihan',
+                    'upseling_lanjutan_materi',
+                    'sertifikasi_kompetensi_internal',
+                    'pelatihan_kompetensi_eksternal',
+                ],
+            ],
+            'sales' => [
+                'label' => 'Sales',
+                'keys' => ['target_penjualan_tahunan', 'biaya_akuisisi_perclient', 'peningkatan_kemampuan_kompetensi_sales'],
+            ],
+            'spv sales' => [
+                'label' => 'SPV Sales',
+                'keys' => [
+                    'meningkatkan_revenue_perusahaan',
+                    'customer_acquisition_cost',
+                    'evaluasi_kinerja_sales',
+                    'pendapatan_penjualan_project',
+                    'leads_project',
+                ],
+            ],
+        ];
+    }
+
+    public function getPanduanOpsi()
+    {
+        $semua = PanduanData::all();
+        $grup = [];
+
+        foreach ($this->panduanJabatanMap() as $slug => $cfg) {
+            $total = count(array_filter($cfg['keys'], fn($k) => isset($semua[$k])));
+            if ($total === 0) {
+                continue;
+            }
+
+            $divisi = match ($slug) {
+                'IT Service Management' => 'IT Service Management',
+                default => karyawan::whereRaw('LOWER(jabatan) = ?', [$slug])
+                    ->whereNotNull('divisi')
+                    ->where('divisi', '!=', '')
+                    ->where('divisi', '!=', 'Direksi')
+                    ->value('divisi') ?? 'Lainnya',
+            };
+
+            $grup[$divisi][] = ['value' => $slug, 'label' => $cfg['label'], 'total' => $total];
+        }
+
+        ksort($grup);
+
+        $hasil = [];
+        foreach ($grup as $divisi => $items) {
+            $hasil[] = ['divisi' => $divisi, 'items' => $items];
+        }
+
+        return response()->json(['groups' => $hasil]);
+    }
+
+    private function bersihkanPanduanPdf(array $panduan): array
+    {
+        foreach (['dari_mana_data', 'error_kosong', 'alur_bisnis'] as $field) {
+            $panduan[$field] = preg_replace(
+                '/[\x{1F000}-\x{1FFFF}\x{2600}-\x{27BF}\x{2B00}-\x{2BFF}\x{FE0F}]/u',
+                '',
+                $panduan[$field] ?? ''
+            );
+        }
+
+        return $panduan;
+    }
+
+    public function downloadPanduanPdf(Request $request)
+    {
+        $request->validate([
+            'jabatan'   => 'required|array|min:1',
+            'jabatan.*' => 'required|string',
+        ]);
+
+        $semua = PanduanData::all();
+        $dipilih = array_unique(array_map('strtolower', $request->input('jabatan')));
+
+        $groups = [];
+        $total = 0;
+
+        foreach ($this->panduanJabatanMap() as $slug => $cfg) {
+            if (!in_array($slug, $dipilih, true)) {
+                continue;
+            }
+
+            $items = [];
+            foreach ($cfg['keys'] as $key) {
+                if (!isset($semua[$key])) {
+                    continue;
+                }
+                $items[] = ['key' => $key, 'p' => $this->bersihkanPanduanPdf($semua[$key])];
+            }
+
+            if (empty($items)) {
+                continue;
+            }
+
+            $total += count($items);
+            $groups[] = ['label' => $cfg['label'], 'items' => $items];
+        }
+
+        if (empty($groups)) {
+            abort(404, 'Panduan belum tersedia untuk jabatan yang dipilih.');
+        }
+
+        $pdf = Pdf::loadView('KPIdata.panduan.pdf', [
+            'groups'  => $groups,
+            'total'   => $total,
+            'tanggal' => now()->locale('id')->translatedFormat('d F Y, H:i'),
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+        $pdf->setOption('isHtml5ParserEnabled', true);
+        $pdf->setOption('defaultFont', 'DejaVu Sans');
+
+        return $pdf->download('Panduan_Target_KPI_' . now()->format('Ymd_His') . '.pdf');
+    }
+
+    private function baseKaryawanAktif()
+    {
+        return karyawan::where('status_aktif', '1')
+            ->where('jabatan', '!=', 'Outsource')
+            ->where('jabatan', '!=', 'Pilih Jabatan')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNotNull('nip')
+            ->whereNotNull('divisi')
+            ->where('divisi', '!=', '')
+            ->where('divisi', '!=', 'Direksi');
     }
 }

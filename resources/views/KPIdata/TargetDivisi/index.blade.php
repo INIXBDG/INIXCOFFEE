@@ -73,7 +73,10 @@
                         <button type="button" class="btn-action success" data-bs-toggle="modal" data-bs-target="#ModalImport">
                             <i class="fa-solid fa-file-import"></i> <span>Import Data</span>
                         </button>
-
+                        <button type="button" class="btn-action" style="background: #fff; border: 1px solid #e2e8f0; color: #475569;"
+                            data-bs-toggle="modal" data-bs-target="#modalPanduanPdf">
+                            <i class="fa-solid fa-file-pdf"></i> <span>Download Panduan</span>
+                        </button>
                         <div class="ms-auto" style="min-width: 260px;">
                             <div class="position-relative">
                                 <i class="fa-solid fa-magnifying-glass position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem;"></i>
@@ -448,6 +451,60 @@
             </form>
         </div>
     </div>
+    
+    {{-- Modal Panduan --}}
+    <div class="modal fade" id="modalPanduan" tabindex="-1" aria-labelledby="modalPanduanLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPanduanLabel">
+                        <span class="title-icon"><i class="fa-solid fa-book-open"></i></span>
+                        <span id="panduanTitle">Panduan Target</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="bodyContentPanduan">
+                    {{-- Konten akan di-inject dari file panduan --}}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        <i class="fa-solid fa-xmark me-1"></i> Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPanduanPdf" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="formPanduanPdf" method="GET" action="{{ route('kpi.panduanPdf') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><span class="title-icon"><i class="fa-solid fa-file-pdf"></i></span> Download Panduan (PDF)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">Pilih jabatan atau divisi. Semua panduan yang dipilih digabung menjadi satu file PDF.</p>
+                        <div class="form-check mb-3 pb-3 border-bottom">
+                            <input class="form-check-input" type="checkbox" id="cekSemuaPanduan">
+                            <label class="form-check-label fw-semibold" for="cekSemuaPanduan">Pilih semua</label>
+                        </div>
+                        <div id="panduanPdfOpsi"></div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <small class="text-muted" id="infoPanduanPdf">0 jabatan dipilih</small>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn-action primary" id="btnDownloadPanduanPdf" disabled>
+                                <i class="fa-solid fa-download"></i> <span>Download PDF</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
     <script>
         window.KPI_CONFIG = {
@@ -471,7 +528,11 @@
             // Session & Auth
             importErrors: @json(session('import_errors')),
             isKoordinatorItsm: {{ auth()->user()->jabatan === 'Koordinator ITSM' ? 'true' : 'false' }},
-            storageBase: "{{ asset('storage') }}"
+            storageBase: "{{ asset('storage') }}",
+
+            // Panduan
+            panduanOpsi: "{{ route('kpi.panduanOpsi') }}",
+            panduanPdf: "{{ route('kpi.panduanPdf') }}",
         };
 
         // Fix untuk route hapusTarget agar bisa diganti ID-nya di JS
