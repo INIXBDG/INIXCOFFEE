@@ -1323,7 +1323,7 @@
                 <div class="panel stat purple">
                     <div class="stat-top">
                         <div>
-                            <div class="l">Jatuh tempo 30 hari</div>
+                            <div class="l">Jatuh tempo 2 bulan</div>
                             <div class="n" id="sumJatuh">0</div>
                         </div>
                         <div class="stat-ico bg-purple"><i class="fa-solid fa-calendar-xmark"></i></div>

@@ -20,7 +20,12 @@ class trackingTagihanPerusahaan extends Model
         'tanggal_perkiraan_mulai',
         'tanggal_perkiraan_selesai',
         'kegiatan',
-        'tipe'
+        'tipe',
+        'is_urgent'
+    ];
+
+    protected $casts = [
+        'is_urgent' => 'boolean',
     ];
 
     public function tagihanPerusahaan ()

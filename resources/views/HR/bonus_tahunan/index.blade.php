@@ -233,6 +233,15 @@
                                 </select>
                             </div>
 
+                            <div class="col-6 col-md-auto">
+                                <label class="visually-hidden" for="filterIkut">Keikutsertaan</label>
+                                <select id="filterIkut" class="form-select form-select-sm" style="min-width: 150px;" onchange="applyFilters()">
+                                    <option value="all">Semua Keikutsertaan</option>
+                                    <option value="ikut">Ikut Dihitung</option>
+                                    <option value="keluar">Dikecualikan</option>
+                                </select>
+                            </div>
+
                             <div class="col-12 col-md">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white border-end-0 text-muted"><i
@@ -261,7 +270,20 @@
                             </h5>
                             <span class="badge bg-light text-secondary border" id="rowCountBadge">0 Data</span>
                         </div>
+                        
                         <div class="d-flex gap-2">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-user-check me-1"></i>Pilih Peserta
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                    <li><h6 class="dropdown-header">Berlaku untuk data yang tampil (sesuai filter):</h6></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="bulkIkut(true)">
+                                        <i class="fa-solid fa-user-plus text-success me-2"></i>Ikutkan semua yang tampil</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0)" onclick="bulkIkut(false)">
+                                        <i class="fa-solid fa-user-minus text-danger me-2"></i>Keluarkan semua yang tampil</a></li>
+                                </ul>
+                            </div>
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
                                     id="bulkActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
@@ -301,6 +323,7 @@
                                     <th style="min-width: 190px;" class="text-center">Masa Kerja</th>
                                     <th style="min-width: 170px;" class="text-center">Skema Bonus</th>
                                     <th style="min-width: 160px;" class="text-end">Nominal Bonus</th>
+                                    <th style="width: 90px;" class="text-center">Ikut Hitung</th>
                                     <th style="width: 70px;" class="text-center">Aksi</th>
                                 </tr>
                             </thead>
@@ -985,7 +1008,7 @@
                 searching: false,
                 deferRender: true,
                 autoWidth: false,
-                order: [[2, 'asc']],
+                order: [[3, 'asc']],
                 dom: '<"dt-top"l>rt<"dt-bottom"ip>',
                 language: {
                     lengthMenu: 'Tampilkan _MENU_ karyawan',
@@ -1096,6 +1119,22 @@
                         }
                     },
                     {
+                        data: 'is_excluded',
+                        orderable: false,
+                        className: 'text-center',
+                        render: function (d, type, row) {
+                            if (type !== 'display') return d ? 0 : 1;
+                            const dis = row.berhak_asli ? '' : 'disabled';
+                            const chk = (row.berhak_asli && !row.is_excluded) ? 'checked' : '';
+                            const title = row.berhak_asli ? 'Ikut / keluarkan dari perhitungan' : 'Belum berhak bonus';
+                            return `<div class="form-check form-switch d-flex justify-content-center mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" title="${title}"
+                                            id="ikut-${row.karyawan_id}" ${chk} ${dis}
+                                            onchange="toggleIkut(${row.karyawan_id}, this.checked)">
+                                    </div>`;
+                        }
+                    },
+                    {
                         data: 'karyawan_id',
                         orderable: false,
                         className: 'text-center',
@@ -1130,11 +1169,14 @@
             const status = document.getElementById('filterStatus').value;
             const skema = document.getElementById('filterSkema').value;
             const search = document.getElementById('searchKeyword').value.toLowerCase().trim();
+            const ikut = document.getElementById('filterIkut').value;
 
             currentFiltered = cachedBonusData.filter(item => {
                 if (divisi !== 'all' && item.divisi !== divisi) return false;
                 if (status !== 'all' && item.status_karyawan !== status) return false;
                 if (skema !== 'all' && item.skema_bonus !== skema) return false;
+                if (ikut === 'ikut' && item.is_excluded) return false;
+                if (ikut === 'keluar' && !item.is_excluded) return false;
                 if (search) {
                     const hay = [item.nama_lengkap, item.nip, item.jabatan, item.divisi, item.rekening_maybank]
                         .map(v => String(v || '').toLowerCase()).join(' | ');
@@ -1159,6 +1201,7 @@
             document.getElementById('filterStatus').value = 'all';
             document.getElementById('filterSkema').value = 'all';
             document.getElementById('searchKeyword').value = '';
+            document.getElementById('filterIkut').value = 'all';
             applyFilters();
         }
 
@@ -1225,7 +1268,8 @@
             const tahun = parseInt(document.getElementById('filterTahun').value);
             const s = cachedSummary || {};
             const eligible = cachedBonusData.filter(x => x.berhak);
-            const notEligible = cachedBonusData.filter(x => !x.berhak);
+            const notEligible = cachedBonusData.filter(x => !x.berhak && !x.is_excluded);
+            const excludedList = cachedBonusData.filter(x => x.is_excluded);
 
             const totalBonus = eligible.reduce((a, i) => a + num(i.nominal_bonus), 0);
             const totalBasic = eligible.reduce((a, i) => a + num(i.basic_salary), 0);
@@ -1385,7 +1429,8 @@
                 { title: 'Skema Custom', icon: 'fa-pen-to-square', color: 'primary', list: eligible.filter(i => i.skema_bonus === 'custom') },
                 { title: 'Belum Berhak (Masuk Setelah Periode)', icon: 'fa-user-clock', color: 'secondary', list: notEligible },
                 { title: 'Bulan Kerja Prorata (< 12 Bln)', icon: 'fa-hourglass-half', color: 'info', list: eligible.filter(i => num(i.bulan_kerja) < 12) },
-                { title: 'Skema 2x / 4x', icon: 'fa-bolt', color: 'success', list: eligible.filter(i => i.skema_bonus === '2x' || i.skema_bonus === '4x') }
+                { title: 'Skema 2x / 4x', icon: 'fa-bolt', color: 'success', list: eligible.filter(i => i.skema_bonus === '2x' || i.skema_bonus === '4x') },
+                { title: 'Dikecualikan dari Perhitungan', icon: 'fa-user-slash', color: 'secondary', list: excludedList },
             ];
             document.getElementById('info-attention').innerHTML = attention.map(a => {
                 const names = a.list.slice(0, 5).map(i => escapeHtml(i.nama_lengkap)).join(', ');
@@ -1813,6 +1858,48 @@
                 error: function() {
                     showToast('Gagal bulk update skema', false);
                 }
+            });
+        }
+
+        function sendInclude(payload, onDone) {
+            $.ajax({
+                url: "{{ route('HR.bonus-tahunan.toggle-include') }}",
+                type: "POST",
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: payload,
+                success: function (res) {
+                    showToast(res.message, !!res.success);
+                    loadData(false);
+                },
+                error: function (xhr) {
+                    const msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Gagal menyimpan perubahan.';
+                    showToast(msg, false);
+                    loadData(false);
+                }
+            });
+        }
+
+        function toggleIkut(karyawanId, ikut) {
+            sendInclude({
+                karyawan_id: karyawanId,
+                tahun: document.getElementById('filterTahun').value,
+                ikut: ikut ? 1 : 0
+            });
+        }
+
+        function bulkIkut(ikut) {
+            const ids = currentFiltered.filter(x => x.berhak_asli).map(x => x.karyawan_id);
+            if (!ids.length) {
+                showToast('Tidak ada karyawan yang bisa diubah pada tampilan saat ini.', false);
+                return;
+            }
+            const aksi = ikut ? 'diikutsertakan' : 'dikeluarkan';
+            if (!confirm(`${ids.length} karyawan yang tampil akan ${aksi} dalam perhitungan bonus. Lanjutkan?`)) return;
+
+            sendInclude({
+                karyawan_ids: ids,
+                tahun: document.getElementById('filterTahun').value,
+                ikut: ikut ? 1 : 0
             });
         }
 

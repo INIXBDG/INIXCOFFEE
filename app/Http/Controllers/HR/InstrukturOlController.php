@@ -5,7 +5,9 @@ namespace App\Http\Controllers\HR;
 use App\Exports\ArrayExport;
 use App\Http\Controllers\Controller;
 use App\Models\InstrukturOl;
+use App\Models\InstrukturOlMateri;
 use App\Models\InstrukturOlPembayaran;
+use App\Models\InstrukturOlRiwayat;
 use App\Models\InstrukturOlSilabus;
 use App\Models\karyawan;
 use App\Models\RKM;
@@ -26,10 +28,17 @@ class InstrukturOlController extends Controller
 {
     private const DIR = InstrukturOl::UPLOAD_DIR;
 
+    /** Dipakai untuk membaca peran instruktur di sebuah RKM (informasi saja) dan filter "kelas instruktur ini". */
     private const PERAN = [
         'utama'        => ['kolom' => 'instruktur_key',  'label' => 'Instruktur Utama'],
         'instruktur-2' => ['kolom' => 'instruktur_key2', 'label' => 'Instruktur 2'],
         'asisten'      => ['kolom' => 'asisten_key',     'label' => 'Asisten'],
+    ];
+
+    /** Silabus & Materi memakai logika yang sama. */
+    private const DOKUMEN = [
+        'silabus' => ['relasi' => 'silabus', 'dir' => 'silabus', 'label' => 'Silabus'],
+        'materi'  => ['relasi' => 'materis', 'dir' => 'materi',  'label' => 'Materi'],
     ];
 
     private const KOLOM_LIST = [
@@ -266,20 +275,100 @@ class InstrukturOlController extends Controller
         ];
     }
 
+    // ---------- Riwayat Mengajar (dipilih manual dari RKM) ----------
+
     public function riwayat(InstrukturOl $instruktur): JsonResponse
     {
-        $kode = trim((string) $instruktur->kode_karyawan);
-        $data = [];
+        return $this->responRiwayat($instruktur);
+    }
 
-        foreach (self::PERAN as $peran => $meta) {
-            $data[$peran] = $kode === ''
-                ? []
-                : $this->riwayatQuery($kode, $meta['kolom'])->get()
-                    ->map(fn ($r) => $this->barisRiwayat($r, $meta['label']))
-                    ->values();
+    /**
+     * Tabel pemilih RKM: search, filter, pagination.
+     * Dipakai oleh Riwayat Mengajar (multi pilih) serta Silabus & Materi (pilih satu).
+     */
+    public function rkmPilihan(Request $request, InstrukturOl $instruktur): JsonResponse
+    {
+        $kode = trim((string) $instruktur->kode_karyawan);
+
+        $paginator = RKM::query()
+            ->with(['materi', 'perusahaan'])
+            ->when($request->q, function ($q, $term) {
+                $q->where(function ($w) use ($term) {
+                    $w->whereHas('materi', fn ($m) => $m->where('nama_materi', 'like', "%{$term}%"))
+                        ->orWhereHas('perusahaan', fn ($p) => $p->where('nama_perusahaan', 'like', "%{$term}%"));
+                });
+            })
+            ->when($request->tahun, fn ($q, $y) => $q->whereYear('tanggal_awal', (int) $y))
+            ->when($request->metode, fn ($q, $m) => $q->where('metode_kelas', $m))
+            ->when($request->boolean('milik') && $kode !== '', function ($q) use ($kode) {
+                $q->where(function ($w) use ($kode) {
+                    foreach (self::PERAN as $meta) {
+                        $w->orWhere($meta['kolom'], $kode);
+                    }
+                });
+            })
+            ->orderByDesc('tanggal_awal')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->through(fn ($r) => $this->barisRiwayat($r, $kode));
+
+        return response()->json(array_merge($paginator->toArray(), [
+            'added'          => $instruktur->riwayats()->pluck('rkm_id')->values(),
+            'tahun_options'  => RKM::query()->whereNotNull('tanggal_awal')
+                ->selectRaw('YEAR(tanggal_awal) as y')->distinct()->orderByDesc('y')->pluck('y'),
+            'metode_options' => RKM::query()->whereNotNull('metode_kelas')->where('metode_kelas', '!=', '')
+                ->distinct()->orderBy('metode_kelas')->pluck('metode_kelas'),
+        ]));
+    }
+
+    public function riwayatStore(Request $request, InstrukturOl $instruktur): JsonResponse
+    {
+        $data = $request->validate([
+            'rkm_ids'   => ['required', 'array', 'min:1'],
+            'rkm_ids.*' => ['integer', Rule::exists((new RKM)->getTable(), 'id')],
+        ], ['rkm_ids.required' => 'Pilih minimal 1 kelas.']);
+
+        $ids   = array_values(array_unique(array_map('intval', $data['rkm_ids'])));
+        $sudah = $instruktur->riwayats()->whereIn('rkm_id', $ids)->pluck('rkm_id')->map(fn ($v) => (int) $v)->all();
+        $baru  = array_values(array_diff($ids, $sudah));
+
+        foreach ($baru as $id) {
+            $instruktur->riwayats()->create(['rkm_id' => $id]);
         }
 
-        return response()->json(['kode_kosong' => $kode === '', 'data' => $data]);
+        return $this->responRiwayat($instruktur, count($baru) . ' riwayat mengajar berhasil ditambahkan.', 201);
+    }
+
+    public function riwayatDestroy(InstrukturOlRiwayat $riwayat): JsonResponse
+    {
+        $instruktur = $riwayat->instruktur;
+        $riwayat->delete(); // hanya melepas tautan ke RKM, data RKM tidak disentuh
+
+        return $this->responRiwayat($instruktur, 'Riwayat mengajar berhasil dihapus.');
+    }
+
+    private function responRiwayat(InstrukturOl $instruktur, ?string $message = null, int $status = 200): JsonResponse
+    {
+        $payload = ['data' => $this->riwayatItems($instruktur)];
+
+        if ($message) {
+            $payload['message'] = $message;
+        }
+
+        return response()->json($payload, $status);
+    }
+
+    private function riwayatItems(InstrukturOl $instruktur)
+    {
+        $kode = trim((string) $instruktur->kode_karyawan);
+
+        return $instruktur->riwayats()
+            ->with(['rkm.materi', 'rkm.perusahaan'])
+            ->get()
+            ->filter(fn ($l) => $l->rkm)
+            ->sortByDesc(fn ($l) => $l->rkm->tanggal_awal?->getTimestamp() ?? 0)
+            ->map(fn ($l) => $this->barisRiwayat($l->rkm, $kode, $l->id))
+            ->values();
     }
 
     public function export(Request $request)
@@ -324,27 +413,21 @@ class InstrukturOlController extends Controller
             'columns.*' => ['in:' . implode(',', array_keys(self::KOLOM_RIWAYAT))],
         ], ['columns.required' => 'Pilih minimal 1 kolom untuk diexport.']);
 
-        $kode = trim((string) $instruktur->kode_karyawan);
-        abort_if($kode === '', 422, 'Kode Karyawan belum diisi.');
-
         $cols = $this->pilihKolom(self::KOLOM_RIWAYAT, $request->input('columns'));
         $rows = [];
         $no   = 1;
 
-        foreach (self::PERAN as $meta) {
-            foreach ($this->riwayatQuery($kode, $meta['kolom'])->get() as $r) {
-                $b   = $this->barisRiwayat($r, $meta['label']);
-                $all = [
-                    'materi'       => $b['materi'],
-                    'perusahaan'   => $b['perusahaan'],
-                    'periode'      => $this->fmtTanggal($b['tanggal_awal']) . ' s/d ' . $this->fmtTanggal($b['tanggal_akhir']),
-                    'metode_kelas' => $b['metode_kelas'],
-                    'peran'        => $b['peran'],
-                    'pax'          => $b['pax'],
-                ];
+        foreach ($this->riwayatItems($instruktur) as $b) {
+            $all = [
+                'materi'       => $b['materi'],
+                'perusahaan'   => $b['perusahaan'],
+                'periode'      => $this->fmtTanggal($b['tanggal_awal']) . ' s/d ' . $this->fmtTanggal($b['tanggal_akhir']),
+                'metode_kelas' => $b['metode_kelas'],
+                'peran'        => $b['peran'],
+                'pax'          => $b['pax'],
+            ];
 
-                $rows[] = array_merge([$no++], array_map(fn ($c) => $all[$c], $cols));
-            }
+            $rows[] = array_merge([$no++], array_map(fn ($c) => $all[$c], $cols));
         }
 
         $headings = array_merge(['No'], array_map(fn ($c) => self::KOLOM_RIWAYAT[$c], $cols));
@@ -359,35 +442,97 @@ class InstrukturOlController extends Controller
         );
     }
 
-    // ---------- Silabus ----------
+    // ---------- Silabus & Materi ----------
 
     public function silabus(InstrukturOl $instruktur): JsonResponse
     {
-        return $this->responSilabus($instruktur);
+        return $this->responDokumen($instruktur, 'silabus');
     }
 
     public function silabusStore(Request $request, InstrukturOl $instruktur): JsonResponse
     {
-        $data = $request->validate($this->silabusRules(true));
-
-        $file     = $request->file('file');
-        $uploaded = [];
-
-        $instruktur->silabus()->create([
-            'judul'          => $data['judul'],
-            'keterangan'     => $data['keterangan'] ?? null,
-            'file_path'      => $this->simpanFile($file, 'silabus', $uploaded),
-            'file_nama_asli' => $file->getClientOriginalName(),
-        ]);
-
-        return $this->responSilabus($instruktur, 'Silabus berhasil diunggah.', 201);
+        return $this->dokStore($request, $instruktur, 'silabus');
     }
 
     public function silabusUpdate(Request $request, InstrukturOlSilabus $silabus): JsonResponse
     {
-        $data = $request->validate($this->silabusRules(false));
+        return $this->dokUpdate($request, $silabus, 'silabus');
+    }
+
+    public function silabusDestroy(InstrukturOlSilabus $silabus): JsonResponse
+    {
+        return $this->dokDestroy($silabus, 'silabus');
+    }
+
+    public function materi(InstrukturOl $instruktur): JsonResponse
+    {
+        return $this->responDokumen($instruktur, 'materi');
+    }
+
+    public function materiStore(Request $request, InstrukturOl $instruktur): JsonResponse
+    {
+        return $this->dokStore($request, $instruktur, 'materi');
+    }
+
+    public function materiUpdate(Request $request, InstrukturOlMateri $materi): JsonResponse
+    {
+        return $this->dokUpdate($request, $materi, 'materi');
+    }
+
+    public function materiDestroy(InstrukturOlMateri $materi): JsonResponse
+    {
+        return $this->dokDestroy($materi, 'materi');
+    }
+
+    private function dokRules(): array
+    {
+        return [
+            'rkm_id'     => ['nullable', 'integer', Rule::exists((new RKM)->getTable(), 'id')],
+            'judul'      => ['required', 'string', 'max:255'],
+            'keterangan' => ['nullable', 'string', 'max:500'],
+            'file'       => ['nullable', 'file', 'mimes:pdf,doc,docx,ppt,pptx', 'max:10240'],
+        ];
+    }
+
+    private function dokStore(Request $request, InstrukturOl $instruktur, string $jenis): JsonResponse
+    {
+        $meta = self::DOKUMEN[$jenis];
+        $data = $request->validate($this->dokRules());
+
+        // Wajib salah satu: pilih kelas dari RKM, atau unggah file sendiri.
+        if (empty($data['rkm_id']) && !$request->hasFile('file')) {
+            throw ValidationException::withMessages([
+                'file' => "Pilih kelas dari RKM atau unggah file {$meta['label']}.",
+            ]);
+        }
+
+        $file     = $request->file('file');
+        $uploaded = [];
+
+        $instruktur->{$meta['relasi']}()->create([
+            'rkm_id'         => $data['rkm_id'] ?? null,
+            'judul'          => $data['judul'],
+            'keterangan'     => $data['keterangan'] ?? null,
+            'file_path'      => $this->simpanFile($file, $meta['dir'], $uploaded),
+            'file_nama_asli' => $file?->getClientOriginalName(),
+        ]);
+
+        return $this->responDokumen($instruktur, $jenis, "{$meta['label']} berhasil ditambahkan.", 201);
+    }
+
+    private function dokUpdate(Request $request, $dok, string $jenis): JsonResponse
+    {
+        $meta = self::DOKUMEN[$jenis];
+        $data = $request->validate($this->dokRules());
+
+        if (empty($data['rkm_id']) && !$request->hasFile('file') && !$dok->file_path) {
+            throw ValidationException::withMessages([
+                'file' => "Pilih kelas dari RKM atau unggah file {$meta['label']}.",
+            ]);
+        }
 
         $attributes = [
+            'rkm_id'     => $data['rkm_id'] ?? null,
             'judul'      => $data['judul'],
             'keterangan' => $data['keterangan'] ?? null,
         ];
@@ -395,47 +540,64 @@ class InstrukturOlController extends Controller
         if ($request->hasFile('file')) {
             $file     = $request->file('file');
             $uploaded = [];
-            $old      = $silabus->file_path;
+            $old      = $dok->file_path;
 
-            $attributes['file_path']      = $this->simpanFile($file, 'silabus', $uploaded);
+            $attributes['file_path']      = $this->simpanFile($file, $meta['dir'], $uploaded);
             $attributes['file_nama_asli'] = $file->getClientOriginalName();
 
             if ($old) {
-                $this->hapusFile('silabus/' . $old);
+                $this->hapusFile($meta['dir'] . '/' . $old);
             }
         }
 
-        $silabus->update($attributes);
+        $dok->update($attributes);
 
-        return $this->responSilabus($silabus->instruktur, 'Silabus berhasil diperbarui.');
+        return $this->responDokumen($dok->instruktur, $jenis, "{$meta['label']} berhasil diperbarui.");
     }
 
-    public function silabusDestroy(InstrukturOlSilabus $silabus): JsonResponse
+    private function dokDestroy($dok, string $jenis): JsonResponse
     {
-        $instruktur = $silabus->instruktur;
-        $silabus->delete(); // soft delete, file dibiarkan
+        $instruktur = $dok->instruktur;
+        $dok->delete(); // soft delete, file dibiarkan
 
-        return $this->responSilabus($instruktur, 'Silabus berhasil dihapus.');
+        return $this->responDokumen($instruktur, $jenis, self::DOKUMEN[$jenis]['label'] . ' berhasil dihapus.');
     }
 
-    private function silabusRules(bool $wajibFile): array
+    private function responDokumen(InstrukturOl $instruktur, string $jenis, ?string $message = null, int $status = 200): JsonResponse
     {
-        return [
-            'judul'      => ['required', 'string', 'max:255'],
-            'keterangan' => ['nullable', 'string', 'max:500'],
-            'file'       => [$wajibFile ? 'required' : 'nullable', 'file', 'mimes:pdf,doc,docx,ppt,pptx', 'max:10240'],
-        ];
-    }
+        $items = $instruktur->{self::DOKUMEN[$jenis]['relasi']}()
+            ->with(['rkm.materi', 'rkm.perusahaan'])
+            ->latest()
+            ->get()
+            ->map(function ($d) {
+                $kelas = $this->labelRkm($d->rkm);
+                $row   = $d->makeHidden('rkm')->toArray();
 
-    private function responSilabus(InstrukturOl $instruktur, ?string $message = null, int $status = 200): JsonResponse
-    {
-        $payload = ['data' => $instruktur->silabus()->latest()->get()];
+                $row['kelas'] = $kelas;
+
+                return $row;
+            })
+            ->values();
+
+        $payload = ['data' => $items];
 
         if ($message) {
             $payload['message'] = $message;
         }
 
         return response()->json($payload, $status);
+    }
+
+    private function labelRkm(?RKM $r): ?string
+    {
+        if (!$r) {
+            return null;
+        }
+
+        $materi     = $r->materi->nama_materi ?? '-';
+        $perusahaan = $r->perusahaan->nama_perusahaan ?? '-';
+
+        return "{$materi} — {$perusahaan} (" . $this->fmtTanggal($r->tanggal_awal?->format('Y-m-d')) . ')';
     }
 
     // ---------- Riwayat Pembayaran ----------
@@ -529,20 +691,16 @@ class InstrukturOlController extends Controller
         ];
     }
 
+    /** Kelas pembayaran harus salah satu kelas yang sudah ada di riwayat mengajar instruktur. */
     private function pastikanRkmMilik(InstrukturOl $instruktur, $rkmId): void
     {
         if (!$rkmId) {
             return;
         }
 
-        $kode  = trim((string) $instruktur->kode_karyawan);
-        $rkm   = RKM::find($rkmId);
-        $milik = $rkm && $kode !== '' && collect(self::PERAN)
-            ->contains(fn ($m) => (string) $rkm->{$m['kolom']} === $kode);
-
-        if (!$milik) {
+        if (!$instruktur->riwayats()->where('rkm_id', $rkmId)->exists()) {
             throw ValidationException::withMessages([
-                'rkm_id' => 'Kelas yang dipilih bukan riwayat mengajar instruktur ini.',
+                'rkm_id' => 'Kelas yang dipilih belum ada di riwayat mengajar instruktur ini.',
             ]);
         }
     }
@@ -582,28 +740,15 @@ class InstrukturOlController extends Controller
         return response()->json($payload, $status);
     }
 
+    /** Opsi kelas pada form pembayaran = riwayat mengajar yang sudah dipilih. */
     private function opsiRkm(InstrukturOl $instruktur): array
     {
-        $kode = trim((string) $instruktur->kode_karyawan);
-        $out  = [];
-
-        if ($kode === '') {
-            return $out;
-        }
-
-        foreach (self::PERAN as $meta) {
-            foreach ($this->riwayatQuery($kode, $meta['kolom'])->get() as $r) {
-                $b     = $this->barisRiwayat($r, $meta['label']);
-                $out[] = [
-                    'id'    => $b['id'],
-                    'materi' => $b['materi'],
-                    'pax'   => $b['pax'],
-                    'label' => "{$b['materi']} — {$b['perusahaan']} ({$this->fmtTanggal($b['tanggal_awal'])}) · {$b['peran']}",
-                ];
-            }
-        }
-
-        return $out;
+        return $this->riwayatItems($instruktur)->map(fn ($b) => [
+            'id'     => $b['rkm_id'],
+            'materi' => $b['materi'],
+            'pax'    => $b['pax'],
+            'label'  => "{$b['materi']} — {$b['perusahaan']} ({$this->fmtTanggal($b['tanggal_awal'])}) · {$b['peran']}",
+        ])->values()->all();
     }
 
     private function cariInstruktur($query, string $term)
@@ -616,25 +761,35 @@ class InstrukturOlController extends Controller
         });
     }
 
-    private function riwayatQuery(string $kode, string $kolom)
+    private function peranDari(RKM $r, string $kode): string
     {
-        return RKM::query()
-            ->with(['materi', 'perusahaan'])
-            ->where($kolom, $kode)
-            ->orderByDesc('tanggal_awal');
+        if ($kode === '') {
+            return '-';
+        }
+
+        $labels = [];
+
+        foreach (self::PERAN as $meta) {
+            if ((string) $r->{$meta['kolom']} === $kode) {
+                $labels[] = $meta['label'];
+            }
+        }
+
+        return $labels ? implode(', ', $labels) : '-';
     }
 
-    private function barisRiwayat(RKM $r, string $peran): array
+    private function barisRiwayat(RKM $r, string $kode, ?int $riwayatId = null): array
     {
         return [
-            'id'            => $r->id,
+            'id'            => $riwayatId, // id tautan riwayat (null pada tabel pemilih RKM)
+            'rkm_id'        => $r->id,
             'materi'        => $r->materi->nama_materi ?? '-',
             'perusahaan'    => $r->perusahaan->nama_perusahaan ?? '-',
             'tanggal_awal'  => $r->tanggal_awal?->format('Y-m-d'),
             'tanggal_akhir' => $r->tanggal_akhir?->format('Y-m-d'),
             'metode_kelas'  => $r->metode_kelas ?: '-',
             'pax'           => (int) $r->pax,
-            'peran'         => $peran,
+            'peran'         => $this->peranDari($r, $kode),
         ];
     }
 
