@@ -1159,7 +1159,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/detail-tagihan/{id}', [TagihanPerusahaanController::class, 'detailTagihanPerusahaan'])->name('detailTagihanPerusahaan');
         Route::post('/delete-tagihan/{id}', [TagihanPerusahaanController::class, 'hapusTagihanPerusahaan'])->name('hapusTagihanPerusahaan');
         Route::get('/tagihan-perusahaan', [TagihanPerusahaanController::class, 'index'])->name('office.tagihanPerusahaan.index');
-
+        Route::post('/toggle-urgent/{id}', [TagihanPerusahaanController::class, 'toggleUrgent'])->name('toggleUrgentTagihan');
+        Route::post('/update-inline/{id}', [TagihanPerusahaanController::class, 'updateInline'])->name('updateInlineTagihan');
+        Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan'])->name('dataTagihan');
+        Route::post('/reorder-urgent', [TagihanPerusahaanController::class, 'reorderUrgent'])->name('reorderUrgentTagihan');
+        
         Route::get('/sop-perusahaan', [PerusahaanController::class, 'indexSop'])->name('sop.perusahaan.index');
         Route::get('/sop-perusahaan/{id}', [PerusahaanController::class, 'detailSop'])->name('sop.perusahaan.detail');
         Route::post('/sop-perusahaan/store', [PerusahaanController::class, 'storeSop'])->name('sop.perusahaan.store');
@@ -1537,6 +1541,18 @@ Route::middleware(['auth'])->group(function () {
             Route::post('{instruktur}/silabus', [InstrukturOlController::class, 'silabusStore'])->name('silabus.store');
             Route::put('silabus/{silabus}', [InstrukturOlController::class, 'silabusUpdate'])->name('silabus.update');
             Route::delete('silabus/{silabus}', [InstrukturOlController::class, 'silabusDestroy'])->name('silabus.destroy');
+
+            Route::get('/{instruktur}/rkm-pilihan', [InstrukturOlController::class, 'rkmPilihan'])->name('rkm-pilihan');
+            
+            // Riwayat mengajar manual (pilih dari RKM)
+            Route::post('/{instruktur}/riwayat', [InstrukturOlController::class, 'riwayatStore'])->name('riwayat.store');
+            Route::delete('/riwayat/{riwayat}', [InstrukturOlController::class, 'riwayatDestroy'])->name('riwayat.destroy');
+            
+            // Materi (sama seperti silabus)
+            Route::get('/{instruktur}/materi', [InstrukturOlController::class, 'materi'])->name('materi.index');
+            Route::post('/{instruktur}/materi', [InstrukturOlController::class, 'materiStore'])->name('materi.store');
+            Route::put('/materi/{materi}', [InstrukturOlController::class, 'materiUpdate'])->name('materi.update');
+            Route::delete('/materi/{materi}', [InstrukturOlController::class, 'materiDestroy'])->name('instruktur-ol.materi.destroy');
         });
 
         Route::prefix('data-password')->name('data-password.')->group(function () {
@@ -1623,6 +1639,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/recalculate', [BonusTahunanController::class, 'recalculateAll'])->name('recalculate');
             Route::get('/export/excel', [BonusTahunanController::class, 'exportExcel'])->name('export.excel');
             Route::get('/export/pdf', [BonusTahunanController::class, 'exportPdf'])->name('export.pdf');
+            Route::post('/toggle-include', [BonusTahunanController::class, 'toggleInclude'])->name('toggle-include');
         });
 
         Route::prefix('thr')->name('thr.')->group(function () {

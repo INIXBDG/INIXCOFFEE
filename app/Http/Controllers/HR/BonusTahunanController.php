@@ -58,6 +58,7 @@ class BonusTahunanController extends Controller
                 $table->text('catatan')->nullable();
                 $table->boolean('is_locked')->default(false);
                 $table->boolean('is_edited')->default(false);
+                $table->boolean('is_excluded')->default(false);
                 $table->timestamps();
 
                 $table->unique(['karyawan_id', 'tahun', 'bulan'], 'unique_bonus_karyawan_periode');
@@ -68,6 +69,7 @@ class BonusTahunanController extends Controller
                 'nip' => fn (Blueprint $t) => $t->string('nip', 100)->nullable(),
                 'divisi' => fn (Blueprint $t) => $t->string('divisi', 150)->nullable(),
                 'is_edited' => fn (Blueprint $t) => $t->boolean('is_edited')->default(false),
+                'is_excluded' => fn (Blueprint $t) => $t->boolean('is_excluded')->default(false),
             ];
 
             foreach ($additions as $column => $definition) {
@@ -161,6 +163,14 @@ class BonusTahunanController extends Controller
         $tahun = (int) $validated['tahun'];
         $emp = karyawan::findOrFail($validated['karyawan_id']);
         $saved = BonusTahunan::where('karyawan_id', $emp->id)->where('tahun', $tahun)->where('bulan', 12)->first();
+
+        if ($saved && $saved->is_excluded) {
+            return response()->json([
+                'success' => false,
+                'message' => "{$emp->nama_lengkap} sedang dikeluarkan dari perhitungan bonus.",
+            ], 422);
+        }
+
         $skema = $validated['skema_bonus'];
         $fullEdit = $request->boolean('full_edit');
 
@@ -260,6 +270,54 @@ class BonusTahunanController extends Controller
         ]);
     }
 
+    public function toggleInclude(Request $request): JsonResponse
+    {
+        $this->ensureTableExists();
+
+        $validated = $request->validate([
+            'tahun' => 'required|integer',
+            'ikut' => 'required|boolean',
+            'karyawan_id' => 'nullable|integer|exists:karyawans,id',
+            'karyawan_ids' => 'nullable|array',
+            'karyawan_ids.*' => 'integer|exists:karyawans,id',
+        ]);
+
+        $ids = collect($validated['karyawan_ids'] ?? []);
+        if (!empty($validated['karyawan_id'])) {
+            $ids->push((int) $validated['karyawan_id']);
+        }
+        $ids = $ids->unique()->values();
+
+        if ($ids->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada karyawan yang dipilih.'], 422);
+        }
+
+        $tahun = (int) $validated['tahun'];
+        $ikut = $request->boolean('ikut');
+
+        DB::beginTransaction();
+        try {
+            foreach ($ids as $id) {
+                $bonus = BonusTahunan::firstOrNew([
+                    'karyawan_id' => $id,
+                    'tahun' => $tahun,
+                    'bulan' => 12,
+                ]);
+                $bonus->is_excluded = !$ikut;
+                $bonus->save();
+            }
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => $ids->count() . ' karyawan ' . ($ikut ? 'diikutsertakan dalam' : 'dikeluarkan dari') . ' perhitungan bonus.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function bulkUpdate(Request $request): JsonResponse
     {
         $this->ensureTableExists();
@@ -343,6 +401,9 @@ class BonusTahunanController extends Controller
                 ->get();
 
             foreach ($bonuses as $bonus) {
+                if ($bonus->is_excluded) {
+                    continue;
+                }
                 $emp = karyawan::find($bonus->karyawan_id);
 
                 if (!$emp) {
@@ -814,6 +875,14 @@ class BonusTahunanController extends Controller
                     : $this->getBasicSalaryForEmployee($emp, $tahun);
             }
 
+            $excluded = $saved && (bool) $saved->is_excluded;
+            $berhakAsli = $berhak;
+
+            if ($excluded) {
+                $berhak = false;
+                $keterangan = 'Dikecualikan dari perhitungan bonus';
+            }
+
             $catatan = null;
 
             if (!$berhak) {
@@ -882,6 +951,8 @@ class BonusTahunanController extends Controller
                 'is_direksi' => strcasecmp(trim((string) $divisiItem), 'Direksi') === 0,
                 'berhak' => $berhak,
                 'keterangan' => $keterangan,
+                'is_excluded' => $excluded,
+                'berhak_asli' => $berhakAsli,
             ]);
         }
 
@@ -896,6 +967,8 @@ class BonusTahunanController extends Controller
             'count_2x' => $eligible->where('skema_bonus', '2x')->count(),
             'count_4x' => $eligible->where('skema_bonus', '4x')->count(),
             'count_custom' => $eligible->where('skema_bonus', 'custom')->count(),
+            'total_tidak_berhak' => $items->where('berhak', false)->where('is_excluded', false)->count(),
+            'total_dikecualikan' => $items->where('is_excluded', true)->count(),
         ];
 
         return [
