@@ -589,8 +589,7 @@ class CertificateController extends Controller
             ->whereBetween($dateColumn, [$startDate, $endDate])
             ->get()
             ->flatMap(function ($eksam) use ($kategori) {
-                $materi = $eksam->rkm->materi ?? null;
-
+                $materi = $eksam->materi ?? null;
                 return $eksam->registexam->map(function ($reg) use ($materi, $kategori, $eksam) {
                     if (!$reg->peserta) {
                         return null;
