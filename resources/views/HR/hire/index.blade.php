@@ -1757,6 +1757,76 @@
         .folder-action-btn.archive:hover {
             background: #f59e0b;
         }
+
+        .form-section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border);
+            margin-top: 0.5rem;
+        }
+
+        .scan-box {
+            background: linear-gradient(135deg, #f0f7ff, #f5f0ff);
+            border: 1px dashed var(--primary);
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .scan-box-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .scan-box-title i {
+            color: var(--purple);
+        }
+
+        .scan-status {
+            font-size: 0.8rem;
+            margin-top: 0.6rem;
+            display: none;
+        }
+
+        .scan-status.loading,
+        .scan-status.ok,
+        .scan-status.error {
+            display: block;
+        }
+
+        .scan-status.loading {
+            color: var(--primary);
+        }
+
+        .scan-status.ok {
+            color: var(--success);
+        }
+
+        .scan-status.error {
+            color: var(--danger);
+        }
+
+        .scan-filled {
+            border-color: var(--success) !important;
+            background-color: #f0fdf4 !important;
+        }
+
+        .file-info {
+            font-size: 0.72rem;
+            margin-top: 0.25rem;
+        }
     </style>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -1771,11 +1841,11 @@
                 <p class="page-subtitle mb-0">Kelola seluruh pelamar yang masuk pada proses rekrutmen</p>
             </div>
             <div>
-                <a href="{{ route('HR.hire.export', array_merge(request()->query(), ['format' => 'xlsx'])) }}"
+                <a href="{{ route('HR.hire.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
                     class="btn btn-outline-secondary me-2">
                     <i class="fa-solid fa-file-export me-1"></i> Export
                 </a>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPelamar">
+                <button class="btn btn-primary" id="btnTambahPelamar">
                     <i class="fa-solid fa-user-plus me-1"></i> Tambah Pelamar
                 </button>
             </div>
@@ -1908,8 +1978,7 @@
                         </a>
                     </li>
                     <li class="folder-list-item">
-                        <a class="folder-list-link inbox-link"
-                            href="{{ route('HR.arsip.index', ['layout' => 'hr']) }}">
+                        <a class="folder-list-link inbox-link" href="{{ route('HR.arsip.index', ['layout' => 'hr']) }}">
                             <i class="fa-solid fa-inbox folder-icon"></i>
                             <span class="folder-label">Data Arsip</span>
                         </a>
@@ -1941,10 +2010,6 @@
                         </button>
                     </span>
                 </div>
-
-                <form method="GET" action="{{ route('HR.hire.index') }}" id="filterForm">
-                </form>
-
                 <div class="card" id="pelamarTableCard">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
@@ -1983,23 +2048,58 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalTambahPelamar" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg-custom modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal fade" id="modalFormPelamar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl-custom modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-user-plus"></i> Tambah Pelamar Manual</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-user-plus" id="pfIcon"></i> <span
+                            id="pfTitle">Tambah Pelamar Manual</span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="formTambahPelamar" enctype="multipart/form-data">
+                <form id="formPelamar" enctype="multipart/form-data">
                     @csrf
+                    <input type="hidden" name="pelamar_id" id="pelamarId">
                     <div class="modal-body">
-                        <div class="alert alert-light border d-flex align-items-center gap-2 mb-3"
-                            style="font-size:0.85rem;">
-                            <i class="fa-solid fa-circle-info text-primary"></i>
-                            <div>Form ini digunakan untuk memasukkan data pelamar secara manual (misal dari walk-in, email
-                                langsung, atau sumber offline).</div>
+                        <div class="scan-box">
+                            <div class="scan-box-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Isi Otomatis dari
+                                Dokumen</div>
+                            <div class="form-hint mb-2" style="margin-top:0;">
+                                Unggah CV (PDF/DOCX) atau foto KTP/Ijazah (JPG/PNG). Data yang dikenali akan mengisi form
+                                dan semuanya tetap bisa diubah.
+                            </div>
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label-custom">Jenis Dokumen</label>
+                                    <select id="scanJenis" class="form-select-custom">
+                                        <option value="cv">CV / Resume</option>
+                                        <option value="ktp">KTP</option>
+                                        <option value="ijazah">Ijazah / Transkrip</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label-custom">File Dokumen</label>
+                                    <input type="file" id="scanFile" class="form-control-custom"
+                                        accept=".pdf,.docx,.jpg,.jpeg,.png">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-primary w-100" id="btnScanDokumen">
+                                        <i class="fa-solid fa-expand me-1"></i> Scan &amp; Isi Form
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="scanTimpa">
+                                <label class="form-check-label" for="scanTimpa" style="font-size:0.8rem;">
+                                    Timpa kolom yang sudah terisi
+                                </label>
+                            </div>
+                            <div class="scan-status" id="scanStatus"></div>
                         </div>
+
                         <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-section-title"><i class="fa-solid fa-briefcase"></i> Data Lamaran</div>
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom"><i class="fa-solid fa-user"></i> Nama Lengkap <span
                                         class="required">*</span></label>
@@ -2019,9 +2119,10 @@
                                     placeholder="+62 812-xxxx-xxxx" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label-custom"><i class="fa-solid fa-location-dot"></i> Domisili</label>
-                                <input type="text" name="domisili" class="form-control-custom"
-                                    placeholder="Kota, Provinsi">
+                                <label class="form-label-custom"><i class="fa-solid fa-calendar-day"></i> Tanggal Melamar
+                                    <span class="required">*</span></label>
+                                <input type="date" name="tanggal_melamar" class="form-control-custom"
+                                    value="{{ date('Y-m-d') }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom"><i class="fa-solid fa-building"></i> Divisi <span
@@ -2050,12 +2151,6 @@
                                     placeholder="Contoh: Frontend Developer, Staff Admin...">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label-custom"><i class="fa-solid fa-calendar-day"></i> Tanggal Melamar
-                                    <span class="required">*</span></label>
-                                <input type="date" name="tanggal_melamar" class="form-control-custom"
-                                    value="{{ date('Y-m-d') }}" required>
-                            </div>
-                            <div class="col-md-6">
                                 <label class="form-label-custom"><i class="fa-solid fa-circle-nodes"></i> Sumber Lamaran
                                     <span class="required">*</span></label>
                                 <input type="text" name="sumber_lamaran" class="form-control-custom"
@@ -2065,32 +2160,172 @@
                                         <option value="{{ $src }}">
                                     @endforeach
                                 </datalist>
-                                <div class="form-hint">Pilih dari daftar atau ketik manual jika sumber tidak tersedia.
-                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-section-title"><i class="fa-solid fa-id-card"></i> Data Pribadi <small
+                                        class="text-muted text-lowercase">(opsional)</small></div>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-id-card"></i> NIK (KTP)</label>
+                                <input type="text" name="nik_ktp" class="form-control-custom" maxlength="20"
+                                    placeholder="16 digit NIK">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-link"></i> LinkedIn</label>
+                                <input type="text" name="linkedin_url" class="form-control-custom"
+                                    placeholder="https://linkedin.com/in/...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-location-dot"></i> Tempat
+                                    Lahir</label>
+                                <input type="text" name="tempat_lahir" class="form-control-custom"
+                                    placeholder="Kota kelahiran">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-cake-candles"></i> Tanggal
+                                    Lahir</label>
+                                <input type="date" name="tanggal_lahir" class="form-control-custom">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-venus-mars"></i> Jenis
+                                    Kelamin</label>
+                                <select name="jenis_kelamin" class="form-select-custom">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-ring"></i> Status
+                                    Pernikahan</label>
+                                <select name="status_pernikahan" class="form-select-custom">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Belum Kawin">Belum Kawin</option>
+                                    <option value="Kawin">Kawin</option>
+                                    <option value="Cerai Hidup">Cerai Hidup</option>
+                                    <option value="Cerai Mati">Cerai Mati</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-hands-praying"></i> Agama</label>
+                                <select name="agama" class="form-select-custom">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Islam">Islam</option>
+                                    <option value="Kristen">Kristen</option>
+                                    <option value="Katolik">Katolik</option>
+                                    <option value="Hindu">Hindu</option>
+                                    <option value="Buddha">Buddha</option>
+                                    <option value="Konghucu">Konghucu</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-map-pin"></i> Domisili</label>
+                                <input type="text" name="domisili" class="form-control-custom"
+                                    placeholder="Kota, Provinsi">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label-custom"><i class="fa-solid fa-house"></i> Alamat Lengkap</label>
+                                <textarea name="alamat" class="form-control-custom" rows="2"
+                                    placeholder="Alamat sesuai KTP / tempat tinggal saat ini"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-section-title"><i class="fa-solid fa-graduation-cap"></i> Pendidikan
+                                    &amp; Pengalaman <small class="text-muted text-lowercase">(opsional)</small></div>
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label-custom"><i class="fa-solid fa-graduation-cap"></i> Pendidikan
                                     Terakhir</label>
                                 <select name="pendidikan_terakhir" class="form-select-custom">
+                                    <option value="">-- Pilih --</option>
                                     @foreach (\App\Models\Pelamar::PENDIDIKAN as $pend)
-                                        <option value="{{ $pend }}" {{ $pend === 'S1' ? 'selected' : '' }}>
-                                            {{ $pend }}</option>
+                                        <option value="{{ $pend }}">{{ $pend }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label-custom"><i class="fa-solid fa-building-columns"></i>
+                                    Institusi</label>
+                                <input type="text" name="institusi" class="form-control-custom"
+                                    placeholder="Nama universitas / sekolah">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label-custom"><i class="fa-solid fa-chart-simple"></i> IPK</label>
+                                <input type="number" name="ipk" class="form-control-custom" step="0.01"
+                                    min="0" max="4" placeholder="3.50">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-book"></i> Jurusan</label>
+                                <input type="text" name="jurusan" class="form-control-custom"
+                                    placeholder="Contoh: Teknik Informatika">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-business-time"></i> Pengalaman
+                                    Kerja <span class="unit-hint">tahun</span></label>
+                                <input type="number" name="pengalaman_tahun" class="form-control-custom" min="0"
+                                    max="50" placeholder="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-money-bill-wave"></i> Gaji
+                                    Diharapkan <span class="unit-hint">/ bulan</span></label>
+                                <input type="text" name="gaji_diharapkan" class="form-control-custom input-rupiah"
+                                    placeholder="Rp 8.000.000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-hourglass-half"></i> Notice
+                                    Period</label>
+                                <input type="text" name="notice_period" class="form-control-custom"
+                                    placeholder="Contoh: Bisa langsung / 1 bulan">
                             </div>
                             <div class="col-12">
                                 <label class="form-label-custom"><i class="fa-solid fa-code"></i> Keahlian Utama</label>
                                 <input type="text" name="keahlian" class="form-control-custom"
                                     placeholder="Pisahkan dengan koma, contoh: React, JavaScript, Tailwind">
                             </div>
+
                             <div class="col-12">
-                                <label class="form-label-custom"><i class="fa-solid fa-paperclip"></i> Upload CV</label>
+                                <div class="form-section-title"><i class="fa-solid fa-paperclip"></i> Dokumen <small
+                                        class="text-muted text-lowercase">(opsional)</small></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-file-pdf"></i> CV</label>
                                 <input type="file" name="cv" class="form-control-custom"
                                     accept=".pdf,.doc,.docx">
-                                <div class="form-hint">Format: PDF, DOC, DOCX. Maks. 5MB.</div>
+                                <div class="form-hint">PDF, DOC, DOCX. Maks. 5MB.</div>
+                                <div class="file-info" id="info_cv"></div>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom"><i class="fa-solid fa-folder-open"></i>
+                                    Portofolio</label>
+                                <input type="file" name="portofolio" class="form-control-custom"
+                                    accept=".pdf,.doc,.docx,.zip">
+                                <div class="form-hint">PDF, DOC, DOCX, ZIP. Maks. 10MB.</div>
+                                <div class="file-info" id="info_portofolio"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-image"></i> Foto</label>
+                                <input type="file" name="foto" class="form-control-custom" accept="image/*">
+                                <div class="form-hint">Maks. 3MB.</div>
+                                <div class="file-info" id="info_foto"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-id-card"></i> KTP</label>
+                                <input type="file" name="ktp" class="form-control-custom"
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="form-hint">PDF/JPG/PNG. Maks. 5MB.</div>
+                                <div class="file-info" id="info_ktp"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label-custom"><i class="fa-solid fa-scroll"></i> Ijazah</label>
+                                <input type="file" name="ijazah" class="form-control-custom"
+                                    accept=".pdf,.jpg,.jpeg,.png">
+                                <div class="form-hint">PDF/JPG/PNG. Maks. 5MB.</div>
+                                <div class="file-info" id="info_ijazah"></div>
+                            </div>
+
                             <div class="col-12">
-                                <label class="form-label-custom"><i class="fa-solid fa-message"></i> Catatan</label>
+                                <label class="form-label-custom"><i class="fa-solid fa-message"></i> Catatan HR</label>
                                 <textarea name="catatan_hr" class="form-control-custom" rows="2"
                                     placeholder="Catatan tambahan tentang pelamar..."></textarea>
                             </div>
@@ -2099,14 +2334,13 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary" id="btnSimpanPelamar">
-                            <i class="fa-solid fa-save me-1"></i> Simpan Pelamar
+                            <i class="fa-solid fa-save me-1"></i> <span id="pfSubmitLabel">Simpan Pelamar</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="modalLihatProfil" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl-custom modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content p-0" id="profilContent">
@@ -2327,7 +2561,8 @@
                                     <i class="fa-solid fa-paperclip"></i> Lampiran Surat Offer (PDF)
                                     <span class="required">*</span>
                                 </label>
-                                <input type="file" name="lampiran_offer" class="form-control-custom" accept=".pdf" required>
+                                <input type="file" name="lampiran_offer" class="form-control-custom" accept=".pdf"
+                                    required>
                                 <div class="form-hint">
                                     💡 Pastikan file PDF sudah dikunci dengan password sebelum diupload.
                                 </div>
@@ -2339,14 +2574,12 @@
                                     <span class="required">*</span>
                                 </label>
                                 <div class="input-group">
-                                    <input type="text" name="password_offer" id="passwordOffer" 
-                                        class="form-control-custom" 
-                                        placeholder="Masukkan password yang Anda gunakan untuk mengunci PDF" 
-                                        required>
-                                    <button type="button" class="btn btn-outline-secondary" 
-                                            onclick="generateRandomPassword()" 
-                                            title="Generate password acak"
-                                            style="border-radius: 0 0.5rem 0.5rem 0; border-left: none;">
+                                    <input type="text" name="password_offer" id="passwordOffer"
+                                        class="form-control-custom"
+                                        placeholder="Masukkan password yang Anda gunakan untuk mengunci PDF" required>
+                                    <button type="button" class="btn btn-outline-secondary"
+                                        onclick="generateRandomPassword()" title="Generate password acak"
+                                        style="border-radius: 0 0.5rem 0.5rem 0; border-left: none;">
                                         <i class="fa-solid fa-shuffle"></i> Acak
                                     </button>
                                 </div>
@@ -2588,7 +2821,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-paper-plane me-1"></i> Kirim Email
                         </button>
@@ -2602,7 +2836,8 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-circle-xmark" style="color:var(--danger);"></i> Tolak
+                    <h5 class="modal-title"><i class="fa-solid fa-circle-xmark" style="color:var(--danger);"></i>
+                        Tolak
                         Lamaran</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -2639,7 +2874,8 @@
                             <div class="col-12">
                                 <label class="form-label-custom"><i class="fa-solid fa-comment"></i> Catatan Internal
                                     (Opsional)</label>
-                                <textarea name="catatan_internal" class="form-control-custom" rows="2" placeholder="Catatan untuk tim HR..."></textarea>
+                                <textarea name="catatan_internal" class="form-control-custom" rows="2"
+                                    placeholder="Catatan untuk tim HR..."></textarea>
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
@@ -2660,7 +2896,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-danger">
                             <i class="fa-solid fa-xmark me-1"></i> Tolak Lamaran
                         </button>
@@ -2767,7 +3004,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-save me-1"></i> Simpan Penilaian
                         </button>
@@ -2788,11 +3026,14 @@
                     @csrf
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label-custom"><i class="fa-solid fa-folder"></i> Nama Folder <span class="required">*</span></label>
-                            <input type="text" name="nama" class="form-control-custom" placeholder="Masukkan nama folder" required>
+                            <label class="form-label-custom"><i class="fa-solid fa-folder"></i> Nama Folder <span
+                                    class="required">*</span></label>
+                            <input type="text" name="nama" class="form-control-custom"
+                                placeholder="Masukkan nama folder" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label-custom"><i class="fa-solid fa-sitemap"></i> Parent Folder (Opsional)</label>
+                            <label class="form-label-custom"><i class="fa-solid fa-sitemap"></i> Parent Folder
+                                (Opsional)</label>
                             <select name="parent_id" id="parentFolderSelectCreate" class="form-select-custom">
                                 <option value="">-- Root Folder --</option>
                             </select>
@@ -2800,8 +3041,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Buat Folder</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Buat
+                            Folder</button>
                     </div>
                 </form>
             </div>
@@ -2820,11 +3063,14 @@
                     <input type="hidden" name="folder_id" id="editFolderId">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label class="form-label-custom"><i class="fa-solid fa-folder"></i> Nama Folder <span class="required">*</span></label>
-                            <input type="text" name="nama" id="editFolderName" class="form-control-custom" required>
+                            <label class="form-label-custom"><i class="fa-solid fa-folder"></i> Nama Folder <span
+                                    class="required">*</span></label>
+                            <input type="text" name="nama" id="editFolderName" class="form-control-custom"
+                                required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label-custom"><i class="fa-solid fa-sitemap"></i> Parent Folder (Opsional)</label>
+                            <label class="form-label-custom"><i class="fa-solid fa-sitemap"></i> Parent Folder
+                                (Opsional)</label>
                             <select name="parent_id" id="parentFolderSelectEdit" class="form-select-custom">
                                 <option value="">-- Root Folder --</option>
                             </select>
@@ -2832,8 +3078,10 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Simpan Perubahan</button>
+                        <button type="button" class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i> Simpan
+                            Perubahan</button>
                     </div>
                 </form>
             </div>
@@ -2864,24 +3112,113 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const BASE_URL = '{{ url('HR-dashboard/hire') }}';
+        const URL_FOLDER_LIST = '{{ route('HR.hire.folder-list') }}';
+        const URL_FOLDER_STORE = '{{ route('HR.folders.store') }}';
+        const URL_PELAMAR_MOVE = '{{ route('HR.folders.pelamar.move') }}';
+        const URL_PENILAIAN = '{{ route('HR.folders.pelamar.penilaian') }}';
+        const URL_BY_FOLDER = '{{ url('HR-dashboard/hire/by-folder') }}';
+
         let currentFolderId = 'all';
         let currentFolderName = 'Semua Pelamar';
-        let draggedPelamarId = null;
+        let daftarFolder = [];
+        let tesseractPromise = null;
 
-        $(document).ready(function() {
-            loadFolderList();
-            setupDragAndDrop();
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
         });
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[c]);
+        }
+
+        function toast(msg, type = 'success') {
+            const icon = type === 'success' ? 'circle-check' : 'circle-xmark';
+            const el = $(`<div class="toast-msg ${type}"><i class="fa-solid fa-${icon}"></i> ${esc(msg)}</div>`);
+            $('#toastContainer').append(el);
+            setTimeout(() => el.fadeOut(300, function() {
+                $(this).remove();
+            }), 4000);
+        }
+
+        function showToastGlobal(msg, type = 'success') {
+            toast(msg, type);
+        }
+
+        function closeModal(id) {
+            const instance = bootstrap.Modal.getInstance(document.getElementById(id));
+            if (instance) instance.hide();
+        }
+
+        function reloadPage() {
+            setTimeout(() => location.reload(), 800);
+        }
+
+        function pesanError(xhr) {
+            if (xhr && xhr.responseJSON) {
+                if (xhr.responseJSON.errors) {
+                    const pertama = Object.values(xhr.responseJSON.errors)[0];
+                    if (pertama && pertama[0]) return pertama[0];
+                }
+                if (xhr.responseJSON.message) return xhr.responseJSON.message;
+            }
+            return 'Terjadi kesalahan pada server.';
+        }
+
+        function generateRandomPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let password = '';
+            for (let i = 0; i < 6; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('passwordOffer').value = password;
+        }
+
+        function urutFolder(a, b) {
+            if (a.is_pinned && !b.is_pinned) return -1;
+            if (!a.is_pinned && b.is_pinned) return 1;
+            return a.nama.localeCompare(b.nama);
+        }
+
+        function keturunanFolder(id, folders) {
+            const hasil = [String(id)];
+            folders.filter(f => f.parent_id == id).forEach(c => hasil.push(...keturunanFolder(c.id, folders)));
+            return hasil;
+        }
+
+        function isiOpsiFolder(selector, folders, excludeId) {
+            const select = $(selector);
+            select.find('option:not(:first)').remove();
+            const abaikan = excludeId ? keturunanFolder(excludeId, folders) : [];
+
+            const tambah = (list, level) => {
+                list.slice().sort((a, b) => a.nama.localeCompare(b.nama)).forEach(f => {
+                    if (abaikan.includes(String(f.id))) return;
+                    select.append($('<option>').val(f.id).text('—'.repeat(level) + (level ? ' ' : '') + f.nama));
+                    tambah(folders.filter(c => c.parent_id == f.id), level + 1);
+                });
+            };
+
+            tambah(folders.filter(f => !f.parent_id), 0);
+        }
 
         function loadFolderList() {
             $.ajax({
-                url: '{{ route('HR.hire.folder-list') }}',
+                url: URL_FOLDER_LIST,
                 type: 'GET',
                 dataType: 'json',
                 success: function(res) {
                     if (res.success) {
-                        renderFolderSidebar(res.data, res.unassigned_count);
-                        loadFolderOptionsForNilai(res.data); // 🆕 BARU
+                        daftarFolder = res.data || [];
+                        renderFolderSidebar(daftarFolder, res.unassigned_count);
                     }
                 },
                 error: function() {
@@ -2894,10 +3231,9 @@
 
         function renderFolderSidebar(folders, unassignedCount) {
             $('#countUnassigned').text(unassignedCount);
-            const tree = $('#hireFolderTree');
-            tree.empty();
+            const tree = $('#hireFolderTree').empty();
 
-            if (folders.length === 0) {
+            if (!folders.length) {
                 tree.html(`
                     <li class="text-center text-muted py-3" style="font-size: 0.8rem;">
                         <i class="fa-solid fa-folder-open"></i><br>
@@ -2908,164 +3244,161 @@
                 return;
             }
 
-            // Filter hanya root folder
-            const rootFolders = folders.filter(f => 
-                f.parent_id == null || f.parent_id == 0 || f.parent_id === ''
-            );
+            const root = folders.filter(f => !f.parent_id).sort(urutFolder);
+            renderFolderTree(root, folders, tree);
 
-            rootFolders.sort((a, b) => {
-                if (a.is_pinned && !b.is_pinned) return -1;
-                if (!a.is_pinned && b.is_pinned) return 1;
-                return a.nama.localeCompare(b.nama);
-            });
-
-            renderFolderTree(rootFolders, folders, tree, 0);
-        }
-
-        function generateRandomPassword() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
-            let password = '';
-            for (let i = 0; i < 6; i++) {
-                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            if (currentFolderId !== 'all') {
+                $(`.folder-list-link[data-folder-id="${currentFolderId}"]`).addClass('active');
             }
-            document.getElementById('passwordOffer').value = password;
         }
 
-        function renderFolderTree(currentFolders, allFolders, container, level) {
-            currentFolders.forEach(folder => {
-                const escapedName = folder.nama.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                
-                // Cari children
-                const children = allFolders.filter(f => f.parent_id == folder.id);
-                children.sort((a, b) => a.nama.localeCompare(b.nama));
-                
-                const hasChildren = children.length > 0;
-                const toggleHtml = hasChildren 
-                    ? `<span class="folder-toggle expanded" onclick="event.stopPropagation(); toggleFolderChildren(this, ${folder.id})"><i class="fa-solid fa-chevron-right"></i></span>`
-                    : `<span style="width:18px; display:inline-block;"></span>`;
+        function renderFolderTree(current, all, container) {
+            current.forEach(folder => {
+                const children = all.filter(f => f.parent_id == folder.id).sort(urutFolder);
+                const has = children.length > 0;
+                const nama = esc(folder.nama);
+                const toggle = has ?
+                    `<span class="folder-toggle expanded" data-folder-toggle="${folder.id}"><i class="fa-solid fa-chevron-right"></i></span>` :
+                    `<span style="width:18px; display:inline-block;"></span>`;
 
                 const li = $(`
                     <li class="folder-list-item">
-                        <a class="folder-list-link" data-folder-id="${folder.id}"
-                            onclick="filterByFolder(${folder.id}, '${escapedName}')">
-                            ${toggleHtml}
+                        <a class="folder-list-link" data-folder-id="${folder.id}" data-nama="${nama}" data-parent="${folder.parent_id || ''}">
+                            ${toggle}
                             <i class="fa-solid fa-folder folder-icon"></i>
                             ${folder.is_pinned ? '<i class="fa-solid fa-thumbtack pin-icon"></i>' : ''}
-                            <span class="folder-label" title="${folder.nama}">${folder.nama}</span>
+                            <span class="folder-label" title="${nama}">${nama}</span>
                             <span class="folder-count">${folder.pelamars_count || 0}</span>
                             <span class="folder-actions">
-                                <button class="folder-action-btn" onclick="event.stopPropagation(); togglePinFolder(${folder.id})" title="Pin/Unpin">
-                                    <i class="fa-solid fa-thumbtack"></i>
-                                </button>
-                                <button class="folder-action-btn" onclick="event.stopPropagation(); showEditFolderModal(${folder.id}, '${escapedName}', '${folder.parent_id || ''}')" title="Edit Folder">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button class="folder-action-btn danger" onclick="event.stopPropagation(); showDeleteFolderModal(${folder.id}, '${escapedName}')" title="Hapus Folder">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                                <button class="folder-action-btn archive" onclick="event.stopPropagation(); archiveFolderFromHire(${folder.id}, '${escapedName}')" title="Arsipkan Folder">
-                                    <i class="fa-solid fa-box-archive"></i>
-                                </button>
+                                <button class="folder-action-btn btn-pin-folder" title="Pin/Unpin"><i class="fa-solid fa-thumbtack"></i></button>
+                                <button class="folder-action-btn btn-edit-folder" title="Edit Folder"><i class="fa-solid fa-pen"></i></button>
+                                <button class="folder-action-btn danger btn-del-folder" title="Hapus Folder"><i class="fa-solid fa-trash"></i></button>
+                                <button class="folder-action-btn archive btn-arsip-folder" title="Arsipkan Folder"><i class="fa-solid fa-box-archive"></i></button>
                             </span>
                         </a>
-                        ${hasChildren ? `<ul class="folder-list-nested" id="folder-children-hire-${folder.id}"></ul>` : ''}
+                        ${has ? `<ul class="folder-list-nested" id="folder-children-hire-${folder.id}"></ul>` : ''}
                     </li>
                 `);
 
                 container.append(li);
 
-                // Render children secara recursive
-                if (hasChildren) {
-                    const nestedContainer = $(`#folder-children-hire-${folder.id}`);
-                    renderFolderTree(children, allFolders, nestedContainer, level + 1);
+                if (has) {
+                    renderFolderTree(children, all, $(`#folder-children-hire-${folder.id}`));
                 }
             });
         }
 
-        function toggleFolderChildren(toggleEl, folderId) {
-            const nested = $(`#folder-children-hire-${folderId}`);
-            const toggle = $(toggleEl);
-            nested.slideToggle(200);
-            toggle.toggleClass('expanded');
+        function expandParentFolders(folderId, allFolders) {
+            const folder = allFolders.find(f => f.id == folderId);
+            if (!folder || !folder.parent_id) return;
+
+            const nested = $(`#folder-children-hire-${folder.parent_id}`);
+            if (nested.length) {
+                nested.show();
+                nested.closest('li').find('> .folder-list-link .folder-toggle').addClass('expanded');
+            }
+
+            expandParentFolders(folder.parent_id, allFolders);
         }
-        
-        function loadFolderOptionsForNilai() {
+
+        function filterByFolder(folderId, folderName) {
+            if (folderId === 'all') {
+                if (currentFolderId === 'all') return;
+                window.location.reload();
+                return;
+            }
+
+            currentFolderId = folderId;
+            currentFolderName = folderName;
+            $('.folder-list-link').removeClass('active');
+            $(`.folder-list-link[data-folder-id="${folderId}"]`).addClass('active');
+            $('#activeFolderName').text(folderName);
+            $('#activeFolderIndicator').show();
+            expandParentFolders(folderId, daftarFolder);
+
+            $('#pelamarTableWrapper').html(`
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Memuat data pelamar...</p>
+                </div>
+            `);
+            $('#paginationWrapper').hide();
+
             $.ajax({
-                url: '{{ route('HR.hire.folder-list') }}',
+                url: `${URL_BY_FOLDER}/${folderId}`,
                 type: 'GET',
                 dataType: 'json',
                 success: function(res) {
                     if (res.success) {
-                        const select = $('#nilaiFolderId');
-                        select.find('option:not(:first)').remove();
-                        
-                        const rootFolders = (res.data || []).filter(f => 
-                            f.parent_id == null || f.parent_id == 0 || f.parent_id === ''
-                        );
-                        
-                        function addOptions(currentFolders, allFolders, level = 0) {
-                            currentFolders.sort((a, b) => a.nama.localeCompare(b.nama));
-                            currentFolders.forEach(f => {
-                                const indent = '—'.repeat(level) + ' ';
-                                select.append(`<option value="${f.id}">${indent}${f.nama}</option>`);
-                                
-                                // Cari children
-                                const children = allFolders.filter(cf => cf.parent_id == f.id);
-                                if (children.length > 0) {
-                                    addOptions(children, allFolders, level + 1);
-                                }
-                            });
-                        }
-                        
-                        addOptions(rootFolders, res.data);
+                        $('#pelamarTableWrapper').html(res.html);
+                        $('#tableInfo').html(`Menampilkan <span class="fw-semibold">${res.total}</span> pelamar di "${esc(folderName)}"`);
                     }
+                },
+                error: function() {
+                    $('#pelamarTableWrapper').html(`
+                        <div class="text-center py-5 text-danger">
+                            <i class="fa-solid fa-exclamation-circle fa-2x mb-2"></i>
+                            <p>Gagal memuat data</p>
+                        </div>
+                    `);
                 }
             });
         }
 
-        function setupDragAndDrop() {
-            let draggedPelamarId = null;
+        function resetFolderFilter() {
+            currentFolderId = 'x';
+            window.location.reload();
+        }
 
-            $(document).on('dragstart', '.table-applicant tbody tr[draggable="true"]', function(e) {
-                draggedPelamarId = $(this).data('id');
-                e.originalEvent.dataTransfer.setData('pelamar_id', draggedPelamarId);
-                e.originalEvent.dataTransfer.effectAllowed = 'move';
-                $(this).addClass('dragging');
+        function togglePinFolder(folderId) {
+            $.ajax({
+                url: `/HR-dashboard/folders/${folderId}/pin`,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(res) {
+                    if (res.success) toast(res.message, 'success');
+                    loadFolderList();
+                },
+                error: function() {
+                    toast('Gagal mengubah pin folder', 'danger');
+                }
             });
+        }
 
-            $(document).on('dragend', '.table-applicant tbody tr[draggable="true"]', function() {
-                $(this).removeClass('dragging');
-                $('.folder-list-link').removeClass('drag-over drag-over-invalid');
-                draggedPelamarId = null;
-            });
+        function archiveFolderFromHire(folderId, folderName) {
+            if (!confirm(`Yakin ingin mengarsipkan folder "${folderName}"?\n\nFolder beserta semua subfolder akan dipindahkan ke Arsip.`)) {
+                return;
+            }
 
-            $(document).on('dragover', '.folder-list-link', function(e) {
-                e.preventDefault();
-                e.originalEvent.dataTransfer.dropEffect = 'move';
-                $(this).addClass('drag-over');
-            });
-
-            $(document).on('dragleave', '.folder-list-link', function() {
-                $(this).removeClass('drag-over');
-            });
-
-            $(document).on('drop', '.folder-list-link', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                $(this).removeClass('drag-over');
-
-                const targetFolderId = $(this).data('folder-id');
-                const pelamarId = e.originalEvent.dataTransfer.getData('pelamar_id');
-
-                if (pelamarId && targetFolderId && targetFolderId !== 'all' && targetFolderId !== 'unassigned') {
-                    movePelamarToFolder(pelamarId, targetFolderId);
+            $.ajax({
+                url: `/HR-dashboard/folders/${folderId}/archive`,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(res) {
+                    if (res.success) {
+                        toast(res.message, 'success');
+                        if (currentFolderId == folderId) {
+                            resetFolderFilter();
+                            return;
+                        }
+                    } else {
+                        toast(res.message || 'Gagal mengarsipkan folder', 'danger');
+                    }
+                    loadFolderList();
+                },
+                error: function(xhr) {
+                    toast(pesanError(xhr), 'danger');
                 }
             });
         }
 
         function movePelamarToFolder(pelamarId, folderId) {
             $.ajax({
-                url: '{{ route('HR.folders.pelamar.move') }}',
+                url: URL_PELAMAR_MOVE,
                 type: 'POST',
                 data: {
                     _token: $('meta[name="csrf-token"]').attr('content'),
@@ -3086,58 +3419,11 @@
             });
         }
 
-        function showToastGlobal(msg, type = 'success') {
-            const icon = type === 'success' ? 'circle-check' : 'circle-xmark';
-            const el = $(`<div class="toast-msg ${type}"><i class="fa-solid fa-${icon}"></i> ${msg}</div>`);
-            $('#toastContainer').append(el);
-            setTimeout(() => el.fadeOut(300, function() { $(this).remove(); }), 4000);
-        }
-
-        function loadParentFolderOptions(selectId, excludeFolderId, callback) {
-            const select = $(`#${selectId}`);
-            select.find('option:not(:first)').remove();
-            
-            $.ajax({
-                url: '{{ route('HR.hire.folder-list') }}',
-                type: 'GET',
-                dataType: 'json',
-                success: function(res) {
-                    if (res.success) {
-                        const rootFolders = (res.data || []).filter(f => 
-                            f.parent_id == null || f.parent_id == 0 || f.parent_id === ''
-                        );
-                        
-                        function addOptions(currentFolders, allFolders, level = 0) {
-                            currentFolders.sort((a, b) => a.nama.localeCompare(b.nama));
-                            currentFolders.forEach(f => {
-                                if (excludeFolderId && f.id == excludeFolderId) return;
-                                const indent = '—'.repeat(level) + ' ';
-                                select.append(`<option value="${f.id}">${indent}${f.nama}</option>`);
-                                const children = allFolders.filter(cf => cf.parent_id == f.id);
-                                if (children.length > 0) {
-                                    addOptions(children, allFolders, level + 1);
-                                }
-                            });
-                        }
-                        addOptions(rootFolders, res.data);
-                        if (typeof callback === 'function') callback();
-                    }
-                }
-            });
-        }
-
-        function showEditFolderModal(folderId, folderName, currentParentId) {
+        function showEditFolderModal(folderId, folderName, parentId) {
             $('#editFolderId').val(folderId);
             $('#editFolderName').val(folderName);
-            
-            loadParentFolderOptions('parentFolderSelectEdit', folderId, function() {
-                if (currentParentId) {
-                    $('#parentFolderSelectEdit').val(currentParentId);
-                } else {
-                    $('#parentFolderSelectEdit').val('');
-                }
-            });
-            
+            isiOpsiFolder('#parentFolderSelectEdit', daftarFolder, folderId);
+            $('#parentFolderSelectEdit').val(parentId || '');
             new bootstrap.Modal(document.getElementById('modalEditFolder')).show();
         }
 
@@ -3147,515 +3433,591 @@
             new bootstrap.Modal(document.getElementById('modalDeleteFolder')).show();
         }
 
-        $('#formCreateFolder').on('submit', function(e) {
-            e.preventDefault();
-            const fd = new FormData(this);
-            $.ajax({
-                url: '{{ route('HR.folders.store') }}',
-                type: 'POST',
-                data: fd,
-                processData: false,
-                contentType: false,
-                success: function(res) {
-                    if (res.success) {
-                        showToastGlobal(res.message, 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('modalCreateFolder')).hide();
-                        $('#formCreateFolder')[0].reset();
-                        loadFolderList();
-                    } else {
-                        showToastGlobal(res.message || 'Gagal membuat folder', 'danger');
-                    }
-                },
-                error: function() {
-                    showToastGlobal('Terjadi kesalahan pada server', 'danger');
-                }
+        function rupiah(n) {
+            return n || n === 0 ? 'Rp ' + Number(n).toLocaleString('id-ID') : '';
+        }
+
+        function tanggalIndo(s) {
+            if (!s) return '';
+            const [y, m, d] = String(s).split('-');
+            return new Date(y, m - 1, d).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
             });
-        });
+        }
 
-        $('#formEditFolder').on('submit', function(e) {
-            e.preventDefault();
-            const folderId = $('#editFolderId').val();
-            const newName = $('#editFolderName').val();
-            const newParentId = $('#parentFolderSelectEdit').val() || '';
-            
-            $.ajax({
-                url: `/HR-dashboard/folders/${folderId}/rename`,
-                type: 'PUT',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    nama: newName
-                },
-                success: function() {
-                    $.ajax({
-                        url: `/HR-dashboard/folders/${folderId}/move`,
-                        type: 'POST',
-                        data: {
-                            _token: $('meta[name="csrf-token"]').attr('content'),
-                            parent_id: newParentId
-                        },
-                        success: function() {
-                            showToastGlobal('Folder berhasil diperbarui', 'success');
-                            bootstrap.Modal.getInstance(document.getElementById('modalEditFolder')).hide();
-                            loadFolderList();
-                        },
-                        error: function() {
-                            showToastGlobal('Nama berhasil diubah, tapi gagal memindahkan folder', 'danger');
-                            bootstrap.Modal.getInstance(document.getElementById('modalEditFolder')).hide();
-                            loadFolderList();
-                        }
-                    });
-                },
-                error: function() {
-                    showToastGlobal('Gagal mengubah nama folder', 'danger');
-                }
-            });
-        });
+        function setScanStatus(tipe, html) {
+            $('#scanStatus').attr('class', 'scan-status ' + tipe).html(html);
+        }
 
-        $('#btnKonfirmasiHapusFolder').on('click', function() {
-            const folderId = $('#deleteFolderId').val();
-            $.ajax({
-                url: `/HR-dashboard/folders/${folderId}`,
-                type: 'POST',
-                data: {
-                    _method: 'DELETE',
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(res) {
-                    if (res.success) {
-                        showToastGlobal(res.message || 'Folder berhasil dihapus', 'success');
-                        bootstrap.Modal.getInstance(document.getElementById('modalDeleteFolder')).hide();
-                        if (currentFolderId == folderId) {
-                            resetFolderFilter();
-                        }
-                        loadFolderList();
-                    } else {
-                        showToastGlobal(res.message || 'Gagal menghapus folder', 'danger');
-                    }
-                },
-                error: function() {
-                    showToastGlobal('Terjadi kesalahan pada server', 'danger');
-                }
-            });
-        });
-
-        $('#modalCreateFolder').on('show.bs.modal', function () {
-            $('#formCreateFolder')[0].reset();
-            loadParentFolderOptions('parentFolderSelectCreate', null, null);
-        });
-
-        function filterByFolder(folderId, folderName) {
-            currentFolderId = folderId;
-            currentFolderName = folderName;
-            $('.folder-list-link').removeClass('active');
-            $(`.folder-list-link[data-folder-id="${folderId}"]`).addClass('active');
-
-            if (folderId === 'all') {
-                $('#activeFolderIndicator').hide();
-            } else {
-                $('#activeFolderName').text(folderName);
-                $('#activeFolderIndicator').show();
-                
-                $.ajax({
-                    url: '{{ route('HR.hire.folder-list') }}',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(res) {
-                        if (res.success) {
-                            expandParentFolders(folderId, res.data);
-                        }
-                    }
+        function muatTesseract() {
+            if (window.Tesseract) return Promise.resolve();
+            if (!tesseractPromise) {
+                tesseractPromise = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+                    s.onload = resolve;
+                    s.onerror = () => {
+                        tesseractPromise = null;
+                        reject(new Error('Gagal memuat mesin OCR. Periksa koneksi internet.'));
+                    };
+                    document.head.appendChild(s);
                 });
             }
+            return tesseractPromise;
+        }
 
-            $('#pelamarTableWrapper').html(`
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2 text-muted">Memuat data pelamar...</p>
-                </div>
-            `);
-            $('#paginationWrapper').hide();
+        async function ocrGambar(file) {
+            await muatTesseract();
+            const hasil = await Tesseract.recognize(file, 'ind+eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        setScanStatus('loading', `<i class="fa-solid fa-spinner fa-spin"></i> Membaca teks gambar... ${Math.round(m.progress * 100)}%`);
+                    }
+                }
+            });
+            return hasil.data.text || '';
+        }
+
+        function isiDariScan(data, timpa) {
+            let terisi = 0;
+
+            Object.entries(data).forEach(([key, nilai]) => {
+                if (nilai === null || nilai === '') return;
+                const $el = $(`#formPelamar [name="${key}"]`);
+                if (!$el.length) return;
+
+                const lama = String($el.val() || '').trim();
+                if (lama && !timpa) return;
+
+                if ($el.is('select')) {
+                    const cocok = $el.find('option').filter(function() {
+                        return $(this).val().toLowerCase() === String(nilai).toLowerCase();
+                    }).first();
+                    if (!cocok.length) return;
+                    $el.val(cocok.val());
+                } else {
+                    $el.val(nilai);
+                }
+
+                $el.addClass('scan-filled');
+                terisi++;
+            });
+
+            return terisi;
+        }
+
+        function lampirkanBerkas(jenis, file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const diizinkan = {
+                cv: ['pdf', 'docx'],
+                ktp: ['pdf', 'jpg', 'jpeg', 'png'],
+                ijazah: ['pdf', 'jpg', 'jpeg', 'png']
+            };
+
+            if (!diizinkan[jenis] || !diizinkan[jenis].includes(ext)) return;
+
+            const target = $(`#formPelamar input[name="${jenis}"]`)[0];
+            if (target && !target.files.length) {
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    target.files = dt.files;
+                } catch (e) {}
+            }
+        }
+
+        async function scanDokumen() {
+            const file = $('#scanFile')[0].files[0];
+            const jenis = $('#scanJenis').val();
+
+            if (!file) {
+                setScanStatus('error', 'Pilih file dokumen terlebih dahulu.');
+                return;
+            }
+
+            const $btn = $('#btnScanDokumen');
+            $btn.prop('disabled', true);
+            setScanStatus('loading', '<i class="fa-solid fa-spinner fa-spin"></i> Membaca dokumen...');
+
+            const fd = new FormData();
+            fd.append('jenis', jenis);
+            fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+            try {
+                const ext = file.name.split('.').pop().toLowerCase();
+
+                if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                    const teks = await ocrGambar(file);
+                    fd.append('teks', teks);
+                } else {
+                    fd.append('dokumen', file);
+                }
+
+                const res = await $.ajax({
+                    url: `${BASE_URL}/scan-dokumen`,
+                    type: 'POST',
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json'
+                });
+
+                const terisi = isiDariScan(res.data, $('#scanTimpa').is(':checked'));
+                lampirkanBerkas(jenis, file);
+                setScanStatus('ok', `<i class="fa-solid fa-circle-check"></i> ${terisi} kolom terisi otomatis. Periksa kembali sebelum menyimpan.`);
+            } catch (e) {
+                const pesan = e && e.responseJSON ? pesanError(e) : (e && e.message ? e.message : 'Gagal memproses dokumen.');
+                setScanStatus('error', `<i class="fa-solid fa-circle-exclamation"></i> ${esc(pesan)}`);
+            } finally {
+                $btn.prop('disabled', false);
+            }
+        }
+
+        function resetFormPelamar() {
+            $('#formPelamar')[0].reset();
+            $('#formPelamar .scan-filled').removeClass('scan-filled');
+            $('#pelamarId').val('');
+            $('#scanStatus').attr('class', 'scan-status').html('');
+            $('.file-info').html('');
+        }
+
+        function bukaFormTambah() {
+            resetFormPelamar();
+            $('#pfTitle').text('Tambah Pelamar Manual');
+            $('#pfIcon').attr('class', 'fa-solid fa-user-plus');
+            $('#pfSubmitLabel').text('Simpan Pelamar');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalFormPelamar')).show();
+        }
+
+        function bukaFormEdit(id) {
+            resetFormPelamar();
+            $('#pelamarId').val(id);
+            $('#pfTitle').text('Edit Data Pelamar');
+            $('#pfIcon').attr('class', 'fa-solid fa-pen-to-square');
+            $('#pfSubmitLabel').text('Simpan Perubahan');
 
             $.ajax({
-                url: `{{ url('HR-dashboard/hire/by-folder') }}/${folderId}`,
+                url: `${BASE_URL}/show/${id}`,
                 type: 'GET',
                 dataType: 'json',
-                success: function(res) {
-                    if (res.success) {
-                        renderFilteredTable(res.data, folderName);
-                    }
-                },
-                error: function() {
-                    $('#pelamarTableWrapper').html(`
-                        <div class="text-center py-5 text-danger">
-                            <i class="fa-solid fa-exclamation-circle fa-2x mb-2"></i>
-                            <p>Gagal memuat data</p>
-                        </div>
-                    `);
-                }
-            });
-        }
+                success: function(json) {
+                    const form = json.data.form;
 
-        function togglePinFolder(folderId) {
-            $.ajax({
-                url: `/HR-dashboard/folders/${folderId}/pin`,
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(res) {
-                    loadFolderList();
-                    if (res.success) {
-                        toast(res.message, 'success');
-                        loadFolderList();
-                    }
-                },
-                error: function() {
-                    toast('Gagal mengubah pin folder', 'danger');
-                }
-            });
-        }
+                    Object.entries(form).forEach(([key, nilai]) => {
+                        const $el = $(`#formPelamar [name="${key}"]`);
+                        if (!$el.length || nilai === null || nilai === undefined) return;
 
-        function archiveFolderFromHire(folderId, folderName) {
-            if (!confirm(`Yakin ingin mengarsipkan folder "${folderName}"?\n\nFolder beserta semua subfolder akan dipindahkan ke Arsip.`)) {
-                return;
-            }
+                        let isi = nilai;
+                        if (key === 'gaji_diharapkan') isi = rupiah(nilai);
 
-            $.ajax({
-                url: `/HR-dashboard/folders/${folderId}/archive`,
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(res) {
-                    loadFolderList();
-                    if (res.success) {
-                        toast(res.message, 'success');
-                        
-                        if (currentFolderId == folderId) {
-                            resetFolderFilter();
+                        if ($el.is('select') && isi !== '' && !$el.find('option').filter(function() {
+                                return $(this).val() === String(isi);
+                            }).length) {
+                            $el.append($('<option>').val(isi).text(isi));
                         }
-                        
-                        loadFolderList();
-                    } else {
-                        toast(res.message || 'Gagal mengarsipkan folder', 'danger');
-                    }
+
+                        $el.val(isi);
+                    });
+
+                    const label = {
+                        cv: 'CV',
+                        portofolio: 'Portofolio',
+                        foto: 'Foto',
+                        ktp: 'KTP',
+                        ijazah: 'Ijazah'
+                    };
+
+                    Object.entries(json.data.dokumen).forEach(([key, url]) => {
+                        if (url) {
+                            $(`#info_${key}`).html(`<a href="${url}" target="_blank"><i class="fa-solid fa-paperclip"></i> ${label[key]} saat ini</a> · unggah file baru untuk mengganti`);
+                        }
+                    });
+
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalFormPelamar')).show();
                 },
                 error: function(xhr) {
-                    const res = xhr.responseJSON;
-                    toast(res?.message || 'Terjadi kesalahan saat mengarsipkan', 'danger');
+                    toast(pesanError(xhr), 'danger');
                 }
             });
         }
 
-        function expandParentFolders(folderId, allFolders) {
-            if (!allFolders) return;
-            
-            const folder = allFolders.find(f => f.id == folderId);
-            if (!folder || folder.parent_id == null || folder.parent_id == 0 || folder.parent_id === '') return;
-            
-            const nested = $(`#folder-children-hire-${folder.parent_id}`);
-            if (nested.length) {
-                nested.show();
-                nested.prev('li').find('.folder-toggle').addClass('expanded');
-            }
-            
-            expandParentFolders(folder.parent_id, allFolders);
+        function itemProfil(label, nilai) {
+            return `<div><div class="profile-item-label">${label}</div><div class="profile-item-value">${nilai ? nilai : '-'}</div></div>`;
         }
 
-        function renderFilteredTable(data, folderName) {
-            if (data.length === 0) {
-                $('#pelamarTableWrapper').html(`
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-inbox fa-2x mb-2 d-block"></i>
-                        Belum ada pelamar di "${folderName}"
-                    </div>
-                `);
-                $('#tableInfo').html(`Menampilkan <span class="fw-semibold">0</span> pelamar`);
-                $('#paginationWrapper').hide();
-                return;
-            }
-            let rows = '';
-            data.forEach(p => {
-                const sumberIcon = getSumberIcon(p.sumber_lamaran);
-                const ratingHtml = renderRatingCell(p.avg_rating, p.totalPenilai);
-                const cvUrl = p.cv_path ? `/storage/${p.cv_path}` : '';
-                rows += `
-                    <tr draggable="true" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-email="${p.email}"
-                        data-tahap="${p.tahap_rekrutmen}" data-jabatan="${p.jabatan}" data-divisi="${p.divisi}"
-                        data-cv="${cvUrl}">
-                        <td><input type="checkbox" class="form-check-input check-row" value="${p.id}"></td>
-                        <td>
-                            <div class="applicant-info">
-                                <div class="applicant-avatar ${p.avClass}">${p.inisial}</div>
-                                <div>
-                                    <div class="applicant-name">${p.nama_lengkap}</div>
-                                    <div class="applicant-email">${p.email}</div>
-                                </div>
+        function renderProfil(d) {
+            const p = d.pelamar;
+            const f = d.form;
+
+            const keahlianHtml = f.keahlian ?
+                f.keahlian.split(',').map(k => `<span class="skill-tag">${esc(k.trim())}</span>`).join('') :
+                '<span class="text-muted">-</span>';
+
+            let riwayatHtml = '';
+            if (d.riwayat && d.riwayat.length) {
+                d.riwayat.forEach((r, i) => {
+                    const isLast = i === d.riwayat.length - 1;
+                    const dotClass = isLast ? 'active' : 'done';
+                    const icon = isLast ? 'fa-solid fa-user-tie' : 'fa-solid fa-check';
+                    const dateStr = new Date(r.created_at).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+
+                    let ratingHtml = '';
+                    if (r.rating && r.rating > 0) {
+                        ratingHtml = '<div class="timeline-rating">';
+                        for (let s = 1; s <= 4; s++) {
+                            ratingHtml += `<i class="fa-solid fa-star ${s <= r.rating ? 'star' : 'star empty'}"></i>`;
+                        }
+                        ratingHtml += '</div>';
+                    }
+
+                    const feedbackHtml = r.keterangan && String(r.keterangan).trim() !== '' ?
+                        `<div class="timeline-feedback">${esc(r.keterangan)}</div>` : '';
+
+                    riwayatHtml += `
+                        <div class="timeline-item">
+                            <div class="timeline-dot ${dotClass}"><i class="${icon}"></i></div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">${esc(r.aksi)}</div>
+                                <div class="timeline-desc">${dateStr} · oleh ${esc(r.oleh ?? '-')}</div>
+                                ${ratingHtml}
+                                ${feedbackHtml}
                             </div>
-                        </td>
-                        <td>
-                            <span class="position-tag">${p.jabatan}</span>
-                            <div class="position-dept">${p.divisi}</div>
-                        </td>
-                        <td>
-                            <span class="source-badge ${sumberIcon.class}">
-                                <i class="${sumberIcon.icon}"></i> ${p.sumber_lamaran || 'Lainnya'}
-                            </span>
-                        </td>
-                        <td>${p.tanggal_melamar || '-'}</td>
-                        <td>${ratingHtml}</td>
-                        <td>
-                            <span class="stage-badge stage-${p.tahap_rekrutmen}">${p.tahap_label}</span>
-                        </td>
-                        <td>
-                            ${renderActionButtons(p)}
-                        </td>
-                    </tr>
-                `;
-            });
-            $('#pelamarTableWrapper').html(`
-                <table class="table table-applicant align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width:40px;"><input type="checkbox" class="form-check-input" id="checkAll"></th>
-                            <th>Pelamar</th>
-                            <th>Posisi Dilamar</th>
-                            <th>Sumber</th>
-                            <th>Tanggal</th>
-                            <th>Penilaian</th>
-                            <th>Tahapan</th>
-                            <th class="text-center" style="width:140px;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            `);
-            $('#tableInfo').html(`Menampilkan <span class="fw-semibold">${data.length}</span> pelamar di "${folderName}"`);
-            $('#paginationWrapper').hide();
-        }
-
-        function renderDropdownActions(p) {
-            let items = '';
-            const tahap = p.tahap_rekrutmen;
-
-            if (['applied', 'screening'].includes(tahap)) {
-                items +=
-                    `<li><a class="dropdown-item text-info btn-lanjut-tahap" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-tahap-saat-ini="${p.tahap_label}" data-tahap-berikutnya="${p.tahap_berikutnya || ''}"><i class="fa-solid fa-arrow-right"></i> Lanjut Tahapan</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-danger btn-tolak" data-id="${p.id}" data-nama="${p.nama_lengkap}"><i class="fa-solid fa-xmark"></i> Tolak Lamaran</a></li>`;
-            } else if (tahap === 'interview') {
-                items +=
-                    `<li><a class="dropdown-item text-warning btn-jadwal-interview" data-id="${p.id}" data-nama="${p.nama_lengkap}"><i class="fa-regular fa-calendar"></i> Jadwalkan Interview</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-success btn-lanjut-tahap" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-tahap-saat-ini="${p.tahap_label}" data-tahap-berikutnya="offer"><i class="fa-solid fa-arrow-right"></i> Lanjutkan</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-danger btn-tolak" data-id="${p.id}" data-nama="${p.nama_lengkap}"><i class="fa-solid fa-xmark"></i> Tolak Lamaran</a></li>`;
-            } else if (tahap === 'offer') {
-                items +=
-                    `<li><a class="dropdown-item text-info btn-kirim-offer" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-jabatan="${p.jabatan}"><i class="fa-solid fa-file-invoice"></i> Kirim Offer</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-success btn-lanjut-tahap" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-tahap-saat-ini="${p.tahap_label}" data-tahap-berikutnya="hired"><i class="fa-solid fa-check"></i> Diterima (Hired)</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-danger btn-tolak" data-id="${p.id}" data-nama="${p.nama_lengkap}"><i class="fa-solid fa-xmark"></i> Tolak Lamaran</a></li>`;
-            } else if (tahap === 'hired') {
-                items +=
-                    `<li><a class="dropdown-item text-success btn-onboarding" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-divisi="${p.divisi}" data-jabatan="${p.jabatan}" data-mulai="${p.tanggal_mulai_kerja || ''}"><i class="fa-solid fa-user-plus"></i> Proses Onboarding</a></li>`;
-            } else if (tahap === 'rejected') {
-                items +=
-                    `<li><a class="dropdown-item btn-kirim-email" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-email="${p.email}"><i class="fa-regular fa-envelope"></i> Kirim Email</a></li>`;
-                items +=
-                    `<li><a class="dropdown-item text-danger btn-hapus" data-id="${p.id}" data-nama="${p.nama_lengkap}"><i class="fa-solid fa-trash"></i> Hapus Data</a></li>`;
+                        </div>`;
+                });
+            } else {
+                riwayatHtml = '<p class="text-muted mb-0" style="font-size:0.85rem;">Belum ada riwayat.</p>';
             }
 
-            return items;
-        }
+            let penilaianHtml = '';
+            if (d.penilaians && d.penilaians.length > 0) {
+                let summaryHtml = '';
+                if (d.avg_rating) {
+                    const full = Math.floor(d.avg_rating);
+                    summaryHtml = `
+                        <div class="penilaian-summary">
+                            <div class="penilaian-summary-item">
+                                <div class="penilaian-summary-value">${d.avg_rating}</div>
+                                <div class="penilaian-summary-label">Rata-rata Nilai</div>
+                            </div>
+                            <div class="penilaian-summary-item">
+                                <div class="penilaian-summary-stars">${'★'.repeat(full)}${'☆'.repeat(4 - full)}</div>
+                                <div class="penilaian-summary-label">dari 4 bintang</div>
+                            </div>
+                            <div class="penilaian-summary-item">
+                                <div class="penilaian-summary-value">${d.total_penilai}</div>
+                                <div class="penilaian-summary-label">Interviewer</div>
+                            </div>
+                        </div>`;
+                }
 
-        function renderRatingCell(avgRating, totalPenilai) {
-            if (!avgRating || totalPenilai === 0) {
-                return `<span class="table-rating-empty">Belum dinilai</span>`;
+                const listHtml = d.penilaians.map(pf => {
+                    const stars = pf.rating ?
+                        '★'.repeat(pf.rating) + '<span class="star-empty">' + '☆'.repeat(4 - pf.rating) + '</span>' :
+                        '<em class="text-muted">Belum dinilai</em>';
+                    const inisial = (pf.interviewer_nama || '?').split(' ').slice(0, 2).map(n => n[0] || '').join('').toUpperCase();
+                    const fileLink = pf.file_penilaian ?
+                        `<a href="/storage/${esc(pf.file_penilaian)}" target="_blank" class="penilaian-file-link"><i class="fa-solid fa-file-pdf text-danger"></i> Lihat File Penilaian</a>` : '';
+                    const catatan = pf.catatan && String(pf.catatan).trim() !== '' ?
+                        `<div class="penilaian-catatan-box"><strong><i class="fa-solid fa-comment"></i> Catatan:</strong>${esc(pf.catatan)}</div>` : '';
+
+                    return `
+                        <div class="penilaian-card">
+                            <div class="penilaian-card-header">
+                                <div class="penilaian-interviewer-info">
+                                    <div class="penilaian-interviewer-avatar">${esc(inisial)}</div>
+                                    <div>
+                                        <div class="penilaian-interviewer-name">
+                                            ${esc(pf.interviewer_nama)}
+                                            <span class="penilaian-folder-badge"><i class="fa-solid fa-folder"></i> ${esc(pf.folder_nama)}</span>
+                                        </div>
+                                        <div class="penilaian-interviewer-role">${esc(pf.interviewer_jabatan)}</div>
+                                    </div>
+                                </div>
+                                <div class="penilaian-date"><i class="fa-regular fa-clock"></i> ${esc(pf.tanggal_dinilai || '-')}</div>
+                            </div>
+                            <div class="penilaian-rating-display">${stars}</div>
+                            ${catatan}
+                            ${fileLink}
+                        </div>`;
+                }).join('');
+
+                penilaianHtml = `${summaryHtml}${listHtml}`;
+            } else {
+                penilaianHtml = `
+                    <div class="penilaian-empty">
+                        <i class="fa-regular fa-star"></i>
+                        <p>Belum ada penilaian dari interviewer</p>
+                    </div>`;
             }
-            const fullStars = Math.floor(avgRating);
-            const emptyStars = 4 - fullStars;
-            let starsHtml = '';
-            for (let i = 0; i < fullStars; i++) starsHtml += '<i class="fa-solid fa-star"></i>';
-            for (let i = 0; i < emptyStars; i++) starsHtml += '<i class="fa-solid fa-star star-empty"></i>';
-            return `
-                <div class="table-rating">${starsHtml}</div>
-                <div class="table-rating-info">${avgRating} · ${totalPenilai} interviewer</div>
-            `;
-        }
 
-        function getSumberIcon(sumber) {
-            const map = {
-                'linkedin': {
-                    icon: 'fa-brands fa-linkedin-in',
-                    class: 'linkedin'
-                },
-                'jobstreet': {
-                    icon: 'fa-solid fa-briefcase',
-                    class: 'jobstreet'
-                },
-                'website perusahaan': {
-                    icon: 'fa-solid fa-globe',
-                    class: 'website'
-                },
-                'referral karyawan': {
-                    icon: 'fa-solid fa-user-group',
-                    class: 'referral'
-                },
-                'glints': {
-                    icon: 'fa-solid fa-graduation-cap',
-                    class: 'glints'
-                },
-                'kalibrr': {
-                    icon: 'fa-solid fa-star',
-                    class: 'kalibrr'
-                },
+            const labelDok = {
+                cv: 'CV',
+                portofolio: 'Portofolio',
+                foto: 'Foto',
+                ktp: 'KTP',
+                ijazah: 'Ijazah'
             };
-            return map[(sumber || '').toLowerCase()] || {
-                icon: 'fa-solid fa-circle-question',
-                class: 'other'
-            };
-        }
 
-        function renderActionButtons(p) {
-            const cvUrl = p.cv_path ? `/storage/${p.cv_path}` : '';
+            const dokHtml = Object.entries(d.dokumen).filter(([, url]) => url).map(([k, url]) =>
+                `<a href="${url}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-file me-1"></i> ${labelDok[k]}</a>`
+            ).join('') || '<span class="text-muted" style="font-size:0.85rem;">Belum ada dokumen diunggah</span>';
 
-            let html = `
-                <div class="action-cell">
-                    <button class="btn-quick-action btn-lihat-profil" title="Lihat Profil" data-id="${p.id}">
-                        <i class="fa-solid fa-eye text-primary"></i>
-                    </button>
-                    <div class="dropdown">
-                        <button class="btn-action-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end action-dropdown-menu">
-            `;
+            const usia = f.tanggal_lahir && d.usia ? ` (${d.usia} tahun)` : '';
+            const ttl = [f.tempat_lahir, f.tanggal_lahir ? tanggalIndo(f.tanggal_lahir) + usia : ''].filter(Boolean).join(', ');
+            const pendidikan = [f.pendidikan_terakhir, f.jurusan].filter(Boolean).join(' - ');
+            const jk = f.jenis_kelamin === 'L' ? 'Laki-laki' : (f.jenis_kelamin === 'P' ? 'Perempuan' : '');
+            const linkedin = f.linkedin_url ? `<a href="${esc(f.linkedin_url)}" target="_blank">${esc(f.linkedin_url)}</a>` : '';
 
-            // Lihat CV
-            if (p.cv_path) {
-                html += `
-                    <li><a class="dropdown-item btn-lihat-cv" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-cv="${cvUrl}">
-                        <i class="fa-solid fa-file-pdf text-danger"></i> Lihat CV
-                    </a></li>
-                `;
-            }
-
-            // Beri Penilaian
-            html += `
-                <li><a class="dropdown-item btn-nilai-pelamar" data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                    <i class="fa-solid fa-star text-warning"></i> Beri Penilaian
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-            `;
-
-            // Actions berdasarkan tahap
-            if (['applied', 'screening'].includes(p.tahap_rekrutmen)) {
-                html += `
-                    <li><a class="dropdown-item dropdown-item-info btn-lanjut-tahap" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-tahap-saat-ini="${p.tahap_label}" data-tahap-berikutnya="${p.tahap_berikutnya || ''}">
-                        <i class="fa-solid fa-arrow-right"></i> Lanjut Tahapan
-                    </a></li>
-                    <li><a class="dropdown-item dropdown-item-danger btn-tolak" data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                        <i class="fa-solid fa-xmark"></i> Tolak Lamaran
-                    </a></li>
-                `;
-
-            } else if (p.tahap_rekrutmen === 'interview') {
-                html += `<li><a class="dropdown-item dropdown-item-warning btn-jadwal-interview" 
-                                data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                            <i class="fa-regular fa-calendar"></i> Jadwalkan Interview
-                        </a></li>`;
-
-                html += `<li><a class="dropdown-item dropdown-item-purple btn-kirim-offer" 
-                                data-id="${p.id}" data-nama="${p.nama_lengkap}" data-jabatan="${p.jabatan}">
-                            <i class="fa-solid fa-file-invoice"></i> Kirim Offer
-                        </a></li>`;
-
-                html += `<li><a class="dropdown-item dropdown-item-danger btn-tolak" 
-                                data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                            <i class="fa-solid fa-xmark"></i> Tolak Lamaran
-                        </a></li>`;
-
-            } else if (p.tahap_rekrutmen === 'offer') {
-                html += `
-                    <li><a class="dropdown-item dropdown-item-purple btn-kirim-offer" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-jabatan="${p.jabatan}">
-                        <i class="fa-solid fa-file-invoice"></i> Kirim Offer
-                    </a></li>
-                    <li><a class="dropdown-item dropdown-item-success btn-lanjut-tahap" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-tahap-saat-ini="${p.tahap_label}" data-tahap-berikutnya="hired">
-                        <i class="fa-solid fa-check"></i> Diterima (Hired)
-                    </a></li>
-                    <li><a class="dropdown-item dropdown-item-danger btn-tolak" data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                        <i class="fa-solid fa-xmark"></i> Tolak Lamaran
-                    </a></li>
-                `;
-            } else if (p.tahap_rekrutmen === 'hired') {
-                html += `
-                    <li><a class="dropdown-item dropdown-item-success btn-onboarding" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-divisi="${p.divisi}" data-jabatan="${p.jabatan}" data-mulai="">
-                        <i class="fa-solid fa-user-plus"></i> Proses Onboarding
-                    </a></li>
-                `;
-            } else if (p.tahap_rekrutmen === 'rejected') {
-                html += `
-                    <li><a class="dropdown-item btn-kirim-email" data-id="${p.id}" data-nama="${p.nama_lengkap}" data-email="${p.email}">
-                        <i class="fa-regular fa-envelope"></i> Kirim Email
-                    </a></li>
-                    <li><a class="dropdown-item dropdown-item-danger btn-hapus" data-id="${p.id}" data-nama="${p.nama_lengkap}">
-                        <i class="fa-solid fa-trash"></i> Hapus Data
-                    </a></li>
-                `;
-            }
-
-            html += `
-                        </ul>
+            $('#profilContent').html(`
+                <div class="profile-header">
+                    <div class="profile-avatar-lg">${esc(d.inisial)}</div>
+                    <div class="profile-name">${esc(p.nama_lengkap)}</div>
+                    <div class="profile-position">${esc(f.jabatan ?? '-')} · ${esc(f.divisi ?? '-')}</div>
+                    <div class="profile-contact">
+                        <span><i class="fa-solid fa-envelope"></i> ${esc(f.email)}</span>
+                        <span><i class="fa-solid fa-phone"></i> ${esc(f.no_telepon ?? '-')}</span>
+                        <span><i class="fa-solid fa-location-dot"></i> ${esc(f.domisili ?? '-')}</span>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white position-absolute" style="top:1rem;right:1rem;" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="profile-body-scroll">
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-user"></i> Informasi Pribadi</div>
+                        <div class="profile-grid">
+                            ${itemProfil('NIK', esc(f.nik_ktp))}
+                            ${itemProfil('Tempat, Tanggal Lahir', esc(ttl))}
+                            ${itemProfil('Jenis Kelamin', jk)}
+                            ${itemProfil('Status Pernikahan', esc(f.status_pernikahan))}
+                            ${itemProfil('Agama', esc(f.agama))}
+                            ${itemProfil('LinkedIn', linkedin)}
+                            <div style="grid-column:1/-1;">${itemProfil('Alamat', esc(f.alamat))}</div>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-graduation-cap"></i> Pendidikan &amp; Lamaran</div>
+                        <div class="profile-grid">
+                            ${itemProfil('Pendidikan', esc(pendidikan))}
+                            ${itemProfil('Institusi', esc(f.institusi))}
+                            ${itemProfil('IPK', esc(f.ipk))}
+                            ${itemProfil('Pengalaman', f.pengalaman_tahun !== null && f.pengalaman_tahun !== '' ? f.pengalaman_tahun + ' tahun' : '')}
+                            ${itemProfil('Detail Posisi', esc(f.detail_jabatan))}
+                            ${itemProfil('Sumber Lamaran', esc(f.sumber_lamaran))}
+                            ${itemProfil('Tanggal Melamar', tanggalIndo(f.tanggal_melamar))}
+                            ${itemProfil('Gaji Diharapkan', rupiah(f.gaji_diharapkan))}
+                            ${itemProfil('Notice Period', esc(f.notice_period))}
+                            ${itemProfil('Tahapan', esc(d.tahap_label))}
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-code"></i> Keahlian</div>
+                        <div>${keahlianHtml}</div>
+                    </div>
+                    ${f.catatan_hr ? `<div class="profile-section"><div class="profile-section-title"><i class="fa-solid fa-message"></i> Catatan HR</div><div style="font-size:0.875rem;">${esc(f.catatan_hr)}</div></div>` : ''}
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-route"></i> Riwayat Tahapan Rekrutmen</div>
+                        ${riwayatHtml}
+                    </div>
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-star"></i> Hasil Penilaian Interviewer</div>
+                        ${penilaianHtml}
+                    </div>
+                    <div class="profile-section">
+                        <div class="profile-section-title"><i class="fa-solid fa-paperclip"></i> Dokumen</div>
+                        <div class="d-flex flex-wrap gap-2">${dokHtml}</div>
                     </div>
                 </div>
-            `;
-
-            return html;
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary btn-edit-pelamar" data-id="${p.id}">
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Data
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            `);
         }
 
-        function resetFolderFilter() {
-            filterByFolder('all', 'Semua Pelamar');
-            setTimeout(() => location.reload(), 300);
+        function updateBintang(nilai) {
+            $('#starContainerNilai .star-nilai').each(function() {
+                const aktif = $(this).data('value') <= nilai;
+                $(this).css('color', aktif ? '#ffc107' : '#ddd').text(aktif ? '★' : '☆');
+            });
         }
 
-        (function($) {
-            const BASE_URL = '{{ url('HR-dashboard/hire') }}';
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        $(document).ready(function() {
+            loadFolderList();
+
+            $(document).on('click', '#hireFolderTree .folder-list-link', function() {
+                filterByFolder($(this).attr('data-folder-id'), $(this).attr('data-nama'));
+            });
+
+            $(document).on('click', '[data-folder-toggle]', function(e) {
+                e.stopPropagation();
+                $(`#folder-children-hire-${$(this).attr('data-folder-toggle')}`).slideToggle(200);
+                $(this).toggleClass('expanded');
+            });
+
+            $(document).on('click', '.btn-pin-folder', function(e) {
+                e.stopPropagation();
+                togglePinFolder($(this).closest('.folder-list-link').attr('data-folder-id'));
+            });
+
+            $(document).on('click', '.btn-edit-folder', function(e) {
+                e.stopPropagation();
+                const a = $(this).closest('.folder-list-link');
+                showEditFolderModal(a.attr('data-folder-id'), a.attr('data-nama'), a.attr('data-parent'));
+            });
+
+            $(document).on('click', '.btn-del-folder', function(e) {
+                e.stopPropagation();
+                const a = $(this).closest('.folder-list-link');
+                showDeleteFolderModal(a.attr('data-folder-id'), a.attr('data-nama'));
+            });
+
+            $(document).on('click', '.btn-arsip-folder', function(e) {
+                e.stopPropagation();
+                const a = $(this).closest('.folder-list-link');
+                archiveFolderFromHire(a.attr('data-folder-id'), a.attr('data-nama'));
+            });
+
+            $(document).on('dragstart', '.table-applicant tbody tr[draggable="true"]', function(e) {
+                e.originalEvent.dataTransfer.setData('pelamar_id', $(this).attr('data-id'));
+                e.originalEvent.dataTransfer.effectAllowed = 'move';
+                $(this).addClass('dragging');
+            });
+
+            $(document).on('dragend', '.table-applicant tbody tr[draggable="true"]', function() {
+                $(this).removeClass('dragging');
+                $('.folder-list-link').removeClass('drag-over drag-over-invalid');
+            });
+
+            $(document).on('dragover', '.folder-list-link', function(e) {
+                e.preventDefault();
+                e.originalEvent.dataTransfer.dropEffect = 'move';
+                $(this).addClass('drag-over');
+            });
+
+            $(document).on('dragleave', '.folder-list-link', function() {
+                $(this).removeClass('drag-over');
+            });
+
+            $(document).on('drop', '.folder-list-link', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('drag-over');
+
+                const targetFolderId = $(this).attr('data-folder-id');
+                const pelamarId = e.originalEvent.dataTransfer.getData('pelamar_id');
+
+                if (pelamarId && targetFolderId && targetFolderId !== 'all' && targetFolderId !== 'unassigned') {
+                    movePelamarToFolder(pelamarId, targetFolderId);
                 }
             });
 
-            function toast(msg, type = 'success') {
-                const icon = type === 'success' ? 'circle-check' : 'circle-xmark';
-                const el = $(`<div class="toast-msg ${type}"><i class="fa-solid fa-${icon}"></i> ${msg}</div>`);
-                $('#toastContainer').append(el);
-                setTimeout(() => el.fadeOut(300, function() {
-                    $(this).remove();
-                }), 4000);
-            }
+            $('#modalCreateFolder').on('show.bs.modal', function() {
+                $('#formCreateFolder')[0].reset();
+                isiOpsiFolder('#parentFolderSelectCreate', daftarFolder);
+            });
 
-            function closeModal(id) {
-                const modalEl = document.getElementById(id);
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-            }
+            $('#formCreateFolder').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: URL_FOLDER_STORE,
+                    type: 'POST',
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.success) {
+                            toast(res.message, 'success');
+                            closeModal('modalCreateFolder');
+                            loadFolderList();
+                        } else {
+                            toast(res.message || 'Gagal membuat folder', 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
+                    }
+                });
+            });
 
-            function reloadPage() {
-                setTimeout(() => location.reload(), 800);
-            }
+            $('#formEditFolder').on('submit', function(e) {
+                e.preventDefault();
+                const folderId = $('#editFolderId').val();
+                const token = $('meta[name="csrf-token"]').attr('content');
 
-            $('#checkAll').on('change', function() {
+                $.ajax({
+                    url: `/HR-dashboard/folders/${folderId}/rename`,
+                    type: 'PUT',
+                    data: {
+                        _token: token,
+                        nama: $('#editFolderName').val()
+                    },
+                    success: function() {
+                        $.ajax({
+                            url: `/HR-dashboard/folders/${folderId}/move`,
+                            type: 'POST',
+                            data: {
+                                _token: token,
+                                parent_id: $('#parentFolderSelectEdit').val() || ''
+                            },
+                            success: function() {
+                                toast('Folder berhasil diperbarui', 'success');
+                                closeModal('modalEditFolder');
+                                loadFolderList();
+                            },
+                            error: function() {
+                                toast('Nama berhasil diubah, tapi gagal memindahkan folder', 'danger');
+                                closeModal('modalEditFolder');
+                                loadFolderList();
+                            }
+                        });
+                    },
+                    error: function() {
+                        toast('Gagal mengubah nama folder', 'danger');
+                    }
+                });
+            });
+
+            $('#btnKonfirmasiHapusFolder').on('click', function() {
+                const folderId = $('#deleteFolderId').val();
+                $.ajax({
+                    url: `/HR-dashboard/folders/${folderId}`,
+                    type: 'POST',
+                    data: {
+                        _method: 'DELETE',
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            toast(res.message || 'Folder berhasil dihapus', 'success');
+                            closeModal('modalDeleteFolder');
+                            if (currentFolderId == folderId) {
+                                resetFolderFilter();
+                                return;
+                            }
+                            loadFolderList();
+                        } else {
+                            toast(res.message || 'Gagal menghapus folder', 'danger');
+                        }
+                    },
+                    error: function() {
+                        toast('Terjadi kesalahan pada server', 'danger');
+                    }
+                });
+            });
+
+            $(document).on('change', '#checkAll', function() {
                 $('.check-row').prop('checked', this.checked);
             });
 
             $('#metodeInterview').on('change', function() {
-                if (this.value === 'online') {
-                    $('#linkMeetingWrapper').show();
-                    $('#alamatWrapper').hide();
-                } else if (this.value === 'offline') {
+                if (this.value === 'offline') {
                     $('#linkMeetingWrapper').hide();
                     $('#alamatWrapper').show();
                 } else {
@@ -3668,56 +4030,86 @@
                 $('#alasanLainWrapper').toggle(this.value === 'lainnya');
             });
 
+            $(document).on('input', '.input-rupiah', function() {
+                const digits = this.value.replace(/\D/g, '');
+                this.value = digits ? 'Rp ' + Number(digits).toLocaleString('id-ID') : '';
+            });
+
+            $('#btnTambahPelamar').on('click', bukaFormTambah);
+
+            $(document).on('click', '.btn-edit-pelamar', function(e) {
+                e.preventDefault();
+                const id = $(this).attr('data-id');
+                const $profil = $('#modalLihatProfil');
+
+                if ($profil.hasClass('show')) {
+                    $profil.one('hidden.bs.modal', () => bukaFormEdit(id));
+                    bootstrap.Modal.getInstance($profil[0]).hide();
+                } else {
+                    bukaFormEdit(id);
+                }
+            });
+
+            $('#btnScanDokumen').on('click', scanDokumen);
+
+            $('#formPelamar').on('submit', function(e) {
+                e.preventDefault();
+                const id = $('#pelamarId').val();
+                const url = id ? `${BASE_URL}/${id}/update` : `${BASE_URL}/store`;
+                const $btn = $('#btnSimpanPelamar');
+                const originalHtml = $btn.html();
+
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: new FormData(this),
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        $btn.prop('disabled', false).html(originalHtml);
+                        if (res.success) {
+                            toast(res.message);
+                            closeModal('modalFormPelamar');
+                            reloadPage();
+                        } else {
+                            toast(res.message ?? 'Terjadi kesalahan.', 'danger');
+                        }
+                    },
+                    error: function(xhr) {
+                        $btn.prop('disabled', false).html(originalHtml);
+                        toast(pesanError(xhr), 'danger');
+                    }
+                });
+            });
+
             $(document).on('click', '.btn-lihat-cv', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const nama = $(this).data('nama');
-                const cvUrl = $(this).data('cv');
+                const nama = $(this).attr('data-nama');
+                const cvUrl = $(this).attr('data-cv');
 
                 if (!cvUrl) {
                     toast('CV tidak tersedia', 'danger');
                     return;
                 }
 
-                // Buat modal CV viewer dinamis
-                let modalHtml = `
-                    <div class="modal fade" id="modalCVViewer" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-xl modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header" style="background: linear-gradient(135deg, #1f2937, #374151); color: white;">
-                                    <h5 class="modal-title">
-                                        <i class="fa-solid fa-file-pdf me-2"></i>
-                                        <span>CV - ${nama}</span>
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body p-0">
-                                    <div id="cvViewerContainer" style="width: 100%; height: 75vh; background: #f3f4f6;">
-                                        <div class="text-center py-5">
-                                            <i class="fa-solid fa-spinner fa-spin fa-3x text-muted mb-3"></i>
-                                            <p class="text-muted">Memuat CV...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                $('#cvTitle').text('CV - ' + nama);
+                $('#cvDownloadBtn').attr('href', cvUrl);
+                $('#cvViewerContainer').html(`
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-spinner fa-spin fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Memuat CV...</p>
                     </div>
-                `;
+                `);
 
-                // Hapus modal lama jika ada
-                $('#modalCVViewer').remove();
-                $('body').append(modalHtml);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCVViewer')).show();
 
-                const modal = new bootstrap.Modal(document.getElementById('modalCVViewer'));
-                modal.show();
-
-                // Load CV content
                 setTimeout(() => {
                     if (cvUrl.toLowerCase().endsWith('.pdf')) {
-                        $('#cvViewerContainer').html(
-                            `<iframe src="${cvUrl}" style="width:100%;height:75vh;border:none;"></iframe>`
-                            );
+                        $('#cvViewerContainer').html(`<iframe src="${cvUrl}" style="width:100%;height:75vh;border:none;"></iframe>`);
                     } else {
                         $('#cvViewerContainer').html(`
                             <div class="text-center py-5">
@@ -3731,163 +4123,30 @@
                         `);
                     }
                 }, 300);
+            });
 
-                // Cleanup saat modal ditutup
-                $('#modalCVViewer').on('hidden.bs.modal', function() {
-                    $(this).remove();
-                });
+            $('#modalCVViewer').on('hidden.bs.modal', function() {
+                $('#cvViewerContainer').empty();
             });
 
             $(document).on('click', '.btn-nilai-pelamar', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const id = $(this).data('id');
-                const nama = $(this).data('nama');
+                $('#formNilaiPelamar')[0].reset();
+                $('#nilaiPelamarId').val($(this).attr('data-id'));
+                $('#nilaiNama').val($(this).attr('data-nama'));
+                $('#ratingInputNilai').val(0);
+                updateBintang(0);
+                isiOpsiFolder('#nilaiFolderId', daftarFolder);
 
-                let modalHtml = `
-                    <div class="modal fade" id="modalNilaiPelamar" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title"><i class="fa-solid fa-star text-warning"></i> Beri Penilaian</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form id="formNilaiPelamar">
-                                    @csrf
-                                    <input type="hidden" name="pelamar_id" id="nilaiPelamarId" value="${id}">
-                                    <div class="modal-body">
-                                        <div class="mb-3">
-                                            <label class="form-label-custom"><i class="fa-solid fa-user"></i> Nama Pelamar</label>
-                                            <input type="text" id="nilaiNama" class="form-control-custom" value="${nama}" readonly style="background:#f9fafb;">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label-custom"><i class="fa-solid fa-folder"></i> Masukkan ke Folder <span class="required">*</span></label>
-                                            <select name="folder_id" id="nilaiFolderId" class="form-select-custom" required>
-                                                <option value="">-- Pilih Folder --</option>
-                                            </select>
-                                            <div class="form-hint">Pelamar akan dimasukkan ke folder ini untuk dinilai.</div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label-custom"><i class="fa-solid fa-star"></i> Penilaian (1-4 Bintang) <span class="required">*</span></label>
-                                            <div class="d-flex gap-2 fs-2" style="cursor: pointer;" id="starContainerNilai">
-                                                <span class="star-nilai" data-value="1" style="color: #ddd; font-size: 2rem;">☆</span>
-                                                <span class="star-nilai" data-value="2" style="color: #ddd; font-size: 2rem;">☆</span>
-                                                <span class="star-nilai" data-value="3" style="color: #ddd; font-size: 2rem;">☆</span>
-                                                <span class="star-nilai" data-value="4" style="color: #ddd; font-size: 2rem;">☆</span>
-                                            </div>
-                                            <input type="hidden" name="rating" id="ratingInputNilai" value="0">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label-custom"><i class="fa-solid fa-comment"></i> Catatan</label>
-                                            <textarea name="catatan" class="form-control-custom" rows="3" placeholder="Catatan evaluasi pelamar..."></textarea>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label-custom"><i class="fa-solid fa-paperclip"></i> File Penilaian (PDF/DOC)</label>
-                                            <input type="file" name="file_penilaian" class="form-control-custom" accept=".pdf,.doc,.docx">
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fa-solid fa-save me-1"></i> Simpan Penilaian
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Hapus modal lama jika ada
-                $('#modalNilaiPelamar').remove();
-                $('body').append(modalHtml);
-
-                const modal = new bootstrap.Modal(document.getElementById('modalNilaiPelamar'));
-                modal.show();
-
-                // Load folder list
-                loadFolderOptionsForNilai();
-
-                // Star rating handlers
-                $(document).on('click', '.star-nilai', function() {
-                    const value = $(this).data('value');
-                    $('#ratingInputNilai').val(value);
-                    $('#starContainerNilai .star-nilai').each(function() {
-                        if ($(this).data('value') <= value) {
-                            $(this).css('color', '#ffc107').text('★');
-                        } else {
-                            $(this).css('color', '#ddd').text('☆');
-                        }
-                    });
-                });
-
-                $(document).on('mouseover', '.star-nilai', function() {
-                    const value = $(this).data('value');
-                    $('#starContainerNilai .star-nilai').each(function() {
-                        $(this).css('color', $(this).data('value') <= value ? '#ffc107' :
-                            '#ddd');
-                    });
-                });
-
-                $(document).on('mouseleave', '#starContainerNilai', function() {
-                    const currentValue = parseInt($('#ratingInputNilai').val());
-                    $('#starContainerNilai .star-nilai').each(function() {
-                        $(this).css('color', $(this).data('value') <= currentValue ? '#ffc107' :
-                            '#ddd');
-                    });
-                });
-
-                // Form submit
-                $('#formNilaiPelamar').on('submit', function(e) {
-                    e.preventDefault();
-                    if ($('#ratingInputNilai').val() == 0) {
-                        toast('Pilih rating terlebih dahulu', 'danger');
-                        return;
-                    }
-                    if (!$('#nilaiFolderId').val()) {
-                        toast('Pilih folder terlebih dahulu', 'danger');
-                        return;
-                    }
-
-                    const fd = new FormData(this);
-                    $.ajax({
-                        url: `${BASE_URL}/penilaian`,
-                        type: 'POST',
-                        data: fd,
-                        processData: false,
-                        contentType: false,
-                        success: function(res) {
-                            if (res.success) {
-                                toast(res.message, 'success');
-                                modal.hide();
-                                reloadPage();
-                            } else {
-                                toast(res.message || 'Gagal menyimpan penilaian', 'danger');
-                            }
-                        },
-                        error: function() {
-                            toast('Terjadi kesalahan pada server', 'danger');
-                        }
-                    });
-                });
-
-                // Cleanup saat modal ditutup
-                $('#modalNilaiPelamar').on('hidden.bs.modal', function() {
-                    $(this).remove();
-                });
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNilaiPelamar')).show();
             });
 
             $(document).on('click', '.star-nilai', function() {
                 const value = $(this).data('value');
                 $('#ratingInputNilai').val(value);
-                $('#starContainerNilai .star-nilai').each(function() {
-                    if ($(this).data('value') <= value) {
-                        $(this).css('color', '#ffc107').text('★');
-                    } else {
-                        $(this).css('color', '#ddd').text('☆');
-                    }
-                });
+                updateBintang(value);
             });
 
             $(document).on('mouseover', '.star-nilai', function() {
@@ -3898,28 +4157,26 @@
             });
 
             $(document).on('mouseleave', '#starContainerNilai', function() {
-                const currentValue = parseInt($('#ratingInputNilai').val());
-                $('#starContainerNilai .star-nilai').each(function() {
-                    $(this).css('color', $(this).data('value') <= currentValue ? '#ffc107' : '#ddd');
-                });
+                updateBintang(parseInt($('#ratingInputNilai').val()) || 0);
             });
 
             $('#formNilaiPelamar').on('submit', function(e) {
                 e.preventDefault();
-                if ($('#ratingInputNilai').val() == 0) {
+
+                if (($('#ratingInputNilai').val() || 0) == 0) {
                     toast('Pilih rating terlebih dahulu', 'danger');
                     return;
                 }
+
                 if (!$('#nilaiFolderId').val()) {
                     toast('Pilih folder terlebih dahulu', 'danger');
                     return;
                 }
 
-                const fd = new FormData(this);
                 $.ajax({
-                    url: '{{ route('HR.folders.pelamar.penilaian') }}',
+                    url: URL_PENILAIAN,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -3931,256 +4188,45 @@
                             toast(res.message || 'Gagal menyimpan penilaian', 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-lihat-profil', function() {
-                const id = $(this).data('id');
-                const $modal = $('#modalLihatProfil');
-                const modal = new bootstrap.Modal($modal[0]);
+                const id = $(this).attr('data-id');
+                const modalEl = document.getElementById('modalLihatProfil');
 
-                $('#profilContent').html(
-                    '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>'
-                );
-                modal.show();
+                $('#profilContent').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>');
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
 
                 $.ajax({
                     url: `${BASE_URL}/show/${id}`,
                     type: 'GET',
                     dataType: 'json',
                     success: function(json) {
-                        const d = json.data;
-                        const p = d.pelamar;
-                        const keahlianHtml = (p.keahlian && p.keahlian.length) ?
-                            p.keahlian.map(k => `<span class="skill-tag">${k}</span>`).join('') :
-                            '<span class="text-muted">-</span>';
-
-                        let riwayatHtml = '';
-                        if (d.riwayat && d.riwayat.length) {
-                            d.riwayat.forEach((r, i) => {
-                                const isLast = i === d.riwayat.length - 1;
-                                const dotClass = isLast ? 'active' : 'done';
-                                const icon = isLast ? 'fa-solid fa-user-tie' :
-                                    'fa-solid fa-check';
-                                const dateStr = new Date(r.created_at).toLocaleDateString(
-                                    'id-ID', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                    });
-                                let ratingHtml = '';
-                                if (r.rating && r.rating > 0) {
-                                    ratingHtml = '<div class="timeline-rating">';
-                                    for (let s = 1; s <= 5; s++) {
-                                        const starClass = s <= r.rating ? 'star' :
-                                            'star empty';
-                                        ratingHtml +=
-                                            `<i class="fa-solid fa-star ${starClass}"></i>`;
-                                    }
-                                    ratingHtml += '</div>';
-                                }
-                                let feedbackHtml = '';
-                                if (r.keterangan && r.keterangan.trim() !== '') {
-                                    feedbackHtml =
-                                        `<div class="timeline-feedback">${r.keterangan}</div>`;
-                                }
-                                riwayatHtml += `
-                                    <div class="timeline-item">
-                                        <div class="timeline-dot ${dotClass}"><i class="${icon}"></i></div>
-                                        <div class="timeline-content">
-                                            <div class="timeline-title">${r.aksi}</div>
-                                            <div class="timeline-desc">${dateStr} · oleh ${r.oleh ?? '-'}</div>
-                                            ${ratingHtml}
-                                            ${feedbackHtml}
-                                        </div>
-                                    </div>`;
-                            });
-                        } else {
-                            riwayatHtml =
-                                '<p class="text-muted mb-0" style="font-size:0.85rem;">Belum ada riwayat.</p>';
-                        }
-
-                        let penilaianSectionHtml = '';
-                        if (d.penilaians && d.penilaians.length > 0) {
-                            let summaryHtml = '';
-                            if (d.avg_rating) {
-                                const fullStars = Math.floor(d.avg_rating);
-                                const emptyStars = 4 - fullStars;
-                                let starsHtml = '';
-                                for (let i = 0; i < fullStars; i++) starsHtml += '★';
-                                for (let i = 0; i < emptyStars; i++) starsHtml += '☆';
-                                summaryHtml = `
-                                    <div class="penilaian-summary">
-                                        <div class="penilaian-summary-item">
-                                            <div class="penilaian-summary-value">${d.avg_rating}</div>
-                                            <div class="penilaian-summary-label">Rata-rata Nilai</div>
-                                        </div>
-                                        <div class="penilaian-summary-item">
-                                            <div class="penilaian-summary-stars">${starsHtml}</div>
-                                            <div class="penilaian-summary-label">dari 4 bintang</div>
-                                        </div>
-                                        <div class="penilaian-summary-item">
-                                            <div class="penilaian-summary-value">${d.total_penilai}</div>
-                                            <div class="penilaian-summary-label">Interviewer</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-
-                            let listHtml = d.penilaians.map(pf => {
-                                const ratingStars = pf.rating ?
-                                    '★'.repeat(pf.rating) + '<span class="star-empty">' +
-                                    '☆'.repeat(4 - pf.rating) + '</span>' :
-                                    '<em class="text-muted">Belum dinilai</em>';
-                                const interviewerInitial = (pf.interviewer_nama || '?')
-                                    .split(' ').slice(0, 2).map(n => n[0] || '').join('')
-                                    .toUpperCase();
-                                let fileLink = '';
-                                if (pf.file_penilaian) {
-                                    fileLink = `
-                                        <a href="/storage/${pf.file_penilaian}" target="_blank" class="penilaian-file-link">
-                                            <i class="fa-solid fa-file-pdf text-danger"></i> Lihat File Penilaian
-                                        </a>
-                                    `;
-                                }
-                                let catatanBox = '';
-                                if (pf.catatan && pf.catatan.trim() !== '') {
-                                    catatanBox = `
-                                        <div class="penilaian-catatan-box">
-                                            <strong><i class="fa-solid fa-comment"></i> Catatan:</strong>
-                                            ${pf.catatan}
-                                        </div>
-                                    `;
-                                }
-                                return `
-                                    <div class="penilaian-card">
-                                        <div class="penilaian-card-header">
-                                            <div class="penilaian-interviewer-info">
-                                                <div class="penilaian-interviewer-avatar">${interviewerInitial}</div>
-                                                <div>
-                                                    <div class="penilaian-interviewer-name">
-                                                        ${pf.interviewer_nama}
-                                                        <span class="penilaian-folder-badge">
-                                                            <i class="fa-solid fa-folder"></i> ${pf.folder_nama}
-                                                        </span>
-                                                    </div>
-                                                    <div class="penilaian-interviewer-role">${pf.interviewer_jabatan}</div>
-                                                </div>
-                                            </div>
-                                            <div class="penilaian-date">
-                                                <i class="fa-regular fa-clock"></i> ${pf.tanggal_dinilai || '-'}
-                                            </div>
-                                        </div>
-                                        <div class="penilaian-rating-display">${ratingStars}</div>
-                                        ${catatanBox}
-                                        ${fileLink}
-                                    </div>
-                                `;
-                            }).join('');
-
-                            penilaianSectionHtml = `
-                                <div class="penilaian-section">
-                                    <div class="profile-section-title">
-                                        <i class="fa-solid fa-star"></i> Hasil Penilaian Interviewer
-                                    </div>
-                                    ${summaryHtml}
-                                    ${listHtml}
-                                </div>
-                            `;
-                        } else {
-                            penilaianSectionHtml = `
-                                <div class="penilaian-section">
-                                    <div class="profile-section-title">
-                                        <i class="fa-solid fa-star"></i> Hasil Penilaian Interviewer
-                                    </div>
-                                    <div class="penilaian-empty">
-                                        <i class="fa-regular fa-star"></i>
-                                        <p>Belum ada penilaian dari interviewer</p>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        const cvBtn = p.cv_path ?
-                            `<a href="/storage/${p.cv_path}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-file-pdf me-1 text-danger"></i> Lihat CV</a>` :
-                            '<span class="text-muted" style="font-size:0.85rem;">CV belum diupload</span>';
-
-                        const usiaText = p.tanggal_lahir && d.usia ? ` (${d.usia} tahun)` : '';
-                        const pendidikanText = (p.pendidikan_terakhir ?? '-') + (p.jurusan ? ' - ' +
-                            p.jurusan : '');
-                        const pengalamanText = p.pengalaman_tahun ? p.pengalaman_tahun + ' tahun' :
-                            '-';
-
-                        $('#profilContent').html(`
-                            <div class="profile-header">
-                                <div class="profile-avatar-lg">${d.inisial}</div>
-                                <div class="profile-name">${p.nama_lengkap}</div>
-                                <div class="profile-position">${p.jabatan ?? '-'} · ${p.divisi ?? '-'}</div>
-                                <div class="profile-contact">
-                                    <span><i class="fa-solid fa-envelope"></i> ${p.email}</span>
-                                    <span><i class="fa-solid fa-phone"></i> ${p.no_telepon ?? '-'}</span>
-                                    <span><i class="fa-solid fa-location-dot"></i> ${p.domisili ?? '-'}</span>
-                                </div>
-                                <button type="button" class="btn-close btn-close-white position-absolute" style="top:1rem;right:1rem;" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="profile-body-scroll">
-                                <div class="profile-section">
-                                    <div class="profile-section-title"><i class="fa-solid fa-user"></i> Informasi Pribadi</div>
-                                    <div class="profile-grid">
-                                        <div><div class="profile-item-label">Tanggal Lahir</div><div class="profile-item-value">${p.tanggal_lahir ? p.tanggal_lahir + usiaText : '-'}</div></div>
-                                        <div><div class="profile-item-label">Pendidikan</div><div class="profile-item-value">${pendidikanText}</div></div>
-                                        <div><div class="profile-item-label">Pengalaman</div><div class="profile-item-value">${pengalamanText}</div></div>
-                                        <div><div class="profile-item-label">Sumber Lamaran</div><div class="profile-item-value">${p.sumber_lamaran ?? '-'}</div></div>
-                                        <div><div class="profile-item-label">Gaji Diharapkan</div><div class="profile-item-value">${d.pelamar.gaji_diharapkan_format ?? '-'}</div></div>
-                                        <div><div class="profile-item-label">Tahapan</div><div class="profile-item-value">${d.tahap_label}</div></div>
-                                    </div>
-                                </div>
-                                <div class="profile-section">
-                                    <div class="profile-section-title"><i class="fa-solid fa-code"></i> Keahlian</div>
-                                    <div>${keahlianHtml}</div>
-                                </div>
-                                <div class="profile-section">
-                                    <div class="profile-section-title"><i class="fa-solid fa-route"></i> Riwayat Tahapan Rekrutmen</div>
-                                    ${riwayatHtml}
-                                </div>
-                                <div class="profile-section">
-                                    ${penilaianSectionHtml}
-                                </div>
-                                <div class="profile-section">
-                                    <div class="profile-section-title"><i class="fa-solid fa-paperclip"></i> Dokumen</div>
-                                    <div class="d-flex flex-wrap gap-2">${cvBtn}</div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
-                            </div>
-                        `);
+                        renderProfil(json.data);
                     },
                     error: function() {
-                        $('#profilContent').html(
-                            '<div class="text-center py-5 text-danger">Gagal memuat data profil.</div>'
-                        );
+                        $('#profilContent').html('<div class="text-center py-5 text-danger">Gagal memuat data profil.</div>');
                     }
                 });
             });
 
             $(document).on('click', '.btn-jadwal-interview', function() {
-                $('#interviewPelamarId').val($(this).data('id'));
-                $('#interviewNama').val($(this).data('nama'));
+                $('#interviewPelamarId').val($(this).attr('data-id'));
+                $('#interviewNama').val($(this).attr('data-nama'));
                 new bootstrap.Modal(document.getElementById('modalJadwalInterview')).show();
             });
 
             $('#formJadwalInterview').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#interviewPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/jadwal-interview`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4192,27 +4238,26 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-kirim-offer', function() {
-                $('#offerPelamarId').val($(this).data('id'));
-                $('#offerNama').val($(this).data('nama'));
-                $('#offerJabatan').val($(this).data('jabatan'));
+                $('#offerPelamarId').val($(this).attr('data-id'));
+                $('#offerNama').val($(this).attr('data-nama'));
+                $('#offerJabatan').val($(this).attr('data-jabatan'));
                 new bootstrap.Modal(document.getElementById('modalKirimOffer')).show();
             });
 
             $('#formKirimOffer').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#offerPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/kirim-offer`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4224,30 +4269,28 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-onboarding', function() {
-                $('#onboardPelamarId').val($(this).data('id'));
-                $('#onboardDivisi').val($(this).data('divisi'));
-                $('#onboardJabatan').val($(this).data('jabatan'));
-                if ($(this).data('mulai')) $('#onboardTanggalMulai').val($(this).data('mulai'));
-                $('#onboardNik').val('EMP-' + new Date().getFullYear() + '-' + String($(this).data('id'))
-                    .padStart(3, '0'));
+                $('#onboardPelamarId').val($(this).attr('data-id'));
+                $('#onboardDivisi').val($(this).attr('data-divisi'));
+                $('#onboardJabatan').val($(this).attr('data-jabatan'));
+                if ($(this).attr('data-mulai')) $('#onboardTanggalMulai').val($(this).attr('data-mulai'));
+                $('#onboardNik').val('EMP-' + new Date().getFullYear() + '-' + String($(this).attr('data-id')).padStart(3, '0'));
                 new bootstrap.Modal(document.getElementById('modalOnboarding')).show();
             });
 
             $('#formOnboarding').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#onboardPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/onboarding`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4259,28 +4302,27 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-lanjut-tahap', function() {
-                $('#lanjutPelamarId').val($(this).data('id'));
-                $('#lanjutNama').val($(this).data('nama'));
-                $('#lanjutTahapSaatIni').val($(this).data('tahap-saat-ini'));
-                if ($(this).data('tahap-berikutnya')) $('#lanjutTahapKe').val($(this).data('tahap-berikutnya'));
+                $('#lanjutPelamarId').val($(this).attr('data-id'));
+                $('#lanjutNama').val($(this).attr('data-nama'));
+                $('#lanjutTahapSaatIni').val($(this).attr('data-tahap-saat-ini'));
+                if ($(this).attr('data-tahap-berikutnya')) $('#lanjutTahapKe').val($(this).attr('data-tahap-berikutnya'));
                 new bootstrap.Modal(document.getElementById('modalLanjutTahap')).show();
             });
 
             $('#formLanjutTahap').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#lanjutPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/lanjut-tahap`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4292,27 +4334,26 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-kirim-email', function() {
-                $('#emailPelamarId').val($(this).data('id'));
-                $('#emailNama').val($(this).data('nama'));
-                $('#emailAlamat').val($(this).data('email'));
+                $('#emailPelamarId').val($(this).attr('data-id'));
+                $('#emailNama').val($(this).attr('data-nama'));
+                $('#emailAlamat').val($(this).attr('data-email'));
                 new bootstrap.Modal(document.getElementById('modalKirimEmail')).show();
             });
 
             $('#formKirimEmail').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#emailPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/kirim-email`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4323,26 +4364,25 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-tolak', function() {
-                $('#tolakPelamarId').val($(this).data('id'));
-                $('#tolakNama').val($(this).data('nama'));
+                $('#tolakPelamarId').val($(this).attr('data-id'));
+                $('#tolakNama').val($(this).attr('data-nama'));
                 new bootstrap.Modal(document.getElementById('modalTolak')).show();
             });
 
             $('#formTolak').on('submit', function(e) {
                 e.preventDefault();
                 const id = $('#tolakPelamarId').val();
-                const fd = new FormData(this);
                 $.ajax({
                     url: `${BASE_URL}/${id}/tolak`,
                     type: 'POST',
-                    data: fd,
+                    data: new FormData(this),
                     processData: false,
                     contentType: false,
                     success: function(res) {
@@ -4354,15 +4394,15 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
 
             $(document).on('click', '.btn-hapus', function() {
-                $('#hapusPelamarId').val($(this).data('id'));
-                $('#hapusNama').text($(this).data('nama'));
+                $('#hapusPelamarId').val($(this).attr('data-id'));
+                $('#hapusNama').text($(this).attr('data-nama'));
                 new bootstrap.Modal(document.getElementById('modalHapus')).show();
             });
 
@@ -4384,43 +4424,11 @@
                             toast(res.message, 'danger');
                         }
                     },
-                    error: function() {
-                        toast('Terjadi kesalahan pada server.', 'danger');
+                    error: function(xhr) {
+                        toast(pesanError(xhr), 'danger');
                     }
                 });
             });
-
-            $('#formTambahPelamar').on('submit', function(e) {
-                e.preventDefault();
-                const $btn = $('#btnSimpanPelamar');
-                const originalHtml = $btn.html();
-                $btn.prop('disabled', true).html(
-                    '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...');
-                const fd = new FormData(this);
-                $.ajax({
-                    url: `${BASE_URL}/store`,
-                    type: 'POST',
-                    data: fd,
-                    processData: false,
-                    contentType: false,
-                    success: function(res) {
-                        $btn.prop('disabled', false).html(originalHtml);
-                        if (res.success) {
-                            toast(res.message);
-                            closeModal('modalTambahPelamar');
-                            $('#formTambahPelamar')[0].reset();
-                            reloadPage();
-                        } else {
-                            toast(res.message ?? 'Terjadi kesalahan.', 'danger');
-                        }
-                    },
-                    error: function() {
-                        $btn.prop('disabled', false).html(originalHtml);
-                        toast('Terjadi kesalahan pada server.', 'danger');
-                    }
-                });
-            });
-
-        })(jQuery);
+        });
     </script>
 @endsection

@@ -15,15 +15,25 @@
         @forelse($pelamars as $index => $p)
             @php
                 $avClass = 'av-' . (($index % 6) + 1);
-                $penilaians = \App\Models\PelamarFolder::where('pelamar_id', $p->id)->whereNotNull('rating')->get();
+                $penilaians = \Illuminate\Support\Collection::wrap($p->pelamarFolders)->whereNotNull('rating');
                 $avgRating = $penilaians->avg('rating');
                 $avgRating = $avgRating ? round($avgRating, 1) : null;
                 $totalPenilai = $penilaians->count();
                 $tahap = $p->tahap_rekrutmen;
+                $cvUrl = $p->cv_path ? asset('storage/' . $p->cv_path) : '';
+                $sumberIcon = match (strtolower($p->sumber_lamaran ?? '')) {
+                    'linkedin' => ['icon' => 'fa-brands fa-linkedin-in', 'class' => 'linkedin'],
+                    'jobstreet' => ['icon' => 'fa-solid fa-briefcase', 'class' => 'jobstreet'],
+                    'website perusahaan' => ['icon' => 'fa-solid fa-globe', 'class' => 'website'],
+                    'referral karyawan' => ['icon' => 'fa-solid fa-user-group', 'class' => 'referral'],
+                    'glints' => ['icon' => 'fa-solid fa-graduation-cap', 'class' => 'glints'],
+                    'kalibrr' => ['icon' => 'fa-solid fa-star', 'class' => 'kalibrr'],
+                    default => ['icon' => 'fa-solid fa-circle-question', 'class' => 'other'],
+                };
             @endphp
             <tr draggable="true" data-id="{{ $p->id }}" data-nama="{{ $p->nama_lengkap }}"
                 data-email="{{ $p->email }}" data-tahap="{{ $tahap }}" data-jabatan="{{ $p->jabatan }}"
-                data-divisi="{{ $p->divisi }}" data-cv="{{ $p->cv_path ? asset('storage/' . $p->cv_path) : '' }}">
+                data-divisi="{{ $p->divisi }}" data-cv="{{ $cvUrl }}">
 
                 <td><input type="checkbox" class="form-check-input check-row" value="{{ $p->id }}"></td>
 
@@ -43,17 +53,6 @@
                 </td>
 
                 <td>
-                    @php
-                        $sumberIcon = match (strtolower($p->sumber_lamaran ?? '')) {
-                            'linkedin' => ['icon' => 'fa-brands fa-linkedin-in', 'class' => 'linkedin'],
-                            'jobstreet' => ['icon' => 'fa-solid fa-briefcase', 'class' => 'jobstreet'],
-                            'website perusahaan' => ['icon' => 'fa-solid fa-globe', 'class' => 'website'],
-                            'referral karyawan' => ['icon' => 'fa-solid fa-user-group', 'class' => 'referral'],
-                            'glints' => ['icon' => 'fa-solid fa-graduation-cap', 'class' => 'glints'],
-                            'kalibrr' => ['icon' => 'fa-solid fa-star', 'class' => 'kalibrr'],
-                            default => ['icon' => 'fa-solid fa-circle-question', 'class' => 'other'],
-                        };
-                    @endphp
                     <span class="source-badge {{ $sumberIcon['class'] }}">
                         <i class="{{ $sumberIcon['icon'] }}"></i>
                         {{ $p->sumber_lamaran ?? 'Lainnya' }}
@@ -65,7 +64,7 @@
                 <td>
                     @if ($avgRating)
                         @php
-                            $fullStars = floor($avgRating);
+                            $fullStars = (int) floor($avgRating);
                             $emptyStars = 4 - $fullStars;
                         @endphp
                         <div class="table-rating">
@@ -104,24 +103,38 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end action-dropdown-menu">
 
+                                <li>
+                                    <a class="dropdown-item btn-edit-pelamar" data-id="{{ $p->id }}">
+                                        <i class="fa-solid fa-pen-to-square text-primary"></i>
+                                        Edit Data
+                                    </a>
+                                </li>
+
                                 @if ($p->cv_path)
                                     <li>
                                         <a class="dropdown-item btn-lihat-cv" data-id="{{ $p->id }}"
-                                            data-nama="{{ $p->nama_lengkap }}"
-                                            data-cv="{{ asset('storage/' . $p->cv_path) }}">
+                                            data-nama="{{ $p->nama_lengkap }}" data-cv="{{ $cvUrl }}">
                                             <i class="fa-solid fa-file-pdf text-danger"></i>
                                             Lihat CV
                                         </a>
                                     </li>
                                 @endif
 
-                                {{-- <li>
+                                <li>
                                     <a class="dropdown-item btn-nilai-pelamar" data-id="{{ $p->id }}"
                                         data-nama="{{ $p->nama_lengkap }}">
                                         <i class="fa-solid fa-star text-warning"></i>
                                         Beri Penilaian
                                     </a>
-                                </li> --}}
+                                </li>
+
+                                <li>
+                                    <a class="dropdown-item btn-kirim-email" data-id="{{ $p->id }}"
+                                        data-nama="{{ $p->nama_lengkap }}" data-email="{{ $p->email }}">
+                                        <i class="fa-regular fa-envelope"></i>
+                                        Kirim Email
+                                    </a>
+                                </li>
 
                                 <li>
                                     <hr class="dropdown-divider">
@@ -155,7 +168,7 @@
                                     <li>
                                         <a class="dropdown-item text-success btn-lanjut-tahap"
                                             data-id="{{ $p->id }}" data-nama="{{ $p->nama_lengkap }}"
-                                            data-tahap-saat-ini="{{ $p->tahap_label }}" data-tahap-berikutnya="interview">
+                                            data-tahap-saat-ini="{{ $p->tahap_label }}" data-tahap-berikutnya="offer">
                                             <i class="fa-solid fa-arrow-right"></i>
                                             Lanjutkan
                                         </a>
@@ -202,13 +215,6 @@
                                         </a>
                                     </li>
                                 @elseif($tahap === 'rejected')
-                                    <li>
-                                        <a class="dropdown-item btn-kirim-email" data-id="{{ $p->id }}"
-                                            data-nama="{{ $p->nama_lengkap }}" data-email="{{ $p->email }}">
-                                            <i class="fa-regular fa-envelope"></i>
-                                            Kirim Email
-                                        </a>
-                                    </li>
                                     <li>
                                         <a class="dropdown-item text-danger btn-hapus" data-id="{{ $p->id }}"
                                             data-nama="{{ $p->nama_lengkap }}">

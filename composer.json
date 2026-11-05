@@ -33,7 +33,7 @@
         "smalot/pdfparser": "^2.12",
         "spatie/laravel-image-optimizer": "^1.8",
         "spatie/laravel-permission": "^6.13",
-        "tecnickcom/tcpdf": "^7.0",
+        "tecnickcom/tcpdf": "^6.7",
         "vinkla/hashids": "^11.0"
     },
     "require-dev": {

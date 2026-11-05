@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,28 +13,9 @@ class Pelamar extends Model
 
     protected $table = 'pelamars';
 
-    protected $fillable = ['nama_lengkap', 'email', 'no_telepon', 'domisili', 'tanggal_lahir', 'jenis_kelamin', 'pendidikan_terakhir', 'jurusan', 'institusi', 'ipk', 'divisi', 'jabatan', 'detail_jabatan', 'tanggal_melamar', 'sumber_lamaran', 'tahap_rekrutmen', 'status_aktif', 'keahlian', 'pengalaman_tahun', 'gaji_diharapkan', 'cv_path', 'portofolio_path', 'foto_path', 'jadwal_interview', 'metode_interview', 'link_meeting', 'lokasi_interview', 'interviewer', 'tahap_interview', 'gaji_ditawarkan', 'tunjangan_makan', 'tunjangan_transport', 'tanggal_mulai_kerja', 'status_kepegawaian', 'benefit_lainnya', 'tanggal_offer_dikirim', 'status_offer', 'rating', 'catatan_hr', 'catatan_internal', 'alasan_penolakan', 'nik_karyawan', 'atasan_langsung', 'checklist_onboarding', 'simpan_talent_pool', 'talent_pool_catatan', 'karyawan_id'];
+    public const HARI_KERJA_PER_BULAN = 22;
 
-    protected $casts = [
-        'keahlian' => 'array',
-        'checklist_onboarding' => 'array',
-        'tanggal_melamar' => 'date',
-        'tanggal_lahir' => 'date',
-        'jadwal_interview' => 'datetime',
-        'tanggal_mulai_kerja' => 'date',
-        'tanggal_offer_dikirim' => 'datetime',
-        'simpan_talent_pool' => 'boolean',
-        'status_aktif' => 'boolean',
-        'gaji_diharapkan' => 'integer',
-        'gaji_ditawarkan' => 'integer',
-        'tunjangan' => 'integer',
-        'rating' => 'integer',
-        'pengalaman_tahun' => 'integer',
-    ];
-
-    protected $dates = ['deleted_at'];
-
-    const TAHAP = [
+    public const TAHAP = [
         'applied' => 'Lamaran Masuk',
         'screening' => 'Screening',
         'interview' => 'Interview',
@@ -43,38 +24,59 @@ class Pelamar extends Model
         'rejected' => 'Ditolak',
     ];
 
-    const HARI_KERJA_PER_BULAN = 22;
+    public const URUTAN_TAHAP = ['applied', 'screening', 'interview', 'offer', 'hired'];
 
-    const SUMBER = ['LinkedIn', 'JobStreet', 'Website Perusahaan', 'Referral Karyawan', 'Glints', 'Kalibrr', 'Instagram', 'Walk-in Interview', 'Job Fair', 'Kampus', 'Lainnya'];
+    public const PROGRESS_TAHAP = [
+        'applied' => 10,
+        'screening' => 30,
+        'interview' => 55,
+        'offer' => 75,
+        'hired' => 100,
+        'rejected' => 0,
+    ];
 
-    const PENDIDIKAN = ['SMA/SMK', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'];
+    public const SUMBER = [
+        'LinkedIn',
+        'JobStreet',
+        'Website Perusahaan',
+        'Referral Karyawan',
+        'Glints',
+        'Kalibrr',
+        'Instagram',
+        'Walk-in Interview',
+        'Job Fair',
+        'Kampus',
+        'Lainnya',
+    ];
 
-    const STATUS_KEPEGAWAIAN = [
+    public const PENDIDIKAN = ['SMA/SMK', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'];
+
+    public const STATUS_KEPEGAWAIAN = [
         'probation' => 'Probation',
         'pkwt' => 'Kontrak (PKWT)',
         'pkwtt' => 'Karyawan Tetap (PKWTT)',
     ];
 
-    const STATUS_OFFER = [
+    public const STATUS_OFFER = [
         'pending' => 'Menunggu',
         'accepted' => 'Diterima',
         'rejected' => 'Ditolak',
     ];
 
-    const METODE_INTERVIEW = [
+    public const METODE_INTERVIEW = [
         'online' => 'Online (Zoom / Google Meet)',
         'offline' => 'Offline (Datang ke Kantor)',
         'phone' => 'Telepon',
     ];
 
-    const TAHAP_INTERVIEW = [
+    public const TAHAP_INTERVIEW = [
         'hr' => 'Interview HR',
         'user' => 'Interview Manager/SPV/Koordinator',
         'technical' => 'Technical Test',
         'direksi' => 'Interview Direksi',
     ];
 
-    const ALASAN_PENOLAKAN = [
+    public const ALASAN_PENOLAKAN = [
         'kualifikasi' => 'Kualifikasi tidak sesuai',
         'pengalaman' => 'Pengalaman kurang memadai',
         'interview' => 'Hasil interview tidak memenuhi',
@@ -82,12 +84,97 @@ class Pelamar extends Model
         'lainnya' => 'Alasan lainnya',
     ];
 
-    const CHECKLIST_ONBOARDING_DEFAULT = [
+    public const CHECKLIST_ONBOARDING_DEFAULT = [
         'kontrak_ditandatangani' => 'Kontrak kerja ditandatangani',
         'dokumen_pribadi' => 'Dokumen pribadi lengkap',
         'akun_sistem' => 'Akun email & sistem perusahaan dibuat',
         'perangkat_kerja' => 'Perangkat kerja disiapkan',
         'bpjs' => 'Pendaftaran BPJS',
+    ];
+
+    protected $fillable = [
+        'nama_lengkap',
+        'email',
+        'no_telepon',
+        'nik_ktp',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'jenis_kelamin',
+        'status_pernikahan',
+        'agama',
+        'domisili',
+        'alamat',
+        'linkedin_url',
+
+        'pendidikan_terakhir',
+        'jurusan',
+        'institusi',
+        'ipk',
+        'pengalaman_tahun',
+        'keahlian',
+
+        'divisi',
+        'jabatan',
+        'detail_jabatan',
+        'tanggal_melamar',
+        'sumber_lamaran',
+        'tahap_rekrutmen',
+        'status_aktif',
+        'gaji_diharapkan',
+        'notice_period',
+
+        'cv_path',
+        'portofolio_path',
+        'foto_path',
+        'ktp_path',
+        'ijazah_path',
+
+        'jadwal_interview',
+        'metode_interview',
+        'link_meeting',
+        'lokasi_interview',
+        'interviewer',
+        'tahap_interview',
+
+        'gaji_ditawarkan',
+        'tunjangan_makan',
+        'tunjangan_transport',
+        'tanggal_mulai_kerja',
+        'status_kepegawaian',
+        'benefit_lainnya',
+        'tanggal_offer_dikirim',
+        'status_offer',
+
+        'rating',
+        'catatan_hr',
+        'catatan_internal',
+        'alasan_penolakan',
+
+        'nik_karyawan',
+        'atasan_langsung',
+        'checklist_onboarding',
+
+        'simpan_talent_pool',
+        'talent_pool_catatan',
+        'karyawan_id',
+    ];
+
+    protected $casts = [
+        'keahlian' => 'array',
+        'checklist_onboarding' => 'array',
+        'tanggal_melamar' => 'date',
+        'tanggal_lahir' => 'date',
+        'tanggal_mulai_kerja' => 'date',
+        'jadwal_interview' => 'datetime',
+        'tanggal_offer_dikirim' => 'datetime',
+        'simpan_talent_pool' => 'boolean',
+        'status_aktif' => 'boolean',
+        'gaji_diharapkan' => 'integer',
+        'gaji_ditawarkan' => 'integer',
+        'tunjangan_makan' => 'integer',
+        'tunjangan_transport' => 'integer',
+        'rating' => 'integer',
+        'pengalaman_tahun' => 'integer',
     ];
 
     public function karyawan()
@@ -98,6 +185,11 @@ class Pelamar extends Model
     public function riwayatTahap()
     {
         return $this->hasMany(Pelamarriwayat::class, 'pelamar_id')->orderBy('created_at', 'asc');
+    }
+
+    public function pelamarFolders()
+    {
+        return $this->hasMany(PelamarFolder::class);
     }
 
     public function scopeAktif($query)
@@ -165,17 +257,23 @@ class Pelamar extends Model
 
     public function getTahapLabelAttribute(): string
     {
-        return self::TAHAP[$this->tahap_rekrutmen] ?? ucfirst($this->tahap_rekrutmen);
+        return self::TAHAP[$this->tahap_rekrutmen] ?? ucfirst((string) $this->tahap_rekrutmen);
     }
 
     public function getInisialAttribute(): string
     {
-        $parts = explode(' ', trim($this->nama_lengkap));
-        $initials = '';
-        foreach (array_slice($parts, 0, 2) as $part) {
-            $initials .= strtoupper($part[0] ?? '');
+        $inisial = '';
+
+        foreach (array_slice(explode(' ', trim($this->nama_lengkap)), 0, 2) as $kata) {
+            $inisial .= strtoupper($kata[0] ?? '');
         }
-        return $initials;
+
+        return $inisial;
+    }
+
+    public function getUsiaAttribute(): ?int
+    {
+        return $this->tanggal_lahir?->age;
     }
 
     public function getCvUrlAttribute(): ?string
@@ -188,19 +286,26 @@ class Pelamar extends Model
         return $this->portofolio_path ? Storage::url($this->portofolio_path) : null;
     }
 
-    public function getUsiaAttribute(): ?int
-    {
-        return $this->tanggal_lahir ? $this->tanggal_lahir->age : null;
-    }
-
     public function getGajiDiharapkanFormatAttribute(): string
     {
-        return $this->gaji_diharapkan ? 'Rp ' . number_format($this->gaji_diharapkan, 0, ',', '.') : '-';
+        return $this->formatRupiah($this->gaji_diharapkan);
     }
 
     public function getGajiDitawarkanFormatAttribute(): string
     {
-        return $this->gaji_ditawarkan ? 'Rp ' . number_format($this->gaji_ditawarkan, 0, ',', '.') : '-';
+        return $this->formatRupiah($this->gaji_ditawarkan);
+    }
+
+    public function getEstimasiPendapatanBulananAttribute(): int
+    {
+        $tunjanganHarian = (int) $this->tunjangan_makan + (int) $this->tunjangan_transport;
+
+        return (int) $this->gaji_ditawarkan + ($tunjanganHarian * self::HARI_KERJA_PER_BULAN);
+    }
+
+    public function getEstimasiPendapatanBulananFormatAttribute(): string
+    {
+        return $this->formatRupiah($this->estimasi_pendapatan_bulanan);
     }
 
     public function getSudahDijadwalkanAttribute(): bool
@@ -208,16 +313,48 @@ class Pelamar extends Model
         return !is_null($this->jadwal_interview);
     }
 
+    public function getInterviewerListAttribute(): array
+    {
+        if (!$this->interviewer) {
+            return [];
+        }
+
+        if (str_starts_with($this->interviewer, '[')) {
+            return json_decode($this->interviewer, true) ?? [];
+        }
+
+        return array_map('trim', explode(',', $this->interviewer));
+    }
+
+    public function getInterviewerDisplayAttribute(): string
+    {
+        $daftar = $this->interviewer_list;
+
+        if (empty($daftar)) {
+            return '-';
+        }
+
+        if (count($daftar) <= 2) {
+            return implode(', ', $daftar);
+        }
+
+        return $daftar[0] . ' dkk (' . count($daftar) . ' orang)';
+    }
+
     public function tahapBerikutnya(): ?string
     {
-        $urutan = ['applied', 'screening', 'interview', 'offer', 'hired'];
-        $current = array_search($this->tahap_rekrutmen, $urutan);
-        return $current !== false && isset($urutan[$current + 1]) ? $urutan[$current + 1] : null;
+        $posisi = array_search($this->tahap_rekrutmen, self::URUTAN_TAHAP, true);
+
+        if ($posisi === false) {
+            return null;
+        }
+
+        return self::URUTAN_TAHAP[$posisi + 1] ?? null;
     }
 
     public function bisaLanjut(): bool
     {
-        return !in_array($this->tahap_rekrutmen, ['hired', 'rejected']);
+        return !in_array($this->tahap_rekrutmen, ['hired', 'rejected'], true);
     }
 
     public function sudahDiterima(): bool
@@ -232,8 +369,7 @@ class Pelamar extends Model
 
     public function progressPersen(): int
     {
-        $map = ['applied' => 10, 'screening' => 30, 'interview' => 55, 'offer' => 75, 'hired' => 100, 'rejected' => 0];
-        return $map[$this->tahap_rekrutmen] ?? 0;
+        return self::PROGRESS_TAHAP[$this->tahap_rekrutmen] ?? 0;
     }
 
     public static function statsFunnel(): array
@@ -248,35 +384,8 @@ class Pelamar extends Model
         ];
     }
 
-    public function pelamarFolders()
+    private function formatRupiah(?int $nilai): string
     {
-        return $this->hasMany(PelamarFolder::class);
-    }
-
-    public function getInterviewerListAttribute()
-    {
-        if (!$this->interviewer) {
-            return [];
-        }
-
-        if (str_starts_with($this->interviewer, '[')) {
-            return json_decode($this->interviewer, true) ?? [];
-        }
-
-        return explode(',', $this->interviewer);
-    }
-
-    public function getInterviewerDisplayAttribute()
-    {
-        $list = $this->interviewer_list;
-        if (empty($list)) {
-            return '-';
-        }
-
-        if (count($list) <= 2) {
-            return implode(', ', $list);
-        }
-
-        return $list[0] . ' dkk (' . count($list) . ' orang)';
+        return $nilai ? 'Rp ' . number_format($nilai, 0, ',', '.') : '-';
     }
 }
