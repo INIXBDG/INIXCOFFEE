@@ -867,6 +867,11 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('karyawan')->name('karyawan.')->group(function () {
             Route::get('/get', [TargetKPIController::class, 'getDataTarget'])->name('get');
         });
+
+                
+        Route::get('/panduan/{key}', [TargetKPIController::class, 'getPanduan'])->name('panduan');
+        Route::get('/panduan-opsi', [TargetKPIController::class, 'getPanduanOpsi'])->name('panduanOpsi');
+        Route::get('/panduan-pdf', [TargetKPIController::class, 'downloadPanduanPdf'])->name('panduanPdf');
     });
 
     // Penilaian KPI
