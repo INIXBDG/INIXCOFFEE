@@ -14,6 +14,12 @@ class karyawan extends Model
     use Notifiable;
     protected $appends = ['hashids'];
 
+    protected $casts = [
+        'bpjs_status_changed_at' => 'datetime',
+        'bpjs_deleted_at' => 'datetime',
+        'bpjs_restore_until' => 'datetime',
+    ];
+
     protected $fillable = [
         'foto',
         'nip',
@@ -24,6 +30,11 @@ class karyawan extends Model
         'rekening_maybank',
         'rekening_bca',
         'status_aktif',
+        'bpjs_status',
+        'bpjs_status_changed_at',
+        'bpjs_deleted_at',
+        'bpjs_restore_until',
+        'bpjs_deleted_by',
         'awal_probation',
         'akhir_probation',
         'awal_kontrak',

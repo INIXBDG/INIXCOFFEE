@@ -1838,6 +1838,10 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/stats', [payrollController::class, 'getStatsPerhitungan'])->name('stats');
             Route::post('/', [payrollController::class, 'storePerhitungan'])->name('store');
             Route::get('/logs-all', [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
+            Route::post('/isi-otomatis', [payrollController::class, 'isiOtomatisBpjs'])->name('isi-otomatis');
+            Route::post('/karyawan/{karyawanId}/status-bpjs', [payrollController::class, 'setBpjsStatus'])->name('status-bpjs');
+            Route::get('/sampah-bpjs', [payrollController::class, 'getBpjsTrash'])->name('trash-bpjs');
+            Route::post('/sampah-bpjs/{karyawanId}/restore', [payrollController::class, 'restoreBpjs'])->name('restore-bpjs');
             Route::delete('/delete-all', [payrollController::class, 'deleteAll'])->name('deleteAll');
             Route::get('/export/excel', [payrollController::class, 'exportExcelPerhitungan'])->name('export.excel');
             Route::get('/export/pdf', [payrollController::class, 'exportPdfPerhitungan'])->name('export.pdf');
@@ -2118,6 +2122,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stats',     [payrollController::class, 'getStatsPerhitungan'])->name('stats');
         Route::post('/',         [payrollController::class, 'storePerhitungan'])->name('store');
         Route::get('/logs-all',  [payrollController::class, 'getAllLogsPerhitungan'])->name('logs.all');
+        Route::post('/isi-otomatis', [payrollController::class, 'isiOtomatisBpjs'])->name('isi-otomatis');
+        Route::post('/karyawan/{karyawanId}/status-bpjs', [payrollController::class, 'setBpjsStatus'])->name('status-bpjs');
+        Route::get('/sampah-bpjs', [payrollController::class, 'getBpjsTrash'])->name('trash-bpjs');
+        Route::post('/sampah-bpjs/{karyawanId}/restore', [payrollController::class, 'restoreBpjs'])->name('restore-bpjs');
         Route::get('/{id}',      [payrollController::class, 'showPerhitungan'])->name('show');
         Route::put('/{id}',      [payrollController::class, 'updatePerhitungan'])->name('update');
         Route::delete('/{id}',   [payrollController::class, 'destroyPerhitungan'])->name('destroy');
