@@ -93,7 +93,7 @@
         <div class="modal-dialog">
             @csrf
             <div class="modal-content">
-                <form action="{{ route('managementKelas.store') }}" method="post">
+                <form action="{{ route('management-kelas.store') }}" method="post">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalKelolaManagementLabel">
@@ -344,8 +344,8 @@
                         const today = new Date().toISOString().split('T')[0];
                         if (manajemen.tanggal >= today && manajemen.id) {
                             kelola.append(
-                                `<button type="button" class="btn btn-danger btn-batalkan ms-2 tombol-container" 
-                                                            data-id="${manajemen.id}" 
+                                `<button type="button" class="btn btn-danger btn-batalkan ms-2 tombol-container"
+                                                            data-id="${manajemen.id}"
                                                             data-ruang="${manajemen.ruangan}"
                                                             data-tanggal="${manajemen.tanggal}">
                                                             <i class="fas fa-ban"></i> Batalkan
@@ -366,18 +366,18 @@
 
                     if (!isExamMode) {
                         kelola.html(`<button type="button" class="btn btn-info btn-detail" data-bs-toggle="modal" data-bs-target="#modalDetailRKM"
-                            data-ruang="${rkm.ruang}" 
-                            data-tanggal_awal="${rkm.tanggal_awal}" 
-                            data-tanggal_akhir="${rkm.tanggal_akhir}" 
-                            data-materi="${rkm.materi}" 
-                            data-sales="${rkm.sales}" 
-                            data-instruktur="${rkm.instruktur}" 
-                            data-instruktur2="${rkm.instruktur2}" 
-                            data-asisten="${rkm.asisten}" 
-                            data-perusahaan="${rkm.perusahaan}" 
-                            data-pax="${rkm.pax}" 
-                            data-exam="${rkm.exam}" 
-                            data-authorize="${rkm.authorize}" 
+                            data-ruang="${rkm.ruang}"
+                            data-tanggal_awal="${rkm.tanggal_awal}"
+                            data-tanggal_akhir="${rkm.tanggal_akhir}"
+                            data-materi="${rkm.materi}"
+                            data-sales="${rkm.sales}"
+                            data-instruktur="${rkm.instruktur}"
+                            data-instruktur2="${rkm.instruktur2}"
+                            data-asisten="${rkm.asisten}"
+                            data-perusahaan="${rkm.perusahaan}"
+                            data-pax="${rkm.pax}"
+                            data-exam="${rkm.exam}"
+                            data-authorize="${rkm.authorize}"
                             >Detail</button>`);
                     }
                     return;

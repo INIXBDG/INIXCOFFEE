@@ -343,9 +343,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 
     // Management Kelas & Kelas Setting
+    Route::resource('management-kelas', managementKelasController::class);
     Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
     Route::post('/management-kelas/{id}/batalkan', [managementKelasController::class, 'batalkan']);
-    Route::resource('management-kelas', managementKelasController::class);
 
     Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
         Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
@@ -1500,7 +1500,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/setup', [HRController::class, 'storeMaster'])->name('setup');
         Route::post('/lupa', [HRController::class, 'lupaPassword'])->middleware('throttle:10,1')->name('lupa');
         Route::post('/master/setup', [HRController::class, 'storeMaster'])->name('master.setup');
-        
+
         Route::prefix('instruktur-ol')->name('instruktur-ol.')->group(function () {
             Route::get('/', [InstrukturOlController::class, 'index'])->name('index');
             Route::get('data', [InstrukturOlController::class, 'getData'])->name('data');
