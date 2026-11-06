@@ -88,7 +88,7 @@ class LemburController extends Controller
 			'data' => $lembur,
 		]);
 	}
- 
+
 
      /**
      * create
@@ -468,9 +468,9 @@ class LemburController extends Controller
     public function approvalLemburKaryawan(Request $request, $id)
     {
         // return $request->all();
-        if(auth()->user()->jabatan == 'HRD'){
-            return 500;
-        }
+        // if(auth()->user()->jabatan == 'HRD'){
+        //     return 500;
+        // }
 		$this->validate($request, [
             'approval'     => 'required',
         ]);
