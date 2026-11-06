@@ -206,6 +206,14 @@ class FeedbackAPIController extends Controller
     public function cekSouvenir($id, $ids)
     {
         $sopenir = souvenirpeserta::where('id_rkm', $id)->where('id_regist', $ids)->first();
+        $NoneSouvenir = RKM::findOrFail($id);
+        if($NoneSouvenir->souvenir == false){
+            return response()->json([
+                'status' => 'skipped',
+                'title' => 'Selamat!',
+                'text' => 'Terimakasih sudah mengisi Feedback ini, Silahkan ke halaman utama!',
+            ], 500);
+        }
 
         if ($sopenir) {
             return response()->json([
@@ -216,15 +224,6 @@ class FeedbackAPIController extends Controller
         } else {
             $rkm = RKM::findOrFail($id);
             $harga_jual = intval($rkm->harga_jual);
-
-            if($rkm->souvenir == false){
-                return response()->json([
-                    'status' => 'skipped',
-                    'title' => 'Selamat!',
-                    'text' => 'Terimakasih sudah mengisi Feedback ini, Silahkan ke halaman utama!',
-                ], 500);
-            }
-
 
             if($rkm){
                 $souvenirs = souvenir::where('min_harga_pelatihan', '<=', $harga_jual)
@@ -285,4 +284,3 @@ class FeedbackAPIController extends Controller
             return response()->json(array_values($groupedSouvenirs));
         }
     }
-}
