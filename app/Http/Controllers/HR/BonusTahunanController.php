@@ -25,6 +25,8 @@ class BonusTahunanController extends Controller
 {
     private static bool $tableEnsured = false;
 
+    private bool $tampilDesimal = true;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -53,7 +55,7 @@ class BonusTahunanController extends Controller
                 $table->integer('masa_kerja_bulan')->default(0);
                 $table->string('masa_kerja_teks')->nullable();
                 $table->string('skema_bonus', 30)->default('standar');
-                $table->decimal('multiplier', 8, 2)->default(1.00);
+                $table->decimal('multiplier', 10, 4)->default(1)->change();
                 $table->decimal('nominal_bonus', 15, 2)->default(0);
                 $table->text('catatan')->nullable();
                 $table->boolean('is_locked')->default(false);
@@ -401,31 +403,23 @@ class BonusTahunanController extends Controller
                 ->get();
 
             foreach ($bonuses as $bonus) {
-                if ($bonus->is_excluded) {
-                    continue;
-                }
+                if ($bonus->is_excluded || $bonus->skema_bonus === 'custom') continue;
+
                 $emp = karyawan::find($bonus->karyawan_id);
+                if (!$emp) continue;
 
-                if (!$emp) {
-                    continue;
-                }
+                $basicSalary = $bonus->is_edited
+                    ? (float) $bonus->basic_salary
+                    : $this->getBasicSalaryForEmployee($emp, $tahun);
+                if ($basicSalary <= 0) continue;
 
-                $basicSalary = (float) ($emp->gaji ?? 0);
-
-                if ($basicSalary <= 0) {
-                    continue;
-                }
-
-                $bulanKerja = (int) ($bonus->masa_kerja_bulan ?? 12);
-                $bulanKerja = max(1, min(12, $bulanKerja));
-
-                $multiplier = (float) ($bonus->multiplier ?? 1);
-
-                $nominalBonus = ($basicSalary / 12) * $bulanKerja * $multiplier;
+                $bulanKerja = max(1, min(12, (int) $bonus->masa_kerja_bulan));
+                $calc = $this->calculateBonusNominal($bulanKerja, $bonus->skema_bonus, $basicSalary);
 
                 $bonus->update([
-                    'basic_salary' => $basicSalary,
-                    'nominal_bonus' => round($nominalBonus),
+                    'basic_salary'  => $basicSalary,
+                    'multiplier'    => $calc['multiplier'],
+                    'nominal_bonus' => $calc['nominal'],
                 ]);
             }
 
@@ -448,6 +442,7 @@ class BonusTahunanController extends Controller
     public function exportExcel(Request $request)
     {
         $this->ensureTableExists();
+        $this->tampilDesimal = filter_var($request->input('desimal', true), FILTER_VALIDATE_BOOLEAN);
 
         $tahun = (int) $request->input('year', now()->year);
         $tahunBonus = $tahun - 1;
@@ -479,7 +474,7 @@ class BonusTahunanController extends Controller
         ];
 
         $currencyStyle = [
-            'numberFormat' => ['formatCode' => '#,##0'],
+            'numberFormat' => ['formatCode' => $this->tampilDesimal ? '#,##0.00' : '#,##0'],
         ];
 
         $totalStyle = [
@@ -527,12 +522,12 @@ class BonusTahunanController extends Controller
             $sheet->setCellValue("A{$rowNum}", $i++);
             $sheet->setCellValue("B{$rowNum}", $row['jabatan']);
             $sheet->setCellValue("C{$rowNum}", $row['nama_lengkap']);
-            $sheet->setCellValue("D{$rowNum}", $row['basic_salary']);
+            $sheet->setCellValue("D{$rowNum}", $this->tampilDesimal ? $row['basic_salary'] : $this->potong((float) $row['basic_salary']));
             $sheet->setCellValueExplicit("E{$rowNum}", (string) $row['rekening_maybank'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue("F{$rowNum}", $row['status_karyawan']);
             $sheet->setCellValue("G{$rowNum}", $row['masa_kerja']);
             $sheet->setCellValue("H{$rowNum}", strtoupper($row['skema_bonus']));
-            $sheet->setCellValue("I{$rowNum}", $row['nominal_bonus']);
+            $sheet->setCellValue("I{$rowNum}", $this->tampilDesimal ? $row['nominal_bonus'] : $this->potong((float) $row['nominal_bonus']));
 
             $totalBasic += (float) $row['basic_salary'];
             $totalBonus += (float) $row['nominal_bonus'];
@@ -552,8 +547,18 @@ class BonusTahunanController extends Controller
 
         $sheet->mergeCells("A{$rowNum}:C{$rowNum}");
         $sheet->setCellValue("A{$rowNum}", 'TOTAL');
-        $sheet->setCellValue("D{$rowNum}", $totalBasic);
-        $sheet->setCellValue("I{$rowNum}", $totalBonus);
+        if ($lastRow >= 5 && $this->tampilDesimal) {
+            $sheet->setCellValue("D{$rowNum}", "=SUM(D5:D{$lastRow})");
+            $sheet->setCellValue("I{$rowNum}", "=SUM(I5:I{$lastRow})");
+        } elseif ($lastRow >= 5) {
+            $sheet->setCellValue("D{$rowNum}", $this->potong($totalBasic));
+            $sheet->setCellValue("I{$rowNum}", $this->potong($totalBonus));
+        } else {
+            $sheet->setCellValue("D{$rowNum}", 0);
+            $sheet->setCellValue("I{$rowNum}", 0);
+        }
+
+        $sheet->getStyle("A{$rowNum}:I{$rowNum}")->applyFromArray($totalStyle);
         $sheet->getStyle("A{$rowNum}:I{$rowNum}")->applyFromArray($totalStyle);
         $sheet->getStyle("D{$rowNum}")->applyFromArray($currencyStyle);
         $sheet->getStyle("I{$rowNum}")->applyFromArray($currencyStyle);
@@ -578,7 +583,7 @@ class BonusTahunanController extends Controller
     public function exportPdf(Request $request)
     {
         $this->ensureTableExists();
-
+        $this->tampilDesimal = filter_var($request->input('desimal', true), FILTER_VALIDATE_BOOLEAN);
         $tahun = (int) $request->input('year', now()->year);
         $tahunBonus = $tahun - 1;
         $mode = $request->input('mode', 'rekap');
@@ -614,12 +619,16 @@ class BonusTahunanController extends Controller
 
         $items = $items->map(fn ($row) => $this->decorateItem($row, $tahunBonus))->values();
 
-        $totalBonus = (float) $items->sum('nominal_bonus');
+        $totalBonus = round((float) $items->sum('nominal_bonus'), 2);
+        $totalBasic = round((float) $items->sum('basic_salary'), 2);
+
         $summary = [
-            'total_karyawan' => $items->count(),
-            'total_basic_salary' => (float) $items->sum('basic_salary'),
+            'total_karyawan'      => $items->count(),
+            'total_basic_salary'  => $totalBasic,
             'total_nominal_bonus' => $totalBonus,
-            'total_terbilang' => $this->terbilangRupiah($totalBonus),
+            'total_basic_fmt'     => $this->rp($totalBasic),
+            'total_bonus_fmt'     => $this->rp($totalBonus),
+            'total_terbilang'     => $this->terbilangRupiah($totalBonus),
         ];
 
         $data = [
@@ -628,6 +637,7 @@ class BonusTahunanController extends Controller
             'tahun' => $tahun,
             'tahunBonus' => $tahunBonus,
             'polos' => $polos,
+            'tampilDesimal' => $this->tampilDesimal,
             'nomorSurat' => $nomorSurat,
             'profil' => $this->companyProfile(),
             'ttd' => $this->resolveTandaTangan(),
@@ -743,12 +753,14 @@ class BonusTahunanController extends Controller
             'custom' => 'Custom (Nominal Khusus)',
         ];
         $pengali = ['standar' => 1, '2x' => 2, '4x' => 4][$skema] ?? null;
-        $basicFmt = 'Rp ' . number_format((float) $row['basic_salary'], 0, ',', '.');
+        $basicFmt = 'Rp ' . $this->rp((float) $row['basic_salary']);
 
         if ($skema === 'custom' || $pengali === null) {
             $rumus = 'Nominal ditetapkan secara khusus';
         } else {
-            $rumus = ($pengali > 1 ? "{$pengali} × " : '') . "({$basicFmt} ÷ 12) × {$row['bulan_kerja']} bulan";
+            // urutan sama persis dengan calculateBonusNominal(): kali dulu, baru bagi 12
+            $rumus = ($pengali > 1 ? "{$pengali} × " : '')
+                . "({$basicFmt} × {$row['bulan_kerja']} bulan ÷ 12)";
         }
 
         $bulanMulai = 'Januari';
@@ -760,21 +772,29 @@ class BonusTahunanController extends Controller
         }
 
         return array_merge($row, [
-            'skema_label' => $labels[$skema] ?? strtoupper($skema),
-            'rumus' => $rumus,
+            'skema_label'  => $labels[$skema] ?? strtoupper($skema),
+            'rumus'        => $rumus,
             'periode_teks' => "{$bulanMulai} - Desember {$tahunBonus}",
-            'terbilang' => $this->terbilangRupiah((float) $row['nominal_bonus']),
+            'basic_fmt'    => $this->rp((float) $row['basic_salary']),
+            'nominal_fmt'  => $this->rp((float) $row['nominal_bonus']),
+            'terbilang'    => $this->terbilangRupiah((float) $row['nominal_bonus']),
         ]);
     }
 
     private function terbilangRupiah(float $angka): string
     {
-        $angka = (int) round(abs($angka));
-        if ($angka === 0) {
-            return 'Nol rupiah';
+        $angka = round(abs($angka), 2);
+        $rupiah = (int) floor($angka);
+        $sen = $this->tampilDesimal ? (int) round(($angka - $rupiah) * 100) : 0;
+
+        $teks = $rupiah === 0 ? 'Nol' : ucfirst(trim($this->terbilang($rupiah)));
+        $teks .= ' rupiah';
+
+        if ($sen > 0) {
+            $teks .= ' ' . trim($this->terbilang($sen)) . ' sen';
         }
 
-        return ucfirst(trim($this->terbilang($angka))) . ' rupiah';
+        return $teks;
     }
 
     private function terbilang(int $angka): string
@@ -961,8 +981,8 @@ class BonusTahunanController extends Controller
         $summary = [
             'total_karyawan' => $eligible->count(),
             'total_tidak_berhak' => $items->where('berhak', false)->count(),
-            'total_basic_salary' => $eligible->sum('basic_salary'),
-            'total_nominal_bonus' => $eligible->sum('nominal_bonus'),
+            'total_basic_salary' => round($eligible->sum('basic_salary'), 2),
+            'total_nominal_bonus' => round($eligible->sum('nominal_bonus'), 2),
             'count_standar' => $eligible->where('skema_bonus', 'standar')->count(),
             'count_2x' => $eligible->where('skema_bonus', '2x')->count(),
             'count_4x' => $eligible->where('skema_bonus', '4x')->count(),
@@ -1043,30 +1063,20 @@ class BonusTahunanController extends Controller
     private function calculateBonusNominal(int $bulanKerja, string $skema, float $basicSalary, float $customNominal = 0): array
     {
         if ($skema === 'custom') {
-            $nominal = $customNominal;
-            $multiplier = $basicSalary > 0 ? round($nominal / $basicSalary, 2) : 1.00;
             return [
-                'multiplier' => $multiplier,
-                'nominal' => $nominal,
+                'multiplier' => $basicSalary > 0 ? round($customNominal / $basicSalary, 4) : 1.0,
+                'nominal'    => $customNominal,
             ];
         }
 
-        $prorataMultiplier = $bulanKerja / 12;
+        $pengali = ['standar' => 1, '2x' => 2, '4x' => 4][$skema] ?? 1;
 
-        if ($skema === '2x') {
-            $multiplier = round(2.00 * $prorataMultiplier, 4);
-            $nominal = round(2.00 * ($basicSalary / 12) * $bulanKerja, 0);
-        } elseif ($skema === '4x') {
-            $multiplier = round(4.00 * $prorataMultiplier, 4);
-            $nominal = round(4.00 * ($basicSalary / 12) * $bulanKerja, 0);
-        } else {
-            $multiplier = round($prorataMultiplier, 4);
-            $nominal = round(($basicSalary / 12) * $bulanKerja, 0);
-        }
+        // kali dulu, baru bagi 12. Presisi mengikuti kolom DB (2 desimal), bukan ke rupiah.
+        $nominal = round(($basicSalary * $bulanKerja * $pengali) / 12, 2);
 
         return [
-            'multiplier' => $multiplier,
-            'nominal' => $nominal,
+            'multiplier' => round($pengali * $bulanKerja / 12, 4),
+            'nominal'    => $nominal,
         ];
     }
 
@@ -1128,5 +1138,20 @@ class BonusTahunanController extends Controller
         }
 
         return (float) ($emp->gaji ?? 0);
+    }
+
+    private function potong(float $angka): float
+    {
+        $angka = round($angka, 2);
+        return $angka >= 0 ? floor($angka) : ceil($angka);
+    }
+
+    private function rp(float $angka): string
+    {
+        if ($this->tampilDesimal) {
+            return number_format(round($angka, 2), 2, ',', '.');
+        }
+
+        return number_format($this->potong($angka), 0, ',', '.');
     }
 }

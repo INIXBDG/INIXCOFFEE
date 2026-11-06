@@ -283,41 +283,46 @@ class KoordinatorITSMKPIService
         ];
     }
 
+    private function ambilSkorTimGap($detailIds)
+    {
+        return detailPersonKPI::whereIn('detailTargetKey', $detailIds)
+            ->whereNotNull('presentase_kemampuan')
+            ->where('presentase_standar', '>', 0)
+            ->whereHas('karyawan', fn($q) => $q->where('jabatan', '!=', 'Koordinator ITSM'))
+            ->get(['id_karyawan', 'presentase_kemampuan', 'presentase_standar']);
+    }
+
+    private function hitungGapDariSkor($skor): array
+    {
+        $avgKemampuan = (float) $skor->avg('presentase_kemampuan');
+        $avgStandar   = (float) $skor->avg('presentase_standar');
+
+        $gap = $avgStandar > 0
+            ? round(min(max($avgStandar - $avgKemampuan, 0), 100), 1)
+            : 0;
+
+        return [
+            'gap'            => $gap,
+            'avg_kemampuan'  => round($avgKemampuan, 1),
+            'avg_standar'    => round($avgStandar, 1),
+        ];
+    }
+
     public function calculatePersentaseGapKompetensi($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
-        if (!$detail || !$detail->detail_jangka) {
-            Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
-            return null; // bukan 0, karena 0 = gap nol = "sempurna"
-        }
-
-        $tahun = (int) $detail->detail_jangka;
-        if ($tahun < 2000 || $tahun > now()->year + 5) {
-            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+        if (!$detail) {
             return null;
         }
 
-        $detailIds = $item->detailTargetKPI->pluck('id');
+        $skor = $this->ambilSkorTimGap($item->detailTargetKPI->pluck('id'));
 
-        $query = detailPersonKPI::whereIn('detailTargetKey', $detailIds);
-
-        if ($personId !== null) {
-            $query->where('id_karyawan', $personId);
+        if ($skor->isEmpty()) {
+            return null;
         }
 
-        // Gap dihitung per baris; kelebihan skill tidak menutup kekurangan orang lain
-        $stats = $query->where('presentase_standar', '>', 0)
-            ->selectRaw('SUM(GREATEST(presentase_standar - presentase_kemampuan, 0)) as total_gap, SUM(presentase_standar) as total_standar')
-            ->first();
-
-        $totalGap = (float) ($stats->total_gap ?? 0);
-        $totalStandar = (float) ($stats->total_standar ?? 0);
-
-        if ($totalStandar <= 0) {
-            return null; // belum ada data standar
-        }
-
-        return round(min(max(($totalGap / $totalStandar) * 100, 0), 100), 1);
+        // Progress = rata-rata kemampuan langsung (contoh: 77.5)
+        return $this->hitungGapDariSkor($skor)['avg_kemampuan'];
     }
 
     public function calculatePersentaseGapKompetensiDetail($itemDetail, $personId = null)
@@ -328,57 +333,33 @@ class KoordinatorITSMKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $firstDetail = $details->first();
-        $nilaiTarget = (float) $firstDetail->nilai_target; // batas maksimal gap, mis. 10
-        $tahun = (int) $firstDetail->detail_jangka;
-
-        if ($nilaiTarget <= 0 || $tahun < 2000 || $tahun > now()->year + 5) {
+        $nilaiTarget = (float) $details->first()->nilai_target;
+        if ($nilaiTarget <= 0) {
             return $this->getDefaultDetailResponse();
         }
 
-        $detailIds = $details->pluck('id');
+        $skor = $this->ambilSkorTimGap($details->pluck('id'));
 
-        $query = detailPersonKPI::whereIn('detailTargetKey', $detailIds);
-
-        if ($personId !== null) {
-            $query->where('id_karyawan', $personId);
-        }
-
-        $detailPersons = $query->select('presentase_kemampuan', 'presentase_standar')
-            ->where('presentase_standar', '>', 0)
-            ->get();
-
-        if ($detailPersons->isEmpty()) {
+        if ($skor->isEmpty()) {
             return $this->getDefaultDetailResponse();
         }
 
-        $totalGap = 0;
-        $totalStandar = 0;
-        $above = 0; // sudah memenuhi standar
-        $below = 0; // masih di bawah standar
+        $hasil = $this->hitungGapDariSkor($skor);
+        $progress = $hasil['avg_kemampuan']; // 77.5
+        $gap      = $hasil['gap'];          // 100 - 77.5 = 22.5
 
-        foreach ($detailPersons as $dp) {
-            $kemampuan = (float) $dp->presentase_kemampuan;
-            $standar = (float) $dp->presentase_standar;
-
-            $totalGap += max($standar - $kemampuan, 0);
-            $totalStandar += $standar;
-
-            if ($kemampuan >= $standar) {
-                $above++;
-            } else {
-                $below++;
-            }
-        }
-
-        $gap = ($totalStandar > 0) ? round(min(($totalGap / $totalStandar) * 100, 100), 1) : 0;
+        $above = $skor->filter(fn($s) => $s->presentase_kemampuan >= $s->presentase_standar)->count();
+        $below = $skor->count() - $above;
 
         return [
-            'progress' => $gap,                 // nilai KPI = gap % (semakin kecil semakin bagus)
-            'gap' => $gap,
-            'target_maks' => $nilaiTarget,
-            'tercapai' => $gap < $nilaiTarget,  // sesuai target "<10%"
-            'pie_chart' => ['above' => $above, 'below' => $below],
+            'progress'       => $progress,                    // 77.5
+            'gap'            => rtrim(rtrim(sprintf('%.1f', $gap), '0'), '.'), // 22.5
+            'is_inverse'     => false,                         // semakin tinggi semakin bagus
+            'target_maks'    => $nilaiTarget,
+            'tercapai'       => $progress >= $nilaiTarget,    // sesuaikan target di DataTarget
+            'avg_kemampuan'  => $hasil['avg_kemampuan'],
+            'jumlah_dinilai' => $skor->count(),
+            'pie_chart'      => ['above' => $above, 'below' => $below],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
             'monthly_progress' => [],

@@ -1652,6 +1652,8 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/period/{id}', [ThrController::class, 'destroyPeriod'])->name('period.destroy');
             Route::get('/holiday-date', [ThrController::class, 'getHolidayDate'])->name('holiday-date');
             Route::get('/export/excel/{periodId}', [ThrController::class, 'exportExcel'])->name('export.excel');
+            Route::post('/toggle-include', [ThrController::class, 'toggleInclude'])->name('toggle-include');
+            Route::get('export/pdf', [ThrController::class, 'exportPdf'])->name('export.pdf');
         });
 
         Route::prefix('payroll')->name('payroll.')->group(function () {

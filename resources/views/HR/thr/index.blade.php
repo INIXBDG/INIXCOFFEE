@@ -472,6 +472,43 @@
                 font-size: 0.82rem;
                 color: var(--gray-700);
             }
+
+            .row-excluded td:not(:nth-last-child(-n+2)) {
+                opacity: 0.5;
+            }
+
+            .export-option {
+                border: 1.5px solid var(--gray-200);
+                border-radius: 10px;
+                padding: 0.75rem 0.9rem;
+                cursor: pointer;
+                transition: all 0.15s;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            .export-option:hover,
+            .export-option.active {
+                border-color: var(--pri);
+                background: var(--pri-light);
+            }
+
+            .export-option input {
+                margin-right: 0.5rem;
+            }
+
+            .export-option .opt-title {
+                font-weight: 700;
+                font-size: 0.88rem;
+                color: var(--gray-900);
+            }
+
+            .export-option .opt-desc {
+                font-size: 0.75rem;
+                color: var(--gray-600);
+                display: block;
+                margin-left: 1.5rem;
+            }
         </style>
 
         <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between page-header gap-3">
@@ -486,6 +523,18 @@
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Mode tampilan angka">
+                    <button type="button" class="btn btn-outline-primary" id="btn-desimal-on"
+                        title="Tampilkan data asli dengan 2 desimal">
+                        <i class="iconify" data-icon="mdi:eye-outline" data-width="18" data-height="18"></i>
+                        Real (,00)
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btn-desimal-off"
+                        title="Hapus desimal tanpa pembulatan">
+                        <i class="iconify" data-icon="mdi:content-cut" data-width="18" data-height="18"></i>
+                        Tanpa Desimal
+                    </button>
+                </div>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-refresh" title="Muat Ulang Data">
                     <i class="iconify" data-icon="mdi:refresh" data-width="18" data-height="18"></i>
                     Refresh
@@ -499,6 +548,10 @@
                     title="Ekspor Data ke File Excel">
                     <i class="iconify" data-icon="mdi:file-excel-outline" data-width="18" data-height="18"></i>
                     Export Excel
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" id="btn-export-pdf" title="Export PDF Surat THR">
+                    <i class="iconify" data-icon="mdi:file-pdf-box" data-width="18" data-height="18"></i>
+                    Export PDF Surat
                 </button>
                 <button type="button" class="btn btn-outline-danger btn-sm" id="btn-delete-period"
                     title="Hapus Periode Ini">
@@ -607,7 +660,7 @@
                                     <option value="Probation">Probation</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-3">
                                 <label class="form-label small fw-bold text-muted mb-1">Filter Kategori THR</label>
                                 <select class="form-select form-select-sm" id="filter-kategori">
                                     <option value="all">Semua Kesesuaian Ketentuan</option>
@@ -617,11 +670,18 @@
                                     <option value="ineligible">Belum Memenuhi Ketentuan</option>
                                 </select>
                             </div>
-                            <div class="col-12 col-md-5">
+                            <div class="col-12 col-md-2">
+                                <label class="form-label small fw-bold text-muted mb-1">Keikutsertaan</label>
+                                <select class="form-select form-select-sm" id="filter-ikut">
+                                    <option value="all">Semua</option>
+                                    <option value="ikut">Ikut Dihitung</option>
+                                    <option value="keluar">Dikecualikan</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
                                 <label class="form-label small fw-bold text-muted mb-1">Cari Karyawan</label>
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white"><i class="iconify"
-                                            data-icon="mdi:magnify"></i></span>
+                                    <span class="input-group-text bg-white"><i class="iconify" data-icon="mdi:magnify"></i></span>
                                     <input type="text" class="form-control" id="input-search"
                                         placeholder="Cari nama, jabatan, NIP, divisi, rekening...">
                                 </div>
@@ -637,7 +697,21 @@
                                 <small class="text-muted">Masa kerja dihitung sampai dengan tanggal jatuh tempo/Idulfitri
                                     sesuai ketentuan aktif</small>
                             </div>
-                            <span class="badge bg-light text-dark border" id="badge-row-count">0 Data Ditemukan</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-light text-dark border" id="badge-row-count">0 Data Ditemukan</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="iconify" data-icon="mdi:account-check-outline"></i> Pilih Peserta
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                        <li><h6 class="dropdown-header">Berlaku untuk data yang tampil (sesuai filter):</h6></li>
+                                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-bulk-ikut">
+                                                <i class="iconify text-success" data-icon="mdi:account-plus-outline"></i> Ikutkan semua yang tampil</a></li>
+                                        <li><a class="dropdown-item" href="javascript:void(0)" id="btn-bulk-keluar">
+                                                <i class="iconify text-danger" data-icon="mdi:account-minus-outline"></i> Keluarkan semua yang tampil</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
@@ -653,6 +727,7 @@
                                         <th class="text-center">Kesesuaian Ketentuan</th>
                                         <th class="text-end">Basic Salary</th>
                                         <th class="text-end">Nilai THR</th>
+                                        <th style="width: 90px;" class="text-center">Ikut Hitung</th>
                                         <th style="width: 85px;" class="text-center">Aksi</th>
                                     </tr>
                                 </thead>
@@ -1303,8 +1378,8 @@
                             <label class="form-label small fw-bold text-gray-900 mb-1">Basic Salary (Gaji)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light">Rp</span>
-                                <input type="number"  class="form-control" id="edit-basic-salary"
-                                    placeholder="0">
+                                <input type="number" step="0.01" min="0" class="form-control"
+                                    id="edit-basic-salary" placeholder="0">
                             </div>
                         </div>
 
@@ -1317,8 +1392,8 @@
                             </div>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text bg-primary text-white fw-bold">Rp</span>
-                                <input type="number"  class="form-control fw-bold fs-5 text-primary"
-                                    id="edit-nilai-thr-final" required>
+                                <input type="number" step="0.01" min="0"
+                                    class="form-control fw-bold fs-5 text-primary" id="edit-nilai-thr-final" required>
                             </div>
                             <div class="mt-1 d-flex justify-content-between align-items-center">
                                 <small class="text-primary fw-bold" id="edit-preview-rupiah">Rp 0</small>
@@ -1342,6 +1417,70 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-export-pdf" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius);">
+                <div class="modal-header bg-danger text-white py-3">
+                    <h5 class="modal-title fw-bold text-white d-flex align-items-center gap-2">
+                        <i class="iconify" data-icon="mdi:file-pdf-box"></i>
+                        Export PDF Surat THR
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label fw-bold small text-uppercase">1. Jenis Dokumen</label>
+
+                    <label class="export-option active" id="opt-mode-rekap">
+                        <input type="radio" name="exportMode" value="rekap" checked>
+                        <span class="opt-title">Surat Rekap Seluruhnya</span>
+                        <span class="opt-desc">Satu surat berisi daftar seluruh karyawan penerima THR (sesuai filter aktif).</span>
+                    </label>
+
+                    <label class="export-option" id="opt-mode-semua">
+                        <input type="radio" name="exportMode" value="semua_surat">
+                        <span class="opt-title">Surat Per Karyawan (Semua)</span>
+                        <span class="opt-desc">Satu file PDF, setiap karyawan mendapat satu halaman surat sendiri (sesuai filter aktif).</span>
+                    </label>
+
+                    <label class="export-option" id="opt-mode-perorang">
+                        <input type="radio" name="exportMode" value="per_orang">
+                        <span class="opt-title">Surat Satu Karyawan</span>
+                        <span class="opt-desc">Pilih satu karyawan untuk dicetak suratnya.</span>
+                    </label>
+
+                    <div class="mb-3" id="group-export-karyawan" style="display: none;">
+                        <select id="export-karyawan" class="form-select"></select>
+                    </div>
+
+                    <label class="form-label fw-bold small text-uppercase mt-2">2. Format Kertas</label>
+
+                    <label class="export-option active" id="opt-format-lengkap">
+                        <input type="radio" name="exportFormat" value="0" checked>
+                        <span class="opt-title">Lengkap (Kop Surat + Background)</span>
+                        <span class="opt-desc">Memakai logo, kop surat, dan background perusahaan.</span>
+                    </label>
+
+                    <label class="export-option" id="opt-format-polos">
+                        <input type="radio" name="exportFormat" value="1">
+                        <span class="opt-title">Polosan</span>
+                        <span class="opt-desc">Tanpa kop dan background, untuk dicetak di kertas kop surat yang sudah jadi.</span>
+                    </label>
+
+                    <label class="form-label fw-bold small text-uppercase mt-2">3. Nomor Surat (Opsional)</label>
+                    <input type="text" id="export-nomor-surat" class="form-control"
+                        placeholder="Kosongkan untuk diisi manual setelah dicetak">
+                </div>
+                <div class="modal-footer bg-light py-2 px-4">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="btn-submit-export-pdf">
+                        <i class="iconify" data-icon="mdi:download"></i> Export PDF
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1386,15 +1525,34 @@
                 const byId = (id) => document.getElementById(id);
 
                 let currentPeriod = null;
+                let currentStats = {};
                 let allPeriods = [];
                 let allItems = [];
                 let currentFilteredItems = [];
                 let dt = null;
                 const charts = {};
 
+                let tampilDesimal = true;
+                try {
+                    tampilDesimal = (localStorage.getItem('thr_tampil_desimal') ?? '1') === '1';
+                } catch (e) {}
+
                 function formatRupiah(number) {
-                    const num = parseFloat(number) || 0;
-                    return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+                    const val = parseFloat(number) || 0;
+                    const bersih = Math.round(val * 100) / 100;
+
+                    if (tampilDesimal) {
+                        return 'Rp ' + bersih.toLocaleString('id-ID', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+
+                    return 'Rp ' + Math.trunc(bersih).toLocaleString('id-ID');
+                }
+
+                function round2(v) {
+                    return Math.round((parseFloat(v) || 0) * 100) / 100;
                 }
 
                 function shortRupiah(v) {
@@ -1494,6 +1652,30 @@
 
                 function isAnalitikActive() {
                     return byId('tab-analitik').classList.contains('active');
+                }
+
+                function activeItems() {
+                    return allItems.filter(i => !i.is_excluded);
+                }
+
+                function syncModeButtons() {
+                    byId('btn-desimal-on').classList.toggle('active', tampilDesimal);
+                    byId('btn-desimal-off').classList.toggle('active', !tampilDesimal);
+                }
+
+                function setModeDesimal(on) {
+                    tampilDesimal = !!on;
+                    try {
+                        localStorage.setItem('thr_tampil_desimal', on ? '1' : '0');
+                    } catch (e) {}
+                    syncModeButtons();
+
+                    if (!currentPeriod) return;
+
+                    renderStats(currentStats);
+                    applyFiltersAndRender(false);
+                    renderAnalytics(currentStats);
+                    if (isAnalitikActive()) renderCharts();
                 }
 
                 function initTable() {
@@ -1598,9 +1780,11 @@
                                     }
 
                                     const tanggalAkhir = currentPeriod?.tanggal_jatuh_tempo || null;
-                                    const lamaKerja = formatLamaKerja(row.tanggal_join, tanggalAkhir);
+                                    const lamaKerja = formatLamaKerja(row.tanggal_join,
+                                        tanggalAkhir);
                                     const tanggalJoin = formatTanggalIndo(row.tanggal_join);
-                                    const bulanDihitung = parseFloat(row.total_masa_kerja_bulan) || 0;
+                                    const bulanDihitung = parseFloat(row.total_masa_kerja_bulan) ||
+                                        0;
 
                                     return `
                                         <div class="text-center">
@@ -1638,9 +1822,12 @@
                             {
                                 data: 'basic_salary',
                                 className: 'text-end font-monospace',
-                                render: function(d, type) {
+                                render: function(d, type, row) {
                                     if (type !== 'display') return parseFloat(d) || 0;
-                                    return `<span class="text-muted">${formatRupiah(d)}</span>`;
+                                    if (row.is_excluded) {
+                                        return `<span class="text-muted fw-bold font-monospace text-decoration-line-through">${formatRupiah(d)}</span>`;
+                                    }
+                                    return `<span class="fw-bold fs-6 text-primary font-monospace">${formatRupiah(d)}</span>`;
                                 }
                             },
                             {
@@ -1652,16 +1839,31 @@
                                 }
                             },
                             {
+                                data: 'is_excluded',
+                                orderable: false,
+                                className: 'text-center',
+                                render: function(d, type, row) {
+                                    if (type !== 'display') return d ? 0 : 1;
+                                    return `<div class="form-check form-switch d-flex justify-content-center mb-0">
+                                                <input class="form-check-input chk-ikut" type="checkbox" role="switch"
+                                                    title="Ikut / keluarkan dari perhitungan" data-id="${row.id}" ${d ? '' : 'checked'}>
+                                            </div>`;
+                                }
+                            },
+                            {
                                 data: 'id',
                                 orderable: false,
                                 className: 'text-center',
                                 render: function(d) {
                                     return `<button type="button" class="btn btn-sm btn-outline-primary btn-edit-item" data-id="${d}" title="Edit Data THR">
-                                            <i class="iconify" data-icon="mdi:pencil"></i> Edit
-                                        </button>`;
+                                                <i class="iconify" data-icon="mdi:pencil"></i> Edit
+                                            </button>`;
                                 }
                             }
                         ],
+                        createdRow: function(tr, data) {
+                            if (data.is_excluded) $j(tr).addClass('row-excluded');
+                        },
                         drawCallback: function() {
                             const api = this.api();
                             const start = api.page.info().start;
@@ -1680,6 +1882,10 @@
                     $j('#table-thr tbody').on('click', '.btn-copy', function() {
                         copyToClipboard($j(this).data('rek'));
                     });
+
+                    $j('#table-thr tbody').on('change', '.chk-ikut', function() {
+                        toggleIkut($j(this).data('id'), this.checked);
+                    });
                 }
 
                 function copyToClipboard(text) {
@@ -1696,30 +1902,30 @@
                     const search = byId('input-search').value.toLowerCase().trim();
                     const statusFilter = byId('filter-status').value;
                     const kategoriFilter = byId('filter-kategori').value;
+                    const ikutFilter = byId('filter-ikut').value;
 
                     currentFilteredItems = allItems.filter(item => {
                         if (search) {
                             const nama = (item.nama_lengkap || '').toLowerCase();
                             const jabatan = (item.jabatan || '').toLowerCase();
-                            const nip = (item.karyawan && item.karyawan.nip ? item.karyawan.nip : '')
-                                .toLowerCase();
-                            const divisi = (item.karyawan && item.karyawan.divisi ? item.karyawan.divisi :
-                                '').toLowerCase();
+                            const nip = (item.karyawan && item.karyawan.nip ? item.karyawan.nip : '').toLowerCase();
+                            const divisi = (item.karyawan && item.karyawan.divisi ? item.karyawan.divisi : '').toLowerCase();
                             const rekening = (item.rekening_maybank || '').toLowerCase();
-                            const match = nama.includes(search) || jabatan.includes(search) || nip.includes(
-                                    search) ||
+                            const match = nama.includes(search) || jabatan.includes(search) || nip.includes(search) ||
                                 divisi.includes(search) || rekening.includes(search);
                             if (!match) return false;
                         }
 
                         if (statusFilter !== 'all' && item.status_karyawan !== statusFilter) return false;
 
+                        if (ikutFilter === 'ikut' && item.is_excluded) return false;
+                        if (ikutFilter === 'keluar' && !item.is_excluded) return false;
+
                         if (kategoriFilter !== 'all') {
                             if (kategoriFilter === 'manual' && !item.is_manual) return false;
                             if (kategoriFilter === 'full' && ketentuan(item) !== 'full') return false;
                             if (kategoriFilter === 'prorata' && ketentuan(item) !== 'prorata') return false;
-                            if (kategoriFilter === 'ineligible' && ketentuan(item) !== 'ineligible')
-                            return false;
+                            if (kategoriFilter === 'ineligible' && ketentuan(item) !== 'ineligible') return false;
                         }
 
                         return true;
@@ -1730,8 +1936,9 @@
                     dt.draw(resetPage);
 
                     byId('badge-row-count').textContent = `${currentFilteredItems.length} Data Ditemukan`;
-                    const total = currentFilteredItems.reduce((a, i) => a + (parseFloat(i.nilai_thr_final) || 0),
-                    0);
+                    const total = currentFilteredItems
+                        .filter(i => !i.is_excluded)
+                        .reduce((a, i) => a + (parseFloat(i.nilai_thr_final) || 0), 0);
                     byId('footer-total-tampil').textContent = formatRupiah(total);
                 }
 
@@ -1774,16 +1981,19 @@
                     });
                 }
 
-                function loadData(periodId) {
-                    byId('thr-skeleton').style.display = 'block';
-                    byId('thr-real-content').style.display = 'none';
-                    byId('thr-empty-state').style.display = 'none';
+                function loadData(periodId, resetPage = true) {
+                    if (resetPage) {
+                        byId('thr-skeleton').style.display = 'block';
+                        byId('thr-real-content').style.display = 'none';
+                        byId('thr-empty-state').style.display = 'none';
+                    }
 
                     fetch(`{{ route('HR.thr.data') }}?period_id=${periodId}`)
                         .then(res => res.json())
                         .then(res => {
                             if (res.status === 'success') {
                                 currentPeriod = res.period;
+                                currentStats = res.stats || {};
                                 allItems = res.items || [];
 
                                 if (!currentPeriod) {
@@ -1797,10 +2007,10 @@
                                 byId('thr-skeleton').style.display = 'none';
                                 byId('thr-real-content').style.display = 'block';
 
-                                renderStats(res.stats);
+                                renderStats(currentStats);
                                 renderRuleBanner(res.period);
-                                applyFiltersAndRender();
-                                renderAnalytics(res.stats);
+                                applyFiltersAndRender(resetPage);
+                                renderAnalytics(currentStats);
 
                                 if (dt) dt.columns.adjust();
                                 if (isAnalitikActive()) renderCharts();
@@ -1834,7 +2044,7 @@
                     byId('analitik-catatan').textContent = period.catatan ?
                         period.catatan :
                         'Ketentuan kalkulasi berlaku untuk seluruh karyawan aktif. Nilai dapat disesuaikan per individu.';
-                    byId('rule-formula-text').textContent = '(Gaji / 12) × Masa Kerja (Bulan)';
+                    byId('rule-formula-text').textContent = '(Gaji × Masa Kerja (Bulan) ÷ 12)';
 
                     const due = new Date(period.tanggal_jatuh_tempo);
                     const today = new Date();
@@ -1862,9 +2072,9 @@
                 }
 
                 function renderAnalytics(stats) {
-                    const items = allItems;
-                    const totalThr = items.reduce((a, i) => a + (parseFloat(i.nilai_thr_final) || 0), 0);
-                    const totalBasic = items.reduce((a, i) => a + (parseFloat(i.basic_salary) || 0), 0);
+                    const items = activeItems();
+                    const totalThr = round2(items.reduce((a, i) => a + (parseFloat(i.nilai_thr_final) || 0), 0));
+                    const totalBasic = round2(items.reduce((a, i) => a + (parseFloat(i.basic_salary) || 0), 0));
                     const receivers = items.filter(i => (parseFloat(i.nilai_thr_final) || 0) > 0);
                     const values = receivers.map(i => parseFloat(i.nilai_thr_final));
                     const avg = receivers.length ? totalThr / receivers.length : 0;
@@ -1896,10 +2106,12 @@
                     const kontrak = items.filter(i => i.status_karyawan === 'Kontrak').length;
                     const prob = items.filter(i => i.status_karyawan === 'Probation').length;
                     const inel = items.filter(i => ketentuan(i) === 'ineligible').length;
-                    const totalManualValue = items.filter(i => i.is_manual).reduce((a, i) => a + (parseFloat(i
-                        .nilai_thr_final) || 0), 0);
-                    const totalSistem = items.reduce((a, i) => a + (parseFloat(i.nilai_thr_sistem) || 0), 0);
-                    const selisihManual = totalThr - totalSistem;
+                    const totalManualValue = round2(items.filter(i => i.is_manual).reduce((a, i) => a + (parseFloat(
+                        i
+                        .nilai_thr_final) || 0), 0));
+                    const totalSistem = round2(items.reduce((a, i) => a + (parseFloat(i.nilai_thr_sistem) || 0),
+                        0));
+                    const selisihManual = round2(totalThr - totalSistem);
 
                     byId('info-ringkasan').innerHTML = [
                         tile('Nama Periode', escapeHtml(currentPeriod.nama_periode)),
@@ -1910,7 +2122,7 @@
                             .abs(selisihManual))),
                         tile('Nilai THR Hasil Edit Manual',
                             `${formatRupiah(totalManualValue)} <small class="text-muted fw-normal">(${manualCount} orang)</small>`
-                            ),
+                        ),
                         tile('Karyawan Tetap', tetap),
                         tile('Karyawan Kontrak', kontrak),
                         tile('Karyawan Probation', prob),
@@ -2014,6 +2226,12 @@
                             icon: 'mdi:account-clock-outline',
                             color: 'secondary',
                             list: items.filter(i => ketentuan(i) === 'ineligible')
+                        },
+                        {
+                            title: 'Dikecualikan dari Perhitungan',
+                            icon: 'mdi:account-cancel-outline',
+                            color: 'secondary',
+                            list: allItems.filter(i => i.is_excluded)
                         }
                     ];
                     byId('info-attention').innerHTML = attention.map(a => {
@@ -2036,13 +2254,12 @@
 
                     const sortedPeriods = allPeriods.slice().sort((a, b) => (a.tahun - b.tahun) || (a.id - b.id));
                     byId('info-periode-body').innerHTML = sortedPeriods.map((p, idx) => {
-                            const cur = parseFloat(p.total_anggaran) || 0;
-                            const prev = idx > 0 ? (parseFloat(sortedPeriods[idx - 1].total_anggaran) || 0) :
-                                null;
+                            const cur = round2(p.total_anggaran);
+                            const prev = idx > 0 ? round2(sortedPeriods[idx - 1].total_anggaran) : null;
                             let selisih = '-',
                                 persen = '-';
                             if (prev !== null) {
-                                const d = cur - prev;
+                                const d = round2(cur - prev);
                                 selisih =
                                     `<span class="${d >= 0 ? 'text-success' : 'text-danger'}">${d >= 0 ? '+' : '-'}${formatRupiah(Math.abs(d))}</span>`;
                                 persen = prev > 0 ?
@@ -2065,8 +2282,8 @@
 
                     const contoh = 5000000;
                     byId('info-simulasi-body').innerHTML = [12, 9, 6, 3, 1].map(m => {
-                        const val = m >= 12 ? contoh : Math.round(contoh / 12 * m);
-                        const rumus = m >= 12 ? '1 × Gaji' : `(5.000.000 / 12) × ${m}`;
+                        const val = m >= 12 ? contoh : round2(contoh * m / 12);
+                        const rumus = m >= 12 ? '1 × Gaji' : `(5.000.000 × ${m} ÷ 12)`;
                         return `
                         <tr>
                             <td class="fw-semibold">${m >= 12 ? '12 Bulan (Penuh)' : m + ' Bulan'}</td>
@@ -2182,7 +2399,7 @@
                                 },
                                 {
                                     label: 'Total THR (Rp)',
-                                    data: buckets.map(b => b.total),
+                                    data: buckets.map(b => round2(b.total)),
                                     borderColor: '#d97706',
                                     tension: 0.35,
                                     pointRadius: 3,
@@ -2294,12 +2511,20 @@
                     if (dt) dt.columns.adjust();
                 });
 
+                byId('btn-desimal-on').addEventListener('click', function() {
+                    setModeDesimal(true);
+                });
+                byId('btn-desimal-off').addEventListener('click', function() {
+                    setModeDesimal(false);
+                });
+                syncModeButtons();
+
                 function hitungSistemEdit() {
                     const salary = parseFloat(byId('edit-basic-salary').value) || 0;
                     const masa = parseFloat(byId('edit-masa-bulan').value) || 0;
                     const full = parseFloat(currentPeriod.full_masa_kerja_bulan) || 12;
-                    if (masa >= full) return Math.round(salary);
-                    if (masa > 0) return Math.round((salary / 12) * masa);
+                    if (masa >= full) return round2(salary);
+                    if (masa > 0) return round2(salary * masa / 12);
                     return 0;
                 }
 
@@ -2328,9 +2553,9 @@
                         '';
                     byId('edit-masa-bulan').value = parseFloat(item.total_masa_kerja_bulan) || 0;
                     byId('edit-masa-teks').value = item.masa_kerja_teks || '';
-                    byId('edit-basic-salary').value = item.basic_salary;
+                    byId('edit-basic-salary').value = round2(item.basic_salary);
                     byId('edit-thr-sistem').textContent = formatRupiah(hitungSistemEdit());
-                    byId('edit-nilai-thr-final').value = item.nilai_thr_final;
+                    byId('edit-nilai-thr-final').value = round2(item.nilai_thr_final);
                     byId('edit-preview-rupiah').textContent = formatRupiah(item.nilai_thr_final);
                     byId('edit-catatan').value = item.catatan || '';
 
@@ -2635,7 +2860,7 @@
                         return;
                     }
                     window.location.href =
-                    `{{ url('HR-dashboard/thr/export/excel') }}/${currentPeriod.id}`;
+                        `{{ url('HR-dashboard/thr/export/excel') }}/${currentPeriod.id}?desimal=${tampilDesimal ? 1 : 0}`;
                 });
 
                 byId('select-period').addEventListener('change', function() {
@@ -2644,6 +2869,118 @@
                 byId('input-search').addEventListener('input', () => applyFiltersAndRender(true));
                 byId('filter-status').addEventListener('change', () => applyFiltersAndRender(true));
                 byId('filter-kategori').addEventListener('change', () => applyFiltersAndRender(true));
+
+                function sendInclude(itemIds, ikut) {
+                    fetch('{{ route('HR.thr.toggle-include') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify({
+                                period_id: currentPeriod.id,
+                                item_ids: itemIds,
+                                ikut: ikut ? 1 : 0
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+                            showToast(res.message || 'Selesai', res.status === 'success' ? 'success' : 'error');
+                            loadData(currentPeriod.id, false);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showToast('Gagal menyimpan perubahan', 'error');
+                            loadData(currentPeriod.id, false);
+                        });
+                }
+
+                function toggleIkut(itemId, ikut) {
+                    sendInclude([itemId], ikut);
+                }
+
+                function bulkIkut(ikut) {
+                    const ids = currentFilteredItems.map(i => i.id);
+                    if (!ids.length) {
+                        showToast('Tidak ada karyawan pada tampilan saat ini', 'warning');
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: ikut ? 'Ikutkan Semua yang Tampil?' : 'Keluarkan Semua yang Tampil?',
+                        text: `${ids.length} karyawan yang tampil akan ${ikut ? 'diikutsertakan dalam' : 'dikeluarkan dari'} perhitungan THR.`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#4f46e5',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Ya, Lanjutkan',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) sendInclude(ids, ikut);
+                    });
+                }
+
+                byId('btn-bulk-ikut').addEventListener('click', () => bulkIkut(true));
+                byId('btn-bulk-keluar').addEventListener('click', () => bulkIkut(false));
+                byId('filter-ikut').addEventListener('change', () => applyFiltersAndRender(true));
+
+                function syncExportOptions() {
+                    const mode = document.querySelector('input[name="exportMode"]:checked').value;
+                    const format = document.querySelector('input[name="exportFormat"]:checked').value;
+
+                    byId('group-export-karyawan').style.display = mode === 'per_orang' ? 'block' : 'none';
+                    byId('opt-mode-rekap').classList.toggle('active', mode === 'rekap');
+                    byId('opt-mode-semua').classList.toggle('active', mode === 'semua_surat');
+                    byId('opt-mode-perorang').classList.toggle('active', mode === 'per_orang');
+                    byId('opt-format-lengkap').classList.toggle('active', format === '0');
+                    byId('opt-format-polos').classList.toggle('active', format === '1');
+                }
+
+                document.querySelectorAll('input[name="exportMode"], input[name="exportFormat"]').forEach(el => {
+                    el.addEventListener('change', syncExportOptions);
+                });
+
+                byId('btn-export-pdf').addEventListener('click', function() {
+                    if (!currentPeriod) {
+                        showToast('Pilih periode terlebih dahulu', 'warning');
+                        return;
+                    }
+
+                    const eligible = currentFilteredItems.filter(i => !i.is_excluded && (parseFloat(i.total_masa_kerja_bulan) || 0) > 0);
+                    byId('export-karyawan').innerHTML = eligible.length ?
+                        eligible.map(i => `<option value="${i.id}">${escapeHtml(i.nama_lengkap)} — ${escapeHtml(i.jabatan || '-')}</option>`).join('') :
+                        '<option value="">Tidak ada karyawan yang berhak</option>';
+
+                    syncExportOptions();
+                    bootstrap.Modal.getOrCreateInstance(byId('modal-export-pdf')).show();
+                });
+
+                byId('btn-submit-export-pdf').addEventListener('click', function() {
+                    const mode = document.querySelector('input[name="exportMode"]:checked').value;
+                    const polos = document.querySelector('input[name="exportFormat"]:checked').value;
+                    const nomor = byId('export-nomor-surat').value.trim();
+
+                    let query = `period_id=${currentPeriod.id}` +
+                        `&mode=${mode}&polos=${polos}` +
+                        `&nomor_surat=${encodeURIComponent(nomor)}` +
+                        `&status_karyawan=${encodeURIComponent(byId('filter-status').value)}` +
+                        `&kategori_thr=${encodeURIComponent(byId('filter-kategori').value)}` +
+                        `&search=${encodeURIComponent(byId('input-search').value)}` +
+                        `&desimal=${tampilDesimal ? 1 : 0}`;
+
+                    if (mode === 'per_orang') {
+                        const id = byId('export-karyawan').value;
+                        if (!id) {
+                            showToast('Pilih karyawan terlebih dahulu', 'warning');
+                            return;
+                        }
+                        query += `&item_id=${id}`;
+                    }
+
+                    bootstrap.Modal.getInstance(byId('modal-export-pdf')).hide();
+                    window.location.href = `{{ route('HR.thr.export.pdf') }}?${query}`;
+                });
 
                 byId('btn-refresh').addEventListener('click', function() {
                     if (currentPeriod) {

@@ -45,9 +45,20 @@ class OverviewDashboardService
             return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 1);
         };
 
+        $jabatanLower = strtolower($karyawan->jabatan ?? '');
+        $isKoordinator = str_contains($jabatanLower, 'koordinator itsm')
+            || str_contains($jabatanLower, 'koordinator');
+
         $targetKPIs = targetKPI::with(['detailTargetKPI.dataTarget', 'detailTargetKPI.detailPersonKPI', 'karyawan'])
             ->whereYear('created_at', $currentYear)
             ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $targetEmployeeId))
+            ->when(!$isKoordinator, function ($q) {
+                $q->whereDoesntHave('detailTargetKPI.dataTarget', function ($sub) {
+                    $sub->whereRaw('LOWER(asistant_route) = ?', [
+                        'persentase gap kompetensi tim terhadap standar skill'
+                    ]);
+                });
+            })
             ->get();
 
         $allNilaiKPI = nilaiKPI::where('id_evaluated', $targetEmployeeId)->whereYear('created_at', $currentYear)->get();
@@ -757,9 +768,10 @@ class OverviewDashboardService
 
         $currentYear = now()->year;
 
-        // ✅ FILTER UTAMA: id_karyawan dipaksa di query targetKPI
-        // Data karyawan lain TIDAK PERNAH diambil dari DB
-        // whereHas + with keduanya difilter agar konsisten & efisien
+        $jabatanLower = strtolower($karyawan->jabatan ?? '');
+        $isKoordinator = str_contains($jabatanLower, 'koordinator itsm')
+            || str_contains($jabatanLower, 'koordinator');
+
         $allTargets = targetKPI::with([
                 'karyawan',
                 'detailTargetKPI' => function ($query) use ($karyawanId) {
@@ -772,6 +784,13 @@ class OverviewDashboardService
             ])
             ->whereYear('created_at', $tahunFilter)
             ->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $karyawanId))
+            ->when(!$isKoordinator, function ($q) {
+                $q->whereDoesntHave('detailTargetKPI.dataTarget', function ($sub) {
+                    $sub->whereRaw('LOWER(asistant_route) = ?', [
+                        'persentase gap kompetensi tim terhadap standar skill'
+                    ]);
+                });
+            })
             ->get();
 
         $processedTargets = collect();
@@ -781,8 +800,17 @@ class OverviewDashboardService
 
         foreach ($allTargets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
-                // ✅ Skip ini sekarang hanya sebagai safety net
-                // Seharusnya tidak pernah trigger karena sudah difilter di query
+                if ($detail->detailPersonKPI->isEmpty()) {
+                    continue;
+                }
+
+                $routeName = strtolower($detail->dataTarget?->asistant_route ?? '');
+                $isGapRoute = $routeName === 'persentase gap kompetensi tim terhadap standar skill';
+
+                if ($isGapRoute && !$isKoordinator) {
+                    continue;
+                }
+                
                 if ($detail->detailPersonKPI->isEmpty()) {
                     continue;
                 }
@@ -998,6 +1026,21 @@ class OverviewDashboardService
             $targetProgressPercentagesRaw = [];
 
             foreach ($assignedPersonIds as $personId) {
+                $routeName = strtolower($detail->dataTarget?->asistant_route ?? '');
+                $isGapRoute = $routeName === 'persentase gap kompetensi tim terhadap standar skill';
+
+                if ($isGapRoute) {
+                    $personJabatan = optional($karyawanList->firstWhere('id', $personId))->jabatan ?? '';
+                    $personJabatanLower = strtolower($personJabatan);
+
+                    $isPersonKoordinator = str_contains($personJabatanLower, 'koordinator itsm')
+                        || str_contains($personJabatanLower, 'koordinator');
+
+                    if (!$isPersonKoordinator) {
+                        continue;
+                    }
+                }
+
                 $uniqueKey = $detail->id . '_' . $personId;
                 if (isset($processedTargets[$uniqueKey])) {
                     continue;

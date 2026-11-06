@@ -503,12 +503,22 @@ $(document).ready(function() {
                 const startDate = new Date(startOfYear);
                 const deadlineDate = new Date(tenggatWaktu);
 
-                if (isNaN(currentDate) || isNaN(startDate)) Tercapai = "Belum Dimulai";
-                else if (currentDate < startDate) Tercapai = "Belum Dimulai";
-                else if (!isNaN(deadlineDate) && (currentDate > deadlineDate || currentDate.getTime() === deadlineDate.getTime())) {
-                    Tercapai = (dataDetail.progress ?? 0) >= (data.nilai_target ?? 0) ? "Mencapai Target" : "Target Gagal";
+                const isInverse = dataDetail.is_inverse === true
+                    || data.condition === 'persentase gap kompetensi tim terhadap standar skill';
+
+                const progressVal = dataDetail.progress ?? 0;
+                const targetVal   = data.nilai_target ?? 0;
+
+                const capai = isInverse
+                    ? progressVal <= targetVal
+                    : progressVal >= targetVal;
+
+                if (isNaN(currentDate) || isNaN(startDate) || currentDate < startDate) {
+                    Tercapai = "Belum Dimulai";
+                } else if (!isNaN(deadlineDate) && (currentDate > deadlineDate || currentDate.getTime() === deadlineDate.getTime())) {
+                    Tercapai = capai ? "Mencapai Target" : "Target Gagal";
                 } else {
-                    Tercapai = (dataDetail.progress ?? 0) >= (data.nilai_target ?? 0) ? "Mencapai Target" : "Sedang Berjalan";
+                    Tercapai = capai ? "Mencapai Target" : "Sedang Berjalan";
                 }
 
                 const targetValueRaw = data.nilai_target ?? 0;
@@ -1019,20 +1029,11 @@ $(document).ready(function() {
                         return `<div class="col-md-4 mt-5"><div class="card border-0 shadow-sm h-100"><div class="mb-2 p-3"><h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month] || '-'}</h5><small class="text-muted">Laporan Analisis Bulanan</small></div><div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;"><div class="mb-3"><p class="mb-0" style="text-align: justify;">${item.description || ''}</p></div></div><div class="mt-auto p-3"><a href="${fileUrl}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}><i class="menu-icon fa-solid fa-file-alt"></i></a></div></div></div>`;
                     }).join('')}</div>`;
                 } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(condition)) {
-                    const karyawanGap = Array.isArray(data.karyawan) ? data.karyawan : [];
-                    const isKoordinatorItsm = window.KPI_CONFIG.isKoordinatorItsm;
-                    const disabledAttr = isKoordinatorItsm ? '' : 'disabled';
-                    const submitBtnHtml = isKoordinatorItsm ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : '';
-                    
-                    contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6><form id="formGapKompetensi"><input type="hidden" name="_token" value="${window.KPI_CONFIG.csrfToken}"><div class="row mb-2 fw-semibold text-muted border-bottom pb-2"><div class="col-md-4">Nama Karyawan</div><div class="col-md-4">Kemampuan (%)</div><div class="col-md-4">Standar (%)</div></div>${karyawanGap.map((item, index) => {
-                        const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
-                        const standar = parseFloat(item.presentase_standar ?? 100);
-                        let badge = '';
-                        if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
-                        else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
-                        else badge = `<span class="badge bg-success">Achieved</span>`;
-                        return `<div class="row mb-2 align-items-center p-2 rounded"><div class="col-md-4 d-flex justify-content-between align-items-center"><span>${item.nama_lengkap ?? '-'}</span>${badge}</div><div class="col-md-4"><input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}></div><div class="col-md-4"><input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}></div><input type="hidden" name="data[${index}][id]" value="${item.id || ''}"></div>`;
-                    }).join('')}${submitBtnHtml}</form></div></div></div>`;
+                    contentStatisticChart = buildGapKompetensiForm(
+                        data, 
+                        window.KPI_CONFIG.isKoordinatorItsm, 
+                        window.KPI_CONFIG.csrfToken
+                    );
                 } else {
                     contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><div class="d-flex justify-content-between mb-3"><h6 class="fw-semibold mb-0">Statistik ${condition}</h6><div class="d-flex gap-2"><select class="form-select form-select-sm" id="filterType"><option value="year">Per Tahun</option><option value="month">Per Bulan</option></select><select class="form-select form-select-sm d-none" id="filterMonth"><option value="">Pilih Bulan</option></select></div></div><div style="height:300px"><canvas id="StatisticChart"></canvas></div></div></div></div>`;
                 }
@@ -1300,6 +1301,46 @@ $(document).ready(function() {
             }
         });
     });
+
+    function buildGapKompetensiForm(data, canEdit, csrfToken) {
+        const list = Array.isArray(data.karyawan) ? data.karyawan : [];
+        const disabledAttr = canEdit ? '' : 'disabled';
+
+        const rows = list.map((item, i) => {
+            const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
+            const badge = skala === null
+                ? '<span class="badge bg-secondary">Belum dinilai</span>'
+                : `<span class="badge bg-info text-dark">${Math.round(skala * 10)}%</span>`;
+
+            return `
+                <div class="row mb-2 align-items-center p-2 rounded">
+                    <div class="col-md-6 d-flex justify-content-between align-items-center">
+                        <span>${item.nama_lengkap ?? '-'}</span>${badge}
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" min="1" max="10" step="0.5" class="form-control"
+                            name="data[${i}][kemampuan]" value="${skala ?? ''}"
+                            placeholder="1 - 10" ${disabledAttr}>
+                    </div>
+                    <input type="hidden" name="data[${i}][id_karyawan]" value="${item.id_karyawan}">
+                    <input type="hidden" name="data[${i}][detailTargetKey]" value="${item.detailTargetKey}">
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body">
+                <h6 class="fw-semibold mb-1">Penilaian Kemampuan Tim</h6>
+                <small class="text-muted d-block mb-3">Isi skala 1-10 (8 = 80%). Gap dihitung dari rata-rata seluruh anggota tim.</small>
+                <form id="formGapKompetensi">
+                    <input type="hidden" name="_token" value="${csrfToken}">
+                    <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                        <div class="col-md-6">Nama Karyawan</div><div class="col-md-6">Nilai (1-10)</div>
+                    </div>
+                    ${rows || '<div class="text-muted small">Tidak ada anggota tim.</div>'}
+                    ${canEdit ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : ''}
+                </form>
+            </div></div></div>`;
+    }
 
     function generateDetailSkeleton() {
         return `
@@ -1713,9 +1754,42 @@ function processRawData(details) {
             } else {
                 progressValueDisplay = Math.round(progressNumeric) + '%';
             }
+            
+            let lengthProgress = actualTarget > 0
+                ? Math.min(Math.round((progress / actualTarget) * 100), 100)
+                : 0;
 
-            const lengthProgress = actualTarget > 0 ? Math.min(Math.round((progress / actualTarget) * 100), 100) : 0;
             let isTargetReached = false;
+
+            const isGapRoute = item.asistant_route === 'persentase gap kompetensi tim terhadap standar skill';
+
+            if (isGapRoute) {
+                const belumDinilai = item.progress === null || item.progress === undefined;
+                const gapValue = parseFloat(item.progress);
+                const targetGap = parseFloat(item.nilai_target) || 10;
+
+                if (belumDinilai || isNaN(gapValue)) {
+                    isTargetReached = false;
+                    lengthProgress = 0;
+                    progressValueDisplay = 'Belum dinilai';
+                } else {
+                    // Status tetap terbalik: gap kecil = bagus
+                    isTargetReached = gapValue <= targetGap;
+
+                    // Progress bar & teks mengikuti nilai gap (92.3% → bar 92.3%)
+                    lengthProgress = Math.max(0, Math.min(100, Math.round(gapValue)));
+                    progressValueDisplay = `Gap ${gapValue}%`;
+                }
+            } else {
+                if (item.tipe_target === 'angka') {
+                    isTargetReached = (item.manual_value ?? 0) >= actualTarget;
+                } else if (item.tipe_target === 'rupiah') {
+                    isTargetReached = progress >= actualTarget;
+                } else {
+                    isTargetReached = progressNumeric >= item.nilai_target;
+                }
+            }
+
             if (item.tipe_target === 'angka') isTargetReached = (item.manual_value ?? 0) >= actualTarget;
             else if (item.tipe_target === 'rupiah') isTargetReached = progress >= actualTarget;
             else isTargetReached = progressNumeric >= item.nilai_target;
