@@ -81,6 +81,13 @@
 
     <p class="terbilang">Terbilang: {{ $summary['total_terbilang'] }}</p>
 
+    @if (!$tampilDesimal)
+        <p class="sub" style="margin: 0 0 8px;">
+            Catatan: nominal ditampilkan tanpa angka desimal (desimal dihapus, tidak dibulatkan).
+            Total dihitung dari nilai asli, sehingga jumlah per baris dapat berbeda 1-2 rupiah dari total.
+        </p>
+    @endif
+
     <p class="para">
         Demikian surat ini kami sampaikan. Atas perhatian dan persetujuan Bapak/Ibu, kami ucapkan terima kasih.
     </p>

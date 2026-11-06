@@ -196,7 +196,7 @@ class TargetKPIController extends Controller
 
         $availableRoutes = [];
         if (count(array_intersect($jabatanList, $kombinasiIT)) === 3) {
-            $availableRoutes = ['kepuasan client itsm', 'inovation adaption rate', 'persentase gap kompetensi tim terhadap standar skill'];
+            $availableRoutes = ['kepuasan client itsm', 'inovation adaption rate'];
         } elseif (count(array_intersect($jabatanList, $kombinasiSales)) === 3) {
             $availableRoutes = ['peningkatan kemampuan kompetensi sales'];
         } else {
@@ -272,21 +272,28 @@ class TargetKPIController extends Controller
             $detail_jangka_value = ($dataTarget->jangka_target === 'Tahunan' && !empty($validated['detail_jangka']))
                 ? $validated['detail_jangka'] : null;
 
+            $isGapKompetensi = strtolower($dataTarget->asistant_route) === 'persentase gap kompetensi tim terhadap standar skill';
+
             foreach ($jabatans as $jabatan) {
                 $query = $this->baseKaryawanAktif()->where('jabatan', $jabatan);
 
-                // Jika karyawan dipilih manual, batasi ke yang dipilih
                 if (!empty($validated['karyawan'])) {
                     $query->whereIn('id', $validated['karyawan']);
+                }
+
+                if ($isGapKompetensi) {
+                    $query->where(function ($q) {
+                        $q->whereRaw('LOWER(jabatan) LIKE ?', ['%koordinator itsm%'])
+                        ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%koordinator%']);
+                    });
                 }
 
                 $karyawanList = $query->get(['id', 'divisi']);
 
                 if ($karyawanList->isEmpty()) {
-                    continue; // atau throw/log jika ingin dianggap error
+                    continue;
                 }
 
-                // Kelompokkan per divisi supaya divisi dan karyawan selalu konsisten
                 foreach ($karyawanList->groupBy('divisi') as $divisi => $anggota) {
                     $detailStore = DetailTargetKPI::create([
                         'id_targetKPI'   => $createTarget->id,
@@ -321,29 +328,35 @@ class TargetKPIController extends Controller
         }
 
         foreach ($data as $item) {
-            $idKaryawan = $item['id_karyawan'] ?? null;
+            $idKaryawan      = $item['id_karyawan'] ?? null;
             $detailTargetKey = $item['detailTargetKey'] ?? null;
+            $skala           = $item['kemampuan'] ?? null;
 
-            if (!$idKaryawan || !$detailTargetKey) {
+            if (!$idKaryawan || !$detailTargetKey || $skala === null || $skala === '') {
                 continue;
             }
 
-            $detailTarget = \App\Models\DetailTargetKPI::find($detailTargetKey);
-            $idTarget = $detailTarget ? $detailTarget->id_targetKPI : null;
-
-            if (!$idTarget) {
+            $skala = (float) $skala;
+            if ($skala < 1 || $skala > 10) {
                 continue;
             }
+
+            $detailTarget = DetailTargetKPI::find($detailTargetKey);
+            if (!$detailTarget) {
+                continue;
+            }
+
+            $idTarget = $detailTarget->id_targetKPI;
 
             detailPersonKPI::updateOrCreate(
                 [
                     'id_karyawan'     => $idKaryawan,
-                    'detailTargetKey' => $detailTargetKey
+                    'detailTargetKey' => $detailTargetKey,
                 ],
                 [
-                    'presentase_kemampuan' => $item['kemampuan'] ?? 0,
-                    'presentase_standar'   => $item['standar'] ?? 100,
-                    'id_target'            => $idTarget
+                    'presentase_kemampuan' => $skala * 10,
+                    'presentase_standar'   => 100,
+                    'id_target'            => $idTarget,
                 ]
             );
         }
@@ -558,6 +571,20 @@ class TargetKPIController extends Controller
             });
         }
 
+        if (!$isSuper) {
+            $userJabatanLower = strtolower($user->jabatan ?? '');
+            $isKoordinator = str_contains($userJabatanLower, 'koordinator itsm')
+                || str_contains($userJabatanLower, 'koordinator');
+
+            if (!$isKoordinator) {
+                $query->whereDoesntHave('detailTargetKPI.dataTarget', function ($q) {
+                    $q->whereRaw('LOWER(asistant_route) = ?', [
+                        'persentase gap kompetensi tim terhadap standar skill'
+                    ]);
+                });
+            }
+        }
+
         $perPage = $request->input('per_page', 10);
         $paginatedList = $query->paginate($perPage);
 
@@ -631,10 +658,14 @@ class TargetKPIController extends Controller
         $routeName = $detailTarget?->dataTarget?->asistant_route ?? '';
         $isGapKompetensiTarget = ($routeName === 'persentase gap kompetensi tim terhadap standar skill');
 
-        $query = targetKPI::with(['karyawan', 'detailTargetKPI.detailPersonKPI.karyawan', 'detailTargetKPI.dataTarget'])->where('id', $idTarget);
-        
+        $query = targetKPI::with([
+            'karyawan',
+            'detailTargetKPI.detailPersonKPI.karyawan',
+            'detailTargetKPI.dataTarget'
+        ])->where('id', $idTarget);
+
         $shouldFilterByPerson = !($isUserKoordinatorItsm && $isGapKompetensiTarget);
-        
+
         if ($personId !== null && $shouldFilterByPerson) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $personId));
         }
@@ -644,63 +675,90 @@ class TargetKPIController extends Controller
         $data = [
             'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $isGapKompetensiTarget) {
                 $detail = $itemDetail->detailTargetKPI->first();
-                if (!$detail) return null;
+                if (!$detail) {
+                    return null;
+                }
 
                 if ($isUserKoordinatorItsm && $isGapKompetensiTarget) {
                     $divisi = $detail->divisi;
-                    
-                    $karyawanDiDivisi = \App\Models\karyawan::where('divisi', $divisi)
+
+                    $karyawanDiDivisi = karyawan::where('divisi', $divisi)
                         ->where('status_aktif', '1')
                         ->whereNot('jabatan', 'Outsource')
                         ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                         ->whereNot('jabatan', 'Pilih Jabatan')
                         ->whereNotNull('nip')
                         ->where('divisi', '!=', 'Direksi')
+                        ->where('jabatan', '!=', 'Koordinator ITSM')
                         ->get();
 
-                    $existingGaps = \App\Models\detailPersonKPI::where('detailTargetKey', $detail->id)
+                    $existingGaps = detailPersonKPI::where('detailTargetKey', $detail->id)
                         ->get()
                         ->keyBy('id_karyawan');
 
-                    $karyawanCollection = $karyawanDiDivisi->map(function($k) use ($existingGaps, $detail) {
+                    $karyawanCollection = $karyawanDiDivisi->map(function ($k) use ($existingGaps, $detail) {
                         $existing = $existingGaps->get($k->id);
+                        $presentase = $existing ? (float) $existing->presentase_kemampuan : null;
+
                         return [
-                            'id' => $existing ? $existing->id : null, 
-                            'id_karyawan' => $k->id,
-                            'detailTargetKey' => $detail->id,
-                            'nama_lengkap' => $k->nama_lengkap,
-                            'jabatan' => $k->jabatan,
-                            'presentase_kemampuan' => $existing ? (float)$existing->presentase_kemampuan : 0,
-                            'presentase_standar' => $existing ? (float)$existing->presentase_standar : 100,
+                            'id'               => $existing ? $existing->id : null,
+                            'id_karyawan'      => $k->id,
+                            'detailTargetKey'  => $detail->id,
+                            'nama_lengkap'     => $k->nama_lengkap,
+                            'jabatan'          => $k->jabatan,
+                            'presentase_kemampuan' => $presentase,
+                            'presentase_standar'   => $existing ? (float) $existing->presentase_standar : 100,
+                            'skala_kemampuan'  => $presentase !== null ? round($presentase / 10, 1) : null,
                         ];
                     })->values();
                 } else {
                     $karyawanCollection = $itemDetail->detailTargetKPI->flatMap(function ($detailItem) use ($personId) {
-                        return $detailItem->detailPersonKPI->where('id_karyawan', $personId);
-                    })->map(fn($person) => [
-                        'id' => $person->id, 
-                        'id_karyawan' => $person->id_karyawan,
-                        'nama_lengkap' => $person->karyawan->nama_lengkap ?? null,
-                        'jabatan' => $person->karyawan->jabatan ?? null, 
-                        'presentase_kemampuan' => $person->presentase_kemampuan ?? 0,
-                        'presentase_standar' => $person->presentase_standar ?? 100,
-                    ])->values();
+                        $persons = $detailItem->detailPersonKPI;
+                        if ($personId !== null) {
+                            $persons = $persons->where('id_karyawan', $personId);
+                        }
+                        return $persons;
+                    })->map(function ($person) {
+                        $presentase = $person->presentase_kemampuan !== null
+                            ? (float) $person->presentase_kemampuan
+                            : null;
+
+                        return [
+                            'id'               => $person->id,
+                            'id_karyawan'      => $person->id_karyawan,
+                            'detailTargetKey'  => $person->detailTargetKey,
+                            'nama_lengkap'     => $person->karyawan->nama_lengkap ?? null,
+                            'jabatan'          => $person->karyawan->jabatan ?? null,
+                            'presentase_kemampuan' => $presentase,
+                            'presentase_standar'   => $person->presentase_standar !== null
+                                ? (float) $person->presentase_standar
+                                : 100,
+                            'skala_kemampuan'  => $presentase !== null ? round($presentase / 10, 1) : null,
+                        ];
+                    })->values();
                 }
 
                 $dataOutput = [
-                    'pembuat' => $itemDetail->karyawan->nama_lengkap ?? null, 
-                    'judul' => $itemDetail->judul,
-                    'condition' => $detail->dataTarget?->asistant_route, 
-                    'deskripsi' => $itemDetail->deskripsi,
-                    'jabatan_kpi' => $detail->jabatan, 
-                    'divisi_kpi' => $detail->divisi,
-                    'karyawan' => $karyawanCollection,
-                    'jangka_target' => $detail->jangka_target, 
-                    'detail_jangka' => $detail->detail_jangka,
-                    'tipe_target' => $detail->tipe_target, 
-                    'nilai_target' => $detail->nilai_target,
-                    'tenggat_waktu' => $this->formatTenggatWaktuExport($detail->jangka_target ?? '', $detail->detail_jangka ?? ''),
-                    'data_detail' => $this->getCalculationByRoute($itemDetail, ($isUserKoordinatorItsm && $isGapKompetensiTarget) ? null : $personId),
+                    'pembuat'        => $itemDetail->karyawan->nama_lengkap ?? null,
+                    'judul'          => $itemDetail->judul,
+                    'condition'      => $detail->dataTarget?->asistant_route,
+                    'deskripsi'      => $itemDetail->deskripsi,
+                    'jabatan_kpi'    => $detail->jabatan,
+                    'divisi_kpi'     => $detail->divisi,
+                    'karyawan'       => $karyawanCollection,
+                    'jangka_target'  => $detail->jangka_target,
+                    'detail_jangka'  => $detail->detail_jangka,
+                    'tipe_target'    => $detail->tipe_target,
+                    'nilai_target'   => $detail->nilai_target,
+                    'tenggat_waktu'  => $this->formatTenggatWaktuExport(
+                        $detail->jangka_target ?? '',
+                        $detail->detail_jangka ?? ''
+                    ),
+                    'data_detail'    => $this->getCalculationByRoute(
+                        $itemDetail,
+                        ($isUserKoordinatorItsm && $isGapKompetensiTarget) ? null : $personId
+                    ),
+                    'can_edit'       => $isUserKoordinatorItsm,
                 ];
 
                 return ['data' => $dataOutput];

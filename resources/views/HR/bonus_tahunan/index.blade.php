@@ -130,6 +130,16 @@
                 </p>
             </div>
             <div class="d-flex flex-wrap gap-2">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Mode tampilan angka">
+                    <button type="button" class="btn btn-outline-primary" id="btnDesimalOn"
+                        onclick="setModeDesimal(true)" title="Tampilkan data asli dengan 2 desimal">
+                        <i class="fa-solid fa-eye me-1"></i>Real (,00)
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnDesimalOff"
+                        onclick="setModeDesimal(false)" title="Hapus desimal tanpa pembulatan">
+                        <i class="fa-solid fa-scissors me-1"></i>Tanpa Desimal
+                    </button>
+                </div>
                 <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="recalculateAll()"
                     title="Hitung Ulang & Simpan Semua Data">
                     <i class="fa-solid fa-rotate me-1"></i>Hitung Ulang
@@ -937,6 +947,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script>
+        let tampilDesimal = true;
+        try { tampilDesimal = (localStorage.getItem('bonus_tampil_desimal') ?? '1') === '1'; } catch (e) {}
         let dt = null;
         let cachedBonusData = [];
         let cachedSummary = null;
@@ -944,9 +956,18 @@
         const trendCache = {};
         const charts = {};
 
-        const formatIDR = (num) => {
-            const val = typeof num === 'number' ? num : (parseFloat(num) || 0);
-            return 'Rp ' + Math.round(val).toLocaleString('id-ID');
+        const formatIDR = (n) => {
+            const val = typeof n === 'number' ? n : (parseFloat(n) || 0);
+            const bersih = Math.round(val * 100) / 100; // buang noise float saja
+
+            if (tampilDesimal) {
+                return 'Rp ' + bersih.toLocaleString('id-ID', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            return 'Rp ' + Math.trunc(bersih).toLocaleString('id-ID');
         };
 
         const shortRupiah = (v) => {
@@ -1448,12 +1469,12 @@
 
             const contoh = 5000000;
             document.getElementById('info-simulasi-body').innerHTML = [12, 9, 6, 3, 1].map(m => {
-                const base = Math.round(contoh / 12 * m);
+                const hitung = (p) => Math.round(contoh * m * p / 12 * 100) / 100;
                 return `<tr>
                     <td class="fw-semibold">${m} Bulan</td>
-                    <td class="text-end">${formatIDR(base)}</td>
-                    <td class="text-end">${formatIDR(base * 2)}</td>
-                    <td class="text-end">${formatIDR(base * 4)}</td>
+                    <td class="text-end">${formatIDR(hitung(1))}</td>
+                    <td class="text-end">${formatIDR(hitung(2))}</td>
+                    <td class="text-end">${formatIDR(hitung(4))}</td>
                 </tr>`;
             }).join('');
 
@@ -1748,17 +1769,17 @@
             let explanation = '';
 
             if (skema === '2x') {
-                result = Math.round(2.00 * (basicSalary / 12) * bulanKerja);
-                explanation = `2 × (${formatIDR(basicSalary)} ÷ 12) × ${bulanKerja} bln`;
+                result = Math.round(basicSalary * bulanKerja * 2 / 12 * 100) / 100;
+                explanation = `2 × (${formatIDR(basicSalary)} × ${bulanKerja} bln ÷ 12)`;
             } else if (skema === '4x') {
-                result = Math.round(4.00 * (basicSalary / 12) * bulanKerja);
-                explanation = `4 × (${formatIDR(basicSalary)} ÷ 12) × ${bulanKerja} bln`;
+                result = Math.round(basicSalary * bulanKerja * 4 / 12 * 100) / 100;
+                explanation = `4 × (${formatIDR(basicSalary)} × ${bulanKerja} bln ÷ 12)`;
             } else if (skema === 'custom') {
                 result = customNominal;
                 explanation = `Nominal kustom yang ditentukan secara manual`;
             } else {
-                result = Math.round((basicSalary / 12) * bulanKerja);
-                explanation = `(${formatIDR(basicSalary)} ÷ 12) × ${bulanKerja} bln`;
+                result = Math.round(basicSalary * bulanKerja / 12 * 100) / 100;
+                explanation = `(${formatIDR(basicSalary)} × ${bulanKerja} bln ÷ 12)`;
             }
 
             document.getElementById('liveCalcResult').textContent = formatIDR(result);
@@ -1935,7 +1956,7 @@
             const skema = document.getElementById('filterSkema').value;
             const search = document.getElementById('searchKeyword').value;
 
-            return `year=${tahun}&divisi=${encodeURIComponent(divisi)}&status_karyawan=${encodeURIComponent(status)}&skema_bonus=${skema}&search=${encodeURIComponent(search)}`;
+            return `year=${tahun}&divisi=${encodeURIComponent(divisi)}&status_karyawan=${encodeURIComponent(status)}&skema_bonus=${skema}&search=${encodeURIComponent(search)}&desimal=${tampilDesimal ? 1 : 0}`;
         }
 
         function exportExcel() {
@@ -1993,6 +2014,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
+            syncModeButtons();
             initTable();
 
             document.getElementById('tab-analitik-btn').addEventListener('shown.bs.tab', function () {
@@ -2004,5 +2026,21 @@
 
             loadData();
         });
+
+        function syncModeButtons() {
+            document.getElementById('btnDesimalOn').classList.toggle('active', tampilDesimal);
+            document.getElementById('btnDesimalOff').classList.toggle('active', !tampilDesimal);
+        }
+
+        function setModeDesimal(on) {
+            tampilDesimal = !!on;
+            try { localStorage.setItem('bonus_tampil_desimal', on ? '1' : '0'); } catch (e) {}
+            syncModeButtons();
+
+            if (!cachedBonusData.length) return;
+            applyFilters(false);
+            renderAnalytics();
+            if (isAnalitikActive()) renderCharts();
+        }
     </script>
 @endsection
