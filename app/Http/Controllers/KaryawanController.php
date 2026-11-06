@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use App\Models\EducationalBackground;
 use App\Models\LogGaji;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 class KaryawanController extends Controller
@@ -266,34 +267,48 @@ class KaryawanController extends Controller
 
         $bulanInput = (int) $request->bulan;
         $tahunInput = (int) $request->tahun;
-        $bulanNow   = (int) Carbon::now()->month;
-        $tahunNow   = (int) Carbon::now()->year;
+        $tunjangan  = $request->tunjangan_jabatan ?? 0;
 
-        $isBulanIni = $bulanInput === $bulanNow && $tahunInput === $tahunNow;
+        $now        = Carbon::now()->startOfMonth();
+        $bulanLalu  = $now->copy()->subMonthNoOverflow();
+        $inputDate  = Carbon::create($tahunInput, $bulanInput, 1)->startOfMonth();
 
-        if ($isBulanIni) {
-            $karyawan = karyawan::findOrFail($id);
-            $karyawan->update([
-                'gaji'              => $request->jumlah_gaji,
-                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
-            ]);
-        }
+        $isBulanIni = $inputDate->equalTo($now);
+        $isBulanLalu = $inputDate->equalTo($bulanLalu);
 
-        LogGaji::updateOrCreate(
-            [
-                'id_karyawan' => $id,
-                'bulan'       => $bulanInput,
-                'tahun'       => $tahunInput,
-            ],
-            [
-                'gaji'              => $request->jumlah_gaji,
-                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
-            ]
-        );
+        $sudahAdaLogBulanIni = LogGaji::where('id_karyawan', $id)
+            ->where('bulan', $now->month)
+            ->where('tahun', $now->year)
+            ->exists();
+
+        // Update data karyawan jika:
+        // - input bulan ini, ATAU
+        // - input bulan lalu DAN belum ada log bulan ini
+        $updateKaryawan = $isBulanIni || ($isBulanLalu && !$sudahAdaLogBulanIni);
+
+        DB::transaction(function () use ($id, $updateKaryawan, $request, $tunjangan, $bulanInput, $tahunInput) {
+            if ($updateKaryawan) {
+                karyawan::findOrFail($id)->update([
+                    'gaji'              => $request->jumlah_gaji,
+                    'tunjangan_jabatan' => $tunjangan,
+                ]);
+            }
+
+            LogGaji::updateOrCreate(
+                [
+                    'id_karyawan' => $id,
+                    'bulan'       => $bulanInput,
+                    'tahun'       => $tahunInput,
+                ],
+                [
+                    'gaji'              => $request->jumlah_gaji,
+                    'tunjangan_jabatan' => $tunjangan,
+                ]
+            );
+        });
 
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }
-
 
     public function slip(Request $request)
     {

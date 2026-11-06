@@ -144,7 +144,8 @@ class TunjanganController extends Controller
         ]);
     }
 
-    public function ambilDataBPJS($id) {
+    public function ambilDataBPJS($id)
+    {
         $dataBPJS = PerhitunganTunjanganHR::where('karyawan_id', $id)->first();
         $dataPPH = Pph21Karyawan::where('karyawan_id', $id)->first();
 
@@ -153,15 +154,15 @@ class TunjanganController extends Controller
         $jenisPPH = JenisTunjangan::where('nama_tunjangan', 'PPH')->first();
 
         return response()->json([
-            'valKar' => $dataBPJS->bpjs_kes_karyawan,
-            'valTK' => $dataBPJS->jht_karyawan,
+            'valKar' => $dataBPJS?->bpjs_kes_karyawan ?? 0,
+            'valTK' => $dataBPJS?->jht_karyawan ?? 0,
             'jesKar' => $jenisBPJSkar,
             'jesTK' => $jenisBPJStk,
-            'pph' => $dataPPH->total_pph,
+            'pph' => $dataPPH?->total_pph ?? 0,
             'jesPPH' => $jenisPPH,
         ]);
     }
-
+    
     // Halaman approval untuk GM
     // public function indexApproval()
     // {

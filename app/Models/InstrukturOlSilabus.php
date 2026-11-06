@@ -13,6 +13,7 @@ class InstrukturOlSilabus extends Model
 
     protected $fillable = [
         'instruktur_ol_id',
+        'rkm_id',
         'judul',
         'keterangan',
         'file_path',
@@ -24,6 +25,11 @@ class InstrukturOlSilabus extends Model
     public function instruktur()
     {
         return $this->belongsTo(InstrukturOl::class, 'instruktur_ol_id');
+    }
+
+    public function rkm()
+    {
+        return $this->belongsTo(RKM::class, 'rkm_id');
     }
 
     public function getFileUrlAttribute(): ?string

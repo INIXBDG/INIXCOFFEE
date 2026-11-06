@@ -35,6 +35,16 @@ class InstrukturOl extends Model
         return $this->hasMany(InstrukturOlSilabus::class, 'instruktur_ol_id');
     }
 
+    public function materis()
+    {
+        return $this->hasMany(InstrukturOlMateri::class, 'instruktur_ol_id');
+    }
+
+    public function riwayats()
+    {
+        return $this->hasMany(InstrukturOlRiwayat::class, 'instruktur_ol_id');
+    }
+
     public function getCvUrlAttribute(): ?string
     {
         return $this->cv_path ? asset(self::UPLOAD_DIR . '/cv/' . $this->cv_path) : null;

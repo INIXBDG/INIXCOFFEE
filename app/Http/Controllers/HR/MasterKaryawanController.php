@@ -67,6 +67,8 @@ class MasterKaryawanController extends Controller
 
     private const REVIEW_GAJI_BULAN = 12;
 
+    private const REMINDER_BULAN = 2;
+
     private const CACHE_TTL = 300;
 
     public function __construct()
@@ -591,12 +593,13 @@ class MasterKaryawanController extends Controller
         $sisaHari = $label = $level = null;
 
         if ($deadline) {
-            $sisaHari = (int) $today->diffInDays(Carbon::parse($deadline)->startOfDay(), false);
+            $batas = Carbon::parse($deadline)->startOfDay();
+            $sisaHari = (int) $today->diffInDays($batas, false);
 
             if ($sisaHari < 0) {
                 $level = 'late';
                 $label = 'Lewat ' . abs($sisaHari) . ' hari';
-            } elseif ($sisaHari <= 30) {
+            } elseif ($batas->lte($today->copy()->addMonths(self::REMINDER_BULAN))) {
                 $level = 'soon';
                 $label = $sisaHari === 0 ? 'Jatuh tempo hari ini' : 'Jatuh tempo ' . $sisaHari . ' hari lagi';
             }
@@ -626,7 +629,7 @@ class MasterKaryawanController extends Controller
             if (preg_match('/^\[(\d{2})\/(\d{2})\/(\d{4})\]\s+(Sudah update|Pending|Masuk Kartap)/i', $log, $m)) {
                 $tgl = Carbon::createFromFormat('d/m/Y', $m[1] . '/' . $m[2] . '/' . $m[3])->startOfDay();
 
-                if ($tgl->lt($today->copy()->subDays(30))) {
+                if ($tgl->lt($today->copy()->subMonths(self::REMINDER_BULAN))) {
                     return false;
                 }
 
@@ -665,7 +668,7 @@ class MasterKaryawanController extends Controller
                 $awal = Carbon::parse($k->awal_tetap)->startOfDay();
                 $sisaHari = (int) $today->diffInDays($awal, false);
 
-                if ($sisaHari >= 0 && $sisaHari <= 30) {
+                if ($sisaHari >= 0 && $awal->lte($today->copy()->addMonths(self::REMINDER_BULAN))) {
                     $hasil->push($dasar + [
                         'jenis'  => 'kartap',
                         'status' => 'pending',

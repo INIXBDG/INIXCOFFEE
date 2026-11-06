@@ -22,11 +22,158 @@ class TagihanPerusahaanController extends Controller
         $this->middleware('permission:Delete Tagihan Perusahaan', ['only' => ['hapusTagihanPerusahaan']]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $trackingTagihanPerusahaans = trackingTagihanPerusahaan::with('tagihanPerusahaan')->orderBy('tanggal_perkiraan_mulai', 'desc')->paginate(10);
+        $tahun = $request->get('tahun', now()->year);
+        $bulan = $request->get('bulan');
 
-        return view('office.tagihanPerusahaan.index', compact('trackingTagihanPerusahaans'));
+        $query = trackingTagihanPerusahaan::with('tagihanPerusahaan')
+            ->whereYear('tanggal_perkiraan_mulai', $tahun);
+
+        if ($bulan) {
+            $query->whereMonth('tanggal_perkiraan_mulai', $bulan);
+        }
+
+        $trackingTagihanPerusahaans = $query
+            ->orderByDesc('is_urgent')
+            ->orderBy('urgent_order')          
+            ->orderBy('tanggal_perkiraan_mulai', 'desc')
+            ->get();
+
+        $listTahun = range(now()->year - 3, now()->year + 1);
+
+        return view('office.tagihanPerusahaan.index', compact(
+            'trackingTagihanPerusahaans', 'tahun', 'bulan', 'listTahun'
+        ));
+    }
+
+    public function toggleUrgent($id)
+    {
+        $tracking = trackingTagihanPerusahaan::findOrFail($id);
+
+        if (!$tracking->is_urgent) {
+            // Ambil order terkecil yang ada, lalu kurangi 1 supaya jadi paling atas
+            $minOrder = trackingTagihanPerusahaan::where('is_urgent', true)
+                            ->min('urgent_order');
+
+            $tracking->is_urgent = true;
+            $tracking->urgent_order = is_null($minOrder) ? 1 : ($minOrder - 1);
+        } else {
+            $tracking->is_urgent = false;
+            $tracking->urgent_order = null;
+        }
+
+        $tracking->save();
+        Cache::forget('office_dashboard_tagihan');
+
+        return response()->json([
+            'success'   => true,
+            'is_urgent' => (bool) $tracking->is_urgent
+        ]);
+    }
+
+    public function reorderUrgent(Request $request)
+    {
+        $orders = $request->orders;
+
+        foreach ($orders as $id => $order) {
+            trackingTagihanPerusahaan::where('id', $id)
+                ->where('is_urgent', true)
+                ->update(['urgent_order' => $order]);
+        }
+
+        Cache::forget('office_dashboard_tagihan');
+
+        return response()->json(['success' => true]);
+    }
+
+    public function updateInline(Request $request, $id)
+    {
+        $tracking = trackingTagihanPerusahaan::findOrFail($id);
+        $tagihan  = tagihanPerusahaan::find($tracking->id_tagihan_perusahaan);
+
+        $field = $request->field;
+
+        // ===== Khusus Due Date (2 field) =====
+        if ($field === 'due_date') {
+            $mulai   = $request->tanggal_perkiraan_mulai;
+            $selesai = $request->tanggal_perkiraan_selesai ?: $mulai;
+
+            if (!$mulai) {
+                return response()->json(['success' => false, 'message' => 'Tanggal mulai wajib'], 422);
+            }
+
+            $tracking->tanggal_perkiraan_mulai   = $mulai;
+            $tracking->tanggal_perkiraan_selesai = $selesai;
+            $tracking->save();
+
+            if ($tagihan) {
+                $tagihan->tanggal_perkiraan_mulai   = $mulai;
+                $tagihan->tanggal_perkiraan_selesai = $selesai;
+                $tagihan->save();
+            }
+
+            // Auto status (opsional)
+            if ($tracking->tanggal_selesai) {
+                $due = \Carbon\Carbon::parse($selesai);
+                $realisasi = \Carbon\Carbon::parse($tracking->tanggal_selesai);
+                if ($realisasi->gt($due) && $tracking->status !== 'selesai') {
+                    $tracking->status = 'telat';
+                    $tracking->save();
+                } elseif ($realisasi->lte($due)) {
+                    $tracking->status = 'selesai';
+                    $tracking->save();
+                }
+            }
+
+            Cache::forget('office_dashboard_tagihan');
+
+            return response()->json(['success' => true]);
+        }
+
+        // ===== Field biasa =====
+        $value = $request->value;
+
+        $allowed = [
+            'kegiatan', 'tipe', 'nominal', 'tracking', 'status',
+            'keterangan', 'tanggal_selesai'
+        ];
+
+        if (!in_array($field, $allowed)) {
+            return response()->json(['success' => false, 'message' => 'Field tidak diizinkan'], 422);
+        }
+
+        $tracking->$field = ($value === '' || $value === null) ? null : $value;
+
+        if (in_array($field, ['kegiatan', 'tipe', 'nominal']) && $tagihan) {
+            $tagihan->$field = $tracking->$field;
+            $tagihan->save();
+        }
+
+        // Auto status
+        if (in_array($field, ['tanggal_selesai', 'status'])) {
+            $due = $tracking->tanggal_perkiraan_selesai
+                ? \Carbon\Carbon::parse($tracking->tanggal_perkiraan_selesai)
+                : \Carbon\Carbon::parse($tracking->tanggal_perkiraan_mulai);
+
+            if ($tracking->tanggal_selesai) {
+                $selesai = \Carbon\Carbon::parse($tracking->tanggal_selesai);
+                if ($selesai->gt($due) && $tracking->status !== 'selesai') {
+                    $tracking->status = 'telat';
+                } elseif ($selesai->lte($due)) {
+                    $tracking->status = 'selesai';
+                }
+            }
+        }
+
+        $tracking->save();
+        Cache::forget('office_dashboard_tagihan');
+
+        return response()->json([
+            'success' => true,
+            'status'  => $tracking->status,
+            'value'   => $tracking->$field
+        ]);
     }
 
     public function storeTagihanPerusahaan(Request $request)
@@ -75,13 +222,13 @@ class TagihanPerusahaanController extends Controller
     public function hapusTagihanPerusahaan($id)
     {
         $tracking = trackingTagihanPerusahaan::findOrFail($id);
-        tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->delete();
-
-        $tracking->delete();
         
+        tagihanPerusahaan::where('id', $tracking->id_tagihan_perusahaan)->delete();
+        $tracking->delete();
+
         Cache::forget('office_dashboard_tagihan');
 
-        return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dihapus.');
+        return response()->json(['success' => true]);
     }
 
     public function updateTagihanPerusahaan(Request $request, $id)
