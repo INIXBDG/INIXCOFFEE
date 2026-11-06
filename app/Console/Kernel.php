@@ -6,6 +6,8 @@ use App\Models\ActivityInstruktur;
 use App\Models\outstanding;
 use App\Models\RKM;
 use App\Models\User;
+use App\Models\karyawan;
+use App\Models\PerhitunganTunjanganHR;
 use App\Notifications\OutstandingNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -235,6 +237,27 @@ class Kernel extends ConsoleKernel
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
         $schedule->command('app:legalitas-reminder')->dailyAt('08:00');
+        $schedule->call(function () {
+            $expired = karyawan::query()
+                ->where('bpjs_status', 'permanent')
+                ->whereNotNull('bpjs_restore_until')
+                ->where('bpjs_restore_until', '<=', now())
+                ->get();
+
+            foreach ($expired as $employee) {
+                PerhitunganTunjanganHR::onlyTrashed()
+                    ->where('karyawan_id', $employee->id)
+                    ->when($employee->bpjs_deleted_at, function ($query) use ($employee) {
+                        $query->where('deleted_at', '>=', $employee->bpjs_deleted_at);
+                    })
+                    ->forceDelete();
+
+                $employee->update([
+                    'bpjs_deleted_at' => null,
+                    'bpjs_restore_until' => null,
+                ]);
+            }
+        })->dailyAt('02:00')->description('Purge BPJS permanen setelah masa pemulihan 2 bulan');
     }
 
     protected function commands(): void

@@ -261,6 +261,8 @@ class payrollController extends Controller
         $payrollList = $payrollData['payrollList'];
         $totalEligible = count($payrollData['eligibleIds']);
 
+        
+
         $summary = [
             'total_karyawan' => $totalEligible,
             'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
@@ -427,6 +429,52 @@ class payrollController extends Controller
             ->whereNotIn('jabatan', ['Komisaris', 'Direktur'])
             ->whereNotIn('id', [1, 3])
             ->where('kode_karyawan', 'not like', '%OL%');
+    }
+
+    private function isBpjsEligible(karyawan $karyawan): bool
+    {
+        if ((int) $karyawan->id === 2) {
+            return true;
+        }
+
+        if (in_array((int) $karyawan->id, [1, 3], true)) {
+            return false;
+        }
+
+        $jabatan = strtolower(trim((string) $karyawan->jabatan));
+        if (
+            str_contains($jabatan, 'direksi')
+            || str_contains($jabatan, 'direktur')
+            || str_contains($jabatan, 'komisaris')
+            || $jabatan === 'outsource'
+            || $jabatan === 'pilih jabatan'
+        ) {
+            return false;
+        }
+
+        return !str_starts_with(strtoupper((string) $karyawan->kode_karyawan), 'OL')
+            && !empty($karyawan->nip);
+    }
+
+    private function bpjsKaryawanQuery()
+    {
+        return karyawan::with('divisi')
+            ->where('status_aktif', '1')
+            ->whereNotNull('nip')
+            ->where(function ($query) {
+                $query->where('id', 2)
+                    ->orWhere(function ($query) {
+                        $query->whereRaw("LOWER(COALESCE(jabatan, '')) NOT LIKE ?", ['%direksi%'])
+                            ->whereRaw("LOWER(COALESCE(jabatan, '')) NOT LIKE ?", ['%direktur%'])
+                            ->whereRaw("LOWER(COALESCE(jabatan, '')) NOT LIKE ?", ['%komisaris%'])
+                            ->whereNotIn('jabatan', ['Outsource', 'Pilih Jabatan']);
+                    });
+            })
+            ->whereNotIn('id', [1, 3])
+            ->where(function ($query) {
+                $query->whereNull('kode_karyawan')
+                    ->orWhere('kode_karyawan', 'NOT LIKE', 'OL%');
+            });
     }
 
     private function isPotonganItem($item): bool
@@ -674,12 +722,11 @@ class payrollController extends Controller
 
     public function indexPerhitungan(Request $request)
     {
-        $karyawans = karyawan::with('divisi')
-            ->where('status_aktif', '1')
+        $karyawans = $this->bpjsKaryawanQuery()
+            ->where('bpjs_status', '!=', 'permanent')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNot('jabatan', 'Outsource')
             ->whereNot('divisi', 'Pilih Divisi')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNotNull('nip')
             ->orderBy('nama_lengkap')
             ->get();
@@ -725,6 +772,12 @@ class payrollController extends Controller
         [$bulan, $tahun] = $this->currentPeriod($request);
 
         $karyawan = karyawan::with('divisi')->findOrFail($request->karyawan_id);
+        if (!$this->isBpjsEligible($karyawan)) {
+            return $this->respondError('Jabatan Direksi atau Direksi/komisaris tidak masuk perhitungan BPJS, kecuali Ray Manurung.');
+        }
+        if (in_array($karyawan->bpjs_status, ['suspended', 'permanent'], true)) {
+            return $this->respondError('Status BPJS karyawan sedang nonaktif. Aktifkan kembali sebelum membuat atau mengubah perhitungan.');
+        }
         $pph21Data = Pph21Karyawan::where('karyawan_id', $karyawan->id)->first();
         $employeeLogs = LogGaji::where('id_karyawan', $karyawan->id)->get();
         $gajiDasar = (int) $this->getGajiPokokFromLogs($employeeLogs, $bulan, $tahun);
@@ -734,7 +787,7 @@ class payrollController extends Controller
             $pph21Setup = $this->hitungPph21Bulanan($gajiDasar, $pph21Data->ptkp);
         }
 
-        $existing = $this->latestPayrollOf($karyawan->id);
+        $existing = $this->latestPayrollOf($karyawan->id, $bulan, $tahun);
 
         $tunjanganRows = $this->latestTunjanganByKaryawan([$karyawan->id], $bulan, $tahun)->get($karyawan->id, collect());
         $tunjanganDetail = $this->tunjanganDetailFromRows($tunjanganRows);
@@ -798,6 +851,7 @@ class payrollController extends Controller
             'tunjangan_detail' => $tunjanganDetail,
             'tunjangan_source' => $tunjanganSource,
             'has_tunjangan' => !empty($tunjanganDetail),
+            'bpjs_status' => $karyawan->bpjs_status ?: 'active',
             'existing_payroll' => $existing ? [
                 'id' => $existing->id,
                 'status' => $existing->status,
@@ -843,30 +897,61 @@ class payrollController extends Controller
             'tunjangan.*.total' => 'nullable|numeric',
         ]);
 
-        $karyawan = karyawan::find($request->karyawan_id);
-        if (!$karyawan) {
-            return $this->respondError('Karyawan tidak ditemukan!');
-        }
-        if ($karyawan->jabatan === 'Outsource' || $karyawan->jabatan === 'Pilih Jabatan') {
-            return $this->respondError('Karyawan dengan jabatan ini tidak masuk perhitungan BPJS!');
-        }
-        if (str_starts_with($karyawan->kode_karyawan ?? '', 'OL')) {
-            return $this->respondError('Karyawan outsource (OL) tidak masuk perhitungan BPJS!');
-        }
-        if (empty($karyawan->nip)) {
-            return $this->respondError('Karyawan tanpa NIP tidak masuk perhitungan BPJS!');
-        }
-
-        $existing = $this->latestPayrollOf($request->karyawan_id);
-        if ($existing) {
-            return $this->updatePerhitungan($request, $existing->id);
-        }
-
         [$bulan, $tahun] = $this->currentPeriod($request);
 
         DB::beginTransaction();
         try {
+            $karyawan = karyawan::whereKey($request->karyawan_id)->lockForUpdate()->first();
+            if (!$karyawan) {
+                DB::rollBack();
+                return $this->respondError('Karyawan tidak ditemukan!');
+            }
+            if (!$this->isBpjsEligible($karyawan)) {
+                DB::rollBack();
+                return $this->respondError('Jabatan Direksi atau komisaris tidak masuk perhitungan BPJS, kecuali Ray Manurung.');
+            }
+            if ($karyawan->jabatan === 'Outsource' || $karyawan->jabatan === 'Pilih Jabatan') {
+                DB::rollBack();
+                return $this->respondError('Karyawan dengan jabatan ini tidak masuk perhitungan BPJS!');
+            }
+            if (str_starts_with($karyawan->kode_karyawan ?? '', 'OL')) {
+                DB::rollBack();
+                return $this->respondError('Karyawan outsource (OL) tidak masuk perhitungan BPJS!');
+            }
+            if (empty($karyawan->nip)) {
+                DB::rollBack();
+                return $this->respondError('Karyawan tanpa NIP tidak masuk perhitungan BPJS!');
+            }
+            if (in_array($karyawan->bpjs_status, ['suspended', 'permanent'], true)) {
+                DB::rollBack();
+                return $this->respondError('Status BPJS karyawan sedang nonaktif. Aktifkan kembali sebelum membuat perhitungan.');
+            }
+
             $attrs = $this->buildPayrollAttributes($request, $karyawan);
+            $existing = PerhitunganTunjanganHR::withTrashed()
+                ->where('karyawan_id', $karyawan->id)
+                ->where('bulan', $bulan)
+                ->where('tahun', $tahun)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $oldData = $existing->toArray();
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+
+                $attrs['updated_by'] = Auth::id();
+                $existing->update($attrs);
+                $this->logManualChanges($oldData, $existing->fresh(), $karyawan->id);
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payroll berhasil diupdate!',
+                    'data' => $existing->fresh()->load(['karyawan.divisi', 'createdBy']),
+                ]);
+            }
 
             $perhitungan = PerhitunganTunjanganHR::create(array_merge($attrs, [
                 'karyawan_id' => $request->karyawan_id,
@@ -883,7 +968,13 @@ class payrollController extends Controller
                 'message' => 'Payroll berhasil dibuat!',
                 'data' => $perhitungan->load(['karyawan.divisi', 'createdBy']),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            if ((int) $e->errorInfo[1] === 1062) {
+                return $this->respondError('Data periode ini sudah tersimpan. Silakan muat ulang halaman, lalu gunakan tombol Update.');
+            }
+            return $this->respondError('Terjadi kesalahan: ' . $e->getMessage());
+        } catch (\Throwable $e) {
             DB::rollBack();
             return $this->respondError('Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -973,6 +1064,13 @@ class payrollController extends Controller
     public function updatePerhitungan(Request $request, $id)
     {
         $perhitungan = PerhitunganTunjanganHR::findOrFail($id);
+        $bpjsStatus = $perhitungan->karyawan?->bpjs_status ?: 'active';
+        if (!$perhitungan->karyawan || !$this->isBpjsEligible($perhitungan->karyawan)) {
+            return $this->respondError('Karyawan ini tidak masuk perhitungan BPJS.');
+        }
+        if (in_array($bpjsStatus, ['suspended', 'permanent'], true)) {
+            return $this->respondError('Status BPJS karyawan sedang nonaktif. Aktifkan kembali sebelum mengubah perhitungan.');
+        }
 
         $request->validate([
             'gaji_pokok' => 'required|numeric|min:0',
@@ -1031,10 +1129,10 @@ class payrollController extends Controller
         $divisi = $request->get('divisi');
         $status = $request->get('status');
 
-        $karyawans = karyawan::where('status_aktif', '1')
+        $karyawans = $this->bpjsKaryawanQuery()
+            ->where('bpjs_status', '!=', 'permanent')
             ->whereNot('jabatan', 'Outsource')
             ->whereNot('jabatan', 'Pilih Jabatan')
-            ->where('kode_karyawan', 'not like', 'OL%')
             ->whereNotNull('nip')
             ->with('divisi')
             ->orderBy('nama_lengkap')
@@ -1106,6 +1204,8 @@ class payrollController extends Controller
                 'jabatan' => $emp->jabatan ?? '-',
                 'divisi' => $this->divisiName($emp),
                 'status_aktif' => $emp->status_aktif == '1' ? 'Aktif' : 'Nonaktif',
+                'bpjs_status' => $emp->bpjs_status ?: 'active',
+                'bpjs_restore_until' => $emp->bpjs_restore_until?->format('d/m/Y H:i'),
                 'gaji_pokok' => $gajiPokok,
                 'tunjangan_preview' => $tunjanganData,
                 'payroll' => $payroll
@@ -1169,6 +1269,8 @@ class payrollController extends Controller
             $payrolls = $payrolls->filter(fn($p) => ($p->karyawan->divisi->nama_divisi ?? '-') === $divisi);
         }
 
+        $payrolls = $payrolls->filter(fn($p) => $p->karyawan && $this->isBpjsEligible($p->karyawan))->values();
+
         $totalGajiBulanan = $payrolls->sum('gaji_pokok');
         $totalBPJSTKPerusahaan = $payrolls->sum(function ($p) {
             return ($p->jht_perusahaan ?? 0) + ($p->jkm_perusahaan ?? 0) + ($p->jkk_perusahaan ?? 0) + ($p->jp_perusahaan ?? 0);
@@ -1198,19 +1300,58 @@ class payrollController extends Controller
             )
             ->toArray();
 
-        $trendQuery = PerhitunganTunjanganHR::selectRaw(
+        $trendKaryawans = $this->bpjsKaryawanQuery()->get();
+        if ($divisi) {
+            $trendKaryawans = $trendKaryawans->filter(
+                fn($employee) => $this->divisiName($employee) === $divisi
+            );
+        }
+        $trendEligibleIds = $trendKaryawans->pluck('id');
+        $trendTahun = $tahun ?: date('Y');
+
+        $trendThp = LogGaji::selectRaw(
             '
                 bulan,
-                SUM(thp_kotor) as total_thp,
+                SUM(CAST(COALESCE(gaji, 0) AS DECIMAL(15,2)) + COALESCE(tunjangan_jabatan, 0)) as total_thp
+            '
+        )
+            ->whereIn('id_karyawan', $trendEligibleIds)
+            ->where('tahun', $trendTahun)
+            ->groupBy('bulan')
+            ->orderBy('bulan')
+            ->get()
+            ->keyBy(fn($row) => (int) $row->bulan);
+
+        $trendBpjs = PerhitunganTunjanganHR::selectRaw(
+            '
+                bulan,
                 SUM(total_bpjs_perusahaan) as total_bpjs_per,
                 SUM(total_bpjs_karyawan) as total_bpjs_kar,
                 COUNT(*) as jumlah
-            ',
+            '
         )
-            ->where('tahun', $tahun ?: date('Y'))
+            ->whereIn('karyawan_id', $trendEligibleIds)
+            ->where('tahun', $trendTahun)
             ->groupBy('bulan')
             ->orderBy('bulan')
-            ->get();
+            ->get()
+            ->keyBy(fn($row) => (int) $row->bulan);
+
+        $trendMonths = $trendThp->keys()
+            ->merge($trendBpjs->keys())
+            ->unique()
+            ->sort()
+            ->values();
+
+        $trendQuery = $trendMonths->map(function ($bulan) use ($trendThp, $trendBpjs) {
+            return [
+                'bulan' => $bulan,
+                'total_thp' => (float) ($trendThp->get($bulan)->total_thp ?? 0),
+                'total_bpjs_per' => (float) ($trendBpjs->get($bulan)->total_bpjs_per ?? 0),
+                'total_bpjs_kar' => (float) ($trendBpjs->get($bulan)->total_bpjs_kar ?? 0),
+                'jumlah' => (int) ($trendBpjs->get($bulan)->jumlah ?? 0),
+            ];
+        })->values();
 
         return response()->json([
             'success' => true,
@@ -2149,6 +2290,203 @@ class payrollController extends Controller
         ]);
     }
 
+    public function setBpjsStatus(Request $request, $karyawanId)
+    {
+        $request->validate([
+            'status' => 'required|in:active,suspended,permanent',
+        ]);
+
+        $karyawan = karyawan::findOrFail($karyawanId);
+        if (!$this->isBpjsEligible($karyawan)) {
+            return $this->respondError('Karyawan ini bukan penerima BPJS.');
+        }
+        $status = $request->status;
+        $now = now();
+
+        DB::beginTransaction();
+        try {
+            $update = [
+                'bpjs_status' => $status,
+                'bpjs_status_changed_at' => $now,
+                'bpjs_deleted_at' => null,
+                'bpjs_restore_until' => null,
+                'bpjs_deleted_by' => null,
+            ];
+
+            $karyawan->update($update);
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return $this->respondError('Gagal mengubah status BPJS: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $status === 'permanent'
+                ? 'BPJS dinonaktifkan permanen. Data perhitungan tetap disimpan dan disembunyikan.'
+                : ($status === 'suspended' ? 'BPJS dinonaktifkan sementara.' : 'BPJS berhasil diaktifkan kembali.'),
+            'data' => [
+                'status' => $status,
+                'restore_until' => $karyawan->bpjs_restore_until?->toISOString(),
+            ],
+        ]);
+    }
+
+    public function getBpjsTrash()
+    {
+        $rows = karyawan::query()
+            ->whereIn('bpjs_status', ['suspended', 'permanent'])
+            ->orderByDesc('bpjs_deleted_at')
+            ->get()
+            ->map(fn($k) => [
+                'id' => $k->id,
+                'nip' => $k->nip,
+                'nama' => $k->nama_lengkap,
+                'divisi' => $this->divisiName($k),
+                'status' => $k->bpjs_status,
+                'deleted_at' => $k->bpjs_deleted_at?->format('d/m/Y H:i'),
+                'restore_until' => $k->bpjs_restore_until?->format('d/m/Y H:i'),
+            ]);
+
+        return response()->json(['success' => true, 'data' => $rows]);
+    }
+
+    public function restoreBpjs($karyawanId)
+    {
+        $karyawan = karyawan::findOrFail($karyawanId);
+        if (!in_array($karyawan->bpjs_status, ['suspended', 'permanent'], true)) {
+            return $this->respondError('BPJS karyawan sudah aktif.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $trashed = PerhitunganTunjanganHR::onlyTrashed()
+                ->where('karyawan_id', $karyawan->id)
+                ->get();
+            foreach ($trashed as $payroll) {
+                $payroll->restore();
+            }
+
+            $karyawan->update([
+                'bpjs_status' => 'active',
+                'bpjs_status_changed_at' => now(),
+                'bpjs_deleted_at' => null,
+                'bpjs_restore_until' => null,
+                'bpjs_deleted_by' => null,
+            ]);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return $this->respondError('Gagal memulihkan BPJS: ' . $e->getMessage());
+        }
+
+        return response()->json(['success' => true, 'message' => 'BPJS berhasil dipulihkan.']);
+    }
+
+    public function isiOtomatisBpjs(Request $request)
+    {
+        $request->validate([
+            'bulan' => 'required|integer|between:1,12',
+            'tahun' => 'required|integer|min:2000|max:2100',
+        ]);
+
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $dibuat = 0;
+        $dilewati = 0;
+
+        $prevDate = Carbon::createFromDate($tahun, $bulan, 1)->subMonth();
+        DB::beginTransaction();
+        try {
+            foreach ($this->bpjsKaryawanQuery()->where('bpjs_status', '!=', 'permanent')->get() as $karyawan) {
+                if ($this->latestPayrollOf($karyawan->id, $bulan, $tahun)) {
+                    continue;
+                }
+
+                if (in_array($karyawan->bpjs_status, ['suspended', 'permanent'], true)) {
+                    $dilewati++;
+                    continue;
+                }
+
+                $previous = $this->latestPayrollOf($karyawan->id, $prevDate->month, $prevDate->year);
+                if (!$previous) {
+                    $dilewati++;
+                    continue;
+                }
+
+                $attributes = [
+                    'gaji_pokok' => $previous->gaji_pokok,
+                    'salary_bpjstk' => $previous->salary_bpjstk,
+                    'umk_bandung' => $previous->umk_bandung,
+                    'tunjangan_detail' => $previous->tunjangan_detail,
+                    'total_tunjangan' => $previous->total_tunjangan,
+                    'jht_perusahaan' => $previous->jht_perusahaan,
+                    'jkm_perusahaan' => $previous->jkm_perusahaan,
+                    'jkk_perusahaan' => $previous->jkk_perusahaan,
+                    'jp_perusahaan' => $previous->jp_perusahaan,
+                    'total_bpjstk_perusahaan' => $previous->total_bpjstk_perusahaan,
+                    'jht_karyawan' => $previous->jht_karyawan,
+                    'jp_karyawan' => $previous->jp_karyawan,
+                    'total_bpjstk_karyawan' => $previous->total_bpjstk_karyawan,
+                    'bpjs_kes_perusahaan' => $previous->bpjs_kes_perusahaan,
+                    'bpjs_kes_karyawan' => $previous->bpjs_kes_karyawan,
+                    'total_bpjs_perusahaan' => $previous->total_bpjs_perusahaan,
+                    'total_bpjs_karyawan' => $previous->total_bpjs_karyawan,
+                    'potongan_pph21' => $previous->potongan_pph21,
+                    'thp_kotor' => $previous->thp_kotor,
+                    'thp_bersih' => $previous->thp_bersih,
+                    'total_biaya_perusahaan' => $previous->total_biaya_perusahaan,
+                    'biaya_tanggungan' => $previous->biaya_tanggungan,
+                    'status' => 'calculated',
+                    'updated_by' => Auth::id(),
+                ];
+
+                $target = PerhitunganTunjanganHR::withTrashed()
+                    ->where('karyawan_id', $karyawan->id)
+                    ->where('bulan', $bulan)
+                    ->where('tahun', $tahun)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($target) {
+                    if ($target->trashed()) {
+                        $target->restore();
+                    }
+                    $target->update($attributes);
+                } else {
+                    PerhitunganTunjanganHR::create(array_merge($attributes, [
+                        'karyawan_id' => $karyawan->id,
+                        'bulan' => $bulan,
+                        'tahun' => $tahun,
+                        'created_by' => Auth::id(),
+                    ]));
+                }
+                $dibuat++;
+            }
+            DB::commit();
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            if ((int) $e->errorInfo[1] === 1062) {
+                return $this->respondError('Data periode BPJS sudah tersimpan. Silakan muat ulang daftar lalu coba lagi.');
+            }
+            return $this->respondError('Gagal mengisi otomatis BPJS: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return $this->respondError('Gagal mengisi otomatis BPJS: ' . $e->getMessage());
+        }
+
+        if (!$dibuat) {
+            return $this->respondError('Tidak ada data yang perlu diisi. Semua periode sudah terisi atau bulan sebelumnya belum tersedia.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$dibuat} karyawan berhasil diisi otomatis BPJS.",
+            'dibuat' => $dibuat,
+            'dilewati' => $dilewati,
+        ]);
+    }
+
     public function deleteAllPph(Request $request)
     {
         try {
@@ -2284,9 +2622,14 @@ class payrollController extends Controller
         return [$bulan, $tahun];
     }
 
-    private function latestPayrollOf($karyawanId)
+    private function latestPayrollOf($karyawanId, $bulan = null, $tahun = null)
     {
-        return PerhitunganTunjanganHR::where('karyawan_id', $karyawanId)
+        $query = PerhitunganTunjanganHR::where('karyawan_id', $karyawanId);
+        if ($bulan && $tahun) {
+            $query->where('bulan', $bulan)->where('tahun', $tahun);
+        }
+
+        return $query
             ->orderByDesc('tahun')
             ->orderByDesc('bulan')
             ->orderByDesc('id')
@@ -2390,12 +2733,7 @@ class payrollController extends Controller
         $salaryBPJSTK = $request->salary_bpjstk;
         $bpjs = $this->resolveBpjs($request, $salaryBPJSTK, $umkBandung);
 
-        if ($karyawan && (
-            $karyawan->jabatan === 'Outsource' ||
-            $karyawan->jabatan === 'Pilih Jabatan' ||
-            str_starts_with($karyawan->kode_karyawan ?? '', 'OL') ||
-            empty($karyawan->nip)
-        )) {
+        if ($karyawan && !$this->isBpjsEligible($karyawan)) {
             $salaryBPJSTK = 0;
             $bpjs = $this->zeroBpjs();
         }

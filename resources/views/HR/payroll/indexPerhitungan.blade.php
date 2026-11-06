@@ -36,6 +36,107 @@
             margin-bottom: 1.5rem;
         }
 
+        .page-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: .6rem;
+            flex-wrap: wrap;
+        }
+
+        .page-actions .btn {
+            min-height: 42px;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .page-actions .btn-auto {
+            border-color: #818cf8 !important;
+            color: #4f46e5 !important;
+            background: #fff;
+        }
+
+        .page-actions .btn-trash {
+            border-color: #f59e0b !important;
+            color: #b45309 !important;
+            background: #fff;
+        }
+
+        .bpjs-action-cell {
+            min-width: 210px;
+        }
+
+        .bpjs-action-cell .btn {
+            min-height: 34px;
+        }
+
+        .bpjs-status-btn {
+            border-radius: 7px !important;
+            font-weight: 700;
+            font-size: .72rem;
+            min-width: 112px;
+            white-space: nowrap;
+        }
+
+        .bpjs-status-btn.active {
+            color: #047857 !important;
+            border-color: #a7f3d0 !important;
+            background: #ecfdf5 !important;
+        }
+
+        .bpjs-status-btn.suspended {
+            color: #b45309 !important;
+            border-color: #fcd34d !important;
+            background: #fffbeb !important;
+        }
+
+        .bpjs-status-menu {
+            min-width: 210px;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            box-shadow: var(--shadow-lg);
+            padding: .45rem !important;
+        }
+
+        .bpjs-status-menu .dropdown-item {
+            border-radius: 7px;
+            font-size: .82rem;
+            font-weight: 600;
+            padding: .55rem .65rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .page-header {
+                gap: 1rem;
+            }
+
+            .page-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .page-actions .btn {
+                flex: 1 1 220px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .page-actions .btn {
+                flex-basis: 100%;
+                width: 100%;
+            }
+
+            #filterGroup {
+                width: 100%;
+            }
+
+            #filterGroup select {
+                flex: 1 1 140px;
+            }
+        }
+
         .page-title {
             font-size: 1.6rem;
             font-weight: 700;
@@ -562,6 +663,30 @@
             background: var(--danger);
         }
 
+        .inactive-employee-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .85rem 1rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .inactive-employee-row + .inactive-employee-row {
+            margin-top: .65rem;
+        }
+
+        .inactive-employee-info {
+            min-width: 0;
+        }
+
+        .inactive-employee-info strong,
+        .inactive-employee-info small {
+            display: block;
+        }
+
         @keyframes slideIn {
             from {
                 opacity: 0;
@@ -616,7 +741,11 @@
                 <h1 class="page-title">Perhitungan BPJS</h1>
                 <p class="page-sub mb-0">Data terkini per karyawan. Cukup diisi sekali, update hanya jika ada perubahan.</p>
             </div>
-            <div class="d-flex gap-2 mt-2 mt-sm-0">
+            <div class="page-actions mt-2 mt-sm-0">
+                <button class="btn btn-auto" onclick="isiOtomatisBpjs()"><i
+                        class="fa-solid fa-wand-magic-sparkles me-2"></i>Isi Otomatis Bulan Sebelumnya</button>
+                <button class="btn btn-trash" onclick="lihatSampahBpjs()"><i
+                        class="fa-solid fa-trash-arrow-up me-2"></i>Karyawan non-aktif</button>
                 <button class="btn btn-pri" onclick="openWizard()"><i class="fa-solid fa-plus me-2"></i>Buat
                     Perhitungan</button>
                 <button class="btn btn-outline-danger" onclick="confirmDeleteAll()">
@@ -631,6 +760,18 @@
                     <span class="fw-bold text-primary" style="font-size:.875rem;"><i
                             class="fa-solid fa-filter me-1"></i>Filter</span>
                     <div class="d-flex gap-2 flex-wrap" id="filterGroup">
+                        <select id="fBulan" class="form-select form-select-sm" style="width:130px" onchange="applyFilter()">
+                            @for ($bulan = 1; $bulan <= 12; $bulan++)
+                                <option value="{{ $bulan }}" @if ($bulan == now()->month) selected @endif>
+                                    {{ \Carbon\Carbon::create()->month($bulan)->translatedFormat('F') }}
+                                </option>
+                            @endfor
+                        </select>
+                        <select id="fTahun" class="form-select form-select-sm" style="width:100px" onchange="applyFilter()">
+                            @for ($tahun = now()->year - 5; $tahun <= now()->year + 1; $tahun++)
+                                <option value="{{ $tahun }}" @if ($tahun == now()->year) selected @endif>{{ $tahun }}</option>
+                            @endfor
+                        </select>
                         <select id="fDivisi" class="form-select form-select-sm" style="width:160px"
                             onchange="applyFilter()">
                             <option value="">Semua Divisi</option>
@@ -1340,6 +1481,27 @@
         </div>
     </div>
 
+    <div class="modal fade" id="inactiveEmployeeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius:12px;border:none">
+                <div class="modal-header modal-header-custom border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-user-slash me-2"></i>Karyawan BPJS Nonaktif
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="inactiveEmployeeBody">
+                    <div class="text-center py-4 text-muted">
+                        <i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat data...
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -1411,13 +1573,16 @@
                     },
                     {
                         data: null,
-                        render: d => d.payroll ?
-                            `<span class="fw-bold text-primary">Rp ${fmtNum(d.payroll.thp_bersih)}</span>` :
-                            `<span class="text-muted">—</span>`
+                        render: d => (d.bpjs_status || 'active') !== 'active' ?
+                            `<span class="text-muted">—</span>` :
+                            (d.payroll ?
+                                `<span class="fw-bold text-primary">Rp ${fmtNum(d.payroll.thp_bersih)}</span>` :
+                                `<span class="text-muted">—</span>`)
                     },
                     {
                         data: null,
-                        render: d => d.payroll ? `Rp ${fmtNum(d.payroll.total_bpjs_perusahaan)}` :
+                        render: d => d.bpjs_status === 'active' && d.payroll ?
+                            `Rp ${fmtNum(d.payroll.total_bpjs_perusahaan)}` :
                             `<span class="text-muted">—</span>`
                     },
                     {
@@ -1429,9 +1594,23 @@
                     {
                         data: null,
                         orderable: false,
-                        render: d => d.payroll ?
-                            `<div class="d-flex gap-1"><button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)" title="Detail"><i class="fa-solid fa-eye"></i></button><button class="btn btn-sm btn-pri" onclick="editPayrollId(${d.payroll.id},event)" title="Update"><i class="fa-solid fa-pen"></i></button></div>` :
-                            `<button class="btn btn-sm btn-pri" onclick="openWizardFor(${d.karyawan_id},event)" title="Buat Perhitungan"><i class="fa-solid fa-plus"></i></button>`
+                        render: d => {
+                            const bpjsStatus = d.bpjs_status || 'active';
+                            const bpjsActive = bpjsStatus === 'active';
+                            const payrollActions = d.payroll ?
+                                `<button class="btn btn-sm btn-outline-primary" onclick="showDetail(${d.payroll.id},event)" title="Detail"><i class="fa-solid fa-eye"></i></button>` +
+                                (bpjsActive ? `<button class="btn btn-sm btn-pri" onclick="editPayrollId(${d.payroll.id},event)" title="Update"><i class="fa-solid fa-pen"></i></button>` : '') :
+                                (bpjsActive ? `<button class="btn btn-sm btn-pri" onclick="openWizardFor(${d.karyawan_id},event)" title="Buat Perhitungan"><i class="fa-solid fa-plus"></i></button>` : '');
+                            const statusAction = bpjsStatus === 'active' ?
+                                `<button class="dropdown-item text-warning" onclick="setBpjsStatus(${d.karyawan_id},'suspended',event)"><i class="fa-solid fa-pause me-2"></i>Nonaktif Sementara</button><button class="dropdown-item text-danger" onclick="setBpjsStatus(${d.karyawan_id},'permanent',event)"><i class="fa-solid fa-ban me-2"></i>Nonaktif Permanen</button>` :
+                                `<button class="dropdown-item text-success" onclick="setBpjsStatus(${d.karyawan_id},'active',event)"><i class="fa-solid fa-play me-2"></i>Aktifkan BPJS</button>`;
+                            const statusBtn = bpjsStatus === 'suspended' ?
+                                `<button class="btn btn-sm btn-outline-warning bpjs-status-btn suspended dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-pause me-1"></i>Nonaktif</button>` :
+                                bpjsStatus === 'permanent' ?
+                                `<button class="btn btn-sm btn-outline-danger bpjs-status-btn dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-ban me-1"></i>Nonaktif</button>` :
+                                `<button class="btn btn-sm bpjs-status-btn active dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-shield-halved me-1"></i>BPJS Aktif</button>`;
+                            return `<div class="bpjs-action-cell d-flex gap-1 align-items-center justify-content-end">${payrollActions}<div class="dropdown">${statusBtn}<div class="dropdown-menu dropdown-menu-end bpjs-status-menu">${statusAction}</div></div></div>`;
+                        }
                     },
                 ],
                 rowCallback: function(row, data) {
@@ -1486,7 +1665,9 @@
                     },
                     {
                         data: null,
-                        render: d => d.payroll ? `Rp ${fmtNum(d.payroll.thp_bersih)}` : '—'
+                        render: d => (d.bpjs_status || 'active') !== 'active' ?
+                            '—' :
+                            (d.payroll ? `Rp ${fmtNum(d.payroll.thp_bersih)}` : '—')
                     },
                     {
                         data: null,
@@ -1517,7 +1698,9 @@
         function filterParams() {
             return {
                 divisi: $('#fDivisi').val(),
-                status: $('#fStatus').val()
+                status: $('#fStatus').val(),
+                bulan: $('#fBulan').val(),
+                tahun: $('#fTahun').val()
             };
         }
 
@@ -1556,7 +1739,130 @@
 
         function resetFilter() {
             $('#fDivisi, #fStatus').val('');
+            $('#fBulan').val(new Date().getMonth() + 1);
+            $('#fTahun').val(new Date().getFullYear());
             applyFilter();
+        }
+
+        function setBpjsStatus(karyawanId, status, event) {
+            if (event) event.stopPropagation();
+            const label = status === 'permanent'
+                ? 'Nonaktifkan BPJS secara permanen? Data tetap disimpan dan disembunyikan.'
+                : (status === 'suspended' ? 'Nonaktifkan BPJS untuk sementara sampai diaktifkan manual?' : 'Aktifkan kembali BPJS karyawan ini?');
+            if (!confirm(label)) return;
+
+            $.ajax({
+                url: BASE + '/karyawan/' + karyawanId + '/status-bpjs',
+                method: 'POST',
+                data: {_token: CSRF, status: status}
+            }).done(function(res) {
+                toast(res.message || 'Status BPJS berhasil diperbarui', 'success');
+
+                if (dtTable) {
+                    dtTable.rows().every(function() {
+                        const rowData = this.data();
+                        if (!rowData || Number(rowData.karyawan_id) !== Number(karyawanId)) return;
+
+                        rowData.bpjs_status = status;
+                        this.data(rowData).invalidate();
+                    });
+                    dtTable.draw(false);
+                }
+
+                if (wzEmployee && Number(wzEmployee.id) === Number(karyawanId) && status !== 'active') {
+                    bootstrap.Modal.getInstance('#wizardModal')?.hide();
+                    resetWizard();
+                }
+
+                applyFilter();
+                if (activeDetailId && $('#detailModal').hasClass('show')) {
+                    showDetail(activeDetailId);
+                }
+            }).fail(function(xhr) {
+                toast(xhr.responseJSON?.message || 'Gagal memperbarui status BPJS', 'error');
+            });
+        }
+
+        function isiOtomatisBpjs() {
+            const params = filterParams();
+            if (!confirm(`Isi otomatis BPJS periode ${params.bulan}/${params.tahun} dari bulan sebelumnya untuk data yang belum ada?`)) return;
+
+            $.ajax({
+                url: BASE + '/isi-otomatis',
+                method: 'POST',
+                data: {_token: CSRF, bulan: params.bulan, tahun: params.tahun}
+            }).done(function(res) {
+                toast(res.message || 'BPJS berhasil diisi otomatis', 'success');
+                applyFilter();
+            }).fail(function(xhr) {
+                toast(xhr.responseJSON?.message || 'Gagal mengisi otomatis BPJS', 'error');
+            });
+        }
+
+        function lihatSampahBpjs() {
+            const modalElement = document.getElementById('inactiveEmployeeModal');
+            if (!modalElement) {
+                toast('Popup karyawan nonaktif tidak ditemukan', 'error');
+                return;
+            }
+
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement, {
+                backdrop: true,
+                keyboard: true
+            });
+            $('#inactiveEmployeeBody').html(
+                '<div class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat data...</div>'
+            );
+            modal.show();
+
+            $.ajax({
+                url: BASE + '/sampah-bpjs',
+                method: 'GET'
+            }).done(function(res) {
+                const rows = res.data || [];
+                if (!rows.length) {
+                    $('#inactiveEmployeeBody').html(
+                        '<div class="text-center py-5 text-muted"><i class="fa-solid fa-circle-check fa-2x mb-3 text-success"></i><div>Tidak ada karyawan BPJS nonaktif.</div></div>'
+                    );
+                    return;
+                }
+
+                $('#inactiveEmployeeBody').html(rows.map(r => `
+                    <div class="inactive-employee-row">
+                        <div class="inactive-employee-info">
+                            <strong>${escapeHtml(r.nama || '-')}</strong>
+                            <small class="text-muted">NIP: ${escapeHtml(r.nip || '-')} &middot; ${escapeHtml(r.divisi || '-')}</small>
+                            <small class="${r.status === 'permanent' ? 'text-danger' : 'text-warning'} mt-1">
+                                ${r.status === 'permanent' ? 'Nonaktif Permanen' : 'Nonaktif Sementara'}
+                            </small>
+                        </div>
+                        <button class="btn btn-success btn-sm flex-shrink-0" onclick="restoreBpjsEmployee(${r.id}, '${escapeJs(r.nama || 'karyawan ini')}')">
+                            <i class="fa-solid fa-rotate-left me-1"></i>Aktifkan Kembali
+                        </button>
+                    </div>
+                `).join(''));
+            }).fail(function(xhr) {
+                toast(xhr.responseJSON?.message || 'Gagal memuat Sampah BPJS', 'error');
+                $('#inactiveEmployeeBody').html(
+                    '<div class="text-center py-4 text-danger">Gagal memuat daftar karyawan nonaktif.</div>'
+                );
+            });
+        }
+
+        function restoreBpjsEmployee(karyawanId, employeeName) {
+            if (!confirm(`Aktifkan kembali BPJS karyawan ${employeeName}?`)) return;
+
+            $.ajax({
+                url: BASE + '/sampah-bpjs/' + karyawanId + '/restore',
+                method: 'POST',
+                data: {_token: CSRF}
+            }).done(function(res) {
+                toast(res.message || 'BPJS berhasil dipulihkan', 'success');
+                applyFilter();
+                lihatSampahBpjs();
+            }).fail(function(xhr) {
+                toast(xhr.responseJSON?.message || 'Gagal memulihkan BPJS', 'error');
+            });
         }
 
         function toggleDetailRow($row, data) {
@@ -1584,10 +1890,17 @@
 
         function renderDetailHtml(data) {
             const p = data.payroll;
-            if (!p) return `<div class="p-4 text-center text-muted">Belum ada perhitungan untuk karyawan ini.</div>`;
+            if (!p) {
+                const statusAction = (data.bpjs_status || 'active') === 'active'
+                    ? `<button class="btn btn-sm btn-outline-warning" onclick="setBpjsStatus(${data.karyawan_id},'suspended',event)"><i class="fa-solid fa-pause me-1"></i>Nonaktif Sementara</button><button class="btn btn-sm btn-outline-danger" onclick="setBpjsStatus(${data.karyawan_id},'permanent',event)"><i class="fa-solid fa-ban me-1"></i>Nonaktif Permanen</button>`
+                    : `<button class="btn btn-sm btn-outline-success" onclick="setBpjsStatus(${data.karyawan_id},'active',event)"><i class="fa-solid fa-play me-1"></i>Aktifkan BPJS</button>`;
+                return `<div class="detail-panel m-3"><div class="text-center text-muted mb-3">Belum ada perhitungan untuk karyawan ini.</div><div class="d-flex justify-content-center gap-2"><button class="btn btn-sm btn-pri" onclick="openWizardFor(${data.karyawan_id},event)"><i class="fa-solid fa-plus me-1"></i>Buat Perhitungan</button>${statusAction}</div></div>`;
+            }
 
             const tunjDetail = (p.tunjangan && p.tunjangan.detail) ? p.tunjangan.detail : [];
             const tunjHtml = renderTunjItems(tunjDetail);
+            const inactiveBpjs = (data.bpjs_status || 'active') !== 'active';
+            const bpjsDisplay = value => inactiveBpjs ? '<span class="text-muted">—</span>' : `Rp ${fmtNum(value)}`;
 
             return `
                 <div class="detail-panel m-3">
@@ -1603,31 +1916,36 @@
                         <div class="col-md-4">
                             <div class="detail-section">
                                 <h6><i class="fa-solid fa-building" style="color:var(--success)"></i>BPJS PERUSAHAAN</h6>
-                                <div class="detail-item"><span>JHT (3.7%)</span><span>Rp ${fmtNum(p.jht_perusahaan)}</span></div>
-                                <div class="detail-item"><span>JKM (0.3%)</span><span>Rp ${fmtNum(p.jkm_perusahaan)}</span></div>
-                                <div class="detail-item"><span>JKK (0.24%)</span><span>Rp ${fmtNum(p.jkk_perusahaan)}</span></div>
-                                <div class="detail-item"><span>JP (2%)</span><span>Rp ${fmtNum(p.jp_perusahaan)}</span></div>
-                                <div class="detail-item"><span>BPJS Kes. (4%)</span><span>Rp ${fmtNum(p.bpjs_kes_perusahaan)}</span></div>
-                                <div class="detail-item detail-total"><span>Total</span><span class="text-success fw-bold">Rp ${fmtNum(p.total_bpjs_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JHT (3.7%)</span><span>${bpjsDisplay(p.jht_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JKM (0.3%)</span><span>${bpjsDisplay(p.jkm_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JKK (0.24%)</span><span>${bpjsDisplay(p.jkk_perusahaan)}</span></div>
+                                <div class="detail-item"><span>JP (2%)</span><span>${bpjsDisplay(p.jp_perusahaan)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (4%)</span><span>${bpjsDisplay(p.bpjs_kes_perusahaan)}</span></div>
+                                <div class="detail-item detail-total"><span>Total</span><span class="text-success fw-bold">${bpjsDisplay(p.total_bpjs_perusahaan)}</span></div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="detail-section">
                                 <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>POTONGAN KARYAWAN</h6>
-                                <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(p.jht_karyawan)}</span></div>
-                                <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(p.jp_karyawan)}</span></div>
-                                <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(p.bpjs_kes_karyawan)}</span></div>
-                                <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>Rp ${fmtNum(p.biaya_tanggungan)}</span></div>
+                                <div class="detail-item"><span>JHT (2%)</span><span>${bpjsDisplay(p.jht_karyawan)}</span></div>
+                                <div class="detail-item"><span>JP (1%)</span><span>${bpjsDisplay(p.jp_karyawan)}</span></div>
+                                <div class="detail-item"><span>BPJS Kes. (1%)</span><span>${bpjsDisplay(p.bpjs_kes_karyawan)}</span></div>
+                                <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>${bpjsDisplay(p.biaya_tanggungan)}</span></div>
                                 ${p.potongan_pph21 ? `<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>` : ''}
                                 <div class="detail-item"><span class="fw-semibold">Total Potongan Karyawan</span><span class="text-danger fw-bold">Rp ${fmtNum(totalPotonganKaryawan(p))}</span></div>
-                                <div class="detail-item detail-total"><span>THP Bersih</span><span class="text-primary fw-bold" style="font-size:1.05rem">Rp ${fmtNum(p.thp_bersih)}</span></div>
+                                <div class="detail-item detail-total"><span>THP Bersih</span><span class="text-primary fw-bold" style="font-size:1.05rem">${inactiveBpjs ? '<span class="text-muted">—</span>' : `Rp ${fmtNum(p.thp_bersih)}`}</span></div>
                             </div>
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-4 pt-3 border-top">
                         <button class="btn btn-sm btn-outline-primary" onclick="showDetail(${p.id},event)"><i class="fa-solid fa-eye me-1"></i>Detail Lengkap</button>
-                        <button class="btn btn-sm btn-pri" onclick="editPayrollId(${p.id},event)"><i class="fa-solid fa-pen me-1"></i>Update</button>
+                        ${data.bpjs_status === 'active' ? `<button class="btn btn-sm btn-pri" onclick="editPayrollId(${p.id},event)"><i class="fa-solid fa-pen me-1"></i>Update</button>` : ''}
                         <button class="btn btn-sm btn-outline-danger" onclick="deletePayrollId(${p.id},event)"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
+                        ${data.bpjs_status === 'active'
+                            ? `<button class="btn btn-sm btn-outline-warning" onclick="setBpjsStatus(${data.karyawan_id},'suspended',event)"><i class="fa-solid fa-pause me-1"></i>Nonaktif Sementara</button>
+                               <button class="btn btn-sm btn-outline-danger" onclick="setBpjsStatus(${data.karyawan_id},'permanent',event)"><i class="fa-solid fa-ban me-1"></i>Nonaktif Permanen</button>`
+                            : `<button class="btn btn-sm btn-outline-success" onclick="setBpjsStatus(${data.karyawan_id},'active',event)"><i class="fa-solid fa-play me-1"></i>Aktifkan BPJS</button>`
+                        }
                     </div>
                 </div>`;
         }
@@ -1699,9 +2017,15 @@
                 const p = res.data;
                 const tunjDetail = p.tunjangan_detail || [];
                 globalChangeLogs = res.change_logs || [];
+                const inactiveBpjs = ['suspended', 'permanent'].includes(p.karyawan?.bpjs_status || 'active');
+                const bpjsDisplay = value => inactiveBpjs ? '<span class="text-muted">—</span>' : `Rp ${fmtNum(value)}`;
 
                 $('#detailBtnDelete').removeClass('d-none');
-                $('#detailBtnEdit').removeClass('d-none');
+                if (inactiveBpjs) {
+                    $('#detailBtnEdit').addClass('d-none');
+                } else {
+                    $('#detailBtnEdit').removeClass('d-none');
+                }
 
                 const tunjHtml = renderTunjItems(tunjDetail);
 
@@ -1724,24 +2048,24 @@
                             <div class="col-md-4">
                                 <div class="detail-section">
                                     <h6><i class="fa-solid fa-building" style="color:var(--success)"></i>BPJS Perusahaan</h6>
-                                    <div class="detail-item"><span>JHT (3.7%)</span><span>Rp ${fmtNum(p.jht_perusahaan)}</span></div>
-                                    <div class="detail-item"><span>JKM (0.3%)</span><span>Rp ${fmtNum(p.jkm_perusahaan)}</span></div>
-                                    <div class="detail-item"><span>JKK (0.24%)</span><span>Rp ${fmtNum(p.jkk_perusahaan)}</span></div>
-                                    <div class="detail-item"><span>JP (2%)</span><span>Rp ${fmtNum(p.jp_perusahaan)}</span></div>
-                                    <div class="detail-item"><span>BPJS Kes. (4%)</span><span>Rp ${fmtNum(p.bpjs_kes_perusahaan)}</span></div>
-                                    <div class="detail-item detail-total"><span>Total</span><span class="text-success">Rp ${fmtNum(p.total_bpjs_perusahaan)}</span></div>
+                                    <div class="detail-item"><span>JHT (3.7%)</span><span>${bpjsDisplay(p.jht_perusahaan)}</span></div>
+                                    <div class="detail-item"><span>JKM (0.3%)</span><span>${bpjsDisplay(p.jkm_perusahaan)}</span></div>
+                                    <div class="detail-item"><span>JKK (0.24%)</span><span>${bpjsDisplay(p.jkk_perusahaan)}</span></div>
+                                    <div class="detail-item"><span>JP (2%)</span><span>${bpjsDisplay(p.jp_perusahaan)}</span></div>
+                                    <div class="detail-item"><span>BPJS Kes. (4%)</span><span>${bpjsDisplay(p.bpjs_kes_perusahaan)}</span></div>
+                                    <div class="detail-item detail-total"><span>Total</span><span class="text-success">${bpjsDisplay(p.total_bpjs_perusahaan)}</span></div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="detail-section">
                                     <h6><i class="fa-solid fa-user-shield" style="color:var(--info)"></i>Potongan Karyawan</h6>
-                                    <div class="detail-item"><span>JHT (2%)</span><span>Rp ${fmtNum(p.jht_karyawan)}</span></div>
-                                    <div class="detail-item"><span>JP (1%)</span><span>Rp ${fmtNum(p.jp_karyawan)}</span></div>
-                                    <div class="detail-item"><span>BPJS Kes. (1%)</span><span>Rp ${fmtNum(p.bpjs_kes_karyawan)}</span></div>
-                                    <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>Rp ${fmtNum(p.biaya_tanggungan)}</span></div>
+                                    <div class="detail-item"><span>JHT (2%)</span><span>${bpjsDisplay(p.jht_karyawan)}</span></div>
+                                    <div class="detail-item"><span>JP (1%)</span><span>${bpjsDisplay(p.jp_karyawan)}</span></div>
+                                    <div class="detail-item"><span>BPJS Kes. (1%)</span><span>${bpjsDisplay(p.bpjs_kes_karyawan)}</span></div>
+                                    <div class="detail-item"><span>Biaya Tanggungan (kesehatan)</span><span>${bpjsDisplay(p.biaya_tanggungan)}</span></div>
                                     ${p.potongan_pph21 ? `<div class="detail-item"><span>PPh 21</span><span>Rp ${fmtNum(p.potongan_pph21)}</span></div>` : ''}
                                     <div class="detail-item"><span class="fw-semibold">Total Potongan Karyawan</span><span class="text-danger fw-bold">Rp ${fmtNum(totalPotonganKaryawan(p))}</span></div>
-                                    <div class="detail-item detail-total"><span>THP Bersih</span><span class="fw-bold text-primary">Rp ${fmtNum(p.thp_bersih)}</span></div>
+                                    <div class="detail-item detail-total"><span>THP Bersih</span><span class="fw-bold text-primary">${inactiveBpjs ? '<span class="text-muted">—</span>' : `Rp ${fmtNum(p.thp_bersih)}`}</span></div>
                                 </div>
                             </div>
                         </div>
@@ -1777,6 +2101,10 @@
             $.get(BASE + '/' + id).done(function(res) {
                 if (!res.success) return toast('Gagal memuat data edit', 'error');
                 const p = res.data;
+                if (['suspended', 'permanent'].includes(p.karyawan?.bpjs_status || 'active')) {
+                    toast('BPJS karyawan sedang nonaktif. Aktifkan kembali sebelum mengubah perhitungan.', 'error');
+                    return;
+                }
                 resetWizard();
                 wzEditId = id;
                 wzKeepBpjs = true;
@@ -1807,7 +2135,9 @@
                 goStep(2);
                 recalcBPJSTotals();
                 $.get(BASE + '/karyawan-data', {
-                    karyawan_id: p.karyawan_id
+                    karyawan_id: p.karyawan_id,
+                    bulan: $('#fBulan').val(),
+                    tahun: $('#fTahun').val()
                 }).done(function(r) {
                     if (r.success && r.karyawan.pph21_source === 'pph21') {
                         $('#wPPh').val(fmtNum(r.karyawan.pph21_bulanan));
@@ -1904,11 +2234,18 @@
 
                 $('#wBtnNext').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i>Memuat...');
                 $.get(BASE + '/karyawan-data', {
-                        karyawan_id: empId
+                        karyawan_id: empId,
+                        bulan: $('#fBulan').val(),
+                        tahun: $('#fTahun').val()
                     })
                     .done(function(res) {
                         if (!res.success) {
                             toast(res.message || 'Gagal memuat data', 'error');
+                            return;
+                        }
+                        if (['suspended', 'permanent'].includes(res.bpjs_status)) {
+                            toast('BPJS karyawan sedang nonaktif. Aktifkan kembali sebelum membuat perhitungan.', 'error');
+                            $('#wBtnNext').prop('disabled', false).html('Selanjutnya <i class="fa-solid fa-arrow-right ms-1"></i>');
                             return;
                         }
 
@@ -2124,6 +2461,8 @@
             if (!wzEmployee) return;
             const payload = {
                 karyawan_id: wzEmployee.id,
+                bulan: $('#fBulan').val(),
+                tahun: $('#fTahun').val(),
                 gaji_pokok: parseNum($('#wGajiPokok').val()),
                 salary_bpjstk: parseNum($('#wSalaryBPJSTK').val()),
                 umk_bandung: parseNum($('#wUMK').val()),
@@ -2274,6 +2613,18 @@
 
         function fmtNum(n) {
             return Math.round(parseFloat(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function escapeHtml(value) {
+            return $('<div>').text(value == null ? '' : String(value)).html();
+        }
+
+        function escapeJs(value) {
+            return String(value == null ? '' : value)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\r/g, '\\r')
+                .replace(/\n/g, '\\n');
         }
 
         function totalPotonganKaryawan(p) {
