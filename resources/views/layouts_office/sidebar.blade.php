@@ -55,14 +55,24 @@
         @endcan
 
         @can('View Tagihan Perusahaan')
+            <li class="menu-header small text-uppercase">
+                <span class="menu-header-text">Finance</span>
+            </li>
+
             <li class="menu-item {{ request()->routeIs('office.tagihanPerusahaan.index') ? 'active open' : '' }}">
                 <a href="{{ route('office.tagihanPerusahaan.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
                     <div class="text-truncate" data-i18n="contact">Tagihan Perusahaan</div>
                 </a>
             </li>
-        @endcan
 
+            <li class="menu-item {{ request()->routeIs('analysis-finance.*') ? 'active open' : '' }}">
+                <a href="{{ route('analysis-finance.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-dollar-circle"></i>
+                    <div class="text-truncate" data-i18n="contact">Analysis Finance</div>
+                </a>
+            </li>
+        @endcan
 
         @can('View RAB Kegiatan')
             <li class="menu-header small text-uppercase">
