@@ -119,6 +119,7 @@ use App\Http\Controllers\office\pickupDriverController;
 use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
+use App\Http\Controllers\office\AnalysisFinanceController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\PenambahanSouvenirController;
@@ -1198,6 +1199,21 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/pic-penagihan/update/{id}', [PicPenagihanController::class, 'update'])->name('picpenagihan.update');
         Route::delete('/pic-penagihan/delete/{id}', [PicPenagihanController::class, 'destroy'])->name('picpenagihan.delete');
         Route::get('/pic-penagihan/pdf/{id}', [PicPenagihanController::class, 'exportPdf'])->name('picpenagihan.pdf');
+
+        //Analisys Finance
+        Route::prefix('analisys-finance')->name('analysis-finance.')->group(function () {            
+            Route::get('/', [AnalysisFinanceController::class, 'index'])->name('index');
+            Route::post('/setting', [AnalysisFinanceController::class, 'saveSetting'])->name('setting');
+            Route::post('/internal-process', [AnalysisFinanceController::class, 'saveInternalProcess'])->name('internal');
+            Route::post('/initiatives', [AnalysisFinanceController::class, 'saveInitiatives'])->name('initiatives');
+            Route::post('/quarterly', [AnalysisFinanceController::class, 'saveQuarterly'])->name('quarterly');
+            Route::post('/import/{type}', [AnalysisFinanceController::class, 'import'])->name('import');
+            Route::get('/template/{type}', [AnalysisFinanceController::class, 'template'])->name('template');
+            Route::post('/indicators', [AnalysisFinanceController::class, 'saveIndicators'])->name('indicators');
+            Route::post('/initiatives/add', [AnalysisFinanceController::class, 'addInitiative'])->name('initiatives.add');
+            Route::delete('/initiatives/{id}', [AnalysisFinanceController::class, 'destroyInitiative'])->name('initiatives.destroy');
+            Route::post('/changes', [AnalysisFinanceController::class, 'saveChanges'])->name('changes');
+        });
 
         // Approval Pendapatan & Komisi Sales
         Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
