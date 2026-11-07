@@ -326,6 +326,12 @@
             color: #e11d48;
         }
 
+        .analysis-wrap .brand .brand-logo {
+            height: 32px;
+            width: auto;
+            display: block;
+        }
+
         .analysis-wrap .brand .sep {
             width: 1px;
             height: 22px;
@@ -893,6 +899,30 @@
             animation: aSpin .7s linear infinite;
         }
 
+        .analysis-wrap .ind-card {
+            transition: transform .3s ease, box-shadow .3s ease;
+        }
+
+        .analysis-wrap .ind-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, .12);
+        }
+
+        .analysis-wrap .ind-card .formula {
+            background: var(--analysis-soft);
+            border: 1px solid var(--analysis-line);
+            border-radius: 8px;
+            padding: .55rem .7rem;
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: .78rem;
+            color: #334155;
+        }
+
+        .analysis-wrap .ind-card .real {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
         .analysis-wrap .alert {
             animation: aShake .5s ease both, aFadeUp .5s ease both;
         }
@@ -937,7 +967,6 @@
         $ind = $analysis['indicators'];
 
         $imgCoin = asset('assets/img/coin.png');
-        $imgRoad = asset('assets/img/road.png');
 
         $keepInputs = collect(['mode' => $mode, 'bulan' => $bulan, 'q' => $q])
             ->map(fn($v, $k) => '<input type="hidden" name="' . $k . '" value="' . e($v) . '">')
@@ -945,7 +974,11 @@
 
         $curQ = (int) ceil(now()->month / 3);
         $stateActive = $tahun == now()->year && $endQ == $curQ;
-        $stateText = $stateActive ? 'ACTIVE' : ($tahun > now()->year || ($tahun == now()->year && $endQ > $curQ) ? 'PROYEKSI' : 'SELESAI');
+        $stateText = $stateActive
+            ? 'ACTIVE'
+            : ($tahun > now()->year || ($tahun == now()->year && $endQ > $curQ)
+                ? 'PROYEKSI'
+                : 'SELESAI');
         $periodShort = $mode === 'q' ? 'TR ' . $q : strtoupper($periodLabel);
     @endphp
 
@@ -953,8 +986,8 @@
 
         {{-- ================= HERO ================= --}}
         <div class="hero mb-3">
-            <svg class="hero-road" viewBox="0 0 420 220" preserveAspectRatio="xMaxYMid slice"
-                xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg class="hero-road" viewBox="0 0 420 220" preserveAspectRatio="xMaxYMid slice" xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true">
                 {{-- badan jalan: cabang atas + cabang bawah menyatu ke tepi kanan --}}
                 <g fill="none" stroke="#231f20" stroke-width="36" stroke-linecap="butt" stroke-linejoin="round">
                     <path d="M150 -30 C172 55 235 108 320 110 L440 110" />
@@ -974,7 +1007,7 @@
                 </div>
                 <div class="hero-text">
                     <div class="brand">
-                        <span class="logo"><span class="l1">inix</span> <span class="l2">indo</span></span>
+                        <img class="brand-logo" src="{{ asset('assets/img/inixs.png') }}" alt="Inixindo">
                         <span class="sep"></span>
                         <span class="tagline">"Continuous Learning, Keep Up To Date"</span>
                     </div>
@@ -1045,102 +1078,73 @@
             <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
         @endif
 
-        {{-- ================= A. SKEMA PENILAIAN ================= --}}
-        <div class="analysis-section">
-            A. Skema Penilaian Finance
-            @if ($canEdit)
-                <span class="analysis-tools">
-                    <a class="btn btn-sm btn-outline-secondary"
-                        href="{{ route('analysis-finance.template', ['type' => 'skema', 'tahun' => $tahun]) }}">Template</a>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-import="skema"
-                        data-label="Skema Penilaian">Import</button>
-                </span>
-            @endif
+        {{-- ================= SKEMA PENILAIAN ================= --}}
+        <div class="analysis-section">Skema Penilaian Finance</div>
+        <div class="row g-3">
+            @foreach ($ind as $i)
+                @php
+                    $tCls = [1 => 'info', 2 => 'warning', 3 => 'success'][$i['no']] ?? 'info';
+                    $icon =
+                        $i['status'] === 'Melampaui'
+                            ? '★'
+                            : ($i['status_class'] === 'success'
+                                ? '✓'
+                                : ($i['status_class'] === 'warning'
+                                    ? '◷'
+                                    : '!'));
+                @endphp
+                <div class="col-12 col-lg-4">
+                    <div class="card ind-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="text-muted small fw-semibold">INDIKATOR {{ $i['no'] }}</span>
+                                <span class="pill {{ $tCls }}">Target:
+                                    {{ str_replace(' ide', ' Ide/Tahun', $i['target_label']) }}</span>
+                            </div>
+                            <h6 class="fw-bold mb-3">{{ $i['analysis'] }}</h6>
+                            <div class="formula mb-3"><strong>Formula:</strong><br>{{ $i['formula'] }}</div>
+                            <div class="text-muted small">Realisasi {{ $periodLabel }}</div>
+                            <div class="d-flex justify-content-between align-items-end">
+                                <div class="real {{ $i['ach'] >= 100 ? 'good' : '' }}">
+                                    {{ $i['unit'] === '%' ? $f1($i['realisasi']) . '%' : (int) $i['realisasi'] . ' Ide' }}
+                                </div>
+                                <span class="pill {{ $i['status_class'] }}">{{ $icon }}
+                                    {{ $i['status'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
-        <form method="POST" action="{{ route('analysis-finance.indicators') }}" class="card">
-            @csrf
-            <input type="hidden" name="tahun" value="{{ $tahun }}">
-            {!! $keepInputs !!}
-            <div class="table-responsive">
-                <table class="analysis-table table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Perspektif</th>
-                            <th style="min-width:220px">Indikator</th>
-                            <th style="min-width:260px">Formula</th>
-                            <th class="num">Target</th>
-                            <th class="num">Bobot (%)</th>
-                            <th class="num">Realisasi {{ $periodLabel }}</th>
-                            <th class="num">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($ind as $i)
-                            <tr>
-                                <td>{{ $i['no'] }}</td>
-                                <td class="fw-bold"
-                                    style="color:var(--analysis-{{ $i['class'] === 'financial' ? 'fin' : ($i['class'] === 'internal' ? 'int' : 'learn') }})">
-                                    {{ $i['perspektif'] }}</td>
-                                <td><input class="cell" name="rows[{{ $i['no'] }}][indikator]"
-                                        value="{{ $i['analysis'] }}"></td>
-                                <td><textarea class="cell" rows="2" name="rows[{{ $i['no'] }}][formula]">{{ $i['formula'] }}</textarea></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <input type="number" min="0" step="{{ $i['no'] === 3 ? 1 : 0.01 }}"
-                                            class="cell num-in" name="rows[{{ $i['no'] }}][target]"
-                                            value="{{ $i['target'] + 0 }}">
-                                        <span class="small text-muted">{{ $i['no'] === 3 ? 'ide' : '%' }}</span>
-                                    </div>
-                                </td>
-                                <td><input type="number" min="0" max="100" step="0.01"
-                                        class="cell num-in" name="rows[{{ $i['no'] }}][bobot]"
-                                        value="{{ $i['bobot'] + 0 }}"></td>
-                                <td class="num fw-bold {{ $i['ach'] >= 100 ? 'good' : '' }}">
-                                    {{ $i['unit'] === '%' ? $f1($i['realisasi']) . '%' : (int) $i['realisasi'] . ' ide' }}
-                                </td>
-                                <td class="num"><span class="pill {{ $i['status_class'] }}">{{ $i['status'] }}</span>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-                <span class="small text-muted">Total bobot harus 100%. Realisasi dihitung otomatis dari data C, D, dan
-                    E.</span>
-                <button class="btn btn-sm btn-primary">Simpan Skema</button>
-            </div>
-        </form>
 
-        {{-- ================= B. OVERVIEW ================= --}}
+        {{-- ================= KPI FINANCE OVERVIEW ================= --}}
         <div class="analysis-section">
-            B. Analysis Finance Overview
+            KPI Finance Overview
             @if ($canEdit)
                 <span class="analysis-tools">
                     <a class="btn btn-sm btn-outline-secondary"
-                        href="{{ route('analysis-finance.template', ['type' => 'overview', 'tahun' => $tahun]) }}">Template</a>
+                        href="{{ route('analysis-finance.template', ['type' => 'overview', 'tahun' => $tahun, 'mode' => $mode, 'bulan' => $bulan, 'q' => $q]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="overview"
-                        data-label="Overview">Import</button>
+                        data-label="Realisasi &amp; Pencapaian">Import</button>
                 </span>
             @endif
         </div>
-        <form method="POST" action="{{ route('analysis-finance.indicators') }}" class="card">
+        <form method="POST" action="{{ route('analysis-finance.overview') }}" class="card">
             @csrf
             <input type="hidden" name="tahun" value="{{ $tahun }}">
+            <input type="hidden" name="periode" value="{{ $periodKey }}">
             {!! $keepInputs !!}
             <div class="table-responsive">
                 <table class="analysis-table dark table">
                     <thead>
                         <tr>
                             <th>Perspektif</th>
-                            <th>Indikator</th>
+                            <th>KPI</th>
                             <th style="min-width:240px">Deskripsi</th>
                             <th class="num">Target</th>
-                            <th class="num">Realisasi</th>
-                            <th class="num">Pencapaian %</th>
+                            <th class="num" style="min-width:150px">Realisasi</th>
+                            <th class="num" style="min-width:150px">Pencapaian %</th>
                             <th class="num">Bobot %</th>
-                            <th class="num">Skor</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1150,39 +1154,48 @@
                                     style="color:var(--analysis-{{ $i['class'] === 'financial' ? 'fin' : ($i['class'] === 'internal' ? 'int' : 'learn') }})">
                                     {{ $i['perspektif'] }}</td>
                                 <td class="fw-semibold">{{ $i['analysis'] }}</td>
-                                <td><input class="cell" name="rows[{{ $i['no'] }}][deskripsi]"
-                                        value="{{ $i['deskripsi'] }}"></td>
-                                <td><input type="number" min="0" step="{{ $i['no'] === 3 ? 1 : 0.01 }}"
-                                        class="cell num-in" name="rows[{{ $i['no'] }}][target]"
-                                        value="{{ $i['target'] + 0 }}"></td>
-                                <td class="num good">
-                                    {{ $i['unit'] === '%' ? $f1($i['realisasi']) . '%' : (int) $i['realisasi'] . ' ide' }}
+                                <td class="text-muted">{{ $i['deskripsi'] }}</td>
+                                <td class="num">{{ $i['target_label'] }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <input type="number" min="0" step="0.1" class="cell num-in"
+                                            name="rows[{{ $i['no'] }}][realisasi]"
+                                            value="{{ $i['in_realisasi'] !== null ? $i['in_realisasi'] + 0 : '' }}"
+                                            placeholder="{{ $i['unit'] === '%' ? $f1($i['auto_realisasi']) : (int) $i['auto_realisasi'] }}">
+                                        <span class="small text-muted">{{ $i['unit'] === '%' ? '%' : 'ide' }}</span>
+                                    </div>
                                 </td>
-                                <td class="num {{ $i['ach'] >= 100 ? 'good' : 'bad' }}">{{ $f1($i['ach']) }}%</td>
-                                <td><input type="number" min="0" max="100" step="0.01"
-                                        class="cell num-in" name="rows[{{ $i['no'] }}][bobot]"
-                                        value="{{ $i['bobot'] + 0 }}"></td>
-                                <td class="num fw-bold">{{ $f2($i['skor']) }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center justify-content-center gap-1">
+                                        <input type="number" min="0" step="0.1" class="cell num-in"
+                                            name="rows[{{ $i['no'] }}][pencapaian]"
+                                            value="{{ $i['in_ach'] !== null ? $i['in_ach'] + 0 : '' }}"
+                                            placeholder="{{ $f1($i['auto_ach']) }}">
+                                        <span class="small text-muted">%</span>
+                                    </div>
+                                </td>
+                                <td class="num">{{ rtrim(rtrim(number_format($i['bobot'], 2), '0'), '.') }}%</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="6" class="text-end">TOTAL SKOR ANALYSIS KEUANGAN — {{ $periodLabel }}</td>
+                            <td colspan="6" class="text-end">TOTAL BOBOT KPI KEUANGAN — {{ $periodLabel }}</td>
                             <td class="num">{{ rtrim(rtrim(number_format($analysis['bobot_total'], 2), '0'), '.') }}%
                             </td>
-                            <td class="num total">{{ $f2($analysis['total']) }}</td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
-            <div class="card-footer bg-transparent text-end">
-                <button class="btn btn-sm btn-primary">Simpan Overview</button>
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                <span class="small text-muted">Kosongkan Realisasi / Pencapaian untuk memakai hitungan otomatis (angka
+                    abu-abu). Isian berlaku untuk periode {{ $periodLabel }}.</span>
+                <button class="btn btn-sm btn-primary">Simpan</button>
             </div>
         </form>
 
         {{-- ================= C. FINANCIAL ================= --}}
-        <div class="analysis-section">C. Financial Perspective</div>
+        <div class="analysis-section">Financial Perspective</div>
         <div class="row g-3">
             <div class="col-12 col-lg-6">
                 <div class="card h-100">
@@ -1305,8 +1318,7 @@
                                         <td><input type="number" min="0" class="cell num-in"
                                                 name="rows[{{ $r['bulan'] }}][bukti_kas]" value="{{ $r['in_b'] }}"
                                                 placeholder="{{ $r['shadow_b'] }}"></td>
-                                        <td
-                                            class="num {{ $r['persen'] !== null && $r['persen'] >= 98 ? 'good' : '' }}">
+                                        <td class="num {{ $r['persen'] !== null && $r['persen'] >= 98 ? 'good' : '' }}">
                                             {{ $r['persen'] === null ? '-' : $f1($r['persen']) . '%' }}</td>
                                         <td><input type="text" class="cell"
                                                 name="rows[{{ $r['bulan'] }}][catatan]" value="{{ $r['catatan'] }}">
@@ -1354,11 +1366,14 @@
         </div>
 
         <form id="iniForm" method="POST" action="{{ route('analysis-finance.initiatives') }}">@csrf
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}</form>
+            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
+        </form>
         <form id="iniAddForm" method="POST" action="{{ route('analysis-finance.initiatives.add') }}">@csrf
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}</form>
+            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
+        </form>
         <form id="iniDelForm" method="POST">@csrf @method('DELETE')
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}</form>
+            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
+        </form>
 
         <div class="card mb-3">
             <div class="card-body pb-2">
@@ -1373,7 +1388,7 @@
                             <th>No</th>
                             <th style="min-width:200px">Initiative</th>
                             <th style="min-width:220px">Description</th>
-                            <th style="width:110px">Target Triwulan</th>
+                            <th style="min-width:220px">Keterangan</th>
                             <th style="min-width:200px">Estimated Impact</th>
                             <th class="num">Diterapkan</th>
                             <th></th>
@@ -1389,13 +1404,11 @@
                                 <td><input form="iniForm" class="cell" name="items[{{ $n }}][description]"
                                         value="{{ $ini->description }}"></td>
                                 <td>
-                                    <select form="iniForm" class="cell"
-                                        name="items[{{ $n }}][analysis_target]">
-                                        @for ($t = 1; $t <= 4; $t++)
-                                            <option value="{{ $t }}" @selected($ini->analysis_target == $t)>TR
-                                                {{ $t }}</option>
-                                        @endfor
-                                    </select>
+                                    <input form="iniForm" class="cell" name="items[{{ $n }}][keterangan]"
+                                        value="{{ $ini->keterangan }}" placeholder="Tujuan initiative">
+                                    <input form="iniForm" type="hidden"
+                                        name="items[{{ $n }}][analysis_target]"
+                                        value="{{ $ini->analysis_target }}">
                                 </td>
                                 <td><input form="iniForm" class="cell"
                                         name="items[{{ $n }}][estimated_impact]"
@@ -1413,16 +1426,15 @@
 
                         <tr class="row-add">
                             <td class="fw-bold text-primary">+</td>
-                            <td><input form="iniAddForm" class="cell" name="initiative"
-                                    placeholder="Initiative baru" required></td>
+                            <td><input form="iniAddForm" class="cell" name="initiative" placeholder="Initiative baru"
+                                    required></td>
                             <td><input form="iniAddForm" class="cell" name="description" placeholder="Description">
                             </td>
                             <td>
-                                <select form="iniAddForm" class="cell" name="analysis_target">
-                                    @for ($t = 1; $t <= 4; $t++)
-                                        <option value="{{ $t }}">TR {{ $t }}</option>
-                                    @endfor
-                                </select>
+                                <input form="iniAddForm" class="cell" name="keterangan"
+                                    placeholder="Tujuan initiative">
+                                <input form="iniAddForm" type="hidden" name="analysis_target"
+                                    value="{{ $endQ }}">
                             </td>
                             <td><input form="iniAddForm" class="cell" name="estimated_impact"
                                     placeholder="Estimated impact"></td>
@@ -1504,7 +1516,8 @@
 
         {{-- ================= F. REKAP TRIWULAN ================= --}}
         <div class="recap mt-5">
-            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3" style="position:relative;z-index:2">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"
+                style="position:relative;z-index:2">
                 <div>
                     <span class="pill danger mb-2">Customizable Area</span>
                     <h4>Rekapitulasi Laporan Triwulan</h4>
@@ -1534,9 +1547,6 @@
                             </div>
                             <div class="val"><span data-count="{{ $qr['pct'] }}" data-dec="1"
                                     data-suffix="%">{{ $f1($qr['pct']) }}%</span></div>
-                            <div class="small mb-2">{{ $qr['projection'] ? 'Target Skor' : 'Skor Kinerja' }}:
-                                <strong>{{ $f2($qr['skor']) }}</strong>
-                            </div>
                             <div class="q-bar"><span style="--w:{{ min(100, max(0, $qr['pct'])) }}%"></span></div>
                         </div>
                     </div>
@@ -1554,7 +1564,6 @@
                                         <th>Triwulan</th>
                                         <th>Status</th>
                                         <th class="num">Pencapaian</th>
-                                        <th class="num">Skor</th>
                                         <th class="num">Tren</th>
                                         <th>Catatan</th>
                                         <th>Keterangan</th>
@@ -1568,10 +1577,6 @@
                                                     class="pill {{ $qr['status'] === 'Selesai' ? 'success' : ($qr['status'] === 'Berjalan' ? 'info' : 'muted') }}">{{ $qr['status'] }}</span>
                                             </td>
                                             <td class="num">{{ $f1($qr['pct']) }}%@if ($qr['in_pct'] !== null)
-                                                    <span class="src manual">M</span>
-                                                @endif
-                                            </td>
-                                            <td class="num">{{ $f2($qr['skor']) }}@if ($qr['in_skor'] !== null)
                                                     <span class="src manual">M</span>
                                                 @endif
                                             </td>
@@ -1594,7 +1599,6 @@
                                     <tr>
                                         <td colspan="2">Rata-rata (non-proyeksi)</td>
                                         <td class="num">{{ $done->count() ? $f1($done->avg('pct')) . '%' : '-' }}</td>
-                                        <td class="num">{{ $done->count() ? $f2($done->avg('skor')) : '-' }}</td>
                                         <td colspan="3"></td>
                                     </tr>
                                 </tfoot>
@@ -1683,7 +1687,6 @@
                                     <tr>
                                         <th>Triwulan</th>
                                         <th>Pencapaian %</th>
-                                        <th>Skor</th>
                                         <th>Status</th>
                                         <th>Catatan</th>
                                         <th>Keterangan</th>
@@ -1697,10 +1700,6 @@
                                                     name="rows[{{ $qr['quarter'] }}][nilai_persen]"
                                                     value="{{ $qr['in_pct'] }}"
                                                     placeholder="{{ $f1($qr['auto_pct']) }}"></td>
-                                            <td><input type="number" step="0.01" class="cell"
-                                                    name="rows[{{ $qr['quarter'] }}][skor_kinerja]"
-                                                    value="{{ $qr['in_skor'] }}"
-                                                    placeholder="{{ $f2($qr['auto_skor']) }}"></td>
                                             <td>
                                                 <select class="cell" name="rows[{{ $qr['quarter'] }}][status]">
                                                     <option value="">Otomatis ({{ $qr['auto_status'] }})</option>
@@ -1710,8 +1709,12 @@
                                                     @endforeach
                                                 </select>
                                             </td>
-                                            <td><textarea rows="2" class="cell" name="rows[{{ $qr['quarter'] }}][catatan]">{{ $qr['catatan'] }}</textarea></td>
-                                            <td><textarea rows="2" class="cell" name="rows[{{ $qr['quarter'] }}][keterangan]">{{ $qr['keterangan'] }}</textarea></td>
+                                            <td>
+                                                <textarea rows="2" class="cell" name="rows[{{ $qr['quarter'] }}][catatan]">{{ $qr['catatan'] }}</textarea>
+                                            </td>
+                                            <td>
+                                                <textarea rows="2" class="cell" name="rows[{{ $qr['quarter'] }}][keterangan]">{{ $qr['keterangan'] }}</textarea>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -1769,11 +1772,10 @@
             /* ---- import modal ---- */
             const importUrl = @json(route('analysis-finance.import', ['type' => '__TYPE__']));
             const hints = {
-                skema: 'Kolom: no (1-3), indikator, formula, target, bobot. Sel kosong = tidak diubah. Total bobot harus 100%.',
-                overview: 'Kolom: no (1-3), deskripsi, target, bobot. Sel kosong = tidak diubah. Total bobot harus 100%.',
+                overview: 'Kolom: no (1-3), realisasi, pencapaian. Sel kosong = hitung otomatis. Berlaku untuk periode yang sedang dipilih di filter.',
                 internal: 'Kolom: bulan (1-12 atau nama bulan), pengajuan_barang, bukti_kas, catatan. Sel kosong = pakai data tagihan.',
-                initiatives: 'Kolom: no, initiative, description, analysis_target (TR 1-4), estimated_impact, status (Diterapkan/Belum). Seluruh daftar tahun ini akan DIGANTI.',
-                quarterly: 'Kolom: triwulan (TR 1-4), pencapaian_persen, skor_kinerja, status, catatan, keterangan. Sel kosong = hitung otomatis.'
+                initiatives: 'Kolom: no, initiative, description, keterangan, estimated_impact, status (Diterapkan/Belum). Seluruh daftar tahun ini akan DIGANTI.',
+                quarterly: 'Kolom: triwulan (TR 1-4), pencapaian_persen, status, catatan, keterangan. Sel kosong = hitung otomatis.'
             };
             document.querySelectorAll('[data-import]').forEach(btn => btn.addEventListener('click', () => {
                 const t = btn.dataset.import;

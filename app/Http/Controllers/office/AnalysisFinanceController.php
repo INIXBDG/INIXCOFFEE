@@ -7,6 +7,7 @@ use App\Models\AnalysisFinanceChange;
 use App\Models\AnalysisFinanceIndicator;
 use App\Models\AnalysisFinanceInitiative;
 use App\Models\AnalysisFinanceInternalProcess;
+use App\Models\AnalysisFinanceOverride;
 use App\Models\AnalysisFinanceQuarterlyReport;
 use App\Models\AnalysisFinanceSetting;
 use App\Models\trackingTagihanPerusahaan;
@@ -23,10 +24,9 @@ class AnalysisFinanceController extends Controller
 
     private const TEMPLATE_HEADERS = [
         'internal'    => ['bulan', 'pengajuan_barang', 'bukti_kas', 'catatan'],
-        'initiatives' => ['no', 'initiative', 'description', 'analysis_target', 'estimated_impact', 'status'],
+        'initiatives' => ['no', 'initiative', 'description', 'keterangan', 'estimated_impact', 'status'],
         'quarterly'   => ['triwulan', 'pencapaian_persen', 'skor_kinerja', 'status', 'catatan', 'keterangan'],
-        'skema'       => ['no', 'indikator', 'formula', 'target', 'bobot'],
-        'overview'    => ['no', 'deskripsi', 'target', 'bobot'],
+        'overview'    => ['no', 'realisasi', 'pencapaian'],
     ];
 
     public function __construct()
@@ -52,8 +52,14 @@ class AnalysisFinanceController extends Controller
             default => [($q - 1) * 3 + 1, $q * 3, 'TR ' . $q . ' ' . $tahun],
         };
 
+        $periodKey = match ($mode) {
+            'bulan' => 'm' . $bulan,
+            'tahun' => 'y',
+            default => 'q' . $q,
+        };
+
         $ctx      = $this->context($tahun);
-        $analysis = $this->buildKpi($ctx, $sm, $em);
+        $analysis = $this->buildKpi($ctx, $sm, $em, $periodKey);
         $quarters = $this->quarters($ctx, $tahun);
 
         $finMonthly = [];
@@ -75,6 +81,7 @@ class AnalysisFinanceController extends Controller
             'em'          => $em,
             'endQ'        => $endQ,
             'periodLabel' => $periodLabel,
+            'periodKey'   => $periodKey,
             'listTahun'   => range(now()->year - 3, now()->year + 1),
             'listBulan'   => self::BULAN,
             'setting'     => $ctx['setting'],
@@ -104,6 +111,7 @@ class AnalysisFinanceController extends Controller
             'internal'    => $this->internalRows($tahun, $monthly),
             'initiatives' => AnalysisFinanceInitiative::where('tahun', $tahun)->orderBy('no')->orderBy('id')->get(),
             'ind_text'    => AnalysisFinanceIndicator::where('tahun', $tahun)->get()->keyBy('no'),
+            'overrides'   => AnalysisFinanceOverride::where('tahun', $tahun)->get(),
         ];
     }
 
@@ -173,7 +181,7 @@ class AnalysisFinanceController extends Controller
         return $rows;
     }
 
-    private function buildKpi(array $ctx, int $sm, int $em): array
+    private function buildKpi(array $ctx, int $sm, int $em, ?string $pk = null): array
     {
         $s = $ctx['setting'];
 
@@ -230,7 +238,19 @@ class AnalysisFinanceController extends Controller
 
         $total = 0;
         foreach ($defs as &$d) {
-            $d['ach']  = $d['target'] > 0 ? $d['realisasi'] / $d['target'] * 100 : 0;
+            $o = $pk ? $ctx['overrides']->first(fn($x) => $x->periode === $pk && (int) $x->no === (int) $d['no']) : null;
+
+            $d['auto_realisasi'] = $d['realisasi'];
+            $d['auto_ach']       = $d['target'] > 0 ? $d['realisasi'] / $d['target'] * 100 : 0;
+            $d['in_realisasi']   = $o?->realisasi;
+            $d['in_ach']         = $o?->pencapaian;
+
+            if ($o?->realisasi !== null) {
+                $d['realisasi'] = (float) $o->realisasi;
+            }
+            $d['ach']  = $o?->pencapaian !== null
+                ? (float) $o->pencapaian
+                : ($d['target'] > 0 ? $d['realisasi'] / $d['target'] * 100 : 0);
             $d['skor'] = round($d['ach'] * $d['bobot'] / 100, 2);
             [$d['status'], $d['status_class']] = $this->statusLabel($d['ach']);
             $total += $d['skor'];
@@ -290,7 +310,7 @@ class AnalysisFinanceController extends Controller
                 $autoPct  = 100.0;
                 $autoSkor = $bobot;
             } else {
-                $k        = $this->buildKpi($ctx, ($q - 1) * 3 + 1, $q * 3);
+                $k        = $this->buildKpi($ctx, ($q - 1) * 3 + 1, $q * 3, 'q' . $q);
                 $autoPct  = (float) $k['persen'];
                 $autoSkor = (float) $k['total'];
             }
@@ -415,6 +435,61 @@ class AnalysisFinanceController extends Controller
         return null;
     }
 
+    /** Simpan Realisasi & Pencapaian (override) untuk periode terpilih. Kosong = pakai hitungan otomatis. */
+    public function saveOverview(Request $request)
+    {
+        $request->validate([
+            'tahun'             => 'required|integer',
+            'periode'           => ['required', 'regex:/^(q[1-4]|m([1-9]|1[0-2])|y)$/'],
+            'rows'              => 'required|array',
+            'rows.*.realisasi'  => 'nullable|numeric|min:0',
+            'rows.*.pencapaian' => 'nullable|numeric|min:0',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->rows as $no => $r) {
+                if ($no < 1 || $no > 3) {
+                    continue;
+                }
+                $this->upsertOverride(
+                    (int) $request->tahun,
+                    $request->periode,
+                    (int) $no,
+                    $this->blank($r['realisasi'] ?? null) ? null : (float) $r['realisasi'],
+                    $this->blank($r['pencapaian'] ?? null) ? null : (float) $r['pencapaian']
+                );
+            }
+        });
+
+        return $this->done($request->tahun, 'Realisasi dan pencapaian berhasil disimpan.');
+    }
+
+    private function upsertOverride(int $tahun, string $pk, int $no, $real, $ach): void
+    {
+        $key = ['tahun' => $tahun, 'periode' => $pk, 'no' => $no];
+
+        if ($real === null && $ach === null) {
+            AnalysisFinanceOverride::where($key)->delete();
+            return;
+        }
+
+        AnalysisFinanceOverride::updateOrCreate($key, ['realisasi' => $real, 'pencapaian' => $ach]);
+    }
+
+    /** [bulan_mulai, bulan_akhir, kunci_periode] dari parameter request (mode/bulan/q). */
+    private function requestPeriod(Request $request): array
+    {
+        $mode  = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'q';
+        $bulan = min(12, max(1, (int) $request->get('bulan', now()->month)));
+        $q     = min(4, max(1, (int) $request->get('q', (int) ceil(now()->month / 3))));
+
+        return match ($mode) {
+            'bulan' => [$bulan, $bulan, 'm' . $bulan],
+            'tahun' => [1, 12, 'y'],
+            default => [($q - 1) * 3 + 1, $q * 3, 'q' . $q],
+        };
+    }
+
     public function saveInternalProcess(Request $request)
     {
         $request->validate([
@@ -450,6 +525,7 @@ class AnalysisFinanceController extends Controller
         $items = collect($request->items ?? [])->map(fn($i) => [
             'initiative'       => trim($i['initiative'] ?? ''),
             'description'      => $i['description'] ?? null,
+            'keterangan'       => $i['keterangan'] ?? null,
             'analysis_target'  => (int) ($i['analysis_target'] ?? 1),
             'estimated_impact' => $i['estimated_impact'] ?? null,
             'is_implemented'   => !empty($i['is_implemented']),
@@ -466,19 +542,21 @@ class AnalysisFinanceController extends Controller
             'tahun'            => 'required|integer',
             'initiative'       => 'required|string|max:255',
             'description'      => 'nullable|string',
+            'keterangan'       => 'nullable|string',
             'analysis_target'  => 'required|integer|min:1|max:4',
             'estimated_impact' => 'nullable|string|max:255',
         ]);
 
-        AnalysisFinanceInitiative::create([
+        AnalysisFinanceInitiative::unguarded(fn() => AnalysisFinanceInitiative::create([
             'tahun'            => $d['tahun'],
             'no'               => (int) AnalysisFinanceInitiative::where('tahun', $d['tahun'])->max('no') + 1,
             'initiative'       => trim($d['initiative']),
             'description'      => $d['description'] ?? null,
+            'keterangan'       => $d['keterangan'] ?? null,
             'analysis_target'  => $d['analysis_target'],
             'estimated_impact' => $d['estimated_impact'] ?? null,
             'is_implemented'   => $request->boolean('is_implemented'),
-        ]);
+        ]));
 
         return $this->done($d['tahun'], 'Inisiatif ditambahkan.');
     }
@@ -605,15 +683,16 @@ class AnalysisFinanceController extends Controller
                 if ($this->blank($i['initiative'])) {
                     continue;
                 }
-                AnalysisFinanceInitiative::create([
+                AnalysisFinanceInitiative::unguarded(fn() => AnalysisFinanceInitiative::create([
                     'tahun'            => $tahun,
                     'no'               => $no++,
                     'initiative'       => $i['initiative'],
                     'description'      => $i['description'] ?? null,
+                    'keterangan'       => $i['keterangan'] ?? null,
                     'analysis_target'  => min(4, max(1, (int) ($i['analysis_target'] ?? 1))),
                     'estimated_impact' => $i['estimated_impact'] ?? null,
                     'is_implemented'   => (bool) ($i['is_implemented'] ?? false),
-                ]);
+                ]));
             }
         });
     }
@@ -644,18 +723,17 @@ class AnalysisFinanceController extends Controller
         } elseif ($type === 'initiatives') {
             $list = AnalysisFinanceInitiative::where('tahun', $tahun)->orderBy('no')->get();
             foreach ($list as $i) {
-                $rows[] = [$i->no, $i->initiative, $i->description, 'TR ' . $i->analysis_target, $i->estimated_impact, $i->is_implemented ? 'Diterapkan' : 'Belum'];
+                $rows[] = [$i->no, $i->initiative, $i->description, $i->keterangan, $i->estimated_impact, $i->is_implemented ? 'Diterapkan' : 'Belum'];
             }
             if (empty($rows)) {
-                $rows[] = [1, 'Digitalisasi Reimbursement via Web Tool', 'Otomatisasi form klaim karyawan berbasis online', 'TR 1', 'Memangkas waktu approval sebesar 50%', 'Diterapkan'];
-                $rows[] = [2, 'Contoh inisiatif belum berjalan', 'Deskripsi singkat', 'TR 4', 'Estimasi dampak', 'Belum'];
+                $rows[] = [1, 'Digitalisasi Reimbursement via Web Tool', 'Otomatisasi form klaim karyawan berbasis online', 'Mempercepat proses reimbursement', 'Memangkas waktu approval sebesar 50%', 'Diterapkan'];
+                $rows[] = [2, 'Contoh inisiatif belum berjalan', 'Deskripsi singkat', 'Tujuan initiative', 'Estimasi dampak', 'Belum'];
             }
-        } elseif ($type === 'skema' || $type === 'overview') {
+        } elseif ($type === 'overview') {
+            [$sm, $em, $pk] = $this->requestPeriod($request);
             $ctx = $this->context($tahun);
-            foreach ($this->buildKpi($ctx, 1, 12)['indicators'] as $i) {
-                $rows[] = $type === 'skema'
-                    ? [$i['no'], $i['analysis'], $i['formula'], $i['target'], $i['bobot']]
-                    : [$i['no'], $i['deskripsi'], $i['target'], $i['bobot']];
+            foreach ($this->buildKpi($ctx, $sm, $em, $pk)['indicators'] as $i) {
+                $rows[] = [$i['no'], round($i['realisasi'], 1), round($i['ach'], 1)];
             }
         } else {
             $ctx = $this->context($tahun);
@@ -699,6 +777,8 @@ class AnalysisFinanceController extends Controller
         }
 
         $count = 0;
+        [, $emReq, $pkReq] = $this->requestPeriod($request);
+        $endQ = (int) ceil($emReq / 3);
 
         if ($type === 'internal') {
             DB::transaction(function () use ($rows, $tahun, &$count) {
@@ -720,37 +800,25 @@ class AnalysisFinanceController extends Controller
                 $items[] = [
                     'initiative'       => trim($r['initiative']),
                     'description'      => $r['description'] ?? null,
-                    'analysis_target'  => $this->parseQuarter($r['analysis_target'] ?? '') ?: 1,
+                    'keterangan'       => $r['keterangan'] ?? null,
+                    'analysis_target'  => $endQ,
                     'estimated_impact' => $r['estimated_impact'] ?? null,
                     'is_implemented'   => in_array(strtolower(trim($r['status'] ?? '')), ['diterapkan', 'ya', 'yes', 'y', '1', 'true', 'selesai', 'implemented'], true),
                 ];
             }
             $this->replaceInitiatives($tahun, $items);
             $count = count($items);
-        } elseif ($type === 'skema' || $type === 'overview') {
-            $payload = [];
-            foreach ($rows as $r) {
-                $no = (int) ($r['no'] ?? 0);
-                if ($no < 1 || $no > 3) {
-                    continue;
-                }
-                $row = [];
-                foreach (['indikator', 'formula', 'deskripsi'] as $k) {
-                    if (array_key_exists($k, $r)) {
-                        $row[$k] = $r[$k];
+        } elseif ($type === 'overview') {
+            DB::transaction(function () use ($rows, $tahun, $pkReq, &$count) {
+                foreach ($rows as $r) {
+                    $no = (int) ($r['no'] ?? 0);
+                    if ($no < 1 || $no > 3) {
+                        continue;
                     }
+                    $this->upsertOverride($tahun, $pkReq, $no, $this->num($r['realisasi'] ?? null), $this->num($r['pencapaian'] ?? null));
+                    $count++;
                 }
-                foreach (['target', 'bobot'] as $k) {
-                    if (array_key_exists($k, $r)) {
-                        $row[$k] = $this->num($r[$k]);
-                    }
-                }
-                $payload[$no] = $row;
-                $count++;
-            }
-            if ($err = $this->applyIndicators($tahun, $payload)) {
-                return back()->withErrors(['file' => $err]);
-            }
+            });
         } else {
             DB::transaction(function () use ($rows, $tahun, &$count) {
                 foreach ($rows as $r) {

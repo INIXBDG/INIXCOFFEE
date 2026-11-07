@@ -1213,6 +1213,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/initiatives/add', [AnalysisFinanceController::class, 'addInitiative'])->name('initiatives.add');
             Route::delete('/initiatives/{id}', [AnalysisFinanceController::class, 'destroyInitiative'])->name('initiatives.destroy');
             Route::post('/changes', [AnalysisFinanceController::class, 'saveChanges'])->name('changes');
+            Route::post('overview', [AnalysisFinanceController::class, 'saveOverview'])->name('overview');
+            Route::post('initiatives/add', [AnalysisFinanceController::class, 'addInitiative'])->name('initiatives.add');
+            Route::delete('initiatives/{id}', [AnalysisFinanceController::class, 'destroyInitiative'])->name('initiatives.destroy');
+            Route::post('changes', [AnalysisFinanceController::class, 'saveChanges'])->name('changes');
         });
 
         // Approval Pendapatan & Komisi Sales
