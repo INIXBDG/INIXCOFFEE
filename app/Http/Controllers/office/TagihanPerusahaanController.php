@@ -20,8 +20,8 @@ class TagihanPerusahaanController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View Tagihan Perusahaan', ['only' => ['index', 'detailTagihanPerusahaan', 'dataTagihan']]);
-        $this->middleware('permission:Store Tagihan Perusahaan', ['only' => ['storeTagihanPerusahaan', 'importTagihanPerusahaan']]);
+        $this->middleware('permission:View Tagihan Perusahaan', ['only' => ['index', 'detailTagihanPerusahaan', 'dataTagihan', 'detailJson']]);
+        $this->middleware('permission:Store Tagihan Perusahaan', ['only' => ['storeTagihanPerusahaan', 'importTagihanPerusahaan', 'storeManualBanyak']]);
         $this->middleware('permission:Update Tagihan Perusahaan', ['only' => ['updateTagihanPerusahaan']]);
         $this->middleware('permission:Delete Tagihan Perusahaan', ['only' => ['hapusTagihanPerusahaan', 'hapusSemuaTagihanPerusahaan']]);
     }
@@ -107,7 +107,7 @@ class TagihanPerusahaanController extends Controller
                 $tagihan->save();
             }
 
-            if ($tracking->tanggal_selesai) {
+            if ($tracking->tanggal_selesai && $tracking->status !== 'on_time') {
                 $due = Carbon::parse($selesai);
                 $realisasi = Carbon::parse($tracking->tanggal_selesai);
                 if ($realisasi->gt($due) && $tracking->status !== 'selesai') {
@@ -139,7 +139,7 @@ class TagihanPerusahaanController extends Controller
             $tagihan->save();
         }
 
-        if (in_array($field, ['tanggal_selesai', 'status'])) {
+        if (in_array($field, ['tanggal_selesai', 'status']) && $tracking->status !== 'on_time') {
             $due = $tracking->tanggal_perkiraan_selesai ? Carbon::parse($tracking->tanggal_perkiraan_selesai) : Carbon::parse($tracking->tanggal_perkiraan_mulai);
 
             if ($tracking->tanggal_selesai) {
@@ -196,6 +196,83 @@ class TagihanPerusahaanController extends Controller
         Cache::forget('office_dashboard_tagihan');
 
         return back()->with('success_tagihan', 'Tagihan perusahaan berhasil dibuat.');
+    }
+
+    public function storeManualBanyak(Request $request)
+    {
+        $request->validate(
+            [
+                'rows' => 'required|array|min:1|max:100',
+                'rows.*.kegiatan' => 'required|string|max:255',
+                'rows.*.tipe' => 'required|in:bulanan,tahunan',
+                'rows.*.nominal' => 'nullable|string|max:100',
+                'rows.*.tanggal_perkiraan_mulai' => 'required|date',
+                'rows.*.tanggal_perkiraan_selesai' => 'nullable|date',
+                'rows.*.keterangan' => 'nullable|string',
+                'rows.*.status' => 'nullable|in:pending,proses,selesai,telat,on_time',
+            ],
+            [
+                'rows.required' => 'Minimal isi satu baris.',
+                'rows.*.kegiatan.required' => 'Kolom Kegiatan wajib diisi di semua baris.',
+                'rows.*.tanggal_perkiraan_mulai.required' => 'Kolom Due Date wajib diisi di semua baris.',
+                'rows.*.tanggal_perkiraan_mulai.date' => 'Format Due Date tidak valid.',
+            ],
+        );
+
+        foreach ($request->rows as $i => $r) {
+            if (!empty($r['tanggal_perkiraan_selesai']) && $r['tanggal_perkiraan_selesai'] < $r['tanggal_perkiraan_mulai']) {
+                return response()->json(['success' => false, 'message' => 'Baris ke-' . ($i + 1) . ': tanggal selesai tidak boleh sebelum tanggal mulai.'], 422);
+            }
+        }
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($request->rows as $r) {
+                $mulai = $r['tanggal_perkiraan_mulai'];
+                $selesai = $r['tanggal_perkiraan_selesai'] ?: $mulai;
+
+                [$nominal, $teksNominal] = $this->parseNominal($r['nominal'] ?? null);
+
+                $keterangan = trim($r['keterangan'] ?? '');
+                if ($teksNominal !== null) {
+                    $keterangan = trim($keterangan . ' (Nominal: ' . $teksNominal . ')');
+                }
+
+                $tagihan = tagihanPerusahaan::create([
+                    'kegiatan' => $r['kegiatan'],
+                    'tipe' => $r['tipe'],
+                    'nominal' => $nominal,
+                    'tanggal_perkiraan_mulai' => $mulai,
+                    'tanggal_perkiraan_selesai' => $selesai,
+                    'last_generate' => now(),
+                ]);
+
+                trackingTagihanPerusahaan::create([
+                    'kegiatan' => $r['kegiatan'],
+                    'tipe' => $r['tipe'],
+                    'id_tagihan_perusahaan' => $tagihan->id,
+                    'nominal' => $nominal,
+                    'keterangan' => $keterangan !== '' ? $keterangan : null,
+                    'tracking' => 'Diajukan dan Sedang Ditinjau oleh Finance',
+                    'status' => $r['status'] ?? 'pending',
+                    'tanggal_perkiraan_mulai' => $mulai,
+                    'tanggal_perkiraan_selesai' => $selesai,
+                ]);
+            }
+
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+        }
+
+        Cache::forget('office_dashboard_tagihan');
+
+        return response()->json([
+            'success' => true,
+            'message' => count($request->rows) . ' tagihan berhasil ditambahkan.',
+        ]);
     }
 
     public function importTagihanPerusahaan(Request $request)
@@ -512,6 +589,9 @@ class TagihanPerusahaanController extends Controller
     private function normalisasiStatus($statusRaw, $tanggalSelesai, $selesai)
     {
         if ($statusRaw !== '') {
+            if (preg_match('/on[\s_-]?time|tepat\s*waktu/', $statusRaw)) {
+                return 'on_time';
+            }
             if (preg_match('/telat|terlambat|late|overdue/', $statusRaw)) {
                 return 'telat';
             }
@@ -616,17 +696,89 @@ class TagihanPerusahaanController extends Controller
             $dueDate = Carbon::parse($tracking->tanggal_perkiraan_mulai);
         }
 
-        if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending'])) {
-            $tracking->status = 'telat';
-            $tracking->save();
-        } elseif ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status) {
-            $tracking->status = 'selesai';
-            $tracking->save();
+        if ($tracking->status !== 'on_time') {
+            if ($request->tanggal_selesai !== null && $dueDate < $request->tanggal_selesai && !in_array($request->status, ['selesai', 'pending'])) {
+                $tracking->status = 'telat';
+                $tracking->save();
+            } elseif ($request->tanggal_selesai !== null && $dueDate >= $request->tanggal_selesai && $tracking->status) {
+                $tracking->status = 'selesai';
+                $tracking->save();
+            }
         }
 
         Cache::forget('office_dashboard_tagihan');
 
         return back()->with('success_tagihan', 'Tagihan berhasil diperbaharui.');
+    }
+
+    public function detailJson($id)
+    {
+        $t = trackingTagihanPerusahaan::with('tagihanPerusahaan')->findOrFail($id);
+
+        $mulai = $t->tanggal_perkiraan_mulai ? Carbon::parse($t->tanggal_perkiraan_mulai) : null;
+        $due = $t->tanggal_perkiraan_selesai ? Carbon::parse($t->tanggal_perkiraan_selesai) : $mulai;
+        $realisasi = $t->tanggal_selesai ? Carbon::parse($t->tanggal_selesai) : null;
+
+        $selisihText = '—';
+        $selisihTone = 'secondary';
+
+        if ($due && $realisasi) {
+            $diff = (int) $due->copy()->startOfDay()->diffInDays($realisasi->copy()->startOfDay(), false);
+
+            if ($diff > 0) {
+                $selisihText = "Terlambat {$diff} hari dari due date";
+                $selisihTone = 'danger';
+            } elseif ($diff === 0) {
+                $selisihText = 'Selesai tepat pada due date';
+                $selisihTone = 'success';
+            } else {
+                $selisihText = abs($diff) . ' hari lebih awal dari due date';
+                $selisihTone = 'success';
+            }
+        } elseif ($due) {
+            $sisa = (int) now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
+
+            if ($sisa > 0) {
+                $selisihText = "{$sisa} hari lagi menuju due date";
+                $selisihTone = 'primary';
+            } elseif ($sisa === 0) {
+                $selisihText = 'Jatuh tempo hari ini';
+                $selisihTone = 'warning';
+            } else {
+                $selisihText = 'Lewat ' . abs($sisa) . ' hari dari due date';
+                $selisihTone = 'danger';
+            }
+        }
+
+        $nominal = $t->nominal;
+        $nominalFormat = ($nominal !== null && $nominal !== '' && is_numeric($nominal))
+            ? 'Rp ' . number_format($nominal, 0, ',', '.')
+            : ($nominal ?: '—');
+
+        if ($mulai && $due && $mulai->isSameDay($due)) {
+            $dueText = $mulai->translatedFormat('d F Y');
+        } elseif ($mulai && $due) {
+            $dueText = $mulai->translatedFormat('d F Y') . ' – ' . $due->translatedFormat('d F Y');
+        } else {
+            $dueText = '—';
+        }
+
+        return response()->json([
+            'id' => $t->id,
+            'kegiatan' => $t->tagihanPerusahaan?->kegiatan ?? $t->kegiatan,
+            'tipe' => $t->tagihanPerusahaan?->tipe ?? $t->tipe,
+            'nominal' => $nominalFormat,
+            'status' => $t->status,
+            'tracking' => $t->tracking,
+            'keterangan' => $t->keterangan,
+            'due_date' => $dueText,
+            'tanggal_selesai' => $realisasi ? $realisasi->translatedFormat('d F Y') : null,
+            'selisih_text' => $selisihText,
+            'selisih_tone' => $selisihTone,
+            'is_urgent' => (bool) $t->is_urgent,
+            'dibuat' => $t->created_at ? $t->created_at->translatedFormat('d F Y H:i') : '—',
+            'diperbarui' => $t->updated_at ? $t->updated_at->translatedFormat('d F Y H:i') : '—',
+        ]);
     }
 
     public function dataTagihan($id)

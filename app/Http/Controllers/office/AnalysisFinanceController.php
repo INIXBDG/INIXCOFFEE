@@ -40,7 +40,7 @@ class AnalysisFinanceController extends Controller
     {
         $now   = now();
         $tahun = (int) $request->get('tahun', $now->year);
-        $mode  = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'tahun';
+        $mode = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'tahun';
         $bulan = min(12, max(1, (int) $request->get('bulan', $now->month)));
         $q     = min(4, max(1, (int) $request->get('q', (int) ceil($now->month / 3))));
 
@@ -129,17 +129,24 @@ class AnalysisFinanceController extends Controller
         $today = Carbon::today();
 
         foreach ($tracking as $t) {
-            if (strtolower(trim((string) $t->status)) === 'pending') {
+            $status = strtolower(trim((string) $t->status));
+
+            if ($status === 'pending') {
                 continue;
             }
 
             $m   = Carbon::parse($t->tanggal_perkiraan_mulai)->month;
             $due = Carbon::parse($t->tanggal_perkiraan_selesai ?: $t->tanggal_perkiraan_mulai)->startOfDay();
 
-            $done = !empty($t->tanggal_selesai) || $t->status === 'selesai';
-            $late = $t->status === 'telat'
-                || (!empty($t->tanggal_selesai) && Carbon::parse($t->tanggal_selesai)->startOfDay()->gt($due))
-                || (!$done && $due->lt($today));
+            if ($status === 'on_time') {
+                $done = true;
+                $late = false;
+            } else {
+                $done = !empty($t->tanggal_selesai) || $status === 'selesai';
+                $late = $status === 'telat'
+                    || (!empty($t->tanggal_selesai) && Carbon::parse($t->tanggal_selesai)->startOfDay()->gt($due))
+                    || (!$done && $due->lt($today));
+            }
 
             $rows[$m]['total']++;
             $rows[$m]['nominal'] += (float) $t->nominal;
@@ -408,7 +415,7 @@ class AnalysisFinanceController extends Controller
 
         $sum = $data['bobot_tagihan'] + $data['bobot_pencairan'] + $data['bobot_ide'];
         if (abs($sum - 100) > 0.001) {
-            return back()->withErrors(['bobot' => 'Total bobot harus 100% (saat ini ' . $sum . '%).'])->withInput();
+            return $this->fail('bobot', 'Total bobot harus 100% (saat ini ' . $sum . '%).');
         }
 
         AnalysisFinanceSetting::updateOrCreate(['tahun' => $data['tahun']], collect($data)->except('tahun')->all());
@@ -429,7 +436,7 @@ class AnalysisFinanceController extends Controller
         ]);
 
         if ($err = $this->applyIndicators((int) $request->tahun, $request->rows)) {
-            return back()->withErrors(['bobot' => $err])->withInput();
+            return $this->fail('bobot', $err);
         }
 
         return $this->done($request->tahun, 'Skema penilaian berhasil disimpan.');
@@ -742,8 +749,21 @@ class AnalysisFinanceController extends Controller
 
     private function done($tahun, string $msg)
     {
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
         return redirect()->route('analysis-finance.index', ['tahun' => $tahun] + request()->only('mode', 'bulan', 'q'))
             ->cookie('swal_success', $msg, 1);
+    }
+
+    private function fail(string $field, string $msg)
+    {
+        if (request()->expectsJson()) {
+            return response()->json(['message' => $msg, 'errors' => [$field => [$msg]]], 422);
+        }
+
+        return back()->withErrors([$field => $msg])->withInput();
     }
 
     public function template(Request $request, string $type)
@@ -807,12 +827,12 @@ class AnalysisFinanceController extends Controller
         $rows  = $this->readCsv($request->file('file')->getRealPath());
 
         if (empty($rows)) {
-            return back()->withErrors(['file' => 'File kosong atau header tidak terbaca. Gunakan template yang disediakan.']);
+            return $this->fail('file', 'File kosong atau header tidak terbaca. Gunakan template yang disediakan.');
         }
 
         $missing = array_diff(array_slice(self::TEMPLATE_HEADERS[$type], 0, 1), array_keys($rows[0]));
         if ($missing) {
-            return back()->withErrors(['file' => 'Kolom wajib tidak ditemukan: ' . implode(', ', $missing) . '. Gunakan template yang disediakan.']);
+            return $this->fail('file', 'Kolom wajib tidak ditemukan: ' . implode(', ', $missing) . '. Gunakan template yang disediakan.');
         }
 
         $count = 0;
