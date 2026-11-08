@@ -32,8 +32,13 @@
                 </select>
 
                 @can('Store Tagihan Perusahaan')
-                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
-                        data-bs-target="#modalImport">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalManual">
+                        <i class="bx bx-plus me-1"></i>Tambah Manual
+                    </button>
+                @endcan
+
+                @can('Store Tagihan Perusahaan')
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i>Import Data
                     </button>
                 @endcan
@@ -77,7 +82,7 @@
                                     data-urgent="{{ $tagihan->is_urgent ? 1 : 0 }}">
 
                                     <td class="text-center pe-0">
-                                        @if ($tagihan->status === 'selesai')
+                                        @if (in_array($tagihan->status, ['selesai', 'on_time']))
                                             <input class="custom-check" type="checkbox" checked disabled>
                                         @elseif($tagihan->status === 'telat')
                                             <input class="custom-fail" type="checkbox" checked disabled>
@@ -148,12 +153,15 @@
                                                 'pending' => ['c' => 'warning', 'i' => 'bx-time-five'],
                                                 'proses' => ['c' => 'primary', 'i' => 'bx-loader-circle'],
                                                 'selesai' => ['c' => 'success', 'i' => 'bx-check-circle'],
+                                                'on_time' => ['c' => 'info', 'i' => 'bx-timer'],
                                                 'telat' => ['c' => 'danger', 'i' => 'bx-info-circle'],
                                             ][$tagihan->status] ?? ['c' => 'secondary', 'i' => 'bx-info-circle'];
+                                            $statusLabel =
+                                                ['on_time' => 'On Time'][$tagihan->status] ?? ucfirst($tagihan->status);
                                         @endphp
                                         <span
-                                            class="badge bg-{{ $cfg['c'] }}-subtle text-{{ $cfg['c'] }} px-2 py-1 text-capitalize">
-                                            <i class="bx {{ $cfg['i'] }} me-1"></i>{{ $tagihan->status }}
+                                            class="badge bg-{{ $cfg['c'] }}-subtle text-{{ $cfg['c'] }} px-2 py-1">
+                                            <i class="bx {{ $cfg['i'] }} me-1"></i>{{ $statusLabel }}
                                         </span>
                                     </td>
 
@@ -164,6 +172,11 @@
                                                 <i class="bx bx-dots-horizontal-rounded"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow">
+                                                <li>
+                                                    <button class="dropdown-item text-primary btn-detail-tagihan" data-id="{{ $tagihan->id }}">
+                                                        <i class="bx bx-show me-2"></i>Lihat Detail
+                                                    </button>
+                                                </li>
                                                 <li>
                                                     <button class="dropdown-item text-success btn-ajukan-tagihan"
                                                         data-id="{{ $tagihan->id }}">
@@ -208,6 +221,122 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bx bx-detail me-2"></i>Detail Tagihan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detail-loading" class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+
+                    <div id="detail-content" class="d-none">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                            <div>
+                                <h5 id="d-kegiatan" class="mb-2"></h5>
+                                <span id="d-tipe" class="badge bg-secondary-subtle text-secondary text-capitalize"></span>
+                                <span id="d-urgent" class="badge bg-warning-subtle text-warning d-none">
+                                    <i class="bx bxs-star me-1"></i>Urgent
+                                </span>
+                            </div>
+                            <div id="d-status"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="detail-label">Nominal</div>
+                                <div id="d-nominal" class="detail-value"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-label">Due Date</div>
+                                <div id="d-due" class="detail-value"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-label">Tanggal Selesai (Realisasi)</div>
+                                <div id="d-selesai" class="detail-value"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-label">Selisih Waktu</div>
+                                <div id="d-selisih" class="detail-value"></div>
+                            </div>
+                            <div class="col-12">
+                                <div class="detail-label">Tracking</div>
+                                <div id="d-tracking" class="detail-value"></div>
+                            </div>
+                            <div class="col-12">
+                                <div class="detail-label">Keterangan</div>
+                                <div id="d-keterangan" class="detail-value" style="white-space: pre-wrap;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-label">Dibuat</div>
+                                <div id="d-dibuat" class="detail-value"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-label">Terakhir Diperbarui</div>
+                                <div id="d-diperbarui" class="detail-value"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalManual" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <form id="form-manual" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bx bx-plus me-2"></i>Tambah Tagihan Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small mb-3">
+                        Isi beberapa baris sekaligus, lalu simpan satu kali. Due Date selesai boleh dikosongkan
+                        (otomatis sama dengan tanggal mulai). Nominal boleh angka atau teks.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle" style="min-width:1100px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:30px;">#</th>
+                                    <th style="min-width:200px;">Kegiatan *</th>
+                                    <th style="min-width:110px;">Tipe</th>
+                                    <th style="min-width:130px;">Nominal</th>
+                                    <th style="min-width:140px;">Due Mulai *</th>
+                                    <th style="min-width:140px;">Due Selesai</th>
+                                    <th style="min-width:160px;">Keterangan</th>
+                                    <th style="min-width:110px;">Status</th>
+                                    <th style="width:80px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="manual-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-tambah-baris">
+                            <i class="bx bx-plus me-1"></i>Tambah Baris
+                        </button>
+                        <input type="number" id="jumlah-baris" class="form-control form-control-sm" value="5"
+                            min="1" max="50" style="width:70px;">
+                        <small class="text-muted">baris sekaligus (maks. 100 total)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="btn-simpan-manual">
+                        <i class="bx bx-save me-1"></i>Simpan Semua
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -256,7 +385,8 @@
                 </div>
                 <div class="modal-body">
                     <p class="mb-2">Anda akan menghapus <b>seluruh data tagihan perusahaan</b>.</p>
-                    <p class="mb-0 text-muted small">Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin ingin melanjutkan?</p>
+                    <p class="mb-0 text-muted small">Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin ingin
+                        melanjutkan?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
@@ -274,7 +404,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-2">Ketik <b class="text-danger">HAPUS SEMUA</b> pada kolom di bawah untuk mengonfirmasi penghapusan permanen.</p>
+                    <p class="mb-2">Ketik <b class="text-danger">HAPUS SEMUA</b> pada kolom di bawah untuk mengonfirmasi
+                        penghapusan permanen.</p>
                     <input type="text" id="input-konfirmasi-hapus" class="form-control" placeholder="HAPUS SEMUA"
                         autocomplete="off">
                 </div>
@@ -383,14 +514,52 @@
                 min-width: 1400px !important;
             }
         }
+
+        .detail-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #8592a3;
+            margin-bottom: 2px;
+        }
+
+        .detail-value {
+            font-weight: 500;
+            color: #384551;
+            padding: 8px 12px;
+            background: #f7f8fa;
+            border-radius: 8px;
+            min-height: 38px;
+            word-break: break-word;
+        }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
             const csrf = $('meta[name="csrf-token"]').attr('content');
+
+            const STATUS_MAP = {
+                pending: ['warning', 'bx-time-five', 'Pending'],
+                proses: ['primary', 'bx-loader-circle', 'Proses'],
+                selesai: ['success', 'bx-check-circle', 'Selesai'],
+                on_time: ['info', 'bx-timer', 'On Time'],
+                telat: ['danger', 'bx-info-circle', 'Telat']
+            };
+
+            function statusBadge(v) {
+                const [c, i, label] = STATUS_MAP[v] || ['secondary', 'bx-info-circle', v];
+                return `<span class="badge bg-${c}-subtle text-${c} px-2 py-1"><i class="bx ${i} me-1"></i>${label}</span>`;
+            }
+
+            function statusCheck(v) {
+                if (v === 'selesai' || v === 'on_time')
+                return '<input class="custom-check" type="checkbox" checked disabled>';
+                if (v === 'telat') return '<input class="custom-fail" type="checkbox" checked disabled>';
+                return '<input class="check-blue" type="checkbox" disabled>';
+            }
 
             const table = $('#table-tagihan').DataTable({
                 order: [],
@@ -399,9 +568,14 @@
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/id.json'
                 },
-                columnDefs: [
-                    { orderable: false, targets: [0, 9] },
-                    { searchable: false, targets: [0, 9] }
+                columnDefs: [{
+                        orderable: false,
+                        targets: [0, 9]
+                    },
+                    {
+                        searchable: false,
+                        targets: [0, 9]
+                    }
                 ],
                 stateSave: false
             });
@@ -418,20 +592,20 @@
             $('#filter-tahun, #filter-bulan').on('change', applyFilter);
 
             let isEditMode = false;
-            $('#mode-edit').on('change', function () {
+            $('#mode-edit').on('change', function() {
                 isEditMode = this.checked;
                 $('body').toggleClass('edit-mode', isEditMode);
                 $('#mode-label').text(isEditMode ? 'Mode Edit' : 'Mode Baca');
 
                 if (!isEditMode) {
-                    $('.inline-input').each(function () {
+                    $('.inline-input').each(function() {
                         const $td = $(this).closest('td');
                         $td.html($(this).data('original-html'));
                     });
                 }
             });
 
-            $(document).on('click', 'body.edit-mode td.editable', function (e) {
+            $(document).on('click', 'body.edit-mode td.editable', function(e) {
                 e.stopPropagation();
                 if ($(this).find('.inline-input, .flatpickr-input, .due-edit-wrapper').length) return;
 
@@ -443,7 +617,9 @@
                     const mulai = $td.data('mulai') || '';
                     const selesai = $td.data('selesai') || '';
 
-                    $td.html(`<input type="text" class="form-control form-control-sm flatpickr-due" placeholder="Pilih tanggal..." style="min-width:180px; cursor:pointer;">`);
+                    $td.html(
+                        `<input type="text" class="form-control form-control-sm flatpickr-due" placeholder="Pilih tanggal..." style="min-width:180px; cursor:pointer;">`
+                        );
                     const $input = $td.find('.flatpickr-due');
 
                     const fp = flatpickr($input[0], {
@@ -453,7 +629,7 @@
                         defaultDate: selesai && selesai !== mulai ? [mulai, selesai] : mulai,
                         showMonths: 1,
                         static: false,
-                        onClose: function (selectedDates) {
+                        onClose: function(selectedDates) {
                             if (selectedDates.length === 0) {
                                 $td.html(originalHtml);
                                 return;
@@ -479,24 +655,35 @@
                                     tanggal_perkiraan_mulai: newMulai,
                                     tanggal_perkiraan_selesai: newSelesai
                                 },
-                                success: function () {
+                                success: function() {
                                     $td.data('mulai', newMulai);
                                     $td.data('selesai', newSelesai);
 
                                     if (newMulai === newSelesai) {
                                         const d = new Date(newMulai);
-                                        $td.html(d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
+                                        $td.html(d.toLocaleDateString('id-ID', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric'
+                                        }));
                                     } else {
                                         const d1 = new Date(newMulai);
                                         const d2 = new Date(newSelesai);
                                         $td.html(
-                                            d1.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) +
+                                            d1.toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short'
+                                            }) +
                                             ' – ' +
-                                            d2.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                            d2.toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })
                                         );
                                     }
                                 },
-                                error: function () {
+                                error: function() {
                                     alert('Gagal menyimpan tanggal');
                                     $td.html(originalHtml);
                                 }
@@ -510,14 +697,16 @@
 
                 if (field === 'tanggal_selesai') {
                     const value = $td.data('value') || '';
-                    $td.html(`<input type="text" class="form-control form-control-sm flatpickr-single" style="min-width:140px;">`);
+                    $td.html(
+                        `<input type="text" class="form-control form-control-sm flatpickr-single" style="min-width:140px;">`
+                        );
                     const $input = $td.find('.flatpickr-single');
 
                     const fp = flatpickr($input[0], {
                         dateFormat: "Y-m-d",
                         locale: "id",
                         defaultDate: value || null,
-                        onClose: function (selectedDates) {
+                        onClose: function(selectedDates) {
                             if (selectedDates.length === 0) {
                                 $td.html(originalHtml);
                                 return;
@@ -534,12 +723,16 @@
                                     field: 'tanggal_selesai',
                                     value: newVal
                                 },
-                                success: function () {
+                                success: function() {
                                     $td.data('value', newVal);
                                     const d = new Date(newVal);
-                                    $td.html(d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }));
+                                    $td.html(d.toLocaleDateString('id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    }));
                                 },
-                                error: function () {
+                                error: function() {
                                     alert('Gagal menyimpan');
                                     $td.html(originalHtml);
                                 }
@@ -559,6 +752,7 @@
                                 <option value="pending" ${value === 'pending' ? 'selected' : ''}>Pending</option>
                                 <option value="proses"  ${value === 'proses' ? 'selected' : ''}>Proses</option>
                                 <option value="selesai" ${value === 'selesai' ? 'selected' : ''}>Selesai</option>
+                                <option value="on_time" ${value === 'on_time' ? 'selected' : ''}>On Time</option>
                                 <option value="telat"   ${value === 'telat' ? 'selected' : ''}>Telat</option>
                             </select>`;
                 } else if (field === 'tipe') {
@@ -567,7 +761,8 @@
                                 <option value="tahunan" ${value === 'tahunan' ? 'selected' : ''}>tahunan</option>
                             </select>`;
                 } else if (field === 'nominal') {
-                    html = `<input type="text" class="inline-input" value="${value || ''}" placeholder="Angka atau teks (fluktuatif, one year, dll)">`;
+                    html =
+                        `<input type="text" class="inline-input" value="${value || ''}" placeholder="Angka atau teks (fluktuatif, one year, dll)">`;
                 } else if (field === 'tracking') {
                     const options = [
                         'Diajukan dan Sedang Ditinjau oleh Finance',
@@ -583,7 +778,9 @@
                     ];
 
                     html = `<select class="inline-input form-select form-select-sm tracking-select">` +
-                        options.map(o => `<option value="${o}" ${value === o ? 'selected' : ''}>${o}</option>`).join('') +
+                        options.map(o =>
+                            `<option value="${o}" ${value === o ? 'selected' : ''}>${o}</option>`).join(
+                        '') +
                         `</select>`;
                 } else {
                     html = `<input type="text" class="inline-input" value="${value || ''}">`;
@@ -594,7 +791,7 @@
                 $input.data('original-html', originalHtml).focus();
 
                 if (field === 'tracking') {
-                    $input.on('change', function () {
+                    $input.on('change', function() {
                         let selected = $(this).val();
 
                         if (selected === 'Menunggu invoice dari PIC') {
@@ -618,11 +815,13 @@
                                 field: 'tracking',
                                 value: selected
                             },
-                            success: function () {
+                            success: function() {
                                 $td.data('value', selected);
-                                $td.html(`<div class="text-truncate" style="max-width:210px;" title="${selected}">${selected}</div>`);
+                                $td.html(
+                                    `<div class="text-truncate" style="max-width:210px;" title="${selected}">${selected}</div>`
+                                    );
                             },
-                            error: function () {
+                            error: function() {
                                 alert('Gagal menyimpan');
                                 $td.html(originalHtml);
                             }
@@ -644,41 +843,30 @@
                             field: field,
                             value: newVal
                         },
-                        success: function (res) {
+                        success: function(res) {
                             $td.data('value', newVal);
 
                             if (field === 'nominal') {
-                                if (newVal !== '' && !isNaN(newVal) && !isNaN(parseFloat(newVal))) {
+                                if (newVal !== '' && !isNaN(newVal) && !isNaN(parseFloat(
+                                        newVal))) {
                                     $td.html('Rp ' + Number(newVal).toLocaleString('id-ID'));
                                 } else {
                                     $td.html(newVal || '—');
                                 }
                             } else if (field === 'status') {
-                                const map = {
-                                    pending: ['warning', 'bx-time-five'],
-                                    proses: ['primary', 'bx-loader-circle'],
-                                    selesai: ['success', 'bx-check-circle'],
-                                    telat: ['danger', 'bx-info-circle']
-                                };
-                                const [c, i] = map[newVal] || ['secondary', 'bx-info-circle'];
-                                $td.html(`<span class="badge bg-${c}-subtle text-${c} px-2 py-1 text-capitalize">
-                                            <i class="bx ${i} me-1"></i>${newVal}</span>`);
-
-                                const $checkTd = $td.closest('tr').find('td:first');
-                                if (newVal === 'selesai') {
-                                    $checkTd.html('<input class="custom-check" type="checkbox" checked disabled>');
-                                } else if (newVal === 'telat') {
-                                    $checkTd.html('<input class="custom-fail" type="checkbox" checked disabled>');
-                                } else {
-                                    $checkTd.html('<input class="check-blue" type="checkbox" disabled>');
-                                }
+                                $td.html(statusBadge(newVal));
+                                $td.closest('tr').find('td:first').html(statusCheck(newVal));
                             } else if (field === 'tipe') {
-                                $td.html(`<span class="badge bg-secondary-subtle text-secondary text-capitalize">${newVal}</span>`);
+                                $td.html(
+                                    `<span class="badge bg-secondary-subtle text-secondary text-capitalize">${newVal}</span>`
+                                    );
                             } else {
-                                $td.html(`<div class="text-truncate" style="max-width:210px;" title="${newVal || ''}">${newVal || '—'}</div>`);
+                                $td.html(
+                                    `<div class="text-truncate" style="max-width:210px;" title="${newVal || ''}">${newVal || '—'}</div>`
+                                    );
                             }
                         },
-                        error: function () {
+                        error: function() {
                             alert('Gagal menyimpan perubahan');
                             $td.html(originalHtml);
                         }
@@ -686,7 +874,7 @@
                 }
 
                 $input.on('blur', save);
-                $input.on('keydown', function (e) {
+                $input.on('keydown', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
                         $(this).blur();
@@ -741,9 +929,10 @@
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
                     filter: 'input, select, button, a, .dropdown, .flatpickr-calendar',
-                    onEnd: function () {
+                    onEnd: function() {
                         const orders = {};
-                        document.querySelectorAll('#table-tagihan tbody tr.urgent-row').forEach((tr, index) => {
+                        document.querySelectorAll('#table-tagihan tbody tr.urgent-row').forEach((tr,
+                            index) => {
                             orders[tr.dataset.id] = index + 1;
                         });
 
@@ -754,7 +943,7 @@
                                 _token: csrf,
                                 orders: orders
                             },
-                            error: function () {
+                            error: function() {
                                 alert('Gagal menyimpan urutan');
                             }
                         });
@@ -768,8 +957,10 @@
 
             $(document).off('click.urgentToggle dblclick.urgentToggle');
 
-            $(document).on('click.urgentToggle', '#table-tagihan tbody tr', function (e) {
-                if ($(e.target).closest('input, select, button, a, .dropdown, .flatpickr-calendar, .inline-input').length) return;
+            $(document).on('click.urgentToggle', '#table-tagihan tbody tr', function(e) {
+                if ($(e.target).closest(
+                        'input, select, button, a, .dropdown, .flatpickr-calendar, .inline-input').length)
+                    return;
                 if (isEditMode && $(e.target).closest('.editable').length) return;
 
                 const $tr = $(this);
@@ -791,13 +982,14 @@
                         data: {
                             _token: csrf
                         },
-                        success: function (res) {
+                        success: function(res) {
                             if (res.is_urgent) {
                                 $tr.addClass('urgent-row').attr('data-urgent', 1);
                                 $tr.prependTo($('#table-tagihan tbody'));
                             } else {
                                 $tr.removeClass('urgent-row').attr('data-urgent', 0);
-                                const $lastUrgent = $('#table-tagihan tbody tr.urgent-row').last();
+                                const $lastUrgent = $('#table-tagihan tbody tr.urgent-row')
+                                    .last();
                                 if ($lastUrgent.length) {
                                     $tr.insertAfter($lastUrgent);
                                 } else {
@@ -808,10 +1000,10 @@
                             table.row($tr).invalidate().draw(false);
                             setTimeout(initUrgentSortable, 80);
                         },
-                        error: function () {
+                        error: function() {
                             alert('Gagal mengubah status urgent');
                         },
-                        complete: function () {
+                        complete: function() {
                             $tr.css('opacity', '1');
                             setTimeout(() => {
                                 isProcessing = false;
@@ -826,7 +1018,7 @@
 
             initUrgentSortable();
 
-            $(document).on('click', '.btn-ajukan-tagihan', function () {
+            $(document).on('click', '.btn-ajukan-tagihan', function() {
                 const id = $(this).data('id');
                 const $form = $('#form-ajukan-' + id);
 
@@ -850,7 +1042,7 @@
                 });
             });
 
-            $(document).on('click', '.btn-hapus-tagihan', function () {
+            $(document).on('click', '.btn-hapus-tagihan', function() {
                 if (!confirm('Yakin ingin menghapus tagihan ini?')) return;
 
                 const id = $(this).data('id');
@@ -871,7 +1063,7 @@
                 });
             });
 
-            $('#form-import').on('submit', function (e) {
+            $('#form-import').on('submit', function(e) {
                 e.preventDefault();
 
                 const fileInput = document.getElementById('import-file');
@@ -884,7 +1076,8 @@
                 const $btn = $('#btn-submit-import');
                 const btnHtml = $btn.html();
 
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Memproses...');
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Memproses...');
 
                 $.ajax({
                     url: "{{ route('importTagihanPerusahaan') }}",
@@ -913,14 +1106,159 @@
                 });
             });
 
+            let manualIdx = 0;
+
+            function barisManual() {
+                const n = manualIdx++;
+                return `
+                <tr>
+                    <td class="text-muted nomor-baris"></td>
+                    <td><input type="text" name="rows[${n}][kegiatan]" class="form-control form-control-sm" required></td>
+                    <td>
+                        <select name="rows[${n}][tipe]" class="form-select form-select-sm">
+                            <option value="bulanan">Bulanan</option>
+                            <option value="tahunan">Tahunan</option>
+                        </select>
+                    </td>
+                    <td><input type="text" name="rows[${n}][nominal]" class="form-control form-control-sm" placeholder="Angka / teks"></td>
+                    <td><input type="date" name="rows[${n}][tanggal_perkiraan_mulai]" class="form-control form-control-sm" required></td>
+                    <td><input type="date" name="rows[${n}][tanggal_perkiraan_selesai]" class="form-control form-control-sm"></td>
+                    <td><input type="text" name="rows[${n}][keterangan]" class="form-control form-control-sm"></td>
+                    <td>
+                        <select name="rows[${n}][status]" class="form-select form-select-sm">
+                            <option value="pending">Pending</option>
+                            <option value="proses">Proses</option>
+                            <option value="selesai">Selesai</option>
+                            <option value="on_time">On Time</option>
+                            <option value="telat">Telat</option>
+                        </select>
+                    </td>
+                    <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-dup-baris" title="Duplikat baris"><i class="bx bx-copy"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-hapus-baris" title="Hapus baris"><i class="bx bx-x"></i></button>
+                    </td>
+                </tr>`;
+            }
+
+            function renumber() {
+                $('#manual-body tr').each((i, tr) => $(tr).find('.nomor-baris').text(i + 1));
+            }
+
+            function tambahBaris(jumlah = 1) {
+                for (let i = 0; i < jumlah; i++) {
+                    if ($('#manual-body tr').length >= 100) break;
+                    $('#manual-body').append(barisManual());
+                }
+                renumber();
+            }
+
+            $('#btn-tambah-baris').on('click', function() {
+                tambahBaris(parseInt($('#jumlah-baris').val()) || 1);
+            });
+
+            $(document).on('click', '.btn-hapus-baris', function() {
+                if ($('#manual-body tr').length <= 1) return;
+                $(this).closest('tr').remove();
+                renumber();
+            });
+
+            $(document).on('click', '.btn-dup-baris', function() {
+                const $src = $(this).closest('tr');
+                if ($('#manual-body tr').length >= 100) return;
+                const $new = $(barisManual());
+                $src.find('input, select').each(function(i) {
+                    $new.find('input, select').eq(i).val($(this).val());
+                });
+                $src.after($new);
+                renumber();
+            });
+
+            $('#modalManual').on('show.bs.modal', function() {
+                $('#manual-body').empty();
+                manualIdx = 0;
+                tambahBaris(3);
+            });
+
+            $('#form-manual').on('submit', function(e) {
+                e.preventDefault();
+
+                const $btn = $('#btn-simpan-manual');
+                const btnHtml = $btn.html();
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...');
+
+                $.ajax({
+                    url: "{{ route('storeManualTagihanPerusahaan') }}",
+                    method: 'POST',
+                    data: $(this).serialize(),
+                    headers: {
+                        'X-CSRF-TOKEN': csrf
+                    },
+                    success(res) {
+                        alert(res.message);
+                        window.location.reload();
+                    },
+                    error(xhr) {
+                        let msg = 'Gagal menyimpan data';
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                            if (xhr.responseJSON.errors) {
+                                msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                            }
+                        }
+                        alert(msg);
+                        $btn.prop('disabled', false).html(btnHtml);
+                    }
+                });
+            });
+
+            const urlDetailTpl = "{{ route('detailJsonTagihanPerusahaan', ':id') }}";
+            const modalDetail = new bootstrap.Modal(document.getElementById('modalDetail'));
+
+            $(document).on('click', '.btn-detail-tagihan', function () {
+                const id = $(this).data('id');
+
+                $('#detail-content').addClass('d-none');
+                $('#detail-loading').removeClass('d-none');
+                modalDetail.show();
+
+                $.ajax({
+                    url: urlDetailTpl.replace(':id', id),
+                    method: 'GET',
+                    success(d) {
+                        $('#d-kegiatan').text(d.kegiatan || '—');
+                        $('#d-tipe').text(d.tipe || '—');
+                        $('#d-urgent').toggleClass('d-none', !d.is_urgent);
+                        $('#d-status').html(statusBadge(d.status));
+                        $('#d-nominal').text(d.nominal || '—');
+                        $('#d-due').text(d.due_date || '—');
+                        $('#d-selesai').text(d.tanggal_selesai || '—');
+                        $('#d-selisih')
+                            .attr('class', 'detail-value text-' + d.selisih_tone)
+                            .text(d.selisih_text || '—');
+                        $('#d-tracking').text(d.tracking || '—');
+                        $('#d-keterangan').text(d.keterangan || '—');
+                        $('#d-dibuat').text(d.dibuat || '—');
+                        $('#d-diperbarui').text(d.diperbarui || '—');
+
+                        $('#detail-loading').addClass('d-none');
+                        $('#detail-content').removeClass('d-none');
+                    },
+                    error() {
+                        modalDetail.hide();
+                        alert('Gagal memuat detail tagihan');
+                    }
+                });
+            });
+
             const modalHapus1 = new bootstrap.Modal(document.getElementById('modalHapusSemua1'));
             const modalHapus2 = new bootstrap.Modal(document.getElementById('modalHapusSemua2'));
 
-            $('#btn-hapus-semua').on('click', function () {
+            $('#btn-hapus-semua').on('click', function() {
                 modalHapus1.show();
             });
 
-            $('#btn-hapus-lanjut').on('click', function () {
+            $('#btn-hapus-lanjut').on('click', function() {
                 modalHapus1.hide();
                 $('#input-konfirmasi-hapus').val('');
                 $('#btn-hapus-final').prop('disabled', true);
@@ -930,15 +1268,16 @@
                 }, 350);
             });
 
-            $('#input-konfirmasi-hapus').on('input', function () {
+            $('#input-konfirmasi-hapus').on('input', function() {
                 $('#btn-hapus-final').prop('disabled', $(this).val().trim() !== 'HAPUS SEMUA');
             });
 
-            $('#btn-hapus-final').on('click', function () {
+            $('#btn-hapus-final').on('click', function() {
                 const $btn = $(this);
                 const btnHtml = $btn.html();
 
-                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...');
+                $btn.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...');
 
                 $.ajax({
                     url: "{{ route('hapusSemuaTagihanPerusahaan') }}",

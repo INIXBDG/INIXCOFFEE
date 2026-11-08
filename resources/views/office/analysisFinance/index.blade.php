@@ -1,6 +1,6 @@
 @extends('layouts_office.app')
 
-@section('css')
+@section('office_contents')
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <style>
@@ -919,6 +919,17 @@
             animation: aShake .5s ease both, aFadeUp .5s ease both;
         }
 
+        .analysis-wrap.is-refreshing [data-live],
+        .analysis-wrap.is-refreshing .chart-box {
+            opacity: .5 !important;
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+
+        .analysis-wrap [data-live].swapped *:not(.q-card.active) {
+            animation: none !important;
+        }
+
         .modal.fade .modal-dialog {
             transform: scale(.82) translateY(40px);
             opacity: 0;
@@ -948,9 +959,6 @@
             }
         }
     </style>
-@endsection
-
-@section('office_contents')
     @php
         $f1 = fn($v) => number_format((float) $v, 1, '.', ',');
         $f2 = fn($v) => number_format((float) $v, 2, '.', ',');
@@ -972,9 +980,30 @@
                 ? 'PROYEKSI'
                 : 'SELESAI');
         $periodShort = $mode === 'q' ? 'TR ' . $q : strtoupper($periodLabel);
+
+        $pageData = [
+            'state' => [
+                'tahun' => $tahun,
+                'mode' => $mode,
+                'bulan' => $bulan,
+                'q' => $q,
+                'periode' => $periodKey,
+                'periodLabel' => $periodLabel,
+            ],
+            'fin' => [
+                'q' => array_values($finQuarterly),
+                'm' => array_values($finMonthly),
+            ],
+            'internal' => array_values($internal),
+            'ide' => $analysis['ide'],
+            'quarters' => $quarters,
+            'changes' => $changes->map(fn($c) => ['k' => $c->keterangan, 'a' => $c->nilai_lalu, 'b' => $c->nilai_ini])->values(),
+        ];
     @endphp
 
-    <div class="analysis-wrap">
+    <script type="application/json" id="page-data">@json($pageData)</script>
+
+    <div class="analysis-wrap" id="analysisRoot">
 
         <div class="hero mb-3">
             <svg class="hero-road" viewBox="0 0 420 220" preserveAspectRatio="xMaxYMid slice" xmlns="http://www.w3.org/2000/svg"
@@ -1000,10 +1029,10 @@
                         <span class="sep"></span>
                         <span class="tagline">"Continuous Learning, Keep Up To Date"</span>
                     </div>
-                    <h1 class="hero-title">KPI Finance {{ $tahun }}</h1>
+                    <h1 class="hero-title" id="live-title" data-live>KPI Finance {{ $tahun }}</h1>
                     <p class="hero-sub">Monitoring Kinerja &amp; Efektivitas Pengelolaan Keuangan</p>
                 </div>
-                <div class="score-box">
+                <div class="score-box" id="live-hero" data-live>
                     <span class="status-pill {{ $stateActive ? '' : 'off' }}">STATUS {{ $periodShort }}:
                         {{ $stateText }}</span>
                     <div class="text-muted small mt-2">Skor Kinerja {{ $mode === 'q' ? 'Kumulatif' : '' }}</div>
@@ -1067,7 +1096,7 @@
         @endif
 
         <div class="analysis-section">Skema Penilaian Finance</div>
-        <div class="row g-3">
+        <div class="row g-3" id="live-skema" data-live>
             @foreach ($ind as $i)
                 @php
                     $tCls = [1 => 'info', 2 => 'warning', 3 => 'success'][$i['no']] ?? 'info';
@@ -1110,14 +1139,15 @@
                 <span class="analysis-tools">
                     <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="overview"
                         data-label="KPI Finance Overview">Refresh Data</button>
-                    <a class="btn btn-sm btn-outline-secondary"
+                    <a class="btn btn-sm btn-outline-secondary" data-tpl="overview"
                         href="{{ route('analysis-finance.template', ['type' => 'overview', 'tahun' => $tahun, 'mode' => $mode, 'bulan' => $bulan, 'q' => $q]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="overview"
                         data-label="Realisasi &amp; Pencapaian">Import</button>
                 </span>
             @endif
         </div>
-        <form method="POST" action="{{ route('analysis-finance.overview') }}" class="card">
+        <form method="POST" action="{{ route('analysis-finance.overview') }}" class="card" id="live-overview"
+            data-live data-ajax>
             @csrf
             <input type="hidden" name="tahun" value="{{ $tahun }}">
             <input type="hidden" name="periode" value="{{ $periodKey }}">
@@ -1198,7 +1228,7 @@
         <div class="row g-3">
             <div class="col-12 col-lg-6">
                 <div class="card h-100">
-                    <div class="card-body">
+                    <div class="card-body" id="live-fin" data-live>
                         <h6 class="fw-bold">Ringkasan Tagihan Keuangan <span class="text-muted fw-normal">·
                                 {{ $periodLabel }}</span></h6>
 
@@ -1274,7 +1304,7 @@
                 <span class="analysis-tools">
                     <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="internal"
                         data-label="Internal Process">Refresh Data</button>
-                    <a class="btn btn-sm btn-outline-secondary"
+                    <a class="btn btn-sm btn-outline-secondary" data-tpl="internal"
                         href="{{ route('analysis-finance.template', ['type' => 'internal', 'tahun' => $tahun]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="internal"
                         data-label="Internal Process">Import</button>
@@ -1283,7 +1313,8 @@
         </div>
         <div class="row g-3">
             <div class="col-12 col-lg-6">
-                <form method="POST" action="{{ route('analysis-finance.internal') }}" class="card h-100">
+                <form method="POST" action="{{ route('analysis-finance.internal') }}" class="card h-100"
+                    id="live-internal" data-live data-ajax>
                     @csrf
                     <input type="hidden" name="tahun" value="{{ $tahun }}">
                     {!! $keepInputs !!}
@@ -1361,7 +1392,7 @@
             Learning &amp; Growth Perspective
             @if ($canEdit)
                 <span class="analysis-tools">
-                    <a class="btn btn-sm btn-outline-secondary"
+                    <a class="btn btn-sm btn-outline-secondary" data-tpl="initiatives"
                         href="{{ route('analysis-finance.template', ['type' => 'initiatives', 'tahun' => $tahun]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="initiatives"
                         data-label="Inisiatif Efisiensi">Import</button>
@@ -1369,104 +1400,103 @@
             @endif
         </div>
 
-        <form id="iniForm" method="POST" action="{{ route('analysis-finance.initiatives') }}">@csrf
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
-        </form>
-        <form id="iniAddForm" method="POST" action="{{ route('analysis-finance.initiatives.add') }}">@csrf
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
-        </form>
-        <form id="iniDelForm" method="POST">@csrf @method('DELETE')
-            <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
-        </form>
+        <div id="live-learning" data-live>
+            <form id="iniForm" method="POST" action="{{ route('analysis-finance.initiatives') }}" data-ajax>@csrf
+                <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
+            </form>
+            <form id="iniAddForm" method="POST" action="{{ route('analysis-finance.initiatives.add') }}"
+                data-ajax>@csrf
+                <input type="hidden" name="tahun" value="{{ $tahun }}">{!! $keepInputs !!}
+            </form>
 
-        <div class="card mb-3">
-            <div class="card-body pb-2">
-                <h6 class="fw-bold mb-0">Tabel 1: Daftar Inisiatif Efisiensi Keuangan</h6>
-                <div class="small text-muted">Edit langsung di tabel lalu klik Simpan. Untuk menambah data baru, isi baris
-                    biru di paling bawah.</div>
-            </div>
-            <div class="table-responsive">
-                <table class="analysis-table table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th style="min-width:200px">Initiative</th>
-                            <th style="min-width:220px">Description</th>
-                            <th style="min-width:220px">Keterangan</th>
-                            <th style="min-width:200px">Estimated Impact</th>
-                            <th class="num">Diterapkan</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($initiatives as $ini)
-                            @php $n = $loop->index; @endphp
+            <div class="card mb-3">
+                <div class="card-body pb-2">
+                    <h6 class="fw-bold mb-0">Tabel 1: Daftar Inisiatif Efisiensi Keuangan</h6>
+                    <div class="small text-muted">Edit langsung di tabel lalu klik Simpan. Untuk menambah data baru, isi
+                        baris biru di paling bawah.</div>
+                </div>
+                <div class="table-responsive">
+                    <table class="analysis-table table">
+                        <thead>
                             <tr>
-                                <td>{{ $ini->no }}</td>
-                                <td><input form="iniForm" class="cell" name="items[{{ $n }}][initiative]"
-                                        value="{{ $ini->initiative }}"></td>
-                                <td><input form="iniForm" class="cell" name="items[{{ $n }}][description]"
-                                        value="{{ $ini->description }}"></td>
-                                <td>
-                                    <input form="iniForm" class="cell" name="items[{{ $n }}][keterangan]"
-                                        value="{{ $ini->keterangan }}" placeholder="Tujuan initiative">
-                                    <input form="iniForm" type="hidden"
-                                        name="items[{{ $n }}][analysis_target]"
-                                        value="{{ $ini->analysis_target }}">
-                                </td>
-                                <td><input form="iniForm" class="cell"
-                                        name="items[{{ $n }}][estimated_impact]"
-                                        value="{{ $ini->estimated_impact }}"></td>
-                                <td class="num"><input form="iniForm" type="checkbox" class="form-check-input"
-                                        name="items[{{ $n }}][is_implemented]" value="1"
-                                        @checked($ini->is_implemented)></td>
-                                <td>
-                                    <button type="submit" form="iniDelForm" class="row-del" title="Hapus"
-                                        formaction="{{ route('analysis-finance.initiatives.destroy', $ini->id) }}"
-                                        onclick="return confirm('Hapus inisiatif ini?')">✕</button>
-                                </td>
+                                <th>No</th>
+                                <th style="min-width:200px">Initiative</th>
+                                <th style="min-width:220px">Description</th>
+                                <th style="min-width:220px">Keterangan</th>
+                                <th style="min-width:200px">Estimated Impact</th>
+                                <th class="num">Diterapkan</th>
+                                <th></th>
                             </tr>
-                        @endforeach
+                        </thead>
+                        <tbody>
+                            @foreach ($initiatives as $ini)
+                                @php $n = $loop->index; @endphp
+                                <tr>
+                                    <td>{{ $ini->no }}</td>
+                                    <td><input form="iniForm" class="cell" name="items[{{ $n }}][initiative]"
+                                            value="{{ $ini->initiative }}"></td>
+                                    <td><input form="iniForm" class="cell" name="items[{{ $n }}][description]"
+                                            value="{{ $ini->description }}"></td>
+                                    <td>
+                                        <input form="iniForm" class="cell" name="items[{{ $n }}][keterangan]"
+                                            value="{{ $ini->keterangan }}" placeholder="Tujuan initiative">
+                                        <input form="iniForm" type="hidden"
+                                            name="items[{{ $n }}][analysis_target]"
+                                            value="{{ $ini->analysis_target }}">
+                                    </td>
+                                    <td><input form="iniForm" class="cell"
+                                            name="items[{{ $n }}][estimated_impact]"
+                                            value="{{ $ini->estimated_impact }}"></td>
+                                    <td class="num"><input form="iniForm" type="checkbox" class="form-check-input"
+                                            name="items[{{ $n }}][is_implemented]" value="1"
+                                            @checked($ini->is_implemented)></td>
+                                    <td>
+                                        <button type="button" class="row-del" title="Hapus"
+                                            data-url="{{ route('analysis-finance.initiatives.destroy', $ini->id) }}">✕</button>
+                                    </td>
+                                </tr>
+                            @endforeach
 
-                        <tr class="row-add">
-                            <td class="fw-bold text-primary">+</td>
-                            <td><input form="iniAddForm" class="cell" name="initiative" placeholder="Initiative baru"
-                                    required></td>
-                            <td><input form="iniAddForm" class="cell" name="description" placeholder="Description">
-                            </td>
-                            <td>
-                                <input form="iniAddForm" class="cell" name="keterangan"
-                                    placeholder="Tujuan initiative">
-                                <input form="iniAddForm" type="hidden" name="analysis_target"
-                                    value="{{ $endQ }}">
-                            </td>
-                            <td><input form="iniAddForm" class="cell" name="estimated_impact"
-                                    placeholder="Estimated impact"></td>
-                            <td class="num"><input form="iniAddForm" type="checkbox" class="form-check-input"
-                                    name="is_implemented" value="1"></td>
-                            <td><button type="submit" form="iniAddForm" class="btn btn-sm btn-primary">Tambah</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="5" class="text-end">Total inisiatif / diterapkan (seluruh tahun)</td>
-                            <td class="num">{{ $initiatives->count() }} /
-                                {{ $initiatives->where('is_implemented', true)->count() }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            <div class="card-footer bg-transparent text-end">
-                <button type="submit" form="iniForm" class="btn btn-sm btn-primary">Simpan Perubahan Tabel 1</button>
+                            <tr class="row-add">
+                                <td class="fw-bold text-primary">+</td>
+                                <td><input form="iniAddForm" class="cell" name="initiative"
+                                        placeholder="Initiative baru" required></td>
+                                <td><input form="iniAddForm" class="cell" name="description"
+                                        placeholder="Description"></td>
+                                <td>
+                                    <input form="iniAddForm" class="cell" name="keterangan"
+                                        placeholder="Tujuan initiative">
+                                    <input form="iniAddForm" type="hidden" name="analysis_target"
+                                        value="{{ $endQ }}">
+                                </td>
+                                <td><input form="iniAddForm" class="cell" name="estimated_impact"
+                                        placeholder="Estimated impact"></td>
+                                <td class="num"><input form="iniAddForm" type="checkbox" class="form-check-input"
+                                        name="is_implemented" value="1"></td>
+                                <td><button type="button" id="btnAddInitiative" class="btn btn-sm btn-primary">Tambah</button></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" class="text-end">Total inisiatif / diterapkan (seluruh tahun)</td>
+                                <td class="num">{{ $initiatives->count() }} /
+                                    {{ $initiatives->where('is_implemented', true)->count() }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-footer bg-transparent text-end">
+                    <button type="submit" form="iniForm" class="btn btn-sm btn-primary">Simpan Perubahan Tabel
+                        1</button>
+                </div>
             </div>
         </div>
 
         <div class="row g-3">
             <div class="col-12 col-lg-5">
                 <div class="card h-100">
-                    <div class="card-body">
+                    <div class="card-body" id="live-ide" data-live>
                         <h6 class="fw-bold">Tabel 2: Hasil Rekap Inisiatif <span class="text-muted fw-normal">· s.d. TR
                                 {{ $endQ }}</span></h6>
                         <table class="analysis-table table">
@@ -1531,7 +1561,7 @@
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="quarterly"
                             data-label="Rekapitulasi Triwulan">Refresh Data</button>
-                        <a class="btn btn-sm btn-outline-light"
+                        <a class="btn btn-sm btn-outline-light" data-tpl="quarterly"
                             href="{{ route('analysis-finance.template', ['type' => 'quarterly', 'tahun' => $tahun]) }}">Template</a>
                         <button type="button" class="btn btn-sm btn-outline-light" data-import="quarterly"
                             data-label="Rekap Triwulan">Import</button>
@@ -1541,7 +1571,7 @@
                 @endif
             </div>
 
-            <div class="row g-3 mb-4" style="position:relative;z-index:2">
+            <div class="row g-3 mb-4" id="live-qcards" data-live style="position:relative;z-index:2">
                 @foreach ($quarters as $qr)
                     <div class="col-6 col-lg-3">
                         <div
@@ -1560,7 +1590,7 @@
 
             <div class="row g-3" style="position:relative;z-index:2">
                 <div class="col-12 col-xl-7">
-                    <div class="panel-light h-100">
+                    <div class="panel-light h-100" id="live-qtable" data-live>
                         <h6 class="fw-bold">Tabel Rekapitulasi &amp; Catatan</h6>
                         <div class="table-responsive">
                             <table class="analysis-table table">
@@ -1621,8 +1651,8 @@
 
             <div class="row g-3 mt-1" style="position:relative;z-index:2">
                 <div class="col-12">
-                    <div class="panel-light">
-                        <form method="POST" action="{{ route('analysis-finance.changes') }}">
+                    <div class="panel-light" id="live-chg" data-live>
+                        <form method="POST" action="{{ route('analysis-finance.changes') }}" data-ajax>
                             @csrf
                             <input type="hidden" name="tahun" value="{{ $tahun }}">
                             <input type="hidden" name="quarter" value="{{ $endQ }}">
@@ -1673,15 +1703,13 @@
         <div class="modal fade" id="modalQuarterly" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <form class="modal-content analysis-wrap" method="POST"
-                    action="{{ route('analysis-finance.quarterly') }}">
+                    action="{{ route('analysis-finance.quarterly') }}" data-ajax>
                     @csrf
-                    <input type="hidden" name="tahun" value="{{ $tahun }}">
-                    {!! $keepInputs !!}
                     <div class="modal-header">
-                        <h5 class="modal-title">Laporan Triwulan Custom {{ $tahun }}</h5><button type="button"
-                            class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title">Laporan Triwulan Custom <span class="js-tahun">{{ $tahun }}</span>
+                        </h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body" id="live-qmodal" data-live>
                         <div class="note-box note-info mb-3">Kosongkan untuk memakai hasil hitung otomatis
                             (placeholder). Isi untuk menimpa.</div>
                         <div class="table-responsive">
@@ -1733,13 +1761,12 @@
         <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <form class="modal-content" method="POST" enctype="multipart/form-data" id="importForm"
-                    action="">
+                    action="" data-ajax>
                     @csrf
-                    <input type="hidden" name="tahun" value="{{ $tahun }}">
-                    {!! $keepInputs !!}
                     <div class="modal-header">
-                        <h5 class="modal-title">Import <span id="importLabel"></span> {{ $tahun }}</h5><button
-                            type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title">Import <span id="importLabel"></span> <span
+                                class="js-tahun">{{ $tahun }}</span></h5><button type="button"
+                            class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <p class="small text-muted mb-2">Unduh <strong>Template</strong> lebih dulu (sudah berisi data
@@ -1755,11 +1782,8 @@
 
         <div class="modal fade" id="modalRefresh" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <form class="modal-content" method="POST" id="refreshForm" action="">
+                <form class="modal-content" method="POST" id="refreshForm" action="" data-ajax>
                     @csrf
-                    <input type="hidden" name="tahun" value="{{ $tahun }}">
-                    <input type="hidden" name="periode" value="{{ $periodKey }}">
-                    {!! $keepInputs !!}
                     <div class="modal-header">
                         <h5 class="modal-title">Refresh Data <span id="refreshLabel"></span></h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -1777,61 +1801,584 @@
             </div>
         </div>
     @endif
-@endsection
-
-@section('scripts')
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(function() {
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const $root = $('#analysisRoot');
+            const csrf = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').first().val();
 
-            const mode = document.getElementById('fMode');
-            const toggle = () => {
-                document.getElementById('fQWrap').style.display = mode.value === 'q' ? '' : 'none';
-                document.getElementById('fBulanWrap').style.display = mode.value === 'bulan' ? '' : 'none';
-            };
-            mode.addEventListener('change', toggle);
-            toggle();
-            document.querySelectorAll('#filterForm select').forEach(s => s.addEventListener('change', () => {
-                document.getElementById('filterForm').submit();
-            }));
+            function collectFormData(form) {
+                const fd = new FormData();
 
-            const importUrl = @json(route('analysis-finance.import', ['type' => '__TYPE__']));
+                Array.from(form.elements).forEach(el => {
+                    if (!el.name || el.disabled) return;
+                    if (el.type === 'file') return;
+
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        if (el.checked) fd.append(el.name, el.value || '1');
+                    } else {
+                        fd.append(el.name, el.value);
+                    }
+                });
+
+                const formId = form.id;
+                if (formId) {
+                    document.querySelectorAll(`[form="${formId}"]`).forEach(el => {
+                        if (!el.name || el.disabled) return;
+                        if (el.type === 'file') return;
+
+                        if (el.type === 'checkbox' || el.type === 'radio') {
+                            if (el.checked) {
+                                fd.delete(el.name);
+                                fd.append(el.name, el.value || '1');
+                            }
+                        } else {
+                            fd.set(el.name, el.value); 
+                        }
+                    });
+                }
+
+                console.log('=== FormData yang dikirim ===');
+                for (let [key, value] of fd.entries()) {
+                    console.log(key, '=', value);
+                }
+
+                return fd;
+            }
+
+            $(document).on('submit', 'form[data-ajax]', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                
+                const btn = e.originalEvent && e.originalEvent.submitter;
+                const formData = collectFormData(this);
+
+                send($(this).attr('action'), formData, btn);
+            });
+
+            // cegah Enter di baris tambah men-submit form kosong
+            $(document).on('keydown', 'tr.row-add input', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    $('#btnAddInitiative').trigger('click');
+                }
+            });
+
+            let DATA = JSON.parse($('#page-data').text());
+            let finKey = 'q';
+            let refreshXhr = null;
+            let chgIdx = 0;
+            const charts = {};
+
+            const tplBase = @json(route('analysis-finance.template', ['type' => '__TYPE__']));
+            const importBase = @json(route('analysis-finance.import', ['type' => '__TYPE__']));
+            const refreshBase = @json(route('analysis-finance.refresh', ['type' => '__TYPE__']));
+
             const hints = {
                 overview: 'Kolom: no (1-3), realisasi, pencapaian. Sel kosong = hitung otomatis. Berlaku untuk periode yang sedang dipilih di filter.',
                 internal: 'Kolom: bulan (1-12 atau nama bulan), pengajuan_barang, bukti_kas, catatan. Sel kosong = pakai data tagihan.',
                 initiatives: 'Kolom: no, initiative, description, keterangan, estimated_impact, status (Diterapkan/Belum). Seluruh daftar tahun ini akan DIGANTI.',
                 quarterly: 'Kolom: triwulan (TR 1-4), pencapaian_persen, status, catatan, keterangan. Sel kosong = hitung otomatis.'
             };
-            document.querySelectorAll('[data-import]').forEach(btn => btn.addEventListener('click', () => {
-                const t = btn.dataset.import;
-                document.getElementById('importForm').action = importUrl.replace('__TYPE__', t);
-                document.getElementById('importLabel').textContent = btn.dataset.label;
-                document.getElementById('importHint').textContent = hints[t];
-                new bootstrap.Modal(document.getElementById('modalImport')).show();
-            }));
 
-            const refreshUrl = @json(route('analysis-finance.refresh', ['type' => '__TYPE__']));
-            const periodLabel = @json($periodLabel);
-            const tahunLabel = @json((string) $tahun);
-            const refreshDesc = {
-                overview: 'Isian manual Realisasi dan Pencapaian indikator 1 dan 2 untuk periode ' +
-                    periodLabel + ' akan dihapus.',
-                financial: 'Isian manual Realisasi dan Pencapaian indikator Pembayaran Tagihan untuk periode ' +
-                    periodLabel + ' akan dihapus.',
-                internal: 'Seluruh isian manual Internal Process tahun ' + tahunLabel +
-                    ' (12 bulan) dan isian manual indikator 2 periode ' + periodLabel + ' akan dihapus.',
-                quarterly: 'Isian manual Pencapaian, Skor, dan Status triwulan tahun ' + tahunLabel +
-                    ' akan dihapus. Catatan dan Keterangan tetap disimpan.'
+            const esc = s => (s ?? '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g,
+                '&lt;');
+
+            function notify(type, msg) {
+                if (window.Swal) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: type,
+                        title: msg,
+                        showConfirmButton: false,
+                        timer: type === 'error' ? 4500 : 2500,
+                        timerProgressBar: true
+                    });
+                } else {
+                    alert(msg);
+                }
+            }
+
+            function confirmBox(text) {
+                if (window.Swal) {
+                    return Swal.fire({
+                        title: 'Konfirmasi',
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya',
+                        cancelButtonText: 'Batal'
+                    }).then(r => r.isConfirmed);
+                }
+                return Promise.resolve(confirm(text));
+            }
+
+            function errMsg(xhr) {
+                const j = xhr.responseJSON;
+                if (j && j.errors) return Object.values(j.errors).flat().join('\n');
+                if (j && j.message) return j.message;
+                if (xhr.status === 419) return 'Sesi berakhir. Muat ulang halaman lalu coba lagi.';
+                return 'Terjadi kesalahan. Silakan coba lagi.';
+            }
+
+            function setLoading(btn, on) {
+                if (btn) $(btn).toggleClass('is-loading', on);
+            }
+
+            function addState(fd) {
+                const s = DATA.state;
+                ['tahun', 'mode', 'bulan', 'q', 'periode'].forEach(k => {
+                    if (!fd.has(k)) fd.append(k, s[k]);
+                });
+            }
+
+            function closeModals() {
+                document.querySelectorAll('.modal.show').forEach(m => {
+                    const inst = bootstrap.Modal.getInstance(m);
+                    if (inst) inst.hide();
+                });
+            }
+
+            function send(url, fd, btn) {
+                addState(fd);
+                setLoading(btn, true);
+                return $.ajax({
+                        url: url,
+                        method: 'POST',
+                        data: fd,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json',
+                        headers: {
+                            'X-CSRF-TOKEN': csrf
+                        }
+                    })
+                    .done(res => {
+                        notify('success', res.message || 'Berhasil disimpan.');
+                        closeModals();
+                        refreshLive();
+                    })
+                    .fail(xhr => notify('error', errMsg(xhr)))
+                    .always(() => setLoading(btn, false));
+            }
+
+            $(document).on('click', '#btnAddInitiative', function () {
+                const btn = this;
+                const $row = $(this).closest('tr.row-add');
+
+                const initiative = ($row.find('input[name="initiative"]').val() || '').trim();
+                if (!initiative) {
+                    notify('error', 'Kolom Initiative wajib diisi.');
+                    $row.find('input[name="initiative"]').focus();
+                    return;
+                }
+
+                const fd = new FormData();
+                fd.append('_token', csrf);
+                fd.append('tahun', DATA.state.tahun);
+                fd.append('initiative', initiative);
+                fd.append('description', $row.find('input[name="description"]').val() || '');
+                fd.append('keterangan', $row.find('input[name="keterangan"]').val() || '');
+                fd.append('analysis_target', $row.find('input[name="analysis_target"]').val() || '1');
+                fd.append('estimated_impact', $row.find('input[name="estimated_impact"]').val() || '');
+
+                if ($row.find('input[name="is_implemented"]').is(':checked')) {
+                    fd.append('is_implemented', '1');
+                }
+
+                // Debug
+                console.log('=== Manual Add FormData ===');
+                for (let [k, v] of fd.entries()) {
+                    console.log(k, '=', v);
+                }
+
+                const url = $('#iniAddForm').attr('action');
+                if (!url) {
+                    notify('error', 'Form add tidak ditemukan.');
+                    return;
+                }
+
+                send(url, fd, btn);
+            });
+
+            $(document).on('click', '.row-del[data-url]', async function() {
+                if (!(await confirmBox('Hapus inisiatif ini?'))) return;
+                const fd = new FormData();
+                fd.append('_method', 'DELETE');
+                fd.append('_token', csrf);
+                send($(this).data('url'), fd, this);
+            });
+
+            function refreshLive(url) {
+                url = url || location.href;
+                if (refreshXhr) refreshXhr.abort();
+                $root.addClass('is-refreshing');
+
+                refreshXhr = $.ajax({
+                        url: url,
+                        method: 'GET',
+                        dataType: 'html',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .done(html => {
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                        $('[data-live]').each(function() {
+                            const src = doc.getElementById(this.id);
+                            if (!src) return;
+                            const $sy = $(this).find('.scroll-y');
+                            const st = $sy.length ? $sy.scrollTop() : 0;
+                            this.innerHTML = src.innerHTML;
+                            $(this).addClass('swapped');
+                            if (st) $(this).find('.scroll-y').scrollTop(st);
+                        });
+
+                        const dataEl = doc.getElementById('page-data');
+                        if (dataEl) DATA = JSON.parse(dataEl.textContent);
+
+                        afterRefresh();
+                    })
+                    .fail((xhr, status) => {
+                        if (status !== 'abort') notify('error', 'Gagal memuat ulang data.');
+                    })
+                    .always(() => {
+                        $root.removeClass('is-refreshing');
+                    });
+
+                return refreshXhr;
+            }
+
+            const toggleFilter = () => {
+                const m = $('#fMode').val();
+                $('#fQWrap').toggle(m === 'q');
+                $('#fBulanWrap').toggle(m === 'bulan');
             };
-            document.querySelectorAll('[data-refresh]').forEach(btn => btn.addEventListener('click', () => {
-                const t = btn.dataset.refresh;
-                document.getElementById('refreshForm').action = refreshUrl.replace('__TYPE__', t);
-                document.getElementById('refreshLabel').textContent = '— ' + btn.dataset.label;
-                document.getElementById('refreshDesc').textContent = refreshDesc[t];
-                new bootstrap.Modal(document.getElementById('modalRefresh')).show();
-            }));
 
-            const wrap = document.querySelector('.analysis-wrap');
+            function applyState() {
+                const s = DATA.state;
+                $('.js-tahun').text(s.tahun);
+                $('a[data-tpl]').each(function() {
+                    const t = $(this).data('tpl');
+                    const p = t === 'overview' ? {
+                        tahun: s.tahun,
+                        mode: s.mode,
+                        bulan: s.bulan,
+                        q: s.q
+                    } : {
+                        tahun: s.tahun
+                    };
+                    this.href = tplBase.replace('__TYPE__', t) + '?' + $.param(p);
+                });
+                $('#fMode').val(s.mode);
+                $('#filterForm [name=q]').val(s.q);
+                $('#filterForm [name=bulan]').val(s.bulan);
+                $('#filterForm [name=tahun]').val(s.tahun);
+                toggleFilter();
+            }
+
+            $('#fMode').on('change', toggleFilter);
+            toggleFilter();
+
+            function applyFilter() {
+                const url = location.pathname + '?' + $('#filterForm').serialize();
+                history.pushState({}, '', url);
+                refreshLive(url);
+            }
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                applyFilter();
+            });
+            $('#filterForm select').on('change', applyFilter);
+            window.addEventListener('popstate', () => refreshLive(location.href));
+
+            $(document).on('click', '[data-import]', function() {
+                const t = $(this).data('import');
+                $('#importForm').attr('action', importBase.replace('__TYPE__', t));
+                $('#importForm')[0].reset();
+                $('#importLabel').text($(this).data('label'));
+                $('#importHint').text(hints[t]);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalImport')).show();
+            });
+
+            $(document).on('click', '[data-refresh]', function() {
+                const t = $(this).data('refresh');
+                const s = DATA.state;
+                const desc = {
+                    overview: 'Isian manual Realisasi dan Pencapaian indikator 1 dan 2 untuk periode ' + s
+                        .periodLabel + ' akan dihapus.',
+                    financial: 'Isian manual Realisasi dan Pencapaian indikator Pembayaran Tagihan untuk periode ' +
+                        s.periodLabel + ' akan dihapus.',
+                    internal: 'Seluruh isian manual Internal Process tahun ' + s.tahun +
+                        ' (12 bulan) dan isian manual indikator 2 periode ' + s.periodLabel +
+                        ' akan dihapus.',
+                    quarterly: 'Isian manual Pencapaian, Skor, dan Status triwulan tahun ' + s.tahun +
+                        ' akan dihapus. Catatan dan Keterangan tetap disimpan.'
+                } [t];
+                $('#refreshForm').attr('action', refreshBase.replace('__TYPE__', t));
+                $('#refreshLabel').text('— ' + $(this).data('label'));
+                $('#refreshDesc').text(desc);
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRefresh')).show();
+            });
+
+            function applyFinView() {
+                $('.fin-view').each(function() {
+                    $(this).toggle($(this).data('finSet') === finKey);
+                });
+                $('[data-fin-view]').each(function() {
+                    const on = $(this).data('finView') === finKey;
+                    $(this).toggleClass('btn-primary', on).toggleClass('btn-outline-primary', !on);
+                });
+                $('#finChartLabel').text(finKey === 'q' ? '· per Triwulan' : '· per Bulan');
+            }
+
+            $(document).on('click', '[data-fin-view]', function() {
+                finKey = $(this).data('finView');
+                applyFinView();
+                updateCharts();
+            });
+
+            const calc = (c, d) => d ? (c - d) / d * 100 : null;
+            const fmtPct = v => v === null ? '-' : v.toFixed(1) + '%';
+            const fmtNum = v => v.toLocaleString('id-ID', {
+                maximumFractionDigits: 2
+            });
+            const bump = el => {
+                el.classList.add('bump');
+                setTimeout(() => el.classList.remove('bump'), 220);
+            };
+
+            function chgRecalc() {
+                const $b = $('#chgBody');
+                if (!$b.length) return;
+                let sa = 0,
+                    sb = 0;
+                $b.find('tr:not(.row-out)').each(function() {
+                    const a = parseFloat($(this).find('.in-a').val());
+                    const b = parseFloat($(this).find('.in-b').val());
+                    sa += isNaN(a) ? 0 : a;
+                    sb += isNaN(b) ? 0 : b;
+                    const out = $(this).find('.out')[0];
+                    const txt = (isNaN(a) || isNaN(b)) ? '-' : fmtPct(calc(a, b));
+                    if (out.textContent !== txt) {
+                        out.textContent = txt;
+                        bump(out);
+                    }
+                });
+                $('#chgSumA').text(fmtNum(sa));
+                $('#chgSumB').text(fmtNum(sb));
+                const tot = document.getElementById('chgTotal');
+                tot.textContent = fmtPct(calc(sa, sb));
+                bump(tot);
+            }
+
+            function chgAdd(d = {}, animate = false) {
+                const i = chgIdx++;
+                const $tr = $('<tr>');
+                if (animate) $tr.addClass('row-anim').css('animationDelay', '0s');
+                $tr.html(`
+                    <td><input class="cell" name="items[${i}][keterangan]" value="${esc(d.k)}"></td>
+                    <td><input type="number" step="any" class="cell in-a text-end" name="items[${i}][nilai_lalu]" value="${d.a ?? ''}"></td>
+                    <td><input type="number" step="any" class="cell in-b text-end" name="items[${i}][nilai_ini]" value="${d.b ?? ''}"></td>
+                    <td class="out">-</td>
+                    <td class="act"><button type="button" class="row-del" title="Hapus baris">✕</button></td>`);
+                $('#chgBody').append($tr);
+                if (animate) $tr.find('input').first().trigger('focus');
+            }
+
+            function initChg(animate) {
+                chgIdx = 0;
+                $('#chgBody').empty();
+                (DATA.changes || []).forEach((r, n) => {
+                    chgAdd(r);
+                    if (animate && !reduce) {
+                        const tr = $('#chgBody tr').last();
+                        tr.addClass('row-anim').css('animationDelay', (n * 50) + 'ms');
+                    }
+                });
+                if (!(DATA.changes || []).length) chgAdd();
+                chgRecalc();
+            }
+
+            $(document).on('input', '#chgBody', chgRecalc);
+            $(document).on('click', '#chgAdd', () => chgAdd({}, true));
+            $(document).on('click', '#chgBody .row-del', function() {
+                const $tr = $(this).closest('tr');
+                $tr.removeClass('row-anim').addClass('row-out');
+                setTimeout(() => {
+                    $tr.remove();
+                    chgRecalc();
+                }, 300);
+            });
+
+            const C = {
+                blue: '#0284c7',
+                red: '#e11d48',
+                green: '#10b981',
+                amber: '#f59e0b',
+                slate: '#64748b'
+            };
+
+            const finLabels = () => DATA.fin[finKey].map(r => finKey === 'm' ? r.nama.substring(0, 3) : r.nama);
+            const finSets = () => [{
+                    label: 'Total',
+                    data: DATA.fin[finKey].map(r => r.total),
+                    backgroundColor: C.blue,
+                    borderRadius: 5
+                },
+                {
+                    label: 'On Time',
+                    data: DATA.fin[finKey].map(r => r.ontime),
+                    backgroundColor: C.green,
+                    borderRadius: 5
+                },
+                {
+                    label: 'Telat',
+                    data: DATA.fin[finKey].map(r => r.telat),
+                    backgroundColor: C.red,
+                    borderRadius: 5
+                }
+            ];
+            const internalLabels = () => DATA.internal.map(r => r.nama.substring(0, 3));
+            const internalSets = () => [{
+                    label: 'Pengajuan Barang',
+                    data: DATA.internal.map(r => r.pengajuan),
+                    backgroundColor: C.blue,
+                    borderRadius: 5
+                },
+                {
+                    label: 'Bukti Kas',
+                    data: DATA.internal.map(r => r.bukti),
+                    backgroundColor: C.amber,
+                    borderRadius: 5
+                }
+            ];
+            const ideLabels = ['Target Ide/Thn', 'Total Ide Masuk', 'Total Implementasi'];
+            const ideSets = () => [{
+                data: [DATA.ide.target, DATA.ide.total, DATA.ide.impl],
+                backgroundColor: [C.slate, C.blue, C.green],
+                borderRadius: 8
+            }];
+
+            function setData(chart, labels, sets) {
+                chart.data.labels = labels;
+                sets.forEach((s, i) => {
+                    if (chart.data.datasets[i]) chart.data.datasets[i].data = s.data;
+                    else chart.data.datasets[i] = s;
+                });
+                chart.data.datasets.length = sets.length;
+                chart.update();
+            }
+
+            function updateCharts() {
+                if (!charts.fin) return;
+                setData(charts.fin, finLabels(), finSets());
+                setData(charts.internal, internalLabels(), internalSets());
+                setData(charts.ide, ideLabels, ideSets());
+
+                const qs = DATA.quarters;
+                const t = charts.trend;
+                t.data.labels = qs.map(q => 'TR ' + q.quarter);
+                t.data.datasets[0].data = qs.map(q => q.pct);
+                t.data.datasets[0].pointBackgroundColor = qs.map(q => q.projection ? '#cbd5e1' : C.blue);
+                t.data.datasets[1].data = qs.map(() => 100);
+                t.update();
+            }
+
+            function buildCharts() {
+                if (typeof Chart === 'undefined') return;
+
+                const anim = {
+                    duration: reduce ? 0 : 1300,
+                    easing: 'easeOutQuart',
+                    delay: ctx => (ctx.type === 'data' && ctx.mode === 'default') ? ctx.dataIndex * 110 + ctx
+                        .datasetIndex * 150 : 0
+                };
+
+                const bar = (id, labels, datasets) => new Chart(document.getElementById(id), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: anim,
+                        plugins: {
+                            legend: {
+                                display: datasets.length > 1
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+
+                charts.fin = bar('chFinance', finLabels(), finSets());
+                charts.internal = bar('chInternal', internalLabels(), internalSets());
+                charts.ide = bar('chIdeas', ideLabels, ideSets());
+
+                const qs = DATA.quarters;
+                charts.trend = new Chart(document.getElementById('chTrend'), {
+                    type: 'line',
+                    data: {
+                        labels: qs.map(q => 'TR ' + q.quarter),
+                        datasets: [{
+                            label: 'Pencapaian %',
+                            data: qs.map(q => q.pct),
+                            borderColor: C.blue,
+                            backgroundColor: 'rgba(2,132,199,.12)',
+                            fill: true,
+                            tension: .35,
+                            pointRadius: 6,
+                            pointHoverRadius: 9,
+                            pointBackgroundColor: qs.map(q => q.projection ? '#cbd5e1' : C.blue),
+                            segment: {
+                                borderDash: ctx => (DATA.quarters[ctx.p1DataIndex] || {}).projection ? [6, 6] : undefined
+                            }
+                        }, {
+                            label: 'Target 100%',
+                            data: qs.map(() => 100),
+                            borderColor: C.slate,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: reduce ? 0 : 1800,
+                            easing: 'easeOutQuart'
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            function afterRefresh() {
+                applyState();
+                applyFinView();
+                initChg(false);
+                updateCharts();
+            }
+
             if (!reduce && 'IntersectionObserver' in window) {
                 const io = new IntersectionObserver(entries => entries.forEach(e => {
                     if (e.isIntersecting) {
@@ -1841,25 +2388,23 @@
                 }), {
                     threshold: .08
                 });
-                wrap.querySelectorAll('.analysis-section, .card, .recap, .q-card').forEach((el, i) => {
-                    if (el.closest('.hero')) return;
-                    el.classList.add('reveal');
-                    el.style.transitionDelay = Math.min((i % 4) * 80, 240) + 'ms';
-                    io.observe(el);
+                $root.find('.analysis-section, .card, .recap, .q-card').each(function(i) {
+                    if ($(this).closest('.hero').length) return;
+                    this.classList.add('reveal');
+                    this.style.transitionDelay = Math.min((i % 4) * 80, 240) + 'ms';
+                    io.observe(this);
                 });
             }
 
             if (!reduce) {
-                wrap.querySelectorAll('.analysis-table tbody').forEach(tb => {
-                    if (tb.id === 'chgBody') return;
-                    tb.querySelectorAll(':scope > tr').forEach((tr, i) => {
-                        tr.classList.add('row-anim');
-                        tr.style.animationDelay = (250 + Math.min(i, 14) * 45) + 'ms';
+                $root.find('.analysis-table tbody').each(function() {
+                    if (this.id === 'chgBody') return;
+                    $(this).children('tr').each(function(i) {
+                        this.classList.add('row-anim');
+                        this.style.animationDelay = (250 + Math.min(i, 14) * 45) + 'ms';
                     });
                 });
-            }
 
-            if (!reduce) {
                 document.querySelectorAll('[data-count]').forEach(el => {
                     const to = parseFloat(el.dataset.count) || 0,
                         dec = +el.dataset.dec || 0,
@@ -1888,233 +2433,16 @@
                 b.appendChild(s);
                 setTimeout(() => s.remove(), 650);
             });
-            document.querySelectorAll('form').forEach(f => f.addEventListener('submit', e => {
-                const b = e.submitter;
-                if (b && b.classList.contains('btn')) b.classList.add('is-loading');
-            }));
 
             document.addEventListener('input', e => {
-                if (e.target.classList && e.target.classList.contains('cell')) e.target.classList.add(
-                    'dirty');
+                if (e.target.classList && e.target.classList.contains('cell')) e.target.classList.add('dirty');
             });
             document.addEventListener('change', e => {
-                if (e.target.classList && e.target.classList.contains('cell')) e.target.classList.add(
-                    'dirty');
+                if (e.target.classList && e.target.classList.contains('cell')) e.target.classList.add('dirty');
             });
 
-            const chgBody = document.getElementById('chgBody');
-            if (chgBody) {
-                const rows = @json($changes->map(fn($c) => ['k' => $c->keterangan, 'a' => $c->nilai_lalu, 'b' => $c->nilai_ini])->values());
-                const esc = s => (s ?? '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g,
-                    '&lt;');
-                const calc = (c, d) => d ? (c - d) / d * 100 : null;
-                const fmtPct = v => v === null ? '-' : v.toFixed(1) + '%';
-                const fmtNum = v => v.toLocaleString('id-ID', {
-                    maximumFractionDigits: 2
-                });
-                let idx = 0;
-
-                const bump = el => {
-                    el.classList.add('bump');
-                    setTimeout(() => el.classList.remove('bump'), 220);
-                };
-
-                const recalc = () => {
-                    let sa = 0,
-                        sb = 0;
-                    chgBody.querySelectorAll('tr:not(.row-out)').forEach(tr => {
-                        const a = parseFloat(tr.querySelector('.in-a').value);
-                        const b = parseFloat(tr.querySelector('.in-b').value);
-                        sa += isNaN(a) ? 0 : a;
-                        sb += isNaN(b) ? 0 : b;
-                        const out = tr.querySelector('.out');
-                        const txt = (isNaN(a) || isNaN(b)) ? '-' : fmtPct(calc(a, b));
-                        if (out.textContent !== txt) {
-                            out.textContent = txt;
-                            bump(out);
-                        }
-                    });
-                    document.getElementById('chgSumA').textContent = fmtNum(sa);
-                    document.getElementById('chgSumB').textContent = fmtNum(sb);
-                    const tot = document.getElementById('chgTotal');
-                    tot.textContent = fmtPct(calc(sa, sb));
-                    bump(tot);
-                };
-
-                const addChg = (d = {}, animate = false) => {
-                    const i = idx++;
-                    const tr = document.createElement('tr');
-                    if (animate || !reduce) tr.className = 'row-anim';
-                    tr.style.animationDelay = animate ? '0s' : (i * 50) + 'ms';
-                    tr.innerHTML = `
-                        <td><input class="cell" name="items[${i}][keterangan]" value="${esc(d.k)}"></td>
-                        <td><input type="number" step="any" class="cell in-a text-end" name="items[${i}][nilai_lalu]" value="${d.a ?? ''}"></td>
-                        <td><input type="number" step="any" class="cell in-b text-end" name="items[${i}][nilai_ini]" value="${d.b ?? ''}"></td>
-                        <td class="out">-</td>
-                        <td class="act"><button type="button" class="row-del" title="Hapus baris">✕</button></td>`;
-                    tr.querySelector('.row-del').addEventListener('click', () => {
-                        tr.classList.remove('row-anim');
-                        tr.classList.add('row-out');
-                        setTimeout(() => {
-                            tr.remove();
-                            recalc();
-                        }, 300);
-                    });
-                    chgBody.appendChild(tr);
-                    if (animate) tr.querySelector('input').focus();
-                };
-
-                rows.forEach(r => addChg(r));
-                if (!rows.length) addChg();
-                chgBody.addEventListener('input', recalc);
-                document.getElementById('chgAdd').addEventListener('click', () => addChg({}, true));
-                recalc();
-            }
-
-            if (typeof Chart === 'undefined') return;
-            const C = {
-                blue: '#0284c7',
-                red: '#e11d48',
-                green: '#10b981',
-                amber: '#f59e0b',
-                slate: '#64748b'
-            };
-            const anim = {
-                duration: reduce ? 0 : 1300,
-                easing: 'easeOutQuart',
-                delay: ctx => (ctx.type === 'data' && ctx.mode === 'default') ? ctx.dataIndex * 110 + ctx
-                    .datasetIndex * 150 : 0
-            };
-            const bar = (id, labels, datasets, extra = {}) => new Chart(document.getElementById(id), {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets
-                },
-                options: Object.assign({
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: anim,
-                    plugins: {
-                        legend: {
-                            display: datasets.length > 1
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
-                    }
-                }, extra)
-            });
-
-            const finSets = {
-                q: @json(array_values($finQuarterly)),
-                m: @json(array_values($finMonthly))
-            };
-            const finLabels = (key) => finSets[key].map(r => key === 'm' ? r.nama.substring(0, 3) : r.nama);
-            const finData = (key) => [{
-                    label: 'Total',
-                    data: finSets[key].map(r => r.total),
-                    backgroundColor: C.blue,
-                    borderRadius: 5
-                },
-                {
-                    label: 'On Time',
-                    data: finSets[key].map(r => r.ontime),
-                    backgroundColor: C.green,
-                    borderRadius: 5
-                },
-                {
-                    label: 'Telat',
-                    data: finSets[key].map(r => r.telat),
-                    backgroundColor: C.red,
-                    borderRadius: 5
-                }
-            ];
-            const finChart = bar('chFinance', finLabels('q'), finData('q'));
-
-            document.querySelectorAll('[data-fin-view]').forEach(btn => btn.addEventListener('click', () => {
-                const key = btn.dataset.finView;
-                document.querySelectorAll('[data-fin-view]').forEach(b => {
-                    b.classList.toggle('btn-primary', b === btn);
-                    b.classList.toggle('btn-outline-primary', b !== btn);
-                });
-                document.querySelectorAll('.fin-view').forEach(el => {
-                    el.style.display = el.dataset.finSet === key ? '' : 'none';
-                });
-                document.getElementById('finChartLabel').textContent = key === 'q' ? '· per Triwulan' : '· per Bulan';
-                finChart.data.labels = finLabels(key);
-                finChart.data.datasets = finData(key);
-                finChart.update();
-            }));
-
-            const internal = @json(array_values($internal));
-            bar('chInternal', internal.map(r => r.nama.substring(0, 3)), [{
-                    label: 'Pengajuan Barang',
-                    data: internal.map(r => r.pengajuan),
-                    backgroundColor: C.blue,
-                    borderRadius: 5
-                },
-                {
-                    label: 'Bukti Kas',
-                    data: internal.map(r => r.bukti),
-                    backgroundColor: C.amber,
-                    borderRadius: 5
-                }
-            ]);
-
-            const ide = @json($analysis['ide']);
-            bar('chIdeas', ['Target Ide/Thn', 'Total Ide Masuk', 'Total Implementasi'], [{
-                data: [ide.target, ide.total, ide.impl],
-                backgroundColor: [C.slate, C.blue, C.green],
-                borderRadius: 8
-            }]);
-
-            const qs = @json($quarters);
-            new Chart(document.getElementById('chTrend'), {
-                type: 'line',
-                data: {
-                    labels: qs.map(q => 'TR ' + q.quarter),
-                    datasets: [{
-                        label: 'Pencapaian %',
-                        data: qs.map(q => q.pct),
-                        borderColor: C.blue,
-                        backgroundColor: 'rgba(2,132,199,.12)',
-                        fill: true,
-                        tension: .35,
-                        pointRadius: 6,
-                        pointHoverRadius: 9,
-                        pointBackgroundColor: qs.map(q => q.projection ? '#cbd5e1' : C.blue),
-                        segment: {
-                            borderDash: ctx => qs[ctx.p1DataIndex].projection ? [6, 6] : undefined
-                        }
-                    }, {
-                        label: 'Target 100%',
-                        data: qs.map(() => 100),
-                        borderColor: C.slate,
-                        borderDash: [4, 4],
-                        pointRadius: 0,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: {
-                        duration: reduce ? 0 : 1800,
-                        easing: 'easeOutQuart'
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
-                    }
-                }
-            });
+            initChg(true);
+            buildCharts();
         });
     </script>
 @endsection

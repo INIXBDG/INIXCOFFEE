@@ -1137,7 +1137,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])->name('office.dashboard.tunjangan');
         Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])->name('office.export.tunjangan.pdf');
         Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
-
+        Route::post('/store-manual-tagihan', [TagihanPerusahaanController::class, 'storeManualBanyak'])->name('storeManualTagihanPerusahaan');
+        Route::get('/detail-tagihan-json/{id}', [TagihanPerusahaanController::class, 'detailJson'])->name('detailJsonTagihanPerusahaan');
 
         Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
         Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
