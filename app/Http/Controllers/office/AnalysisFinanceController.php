@@ -29,20 +29,18 @@ class AnalysisFinanceController extends Controller
         'overview'    => ['no', 'realisasi', 'pencapaian'],
     ];
 
+    private const REFRESH_TYPES = ['overview', 'financial', 'internal', 'quarterly'];
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /* =====================================================================
-     |  HALAMAN UTAMA
-     * ===================================================================== */
-
     public function index(Request $request)
     {
         $now   = now();
         $tahun = (int) $request->get('tahun', $now->year);
-        $mode  = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'q';
+        $mode  = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'tahun';
         $bulan = min(12, max(1, (int) $request->get('bulan', $now->month)));
         $q     = min(4, max(1, (int) $request->get('q', (int) ceil($now->month / 3))));
 
@@ -67,6 +65,15 @@ class AnalysisFinanceController extends Controller
             $finMonthly[$m] = $ctx['monthly'][$m] + ['nama' => self::BULAN[$m]];
         }
 
+        $finQuarterly = [];
+        for ($m = $sm; $m <= $em; $m++) {
+            $qq = (int) ceil($m / 3);
+            $finQuarterly[$qq] ??= ['nama' => 'TR ' . $qq, 'total' => 0, 'telat' => 0, 'ontime' => 0, 'selesai' => 0, 'nominal' => 0];
+            foreach (['total', 'telat', 'ontime', 'selesai', 'nominal'] as $k) {
+                $finQuarterly[$qq][$k] += $ctx['monthly'][$m][$k];
+            }
+        }
+
         $endQ        = (int) ceil($em / 3);
         $initiatives = $ctx['initiatives'];
 
@@ -87,16 +94,13 @@ class AnalysisFinanceController extends Controller
             'setting'     => $ctx['setting'],
             'analysis'    => $analysis,
             'finMonthly'  => $finMonthly,
+            'finQuarterly' => $finQuarterly,
             'internal'    => $ctx['internal'],
             'initiatives' => $initiatives,
             'quarters'    => $quarters,
             'changes'     => $changes,
         ]);
     }
-
-    /* =====================================================================
-     |  KALKULASI
-     * ===================================================================== */
 
     private function context(int $tahun): array
     {
@@ -125,6 +129,10 @@ class AnalysisFinanceController extends Controller
         $today = Carbon::today();
 
         foreach ($tracking as $t) {
+            if (strtolower(trim((string) $t->status)) === 'pending') {
+                continue;
+            }
+
             $m   = Carbon::parse($t->tanggal_perkiraan_mulai)->month;
             $due = Carbon::parse($t->tanggal_perkiraan_selesai ?: $t->tanggal_perkiraan_mulai)->startOfDay();
 
@@ -132,10 +140,6 @@ class AnalysisFinanceController extends Controller
             $late = $t->status === 'telat'
                 || (!empty($t->tanggal_selesai) && Carbon::parse($t->tanggal_selesai)->startOfDay()->gt($due))
                 || (!$done && $due->lt($today));
-
-            if (!($done || $late || $due->lt($today))) {
-                continue;
-            }
 
             $rows[$m]['total']++;
             $rows[$m]['nominal'] += (float) $t->nominal;
@@ -342,9 +346,53 @@ class AnalysisFinanceController extends Controller
         return $out;
     }
 
-    /* =====================================================================
-     |  SIMPAN
-     * ===================================================================== */
+    public function refresh(Request $request, string $type)
+    {
+        abort_unless(in_array($type, self::REFRESH_TYPES, true), 404);
+
+        $request->validate([
+            'tahun' => 'required|integer',
+        ]);
+
+        $tahun = (int) $request->tahun;
+        [, , $pk] = $this->requestPeriod($request);
+
+        DB::transaction(function () use ($type, $tahun, $pk) {
+            if ($type === 'overview') {
+                AnalysisFinanceOverride::where('tahun', $tahun)->where('periode', $pk)->whereIn('no', [1, 2])->delete();
+            } elseif ($type === 'financial') {
+                AnalysisFinanceOverride::where('tahun', $tahun)->where('periode', $pk)->where('no', 1)->delete();
+            } elseif ($type === 'internal') {
+                AnalysisFinanceInternalProcess::where('tahun', $tahun)->delete();
+                AnalysisFinanceOverride::where('tahun', $tahun)->where('periode', $pk)->where('no', 2)->delete();
+            } else {
+                $this->resetQuarterly($tahun);
+            }
+        });
+
+        $label = [
+            'overview'  => 'KPI Finance Overview',
+            'financial' => 'Financial Perspective',
+            'internal'  => 'Internal Process',
+            'quarterly' => 'Rekapitulasi Triwulan',
+        ][$type];
+
+        return $this->done($tahun, "Data {$label} berhasil direfresh dari Tagihan Perusahaan.");
+    }
+
+    private function resetQuarterly(int $tahun): void
+    {
+        AnalysisFinanceQuarterlyReport::where('tahun', $tahun)->update([
+            'nilai_persen' => null,
+            'skor_kinerja' => null,
+            'status'       => null,
+        ]);
+
+        AnalysisFinanceQuarterlyReport::where('tahun', $tahun)
+            ->whereNull('catatan')
+            ->whereNull('keterangan')
+            ->delete();
+    }
 
     public function saveSetting(Request $request)
     {
@@ -368,7 +416,6 @@ class AnalysisFinanceController extends Controller
         return $this->done($data['tahun'], 'Target dan bobot berhasil disimpan.');
     }
 
-    /** Simpan Point A & B. Hanya field yang dikirim yang diubah. */
     public function saveIndicators(Request $request)
     {
         $request->validate([
@@ -435,7 +482,6 @@ class AnalysisFinanceController extends Controller
         return null;
     }
 
-    /** Simpan Realisasi & Pencapaian (override) untuk periode terpilih. Kosong = pakai hitungan otomatis. */
     public function saveOverview(Request $request)
     {
         $request->validate([
@@ -476,7 +522,6 @@ class AnalysisFinanceController extends Controller
         AnalysisFinanceOverride::updateOrCreate($key, ['realisasi' => $real, 'pencapaian' => $ach]);
     }
 
-    /** [bulan_mulai, bulan_akhir, kunci_periode] dari parameter request (mode/bulan/q). */
     private function requestPeriod(Request $request): array
     {
         $mode  = in_array($request->get('mode'), ['bulan', 'q', 'tahun']) ? $request->get('mode') : 'q';
@@ -631,8 +676,6 @@ class AnalysisFinanceController extends Controller
         return $this->done($request->tahun, 'Rekapitulasi triwulan berhasil disimpan.');
     }
 
-    /* ---- helper persist ---- */
-
     private function blank($v): bool
     {
         return $v === null || trim((string) $v) === '';
@@ -702,10 +745,6 @@ class AnalysisFinanceController extends Controller
         return redirect()->route('analysis-finance.index', ['tahun' => $tahun] + request()->only('mode', 'bulan', 'q'))
             ->cookie('swal_success', $msg, 1);
     }
-
-    /* =====================================================================
-     |  IMPORT CSV  &  TEMPLATE
-     * ===================================================================== */
 
     public function template(Request $request, string $type)
     {

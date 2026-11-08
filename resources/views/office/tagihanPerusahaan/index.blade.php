@@ -5,7 +5,6 @@
 
     <div id="real-dashboard" class="container-fluid py-4 d-none">
 
-        {{-- Header + Filter + Mode --}}
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
             <div>
                 <h4 class="mb-0 fw-semibold text-dark d-flex align-items-center">
@@ -31,6 +30,19 @@
                         </option>
                     @endforeach
                 </select>
+
+                @can('Store Tagihan Perusahaan')
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                        data-bs-target="#modalImport">
+                        <i class="bx bx-upload me-1"></i>Import Data
+                    </button>
+                @endcan
+
+                @can('Delete Tagihan Perusahaan')
+                    <button type="button" class="btn btn-sm btn-danger" id="btn-hapus-semua">
+                        <i class="bx bx-trash me-1"></i>Hapus Semua
+                    </button>
+                @endcan
 
                 <div class="form-check form-switch ms-2">
                     <input class="form-check-input" type="checkbox" id="mode-edit">
@@ -64,7 +76,6 @@
                                 <tr data-id="{{ $tagihan->id }}" class="{{ $tagihan->is_urgent ? 'urgent-row' : '' }}"
                                     data-urgent="{{ $tagihan->is_urgent ? 1 : 0 }}">
 
-                                    {{-- Status visual --}}
                                     <td class="text-center pe-0">
                                         @if ($tagihan->status === 'selesai')
                                             <input class="custom-check" type="checkbox" checked disabled>
@@ -75,7 +86,6 @@
                                         @endif
                                     </td>
 
-                                    {{-- Due Date --}}
                                     <td class="editable due-date-cell" data-field="due_date"
                                         data-mulai="{{ $tagihan->tanggal_perkiraan_mulai }}"
                                         data-selesai="{{ $tagihan->tanggal_perkiraan_selesai }}">
@@ -87,13 +97,11 @@
                                         @endif
                                     </td>
 
-                                    {{-- Kegiatan --}}
                                     <td class="editable" data-field="kegiatan"
                                         data-value="{{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}">
                                         {{ $tagihan->tagihanPerusahaan?->kegiatan ?? $tagihan->kegiatan }}
                                     </td>
 
-                                    {{-- Tipe --}}
                                     <td class="editable" data-field="tipe"
                                         data-value="{{ $tagihan->tagihanPerusahaan?->tipe ?? $tagihan->tipe }}">
                                         <span class="badge bg-secondary-subtle text-secondary text-capitalize">
@@ -101,7 +109,6 @@
                                         </span>
                                     </td>
 
-                                    {{-- Nominal --}}
                                     <td class="editable" data-field="nominal" data-value="{{ $tagihan->nominal }}">
                                         @php
                                             $nominal = $tagihan->nominal;
@@ -115,7 +122,6 @@
                                         @endif
                                     </td>
 
-                                    {{-- Tracking --}}
                                     <td class="editable" data-field="tracking" data-value="{{ $tagihan->tracking }}">
                                         <div class="text-truncate" style="max-width:210px;"
                                             title="{{ $tagihan->tracking }}">
@@ -123,7 +129,6 @@
                                         </div>
                                     </td>
 
-                                    {{-- Keterangan (baru) --}}
                                     <td class="editable" data-field="keterangan" data-value="{{ $tagihan->keterangan }}">
                                         <div class="text-truncate" style="max-width:150px;"
                                             title="{{ $tagihan->keterangan }}">
@@ -131,13 +136,11 @@
                                         </div>
                                     </td>
 
-                                    {{-- Tanggal Selesai --}}
                                     <td class="editable" data-field="tanggal_selesai"
                                         data-value="{{ $tagihan->tanggal_selesai }}">
                                         {{ $tagihan->tanggal_selesai ? \Carbon\Carbon::parse($tagihan->tanggal_selesai)->format('d M Y') : '—' }}
                                     </td>
 
-                                    {{-- Status --}}
                                     <td class="editable text-center status-cell" data-field="status"
                                         data-value="{{ $tagihan->status }}">
                                         @php
@@ -154,7 +157,6 @@
                                         </span>
                                     </td>
 
-                                    {{-- Aksi (hanya Ajukan + Hapus) --}}
                                     <td class="text-center">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-outline-primary dropdown-toggle py-1 px-2"
@@ -204,6 +206,83 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="form-import" class="modal-content" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bx bx-upload me-2"></i>Import Data Tagihan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info small mb-3">
+                        Format kolom Excel: <b>No., Tagihan, Due Date, Realisasi, Keterangan, status</b>.
+                        Baris header akan dideteksi otomatis.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">File Excel</label>
+                        <input type="file" name="file" id="import-file" class="form-control"
+                            accept=".xlsx,.xls,.csv" required>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-medium">Tipe Tagihan</label>
+                        <select name="tipe" class="form-select">
+                            <option value="bulanan">Bulanan</option>
+                            <option value="tahunan">Tahunan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success" id="btn-submit-import">
+                        <i class="bx bx-upload me-1"></i>Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalHapusSemua1" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning-subtle">
+                    <h5 class="modal-title text-warning"><i class="bx bx-error me-2"></i>Konfirmasi Langkah 1 dari 2</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Anda akan menghapus <b>seluruh data tagihan perusahaan</b>.</p>
+                    <p class="mb-0 text-muted small">Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin ingin melanjutkan?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-warning" id="btn-hapus-lanjut">Ya, Lanjutkan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalHapusSemua2" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger-subtle">
+                    <h5 class="modal-title text-danger"><i class="bx bx-trash me-2"></i>Konfirmasi Langkah 2 dari 2</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Ketik <b class="text-danger">HAPUS SEMUA</b> pada kolom di bawah untuk mengonfirmasi penghapusan permanen.</p>
+                    <input type="text" id="input-konfirmasi-hapus" class="form-control" placeholder="HAPUS SEMUA"
+                        autocomplete="off">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="btn-hapus-final" disabled>
+                        <i class="bx bx-trash me-1"></i>Hapus Semua Data
+                    </button>
                 </div>
             </div>
         </div>
@@ -265,13 +344,16 @@
             border-left: 4px solid #ffc107;
             cursor: grab;
         }
+
         tr.urgent-row:active {
             cursor: grabbing;
         }
+
         .sortable-ghost {
             opacity: 0.45;
             background: #ffe8a1 !important;
         }
+
         .sortable-chosen {
             background: #ffd666 !important;
         }
@@ -296,38 +378,19 @@
             background: #fff;
         }
 
-        /* Biar table tetap lebar saat layar kecil */
         @media (max-width: 1400px) {
             #table-tagihan {
                 min-width: 1400px !important;
             }
         }
-
-        .urgent-row {
-            background-color: #fff8e6 !important;
-            border-left: 4px solid #ffc107;
-            cursor: grab;
-        }
-
-        .urgent-row:active {
-            cursor: grabbing;
-        }
-
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #fff3cd !important;
-        }
-
-        .sortable-chosen {
-            background: #ffe8a1 !important;
-        }
     </style>
-    <!-- Flatpickr -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
+            const csrf = $('meta[name="csrf-token"]').attr('content');
 
             const table = $('#table-tagihan').DataTable({
                 order: [],
@@ -411,7 +474,7 @@
                                 url: `/office/update-inline/${id}`,
                                 method: 'POST',
                                 data: {
-                                    _token: $('meta[name="csrf-token"]').attr('content'),
+                                    _token: csrf,
                                     field: 'due_date',
                                     tanggal_perkiraan_mulai: newMulai,
                                     tanggal_perkiraan_selesai: newSelesai
@@ -467,7 +530,7 @@
                                 url: `/office/update-inline/${id}`,
                                 method: 'POST',
                                 data: {
-                                    _token: $('meta[name="csrf-token"]').attr('content'),
+                                    _token: csrf,
                                     field: 'tanggal_selesai',
                                     value: newVal
                                 },
@@ -530,7 +593,6 @@
                 const $input = $td.find('.inline-input');
                 $input.data('original-html', originalHtml).focus();
 
-                // ========== KHUSUS TRACKING ==========
                 if (field === 'tracking') {
                     $input.on('change', function () {
                         let selected = $(this).val();
@@ -541,20 +603,18 @@
                             if (nama && nama.trim() !== '') {
                                 selected = 'Menunggu invoice dari PIC ' + nama.trim();
                             } else {
-                                // Batal → kembalikan tampilan lama
                                 $td.html(originalHtml);
                                 return;
                             }
                         }
 
-                        // Simpan
                         const id = $td.closest('tr').data('id');
 
                         $.ajax({
                             url: `/office/update-inline/${id}`,
                             method: 'POST',
                             data: {
-                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                _token: csrf,
                                 field: 'tracking',
                                 value: selected
                             },
@@ -580,7 +640,7 @@
                         url: `/office/update-inline/${id}`,
                         method: 'POST',
                         data: {
-                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            _token: csrf,
                             field: field,
                             value: newVal
                         },
@@ -691,7 +751,7 @@
                             url: "{{ route('reorderUrgentTagihan') }}",
                             method: 'POST',
                             data: {
-                                _token: $('meta[name="csrf-token"]').attr('content'),
+                                _token: csrf,
                                 orders: orders
                             },
                             error: function () {
@@ -729,7 +789,7 @@
                         url: `/office/toggle-urgent/${id}`,
                         method: 'POST',
                         data: {
-                            _token: $('meta[name="csrf-token"]').attr('content')
+                            _token: csrf
                         },
                         success: function (res) {
                             if (res.is_urgent) {
@@ -776,7 +836,7 @@
                     method: 'POST',
                     data: $form.serialize(),
                     headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        'X-CSRF-TOKEN': csrf
                     },
                     success() {
                         $('#loadingModal').modal('hide');
@@ -800,13 +860,107 @@
                     url: `/office/delete-tagihan/${id}`,
                     method: 'POST',
                     data: {
-                        _token: $('meta[name="csrf-token"]').attr('content')
+                        _token: csrf
                     },
                     success() {
                         table.row($tr).remove().draw(false);
                     },
                     error() {
                         alert('Gagal menghapus');
+                    }
+                });
+            });
+
+            $('#form-import').on('submit', function (e) {
+                e.preventDefault();
+
+                const fileInput = document.getElementById('import-file');
+                if (!fileInput.files.length) {
+                    alert('Pilih file terlebih dahulu');
+                    return;
+                }
+
+                const formData = new FormData(this);
+                const $btn = $('#btn-submit-import');
+                const btnHtml = $btn.html();
+
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Memproses...');
+
+                $.ajax({
+                    url: "{{ route('importTagihanPerusahaan') }}",
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRF-TOKEN': csrf
+                    },
+                    success(res) {
+                        alert(res.message);
+                        window.location.reload();
+                    },
+                    error(xhr) {
+                        let msg = 'Gagal import data';
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                            if (xhr.responseJSON.errors) {
+                                msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                            }
+                        }
+                        alert(msg);
+                        $btn.prop('disabled', false).html(btnHtml);
+                    }
+                });
+            });
+
+            const modalHapus1 = new bootstrap.Modal(document.getElementById('modalHapusSemua1'));
+            const modalHapus2 = new bootstrap.Modal(document.getElementById('modalHapusSemua2'));
+
+            $('#btn-hapus-semua').on('click', function () {
+                modalHapus1.show();
+            });
+
+            $('#btn-hapus-lanjut').on('click', function () {
+                modalHapus1.hide();
+                $('#input-konfirmasi-hapus').val('');
+                $('#btn-hapus-final').prop('disabled', true);
+                setTimeout(() => {
+                    modalHapus2.show();
+                    $('#input-konfirmasi-hapus').trigger('focus');
+                }, 350);
+            });
+
+            $('#input-konfirmasi-hapus').on('input', function () {
+                $('#btn-hapus-final').prop('disabled', $(this).val().trim() !== 'HAPUS SEMUA');
+            });
+
+            $('#btn-hapus-final').on('click', function () {
+                const $btn = $(this);
+                const btnHtml = $btn.html();
+
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...');
+
+                $.ajax({
+                    url: "{{ route('hapusSemuaTagihanPerusahaan') }}",
+                    method: 'POST',
+                    data: {
+                        _token: csrf,
+                        konfirmasi: $('#input-konfirmasi-hapus').val().trim()
+                    },
+                    success(res) {
+                        alert(res.message);
+                        window.location.reload();
+                    },
+                    error(xhr) {
+                        let msg = 'Gagal menghapus data';
+                        if (xhr.responseJSON) {
+                            if (xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                            if (xhr.responseJSON.errors) {
+                                msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                            }
+                        }
+                        alert(msg);
+                        $btn.prop('disabled', false).html(btnHtml);
                     }
                 });
             });

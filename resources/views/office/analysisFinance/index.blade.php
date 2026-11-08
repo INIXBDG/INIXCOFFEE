@@ -16,7 +16,6 @@
             font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
         }
 
-        /* ================= KEYFRAMES ================= */
         @keyframes aFadeUp {
             from {
                 opacity: 0;
@@ -202,7 +201,6 @@
             }
         }
 
-        /* ================= HERO ================= */
         .analysis-wrap .hero {
             position: relative;
             overflow: hidden;
@@ -437,7 +435,6 @@
             }
         }
 
-        /* ================= UMUM ================= */
         .analysis-wrap .card {
             border-radius: 16px;
             border: 1px solid #eef2f7;
@@ -650,7 +647,6 @@
             color: #065f46;
         }
 
-        /* ================= INPUT INLINE ================= */
         .analysis-wrap .cell {
             width: 100%;
             border: 1px solid var(--analysis-line);
@@ -701,7 +697,6 @@
             color: #9f1239;
         }
 
-        /* ================= TABEL PERSENTASE PERUBAHAN ================= */
         .analysis-wrap table.chg th {
             background: #e5e7eb;
             color: #374151;
@@ -716,7 +711,6 @@
             transform: scale(1.25);
         }
 
-        /* ================= REKAP TRIWULAN ================= */
         .analysis-wrap .recap {
             background: #2364ae;
             color: #e2e8f0;
@@ -838,7 +832,6 @@
             font-weight: 700;
         }
 
-        /* ================= REVEAL SAAT SCROLL ================= */
         .analysis-wrap .reveal {
             opacity: 0;
             transform: translateY(30px);
@@ -850,7 +843,6 @@
             transform: none;
         }
 
-        /* ================= TOMBOL ================= */
         .analysis-wrap .btn,
         .modal .btn {
             position: relative;
@@ -927,7 +919,6 @@
             animation: aShake .5s ease both, aFadeUp .5s ease both;
         }
 
-        /* ================= MODAL ================= */
         .modal.fade .modal-dialog {
             transform: scale(.82) translateY(40px);
             opacity: 0;
@@ -973,10 +964,11 @@
             ->implode('');
 
         $curQ = (int) ceil(now()->month / 3);
-        $stateActive = $tahun == now()->year && $endQ == $curQ;
+        $stateQ = ($mode === 'tahun' && $tahun == now()->year) ? $curQ : $endQ;
+        $stateActive = $tahun == now()->year && $stateQ == $curQ;
         $stateText = $stateActive
             ? 'ACTIVE'
-            : ($tahun > now()->year || ($tahun == now()->year && $endQ > $curQ)
+            : ($tahun > now()->year || ($tahun == now()->year && $stateQ > $curQ)
                 ? 'PROYEKSI'
                 : 'SELESAI');
         $periodShort = $mode === 'q' ? 'TR ' . $q : strtoupper($periodLabel);
@@ -984,16 +976,13 @@
 
     <div class="analysis-wrap">
 
-        {{-- ================= HERO ================= --}}
         <div class="hero mb-3">
             <svg class="hero-road" viewBox="0 0 420 220" preserveAspectRatio="xMaxYMid slice" xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true">
-                {{-- badan jalan: cabang atas + cabang bawah menyatu ke tepi kanan --}}
                 <g fill="none" stroke="#231f20" stroke-width="36" stroke-linecap="butt" stroke-linejoin="round">
                     <path d="M150 -30 C172 55 235 108 320 110 L440 110" />
                     <path d="M55 255 C105 175 195 118 320 110 L440 110" />
                 </g>
-                {{-- marka putih putus-putus (mengalir) --}}
                 <g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 12"
                     class="road-dash">
                     <path d="M150 -30 C172 55 235 108 320 110 L440 110" />
@@ -1028,16 +1017,15 @@
             </div>
         </div>
 
-        {{-- ================= FILTER ================= --}}
         <div class="card mb-3 reveal">
             <div class="card-body py-3">
                 <form method="GET" id="filterForm" class="row g-2 align-items-end">
                     <div class="col-6 col-md-2">
                         <label class="form-label small mb-1">Periode</label>
                         <select name="mode" id="fMode" class="form-select form-select-sm">
-                            <option value="q" @selected($mode === 'q')>Triwulan (Overview)</option>
+                            <option value="tahun" @selected($mode === 'tahun')>Semua (Satu Tahun)</option>
+                            <option value="q" @selected($mode === 'q')>Triwulan</option>
                             <option value="bulan" @selected($mode === 'bulan')>Bulan</option>
-                            <option value="tahun" @selected($mode === 'tahun')>Tahun</option>
                         </select>
                     </div>
                     <div class="col-6 col-md-2" id="fQWrap">
@@ -1078,7 +1066,6 @@
             <div class="alert alert-danger py-2">{{ $errors->first() }}</div>
         @endif
 
-        {{-- ================= SKEMA PENILAIAN ================= --}}
         <div class="analysis-section">Skema Penilaian Finance</div>
         <div class="row g-3">
             @foreach ($ind as $i)
@@ -1117,11 +1104,12 @@
             @endforeach
         </div>
 
-        {{-- ================= KPI FINANCE OVERVIEW ================= --}}
         <div class="analysis-section">
             KPI Finance Overview
             @if ($canEdit)
                 <span class="analysis-tools">
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="overview"
+                        data-label="KPI Finance Overview">Refresh Data</button>
                     <a class="btn btn-sm btn-outline-secondary"
                         href="{{ route('analysis-finance.template', ['type' => 'overview', 'tahun' => $tahun, 'mode' => $mode, 'bulan' => $bulan, 'q' => $q]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="overview"
@@ -1194,53 +1182,69 @@
             </div>
         </form>
 
-        {{-- ================= C. FINANCIAL ================= --}}
-        <div class="analysis-section">Financial Perspective</div>
+        <div class="analysis-section">
+            Financial Perspective
+            @if ($canEdit)
+                <span class="analysis-tools">
+                    <div class="btn-group btn-group-sm" role="group" id="finToggle">
+                        <button type="button" class="btn btn-primary" data-fin-view="q">Triwulan</button>
+                        <button type="button" class="btn btn-outline-primary" data-fin-view="m">Bulanan</button>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="financial"
+                        data-label="Financial Perspective">Refresh Data</button>
+                </span>
+            @endif
+        </div>
         <div class="row g-3">
             <div class="col-12 col-lg-6">
                 <div class="card h-100">
                     <div class="card-body">
                         <h6 class="fw-bold">Ringkasan Tagihan Keuangan <span class="text-muted fw-normal">·
                                 {{ $periodLabel }}</span></h6>
-                        <div class="table-responsive">
-                            <table class="analysis-table table">
-                                <thead>
-                                    <tr>
-                                        <th>Bulan</th>
-                                        <th class="num">Total</th>
-                                        <th class="num">On Time</th>
-                                        <th class="num">Telat</th>
-                                        <th class="num">%</th>
-                                        <th class="text-end">Nominal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($finMonthly as $m)
-                                        @php $pc = $m['total'] > 0 ? $m['ontime'] / $m['total'] * 100 : null; @endphp
+
+                        @foreach (['q' => $finQuarterly, 'm' => $finMonthly] as $key => $set)
+                            <div class="table-responsive fin-view" data-fin-set="{{ $key }}"
+                                style="{{ $key === 'q' ? '' : 'display:none' }}">
+                                <table class="analysis-table table">
+                                    <thead>
                                         <tr>
-                                            <td class="fw-semibold">{{ $m['nama'] }}</td>
-                                            <td class="num">{{ $m['total'] }}</td>
-                                            <td class="num good">{{ $m['ontime'] }}</td>
-                                            <td class="num bad">{{ $m['telat'] }}</td>
-                                            <td class="num">{{ $pc === null ? '-' : $f1($pc) . '%' }}</td>
-                                            <td class="text-end">Rp {{ number_format($m['nominal'], 0, ',', '.') }}</td>
+                                            <th>{{ $key === 'q' ? 'Triwulan' : 'Bulan' }}</th>
+                                            <th class="num">Total</th>
+                                            <th class="num">On Time</th>
+                                            <th class="num">Telat</th>
+                                            <th class="num">%</th>
+                                            <th class="text-end">Nominal</th>
                                         </tr>
-                                    @endforeach
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td class="num">{{ $analysis['fin']['total'] }}</td>
-                                        <td class="num good">{{ $analysis['fin']['ontime'] }}</td>
-                                        <td class="num bad">{{ $analysis['fin']['telat'] }}</td>
-                                        <td class="num">{{ $f1($analysis['fin']['persen']) }}%</td>
-                                        <td class="text-end">Rp
-                                            {{ number_format(array_sum(array_column($finMonthly, 'nominal')), 0, ',', '.') }}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($set as $m)
+                                            @php $pc = $m['total'] > 0 ? $m['ontime'] / $m['total'] * 100 : null; @endphp
+                                            <tr>
+                                                <td class="fw-semibold">{{ $m['nama'] }}</td>
+                                                <td class="num">{{ $m['total'] }}</td>
+                                                <td class="num good">{{ $m['ontime'] }}</td>
+                                                <td class="num bad">{{ $m['telat'] }}</td>
+                                                <td class="num">{{ $pc === null ? '-' : $f1($pc) . '%' }}</td>
+                                                <td class="text-end">Rp {{ number_format($m['nominal'], 0, ',', '.') }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td>Total</td>
+                                            <td class="num">{{ $analysis['fin']['total'] }}</td>
+                                            <td class="num good">{{ $analysis['fin']['ontime'] }}</td>
+                                            <td class="num bad">{{ $analysis['fin']['telat'] }}</td>
+                                            <td class="num">{{ $f1($analysis['fin']['persen']) }}%</td>
+                                            <td class="text-end">Rp
+                                                {{ number_format(array_sum(array_column($set, 'nominal')), 0, ',', '.') }}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        @endforeach
+
                         <div class="note-box note-info mt-3">
                             @if ($analysis['fin']['persen'] >= $setting->target_tagihan)
                                 Tingkat ketepatan pembayaran berada di atas ambang batas
@@ -1249,7 +1253,7 @@
                                 Tingkat ketepatan pembayaran masih di bawah ambang batas
                                 (≥{{ rtrim(rtrim(number_format($setting->target_tagihan, 2), '0'), '.') }}%).
                             @endif
-                            Data dihitung otomatis dari Tagihan Perusahaan; tagihan yang belum jatuh tempo tidak dihitung.
+                            Data dihitung otomatis dari Tagihan Perusahaan.
                         </div>
                     </div>
                 </div>
@@ -1257,18 +1261,19 @@
             <div class="col-12 col-lg-6">
                 <div class="card h-100">
                     <div class="card-body">
-                        <h6 class="fw-bold">Visualisasi Status Tagihan</h6>
+                        <h6 class="fw-bold">Visualisasi Status Tagihan <span class="text-muted fw-normal" id="finChartLabel">· per Triwulan</span></h6>
                         <div class="chart-box"><canvas id="chFinance"></canvas></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- ================= D. INTERNAL PROCESS ================= --}}
         <div class="analysis-section int">
             Internal Process Perspective
             @if ($canEdit)
                 <span class="analysis-tools">
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="internal"
+                        data-label="Internal Process">Refresh Data</button>
                     <a class="btn btn-sm btn-outline-secondary"
                         href="{{ route('analysis-finance.template', ['type' => 'internal', 'tahun' => $tahun]) }}">Template</a>
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-import="internal"
@@ -1352,7 +1357,6 @@
             </div>
         </div>
 
-        {{-- ================= E. LEARNING & GROWTH ================= --}}
         <div class="analysis-section learn">
             Learning &amp; Growth Perspective
             @if ($canEdit)
@@ -1514,7 +1518,6 @@
             </div>
         </div>
 
-        {{-- ================= F. REKAP TRIWULAN ================= --}}
         <div class="recap mt-5">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3"
                 style="position:relative;z-index:2">
@@ -1526,6 +1529,8 @@
                 </div>
                 @if ($canEdit)
                     <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-refresh="quarterly"
+                            data-label="Rekapitulasi Triwulan">Refresh Data</button>
                         <a class="btn btn-sm btn-outline-light"
                             href="{{ route('analysis-finance.template', ['type' => 'quarterly', 'tahun' => $tahun]) }}">Template</a>
                         <button type="button" class="btn btn-sm btn-outline-light" data-import="quarterly"
@@ -1614,7 +1619,6 @@
                 </div>
             </div>
 
-            {{-- ===== Tabel 3: Persentase Perubahan (di dalam Rekapitulasi Laporan Triwulan) ===== --}}
             <div class="row g-3 mt-1" style="position:relative;z-index:2">
                 <div class="col-12">
                     <div class="panel-light">
@@ -1665,7 +1669,6 @@
         </div>
     </div>
 
-    {{-- ================= MODAL ================= --}}
     @if ($canEdit)
         <div class="modal fade" id="modalQuarterly" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -1749,6 +1752,30 @@
                 </form>
             </div>
         </div>
+
+        <div class="modal fade" id="modalRefresh" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content" method="POST" id="refreshForm" action="">
+                    @csrf
+                    <input type="hidden" name="tahun" value="{{ $tahun }}">
+                    <input type="hidden" name="periode" value="{{ $periodKey }}">
+                    {!! $keepInputs !!}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Refresh Data <span id="refreshLabel"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2" id="refreshDesc"></p>
+                        <p class="small text-muted mb-0">Data lama akan dihapus dan diganti dengan hasil hitung terbaru
+                            dari Tagihan Perusahaan. Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button class="btn btn-warning">Ya, Refresh Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     @endif
 @endsection
 
@@ -1757,7 +1784,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            /* ---- filter periode ---- */
             const mode = document.getElementById('fMode');
             const toggle = () => {
                 document.getElementById('fQWrap').style.display = mode.value === 'q' ? '' : 'none';
@@ -1769,7 +1795,6 @@
                 document.getElementById('filterForm').submit();
             }));
 
-            /* ---- import modal ---- */
             const importUrl = @json(route('analysis-finance.import', ['type' => '__TYPE__']));
             const hints = {
                 overview: 'Kolom: no (1-3), realisasi, pencapaian. Sel kosong = hitung otomatis. Berlaku untuk periode yang sedang dipilih di filter.',
@@ -1785,9 +1810,27 @@
                 new bootstrap.Modal(document.getElementById('modalImport')).show();
             }));
 
-            /* ================= ANIMASI ================= */
+            const refreshUrl = @json(route('analysis-finance.refresh', ['type' => '__TYPE__']));
+            const periodLabel = @json($periodLabel);
+            const tahunLabel = @json((string) $tahun);
+            const refreshDesc = {
+                overview: 'Isian manual Realisasi dan Pencapaian indikator 1 dan 2 untuk periode ' +
+                    periodLabel + ' akan dihapus.',
+                financial: 'Isian manual Realisasi dan Pencapaian indikator Pembayaran Tagihan untuk periode ' +
+                    periodLabel + ' akan dihapus.',
+                internal: 'Seluruh isian manual Internal Process tahun ' + tahunLabel +
+                    ' (12 bulan) dan isian manual indikator 2 periode ' + periodLabel + ' akan dihapus.',
+                quarterly: 'Isian manual Pencapaian, Skor, dan Status triwulan tahun ' + tahunLabel +
+                    ' akan dihapus. Catatan dan Keterangan tetap disimpan.'
+            };
+            document.querySelectorAll('[data-refresh]').forEach(btn => btn.addEventListener('click', () => {
+                const t = btn.dataset.refresh;
+                document.getElementById('refreshForm').action = refreshUrl.replace('__TYPE__', t);
+                document.getElementById('refreshLabel').textContent = '— ' + btn.dataset.label;
+                document.getElementById('refreshDesc').textContent = refreshDesc[t];
+                new bootstrap.Modal(document.getElementById('modalRefresh')).show();
+            }));
 
-            // 1. reveal saat scroll
             const wrap = document.querySelector('.analysis-wrap');
             if (!reduce && 'IntersectionObserver' in window) {
                 const io = new IntersectionObserver(entries => entries.forEach(e => {
@@ -1806,7 +1849,6 @@
                 });
             }
 
-            // 2. baris tabel masuk berurutan
             if (!reduce) {
                 wrap.querySelectorAll('.analysis-table tbody').forEach(tb => {
                     if (tb.id === 'chgBody') return;
@@ -1817,7 +1859,6 @@
                 });
             }
 
-            // 3. count-up angka
             if (!reduce) {
                 document.querySelectorAll('[data-count]').forEach(el => {
                     const to = parseFloat(el.dataset.count) || 0,
@@ -1836,7 +1877,6 @@
                 });
             }
 
-            // 4. ripple tombol + loading saat submit
             document.addEventListener('click', e => {
                 const b = e.target.closest('.btn');
                 if (!b) return;
@@ -1853,7 +1893,6 @@
                 if (b && b.classList.contains('btn')) b.classList.add('is-loading');
             }));
 
-            // 5. tandai sel yang diubah
             document.addEventListener('input', e => {
                 if (e.target.classList && e.target.classList.contains('cell')) e.target.classList.add(
                     'dirty');
@@ -1863,13 +1902,11 @@
                     'dirty');
             });
 
-            /* ---- tabel Persentase Perubahan ---- */
             const chgBody = document.getElementById('chgBody');
             if (chgBody) {
                 const rows = @json($changes->map(fn($c) => ['k' => $c->keterangan, 'a' => $c->nilai_lalu, 'b' => $c->nilai_ini])->values());
                 const esc = s => (s ?? '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g,
                     '&lt;');
-                // Rumus Excel: =(C-D)/D*100  (C = tahun lalu, D = tahun ini)
                 const calc = (c, d) => d ? (c - d) / d * 100 : null;
                 const fmtPct = v => v === null ? '-' : v.toFixed(1) + '%';
                 const fmtNum = v => v.toLocaleString('id-ID', {
@@ -1934,7 +1971,6 @@
                 recalc();
             }
 
-            /* ---- chart ---- */
             if (typeof Chart === 'undefined') return;
             const C = {
                 blue: '#0284c7',
@@ -1975,12 +2011,46 @@
                 }, extra)
             });
 
-            const fin = @json($analysis['fin']);
-            bar('chFinance', ['Total Tagihan', 'Total Telat', 'Total On Time'], [{
-                data: [fin.total, fin.telat, fin.ontime],
-                backgroundColor: [C.blue, C.red, C.green],
-                borderRadius: 8
-            }]);
+            const finSets = {
+                q: @json(array_values($finQuarterly)),
+                m: @json(array_values($finMonthly))
+            };
+            const finLabels = (key) => finSets[key].map(r => key === 'm' ? r.nama.substring(0, 3) : r.nama);
+            const finData = (key) => [{
+                    label: 'Total',
+                    data: finSets[key].map(r => r.total),
+                    backgroundColor: C.blue,
+                    borderRadius: 5
+                },
+                {
+                    label: 'On Time',
+                    data: finSets[key].map(r => r.ontime),
+                    backgroundColor: C.green,
+                    borderRadius: 5
+                },
+                {
+                    label: 'Telat',
+                    data: finSets[key].map(r => r.telat),
+                    backgroundColor: C.red,
+                    borderRadius: 5
+                }
+            ];
+            const finChart = bar('chFinance', finLabels('q'), finData('q'));
+
+            document.querySelectorAll('[data-fin-view]').forEach(btn => btn.addEventListener('click', () => {
+                const key = btn.dataset.finView;
+                document.querySelectorAll('[data-fin-view]').forEach(b => {
+                    b.classList.toggle('btn-primary', b === btn);
+                    b.classList.toggle('btn-outline-primary', b !== btn);
+                });
+                document.querySelectorAll('.fin-view').forEach(el => {
+                    el.style.display = el.dataset.finSet === key ? '' : 'none';
+                });
+                document.getElementById('finChartLabel').textContent = key === 'q' ? '· per Triwulan' : '· per Bulan';
+                finChart.data.labels = finLabels(key);
+                finChart.data.datasets = finData(key);
+                finChart.update();
+            }));
 
             const internal = @json(array_values($internal));
             bar('chInternal', internal.map(r => r.nama.substring(0, 3)), [{
