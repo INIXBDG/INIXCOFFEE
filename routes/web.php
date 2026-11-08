@@ -1127,6 +1127,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/data-mengajar', [OfficeController::class, 'dataMengajar']);
         Route::get('/detail-data-mengajar/{id}', [OfficeController::class, 'detailMengajar']);
         Route::get('/data-tagihan/{id}', [TagihanPerusahaanController::class, 'dataTagihan']);
+        Route::post('/import-tagihan', [TagihanPerusahaanController::class, 'importTagihanPerusahaan'])->name('importTagihanPerusahaan');
+        Route::post('/hapus-semua-tagihan', [TagihanPerusahaanController::class, 'hapusSemuaTagihanPerusahaan'])->name('hapusSemuaTagihanPerusahaan');
         Route::get('/karyawan-information/{id}', [OfficeController::class, 'dataKaryawan']);
         Route::get('/laporan/status-karyawan', [OfficeController::class, 'laporanStatusKaryawan'])->name('office.laporan.status-karyawan');
         Route::get('/laporan/status-karyawan/detail', [OfficeController::class, 'detailKaryawanStatus'])->name('office.laporan.status-karyawan.detail');
@@ -1135,6 +1137,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard/tunjangan', [OfficeController::class, 'getDashboardTunjanganOffice'])->name('office.dashboard.tunjangan');
         Route::get('/export/tunjangan-pdf', [OfficeController::class, 'exportTunjanganPdf'])->name('office.export.tunjangan.pdf');
         Route::get('/export-gaji-pdf', [OfficeController::class, 'exportPdfGaji']);
+
 
         Route::post('/store-hari-libur', [OfficeController::class, 'storeHariLibur'])->name('storeHariLibur');
         Route::get('/data-hari-libur/{year}', [OfficeController::class, 'dataHariLibur']);
@@ -1217,6 +1220,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('initiatives/add', [AnalysisFinanceController::class, 'addInitiative'])->name('initiatives.add');
             Route::delete('initiatives/{id}', [AnalysisFinanceController::class, 'destroyInitiative'])->name('initiatives.destroy');
             Route::post('changes', [AnalysisFinanceController::class, 'saveChanges'])->name('changes');
+            Route::post('/refresh/{type}', [AnalysisFinanceController::class, 'refresh'])->name('refresh');
         });
 
         // Approval Pendapatan & Komisi Sales
