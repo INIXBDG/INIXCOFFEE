@@ -19,6 +19,8 @@ class GMKPIService
 {
     use KPIDefaultResponseTrait;
 
+    private const MINIMUM_KEPUASAN = 3.5;
+
     public function calculateProgressKepuasanPelanggan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -44,9 +46,16 @@ class GMKPIService
 
         $groupedFeedbacks = $feedbacks
             ->groupBy(function ($feedback) {
-                return optional($feedback->rkm)->materi?->nama_materi.'/'.optional($feedback->rkm)->tanggal_awal;
+                $materi = optional($feedback->rkm)->materi?->nama_materi;
+                $tanggalAwal = optional($feedback->rkm)->tanggal_awal;
+
+                if (!$materi || !$tanggalAwal) {
+                    return '__invalid_feedback__';
+                }
+
+                return $materi.'/'.$tanggalAwal;
             })
-            ->filter();
+            ->reject(fn ($group, $key) => $key === '__invalid_feedback__');
 
         $averageFeedbacks = [];
 
@@ -78,7 +87,7 @@ class GMKPIService
 
         $total = count($averageFeedbacks);
         if ($total > 0) {
-            $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
+            $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= self::MINIMUM_KEPUASAN));
 
             return round(($above / $total) * 100, 1);
         }
@@ -130,9 +139,13 @@ class GMKPIService
                 $materiNama = optional($feedback->rkm)->materi?->nama_materi ?? 'unknown';
                 $tanggalAwal = optional($feedback->rkm)->tanggal_awal ?? '0000-00-00';
 
+                if ($materiNama === 'unknown' || $tanggalAwal === '0000-00-00') {
+                    return '__invalid_feedback__';
+                }
+
                 return $materiNama.'/'.$tanggalAwal;
             })
-            ->filter();
+            ->reject(fn ($group, $key) => $key === '__invalid_feedback__');
 
         $averageFeedbacks = [];
         $dailyAverages = [];
@@ -177,8 +190,7 @@ class GMKPIService
             $sessionScores[$key] = $finalAvg;
 
             $sampleDate = $group->first()->created_at->format('Y-m-d');
-            $dailyAverages[$sampleDate] = $finalAvg;
-            $dailyProgresses[$sampleDate] = round($finalAvg * 20, 1);
+            $dailyAverages[$sampleDate][] = $finalAvg;
 
             foreach (['M' => $avgM, 'P' => $avgP, 'F' => $avgF, 'I' => $avgI, 'Ib' => $avgIb, 'Ias' => $avgIas] as $k => $v) {
                 if ($v > 0) {
@@ -189,11 +201,19 @@ class GMKPIService
         }
 
         $totalGroups = count($averageFeedbacks);
-        $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
+        foreach ($dailyAverages as $date => $sessionScoresForDate) {
+            $dailyAverages[$date] = round(array_sum($sessionScoresForDate) / count($sessionScoresForDate), 1);
+            $dailyProgresses[$date] = round($dailyAverages[$date] * 25, 1);
+        }
+
+        $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= self::MINIMUM_KEPUASAN));
         $below = $totalGroups - $above;
         $progress = $totalGroups > 0 ? round(($above / $totalGroups) * 100, 1) : 0;
 
-        $nilaiTarget = $itemDetail->detailTargetKPI->pluck('nilai_target')->first() ?? 0;
+        $nilaiTarget = (float) ($itemDetail->detailTargetKPI->pluck('nilai_target')->first() ?? 0);
+        if ($nilaiTarget > 0 && $nilaiTarget <= 4) {
+            $nilaiTarget *= 25;
+        }
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
