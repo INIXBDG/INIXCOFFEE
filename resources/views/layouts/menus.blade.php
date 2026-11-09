@@ -1977,6 +1977,24 @@
                                         </div>
                                     </div>
 
+                                    @if(auth()->check() && ((auth()->user()->karyawan && auth()->user()->karyawan->jabatan === 'Koordinator ITSM') || auth()->user()->jabatan === 'Koordinator ITSM' || strtolower(auth()->user()->username ?? auth()->user()->name ?? '') === 'ardhan'))
+                                    <div class="col-sm-6 mt-2">
+                                        <div class="card" id="card-hover">
+                                            <div class="card-body d-flex">
+                                                <div class="col-md-2">
+                                                    <i class="fa-solid fa-receipt" style="font-size: 30px; color: #182f51;"></i>
+                                                </div>
+                                                <div class="col-md-10" style="margin-left: 10px">
+                                                    <a href="{{ route('itsm.rekap-pembelian.index') }}" class="link stretched-link text-decoration-none">
+                                                        <h5 class="card-title">Rekap Pembelian</h5>
+                                                    </a>
+                                                    <p class="card-text">Rekap pengajuan operasional &amp; elektronik ITSM.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
+
                                 </div>
                             </div>
                         </div>
