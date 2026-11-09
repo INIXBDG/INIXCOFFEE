@@ -129,7 +129,8 @@
                     type: "GET",
                     dataSrc: "data"
                 },
-                searching: false,
+                searching: true,
+                dom: 'rtip',
                 columns: [
                     { data: null, render: (d, t, r, m) => m.row + 1 },
                     { data: 'nama_perusahaan', defaultContent: '-' },
