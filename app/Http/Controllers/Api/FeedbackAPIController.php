@@ -284,3 +284,4 @@ class FeedbackAPIController extends Controller
             return response()->json(array_values($groupedSouvenirs));
         }
     }
+}
