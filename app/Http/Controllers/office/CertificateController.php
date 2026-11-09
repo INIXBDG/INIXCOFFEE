@@ -670,7 +670,7 @@ class CertificateController extends Controller
     public function updateKategoriExam(Request $request, $rkm_id, $peserta_id)
     {
         $validated = $request->validate([
-            'kategori_exam' => 'required|in:BNSP,Internasional,Authorize,Inixcert',
+            'kategori_exam' => 'nullable|in:BNSP,Internasional,Authorize,Inixcert',
         ]);
 
         $rkm = RKM::with('materi')->findOrFail($rkm_id);
@@ -688,17 +688,17 @@ class CertificateController extends Controller
                 'nama_peserta' => $peserta->nama,
                 'nama_materi' => $rkm->materi->nama_materi ?? '-',
                 'tanggal_pelatihan' => null,
-                'kategori_exam' => $validated['kategori_exam'],
+                'kategori_exam' => $validated['kategori_exam'] ?? null,
             ]);
         } else {
             Certificate::where('rkm_id', $rkm_id)
                 ->where('id_peserta', $peserta_id)
                 ->update([
-                    'kategori_exam' => $validated['kategori_exam'],
+                    'kategori_exam' => $validated['kategori_exam'] ?? null,
                 ]);
 
             $certificate = $certificates->first();
-            $certificate->kategori_exam = $validated['kategori_exam'];
+            $certificate->kategori_exam = $validated['kategori_exam'] ?? null;
         }
 
         return response()->json([
