@@ -310,11 +310,31 @@
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('#formTambahSertifikat input[name="_token"]').value,
                     'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
                 },
+                redirect: 'manual',
             })
-                .then((res) => {
-                    if (!res.ok) throw new Error('Gagal menghapus data');
+                .then(async (res) => {
+                    if (res.status === 419) {
+                        alert('Sesi sudah habis, halaman akan dimuat ulang.');
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (res.type === 'opaqueredirect' || res.ok) {
+                        loadRekap();
+                        return;
+                    }
+
+                    if (res.status === 404) {
+                        alert('Data sudah tidak ada (mungkin sudah dihapus).');
+                        loadRekap();
+                        return;
+                    }
+
+                    const body = await res.json().catch(() => ({}));
                     loadRekap();
+                    throw new Error(body.message || `Gagal menghapus data (status ${res.status})`);
                 })
                 .catch((err) => alert(err.message));
         }
