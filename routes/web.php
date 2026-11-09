@@ -145,6 +145,7 @@ use App\Http\Controllers\RegistryFeatureController;
 use App\Http\Controllers\rekapInstrukturController;
 use App\Http\Controllers\RekapitulasiAbsenController;
 use App\Http\Controllers\RekapPenilaianExamController;
+use App\Http\Controllers\RekapPembelianItsmController;
 use App\Http\Controllers\RekomendasiLanjutanController;
 use App\Http\Controllers\ReportSalesProjectController;
 use App\Http\Controllers\RKMController as ControllersRKMController;
@@ -2083,6 +2084,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/jumlah-permintaan-per-bulan', [DashboardItsmController::class, 'getJumlahPermintaanPerBulan']);
     Route::get('/permintaan-sering-diajukan', [DashboardItsmController::class, 'getPermintaanSeringDiajukan']);
     Route::get('/list-bulan', [DashboardItsmController::class, 'getListBulan']);
+
+    // Rekap Pembelian ITSM (Khusus Koordinator ITSM / Ardhan)
+    Route::prefix('itsm/rekap-pembelian')->name('itsm.rekap-pembelian.')->group(function () {
+        Route::get('/', [RekapPembelianItsmController::class, 'index'])->name('index');
+        Route::get('/detail/{id}', [RekapPembelianItsmController::class, 'getDetail'])->name('detail');
+    });
 
     Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
