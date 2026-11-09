@@ -2,11 +2,10 @@
 
 namespace App\Services\KPI\Jabatan;
 
-use App\Models\Nilaifeedback;
 use App\Models\IdeInovasi;
+use App\Models\Nilaifeedback;
 use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DivisiITSMKPIService
@@ -18,19 +17,21 @@ class DivisiITSMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $tahun = (int) $detail->detail_jangka;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+
             return 0;
         }
 
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5')
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'P1')
             ->whereBetween('created_at', [$start, $end])
             ->get();
 
@@ -47,12 +48,13 @@ class DivisiITSMKPIService
             $f3 = (float) ($fb->F3 ?? 0);
             $f4 = (float) ($fb->F4 ?? 0);
             $f5 = (float) ($fb->F5 ?? 0);
+            $p1 = (float) ($fb->P1 ?? 0);
 
-            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
-            $totalResponden++;
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5 + $p1) / 6));
+            ++$totalResponden;
 
             if ($avg >= 3.0) {
-                $respondenPuas++;
+                ++$respondenPuas;
             }
         }
 
@@ -77,7 +79,7 @@ class DivisiITSMKPIService
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'created_at')
+        $feedbacks = Nilaifeedback::select('F1', 'F2', 'F3', 'F4', 'F5', 'P1', 'created_at')
             ->whereBetween('created_at', [$start, $end])
             ->get();
 
@@ -98,12 +100,13 @@ class DivisiITSMKPIService
             $f3 = (float) ($fb->F3 ?? 0);
             $f4 = (float) ($fb->F4 ?? 0);
             $f5 = (float) ($fb->F5 ?? 0);
+            $p1 = (float) ($fb->P1 ?? 0);
 
-            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5) / 5));
-            $totalResponden++;
+            $avg = min(4, max(1, ($f1 + $f2 + $f3 + $f4 + $f5 + $p1) / 6));
+            ++$totalResponden;
 
             if ($avg >= 3.0) {
-                $respondenPuas++;
+                ++$respondenPuas;
             }
 
             $date = Carbon::parse($fb->created_at);
@@ -157,6 +160,7 @@ class DivisiITSMKPIService
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
             Log::warning("Tidak ada detail_jangka untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -164,6 +168,7 @@ class DivisiITSMKPIService
         $target = (int) $detail->nilai_target;
         if ($tahun < 2000 || $tahun > now()->year + 5) {
             Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+
             return 0;
         }
 
@@ -191,10 +196,10 @@ class DivisiITSMKPIService
         $end = "$tahun-12-31 23:59:59";
 
         $ideInovasi = IdeInovasi::select(
-                'judul',
-                'deskripsi',
-                'created_at'
-            )
+            'judul',
+            'deskripsi',
+            'created_at'
+        )
             ->whereBetween('created_at', [$start, $end])
             ->orderBy('created_at', 'asc')
             ->get();
