@@ -1206,6 +1206,7 @@ Route::prefix('dashboard-sla/{team}')->group(function () {
 Route::get('/dashboard-sla/event/overall', [DashboardSLAController::class, 'overallEventSla']);
 Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
 Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
+Route::get('/dashboard-sla/survey-yearly', [DashboardSLAController::class, 'surveyYearly']);
 Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
 Route::middleware('auth')->group(function () {
