@@ -158,7 +158,7 @@
                                         <select class="form-select form-select-sm d-inline-block w-auto me-1 kategori-exam-select"
                                                 data-url="{{ route('office.certificate.updateKategoriExam', ['rkm_id' => $p->id_rkm, 'peserta_id' => $p->id_peserta]) }}"
                                                 data-previous="{{ $kategoriSaatIni }}">
-                                            <option value="" disabled {{ $kategoriSaatIni == '' ? 'selected' : '' }}>Pilih Kategori</option>
+                                            <option value="" {{ $kategoriSaatIni == '' ? 'selected' : '' }}>Pilih Kategori</option>
                                             @foreach (['BNSP', 'Internasional', 'Authorize', 'Inixcert'] as $kategori)
                                                 <option value="{{ $kategori }}" {{ $kategoriSaatIni === $kategori ? 'selected' : '' }}>
                                                     {{ $kategori }}

@@ -14,36 +14,16 @@ class PerpindahanDBController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:View CRM Perpindahan DB', ['only' => ['index']]);
-    }
-
-    private function isSpvSales(): bool
-    {
-        $user = Auth::user();
-        if (!$user)
-            return false;
-        $hasRole = method_exists($user, 'hasRole') ? $user->hasRole('spv_sales') : false;
-        return $user->jabatan === 'SPV Sales' || $hasRole;
-    }
-
-    private function denyAccess()
-    {
-        abort(403, 'Akses ditolak.');
+        $this->middleware('permission:View CRM Perpindahan DB', ['only' => ['index', 'getData']]);
     }
 
     public function index()
     {
-        if (!$this->isSpvSales())
-            return $this->denyAccess();
         return view('crm.perpindahandb');
     }
 
     public function getData(Request $request)
     {
-        if (!$this->isSpvSales()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $query = Perusahaan::query();
 
         if ($request->filled('search')) {
@@ -75,10 +55,6 @@ class PerpindahanDBController extends Controller
 
     public function getSalesList()
     {
-        if (!$this->isSpvSales()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $sales = User::with('karyawan:id,kode_karyawan,nama_lengkap')
             ->where(function ($q) {
                 $q->where('jabatan', 'Sales')
@@ -99,9 +75,6 @@ class PerpindahanDBController extends Controller
 
     public function transfer(Request $request)
     {
-        if (!$this->isSpvSales())
-            return back()->with('error', 'Akses ditolak.');
-
         $request->validate([
             'perusahaan_id' => 'required|exists:perusahaans,id',
             'sales_baru' => 'required|string',
@@ -155,10 +128,6 @@ class PerpindahanDBController extends Controller
 
     public function exportHistory($id)
     {
-        if (!$this->isSpvSales()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
         $perusahaan = Perusahaan::findOrFail($id);
         $history = json_decode($perusahaan->history_sales ?? '[]', true);
 
