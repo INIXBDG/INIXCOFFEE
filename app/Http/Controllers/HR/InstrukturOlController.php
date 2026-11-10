@@ -28,14 +28,12 @@ class InstrukturOlController extends Controller
 {
     private const DIR = InstrukturOl::UPLOAD_DIR;
 
-    /** Dipakai untuk membaca peran instruktur di sebuah RKM (informasi saja) dan filter "kelas instruktur ini". */
     private const PERAN = [
         'utama'        => ['kolom' => 'instruktur_key',  'label' => 'Instruktur Utama'],
         'instruktur-2' => ['kolom' => 'instruktur_key2', 'label' => 'Instruktur 2'],
         'asisten'      => ['kolom' => 'asisten_key',     'label' => 'Asisten'],
     ];
 
-    /** Silabus & Materi memakai logika yang sama. */
     private const DOKUMEN = [
         'silabus' => ['relasi' => 'silabus', 'dir' => 'silabus', 'label' => 'Silabus'],
         'materi'  => ['relasi' => 'materis', 'dir' => 'materi',  'label' => 'Materi'],
@@ -182,7 +180,6 @@ class InstrukturOlController extends Controller
                     'ktp_path'      => $this->simpanFile($request->file('ktp'), 'ktp', $uploaded),
                 ]);
 
-                // Buat akun karyawan + user hanya jika kode karyawan belum terdaftar
                 $sudahAda = $kode && karyawan::where('kode_karyawan', $kode)->exists();
 
                 if (!$sudahAda) {
@@ -275,17 +272,11 @@ class InstrukturOlController extends Controller
         ];
     }
 
-    // ---------- Riwayat Mengajar (dipilih manual dari RKM) ----------
-
     public function riwayat(InstrukturOl $instruktur): JsonResponse
     {
         return $this->responRiwayat($instruktur);
     }
 
-    /**
-     * Tabel pemilih RKM: search, filter, pagination.
-     * Dipakai oleh Riwayat Mengajar (multi pilih) serta Silabus & Materi (pilih satu).
-     */
     public function rkmPilihan(Request $request, InstrukturOl $instruktur): JsonResponse
     {
         $kode = trim((string) $instruktur->kode_karyawan);
@@ -342,7 +333,7 @@ class InstrukturOlController extends Controller
     public function riwayatDestroy(InstrukturOlRiwayat $riwayat): JsonResponse
     {
         $instruktur = $riwayat->instruktur;
-        $riwayat->delete(); // hanya melepas tautan ke RKM, data RKM tidak disentuh
+        $riwayat->delete();
 
         return $this->responRiwayat($instruktur, 'Riwayat mengajar berhasil dihapus.');
     }
@@ -442,8 +433,6 @@ class InstrukturOlController extends Controller
         );
     }
 
-    // ---------- Silabus & Materi ----------
-
     public function silabus(InstrukturOl $instruktur): JsonResponse
     {
         return $this->responDokumen($instruktur, 'silabus');
@@ -499,7 +488,6 @@ class InstrukturOlController extends Controller
         $meta = self::DOKUMEN[$jenis];
         $data = $request->validate($this->dokRules());
 
-        // Wajib salah satu: pilih kelas dari RKM, atau unggah file sendiri.
         if (empty($data['rkm_id']) && !$request->hasFile('file')) {
             throw ValidationException::withMessages([
                 'file' => "Pilih kelas dari RKM atau unggah file {$meta['label']}.",
@@ -558,7 +546,7 @@ class InstrukturOlController extends Controller
     private function dokDestroy($dok, string $jenis): JsonResponse
     {
         $instruktur = $dok->instruktur;
-        $dok->delete(); // soft delete, file dibiarkan
+        $dok->delete();
 
         return $this->responDokumen($instruktur, $jenis, self::DOKUMEN[$jenis]['label'] . ' berhasil dihapus.');
     }
@@ -600,8 +588,6 @@ class InstrukturOlController extends Controller
         return "{$materi} — {$perusahaan} (" . $this->fmtTanggal($r->tanggal_awal?->format('Y-m-d')) . ')';
     }
 
-    // ---------- Riwayat Pembayaran ----------
-
     public function pembayaran(InstrukturOl $instruktur): JsonResponse
     {
         return $this->responPembayaran($instruktur);
@@ -609,12 +595,12 @@ class InstrukturOlController extends Controller
 
     public function pembayaranStore(Request $request, InstrukturOl $instruktur): JsonResponse
     {
-        $data = $request->validate($this->pembayaranRules());
-        $this->pastikanRkmMilik($instruktur, $data['rkm_id'] ?? null);
-
-        $uploaded   = [];
+        $data       = $request->validate($this->pembayaranRules());
         $attributes = $this->pembayaranAttributes($data, $request);
-        $file       = $request->file('bukti');
+        $this->pastikanRkmMilik($instruktur, $attributes['rkm_ids']);
+
+        $uploaded = [];
+        $file     = $request->file('bukti');
 
         if ($file) {
             $attributes['bukti_path']      = $this->simpanFile($file, 'bukti-pembayaran', $uploaded);
@@ -630,9 +616,8 @@ class InstrukturOlController extends Controller
     {
         $data       = $request->validate($this->pembayaranRules());
         $instruktur = $pembayaran->instruktur;
-        $this->pastikanRkmMilik($instruktur, $data['rkm_id'] ?? null);
-
         $attributes = $this->pembayaranAttributes($data, $request);
+        $this->pastikanRkmMilik($instruktur, $attributes['rkm_ids']);
 
         if ($request->hasFile('bukti')) {
             $file     = $request->file('bukti');
@@ -655,7 +640,7 @@ class InstrukturOlController extends Controller
     public function pembayaranDestroy(InstrukturOlPembayaran $pembayaran): JsonResponse
     {
         $instruktur = $pembayaran->instruktur;
-        $pembayaran->delete(); // soft delete, file bukti dibiarkan agar data bisa dipulihkan
+        $pembayaran->delete();
 
         return $this->responPembayaran($instruktur, 'Pembayaran berhasil dihapus.');
     }
@@ -663,7 +648,8 @@ class InstrukturOlController extends Controller
     private function pembayaranRules(): array
     {
         return [
-            'rkm_id'        => ['nullable', 'integer'],
+            'rkm_ids'       => ['nullable', 'array'],
+            'rkm_ids.*'     => ['integer'],
             'judul'         => ['required', 'string', 'max:255'],
             'harga'         => ['required', 'integer', 'min:0', 'max:999999999999'],
             'kali_pax'      => ['nullable', 'boolean'],
@@ -680,7 +666,7 @@ class InstrukturOlController extends Controller
         $pax  = $kali ? (int) $data['pax'] : null;
 
         return [
-            'rkm_id'        => $data['rkm_id'] ?? null,
+            'rkm_ids'       => array_values(array_unique(array_map('intval', $data['rkm_ids'] ?? []))),
             'judul'         => $data['judul'],
             'harga'         => (int) $data['harga'],
             'kali_pax'      => $kali,
@@ -691,16 +677,17 @@ class InstrukturOlController extends Controller
         ];
     }
 
-    /** Kelas pembayaran harus salah satu kelas yang sudah ada di riwayat mengajar instruktur. */
-    private function pastikanRkmMilik(InstrukturOl $instruktur, $rkmId): void
+    private function pastikanRkmMilik(InstrukturOl $instruktur, array $rkmIds): void
     {
-        if (!$rkmId) {
+        if (!$rkmIds) {
             return;
         }
 
-        if (!$instruktur->riwayats()->where('rkm_id', $rkmId)->exists()) {
+        $ada = $instruktur->riwayats()->whereIn('rkm_id', $rkmIds)->distinct()->count('rkm_id');
+
+        if ($ada !== count($rkmIds)) {
             throw ValidationException::withMessages([
-                'rkm_id' => 'Kelas yang dipilih belum ada di riwayat mengajar instruktur ini.',
+                'rkm_ids' => 'Ada kelas yang dipilih belum masuk riwayat mengajar instruktur ini.',
             ]);
         }
     }
@@ -708,17 +695,26 @@ class InstrukturOlController extends Controller
     private function responPembayaran(InstrukturOl $instruktur, ?string $message = null, int $status = 200): JsonResponse
     {
         $items = $instruktur->pembayarans()
-            ->with(['rkm.materi', 'rkm.perusahaan'])
             ->orderByDesc('tanggal_bayar')
             ->orderByDesc('id')
             ->get();
 
+        $rkms = RKM::with(['materi', 'perusahaan'])
+            ->whereIn('id', $items->pluck('rkm_ids')->flatten()->filter()->unique()->values())
+            ->get()
+            ->keyBy('id');
+
         $payload = [
             'data'        => $items->map(fn ($p) => [
                 'id'              => $p->id,
-                'rkm_id'          => $p->rkm_id,
-                'materi'          => $p->rkm?->materi?->nama_materi,
-                'perusahaan'      => $p->rkm?->perusahaan?->nama_perusahaan,
+                'rkm_ids'         => $p->rkm_ids ?? [],
+                'kelas'           => collect($p->rkm_ids ?? [])
+                    ->map(fn ($id) => $rkms->get($id))
+                    ->filter()
+                    ->map(fn ($r) => [
+                        'materi'     => $r->materi->nama_materi ?? '-',
+                        'perusahaan' => $r->perusahaan->nama_perusahaan ?? '-',
+                    ])->values(),
                 'judul'           => $p->judul,
                 'harga'           => $p->harga,
                 'kali_pax'        => $p->kali_pax,
@@ -740,14 +736,18 @@ class InstrukturOlController extends Controller
         return response()->json($payload, $status);
     }
 
-    /** Opsi kelas pada form pembayaran = riwayat mengajar yang sudah dipilih. */
     private function opsiRkm(InstrukturOl $instruktur): array
     {
         return $this->riwayatItems($instruktur)->map(fn ($b) => [
-            'id'     => $b['rkm_id'],
-            'materi' => $b['materi'],
-            'pax'    => $b['pax'],
-            'label'  => "{$b['materi']} — {$b['perusahaan']} ({$this->fmtTanggal($b['tanggal_awal'])}) · {$b['peran']}",
+            'id'            => $b['rkm_id'],
+            'materi'        => $b['materi'],
+            'perusahaan'    => $b['perusahaan'],
+            'tanggal_awal'  => $b['tanggal_awal'],
+            'tanggal_akhir' => $b['tanggal_akhir'],
+            'metode_kelas'  => $b['metode_kelas'],
+            'peran'         => $b['peran'],
+            'pax'           => $b['pax'],
+            'label'         => "{$b['materi']} — {$b['perusahaan']} ({$this->fmtTanggal($b['tanggal_awal'])}) · {$b['peran']}",
         ])->values()->all();
     }
 
@@ -781,7 +781,7 @@ class InstrukturOlController extends Controller
     private function barisRiwayat(RKM $r, string $kode, ?int $riwayatId = null): array
     {
         return [
-            'id'            => $riwayatId, // id tautan riwayat (null pada tabel pemilih RKM)
+            'id'            => $riwayatId,
             'rkm_id'        => $r->id,
             'materi'        => $r->materi->nama_materi ?? '-',
             'perusahaan'    => $r->perusahaan->nama_perusahaan ?? '-',

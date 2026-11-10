@@ -13,6 +13,7 @@ use App\Services\ReportSmartScanner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -1268,29 +1269,60 @@ class ReportController extends Controller
         }
     }
 
-    public function destroy(ReportTemplate $template): JsonResponse
+    public function destroy(Request $request, ReportTemplate $template): JsonResponse
     {
         try {
-            $generationCount = ReportGeneration::where('template_id', $template->id)->count();
+            $force = $request->boolean('force');
+            $generations = ReportGeneration::where('template_id', $template->id)->get();
+            $generationCount = $generations->count();
 
-            if ($generationCount > 0) {
+            // Ada history & tidak force -> tolak, kirim flag supaya frontend bisa menawarkan opsi
+            if ($generationCount > 0 && !$force) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Template tidak dapat dihapus karena sudah digunakan {$generationCount} kali untuk generate laporan. Non-aktifkan template jika tidak ingin digunakan lagi.",
+                    'has_history' => true,
+                    'history_count' => $generationCount,
+                    'message' => "Template sudah digunakan {$generationCount} kali untuk generate laporan.",
                 ], 422);
             }
 
-            if ($template->template_file_path) {
-                $filePath = storage_path('app/public/' . $template->template_file_path);
-                if (file_exists($filePath)) {
-                    @unlink($filePath);
+            // Force delete: hanya pemilik template atau admin
+            if ($generationCount > 0 && $force) {
+                if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+                    return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
                 }
             }
 
-            $template->placeholders()->delete();
-            $template->delete();
+            DB::transaction(function () use ($template, $generations) {
+                // Hapus file hasil generate + record history
+                foreach ($generations as $generation) {
+                    if ($generation->output_file_path) {
+                        $filePath = storage_path('app/public/' . $generation->output_file_path);
+                        if (file_exists($filePath)) {
+                            @unlink($filePath);
+                        }
+                    }
+                    $generation->delete();
+                }
 
-            return response()->json(['success' => true, 'message' => 'Template berhasil dihapus.']);
+                // Hapus file template
+                if ($template->template_file_path) {
+                    $filePath = storage_path('app/public/' . $template->template_file_path);
+                    if (file_exists($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+
+                $template->placeholders()->delete();
+                $template->delete();
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => $generations->count() > 0
+                    ? "Template beserta {$generations->count()} history berhasil dihapus."
+                    : 'Template berhasil dihapus.',
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to delete template: ' . $e->getMessage());
 
