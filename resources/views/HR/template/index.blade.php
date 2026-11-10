@@ -992,14 +992,16 @@
             }
         }, 10);
 
-        function executeDeleteTemplate(templateId) {
+        function executeDeleteTemplate(templateId, force = false) {
             const btn = document.getElementById('btnConfirmDelete');
             const originalText = btn.innerHTML;
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
 
-            fetch(`/HR-dashboard/reports/delete/${templateId}`, {
+            const url = `/HR-dashboard/reports/delete/${templateId}` + (force ? '?force=1' : '');
+
+            fetch(url, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1011,9 +1013,12 @@
                 .then(data => {
                     if (data.success) {
                         const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-                        modal.hide();
+                        if (modal) modal.hide();
                         showToast(data.message, 'success');
                         setTimeout(() => window.location.reload(), 1000);
+                    } else if (data.has_history) {
+                        // Template punya history -> tawarkan opsi hapus sekalian history
+                        showForceDeletePrompt(templateId, data.history_count);
                     } else {
                         showToast(data.message || 'Gagal menghapus template', 'error');
                         btn.disabled = false;
@@ -1026,6 +1031,37 @@
                     btn.disabled = false;
                     btn.innerHTML = originalText;
                 });
+        }
+
+        function showForceDeletePrompt(templateId, historyCount) {
+            const modalEl = document.getElementById('deleteConfirmModal');
+            const body = modalEl.querySelector('.modal-body');
+            const footer = modalEl.querySelector('.modal-footer');
+
+            body.innerHTML = `
+                <div class="text-center mb-3">
+                    <span class="iconify text-warning" data-icon="mdi:alert-outline" style="font-size: 48px;"></span>
+                </div>
+                <p class="mb-2 text-center">
+                    Template ini sudah digunakan untuk generate laporan sebanyak
+                    <strong>${historyCount} kali</strong>, sehingga tidak bisa dihapus begitu saja.
+                </p>
+                <div class="alert alert-danger small mt-3 mb-0">
+                    <strong>Hapus beserta history?</strong><br>
+                    Template, semua riwayat generate, dan seluruh file laporan hasil generate
+                    akan dihapus <strong>permanen</strong> dan tidak dapat dikembalikan.
+                </div>
+            `;
+
+            footer.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <span class="iconify me-1" data-icon="mdi:close"></span>Batal
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDelete"
+                    onclick="executeDeleteTemplate(${templateId}, true)">
+                    <span class="iconify me-1" data-icon="mdi:delete-forever"></span>Hapus Template + History
+                </button>
+            `;
         }
 
         function showToast(message, type = 'success') {

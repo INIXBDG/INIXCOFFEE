@@ -14,6 +14,7 @@ class InstrukturOlPembayaran extends Model
     protected $fillable = [
         'instruktur_ol_id',
         'rkm_id',
+        'rkm_ids',
         'judul',
         'harga',
         'kali_pax',
@@ -31,6 +32,7 @@ class InstrukturOlPembayaran extends Model
         'pax'           => 'integer',
         'total'         => 'integer',
         'tanggal_bayar' => 'date',
+        'rkm_ids' => 'array',
     ];
 
     protected $appends = ['bukti_url'];
