@@ -597,7 +597,7 @@ class InstrukturOlController extends Controller
     {
         $data       = $request->validate($this->pembayaranRules());
         $attributes = $this->pembayaranAttributes($data, $request);
-        $this->pastikanRkmMilik($instruktur, $attributes['rkm_ids']);
+        $this->pastikanRkmMilik($instruktur, $attributes['rkm_id']);
 
         $uploaded = [];
         $file     = $request->file('bukti');
@@ -617,7 +617,7 @@ class InstrukturOlController extends Controller
         $data       = $request->validate($this->pembayaranRules());
         $instruktur = $pembayaran->instruktur;
         $attributes = $this->pembayaranAttributes($data, $request);
-        $this->pastikanRkmMilik($instruktur, $attributes['rkm_ids']);
+        $this->pastikanRkmMilik($instruktur, $attributes['rkm_id']);
 
         if ($request->hasFile('bukti')) {
             $file     = $request->file('bukti');
@@ -666,7 +666,7 @@ class InstrukturOlController extends Controller
         $pax  = $kali ? (int) $data['pax'] : null;
 
         return [
-            'rkm_ids'       => array_values(array_unique(array_map('intval', $data['rkm_ids'] ?? []))),
+            'rkm_id'        => array_values(array_unique(array_map('intval', $data['rkm_ids'] ?? []))),
             'judul'         => $data['judul'],
             'harga'         => (int) $data['harga'],
             'kali_pax'      => $kali,
@@ -700,15 +700,15 @@ class InstrukturOlController extends Controller
             ->get();
 
         $rkms = RKM::with(['materi', 'perusahaan'])
-            ->whereIn('id', $items->pluck('rkm_ids')->flatten()->filter()->unique()->values())
+            ->whereIn('id', $items->pluck('rkm_id')->flatten()->filter()->unique()->values())
             ->get()
             ->keyBy('id');
 
         $payload = [
             'data'        => $items->map(fn ($p) => [
                 'id'              => $p->id,
-                'rkm_ids'         => $p->rkm_ids ?? [],
-                'kelas'           => collect($p->rkm_ids ?? [])
+                'rkm_ids'         => $p->rkm_id ?? [],
+                'kelas'           => collect($p->rkm_id ?? [])
                     ->map(fn ($id) => $rkms->get($id))
                     ->filter()
                     ->map(fn ($r) => [
