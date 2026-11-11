@@ -1255,19 +1255,7 @@
                                 : false,
                             'rkm' => $user ? $user->can('Fitur Menu RKM') : false,
                             'finance' => $user ? $user->can('Fitur Menu Finance') : false,
-                            'performance' => $user
-                                ? $user->can('View KPI Penilaian') ||
-                                    in_array($user->jabatan, [
-                                        'Koordinator ITSM',
-                                        'HRD',
-                                        'Education Manager',
-                                        'GM',
-                                        'SPV Sales',
-                                        'Direktur',
-                                        'Direktur Utama',
-                                        'Komisaris',
-                                    ])
-                                : false,
+                            'performance' => true,
                             'education' => $user ? $user->can('Fitur Menu Education') : false,
                             'office' => $user ? $user->can('Fitur Menu Office') : false,
                             'crm' => $user ? $user->can('Fitur CRM') : false,
