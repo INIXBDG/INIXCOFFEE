@@ -113,7 +113,7 @@ class PerformanceDashboardService
                         $percent = $rawProgress;
                     }
                 }
-                $percent = max(0, min(100, round($percent, 2)));
+                $percent = max(0, min(100, round($percent, 1)));
 
                 $details[] = [
                     'judul'            => $target->judul,
@@ -156,7 +156,7 @@ class PerformanceDashboardService
     {
         if ($rawProgress <= 0) return '-';
         if ($tipeTarget === 'rupiah') return 'Rp ' . number_format((float)$rawProgress, 0, ',', '.');
-        elseif ($tipeTarget === 'persen') return round($rawProgress, 2) . '%';
+        elseif ($tipeTarget === 'persen') return number_format((float)$rawProgress, 1, '.', '') . '%';
         return number_format((float)$rawProgress, 0, ',', '.');
     }
 
@@ -249,14 +249,14 @@ class PerformanceDashboardService
                         }
                     }
 
-                    $percent = max(0, min(100, round($percent, 2)));
+                    $percent = max(0, min(100, round($percent, 1)));
                     $allProgressValues[] = $percent;
                 }
             }
         }
 
         if (empty($allProgressValues)) return 0;
-        return round(array_sum($allProgressValues) / count($allProgressValues), 2);
+        return round(array_sum($allProgressValues) / count($allProgressValues), 1);
     }
 
     private function calculateThreeSixtyScore($employeeId, $tahun)
@@ -281,6 +281,6 @@ class PerformanceDashboardService
             }
         }
 
-        return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 2);
+        return empty($jenisTotalRaw) ? 0 : round(array_sum($jenisTotalRaw), 1);
     }
 }

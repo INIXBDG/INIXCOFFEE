@@ -5,6 +5,7 @@ namespace App\Services\KPI\Jabatan;
 use App\Models\outstanding;
 use App\Models\PengajuanBarang;
 use App\Models\AnalysisReport;
+use App\Models\AnalysisFinanceInitiative;
 use App\Models\ApprovalPendapatan;
 use App\Models\trackingTagihanPerusahaan;
 use App\Traits\KPIDefaultResponseTrait;
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\Log;
 class FinanceAccountingKPIService
 {
     use KPIDefaultResponseTrait;
+
+    private const SLA_PENCAIRAN_HARI = 7;
+    private const SLA_PENCAIRAN_MULAI = '2026-06-01';
 
     private function getStatus($data)
     {
@@ -30,6 +34,54 @@ class FinanceAccountingKPIService
         }
 
         return 'terlambat';
+    }
+
+    private function slaPencairan($row): ?string
+    {
+        if (empty($row->no_kk) || empty($row->tanggal_pencairan)) {
+            return null;
+        }
+
+        $cair = Carbon::parse($row->tanggal_pencairan);
+
+        if ($cair->lt(Carbon::parse(self::SLA_PENCAIRAN_MULAI)->startOfDay())) {
+            return null;
+        }
+
+        if (empty($row->tanggal_terima_finance)) {
+            return null;
+        }
+
+        $finance = Carbon::parse($row->tanggal_terima_finance);
+        $selisihHari = (int) (($cair->getTimestamp() - $finance->getTimestamp()) / 86400);
+
+        return $selisihHari <= self::SLA_PENCAIRAN_HARI ? 'berhasil' : 'gagal';
+    }
+
+    private function evaluasiPencairan(int $tahun)
+    {
+        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        return PengajuanBarang::whereBetween('created_at', [$start, $end])
+            ->whereNotNull('no_kk')
+            ->whereNotNull('tanggal_pencairan')
+            ->whereNotNull('tanggal_terima_finance')
+            ->get()
+            ->map(fn ($p) => [
+                'date'   => Carbon::parse($p->created_at),
+                'status' => $this->slaPencairan($p),
+            ])
+            ->filter(fn ($r) => $r['status'] !== null)
+            ->values();
+    }
+
+    private function tagihanSelesai($row): bool
+    {
+        $status = strtolower(trim($row->status ?? ''));
+        $tracking = strtolower(trim($row->tracking ?? ''));
+
+        return $status === 'on_time' || ($status === 'selesai' && $tracking === 'selesai');
     }
 
     public function calculateOutstanding($item, $personId)
@@ -147,11 +199,20 @@ class FinanceAccountingKPIService
             return 0;
         }
 
+        $tahun = (int) $detail->detail_jangka;
+        if ($tahun < 2000 || $tahun > now()->year + 5) {
+            Log::warning("Tahun tidak valid: {$tahun} untuk target ID: {$item->id}");
+            return 0;
+        }
+
         $targetValue = (float) $detail->nilai_target;
         if ($targetValue == 0) return 0;
 
-        $manualValue = (float) ($detail->manual_value ?? 0);
-        return $manualValue > 0 ? round($manualValue, 1) : 0;
+        $diterapkan = AnalysisFinanceInitiative::where('tahun', $tahun)
+            ->where('is_implemented', true)
+            ->count();
+
+        return round((float) $diterapkan, 1);
     }
 
     public function calculateInisiatifEfisiensiKeuanganDetail($itemDetail, $personId = null)
@@ -171,9 +232,12 @@ class FinanceAccountingKPIService
             ]);
         }
 
-        $manualValue = (float) ($detail->manual_value ?? 0);
-        $progress = $manualValue > 0 ? round($manualValue, 1) : 0;
-        
+        $diterapkan = AnalysisFinanceInitiative::where('tahun', $tahun)
+            ->where('is_implemented', true)
+            ->count();
+
+        $progress = round((float) $diterapkan, 1);
+
         $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
         if ($gap === '') $gap = '0';
 
@@ -181,6 +245,7 @@ class FinanceAccountingKPIService
             'progress' => $progress,
             'gap' => $gap,
             'dataManual' => ['manual_document' => $detail->manual_document ?? null],
+            'pie_chart' => ['above' => $diterapkan, 'below' => max(0, $nilaiTarget - $diterapkan)],
         ]);
     }
 
@@ -218,7 +283,7 @@ class FinanceAccountingKPIService
 
         $manualValue = (float) ($detail->manual_value ?? 0);
         $progress = $manualValue > 0 ? round($manualValue, 1) : 0;
-        
+
         $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
         if ($gap === '') $gap = '0';
 
@@ -269,7 +334,7 @@ class FinanceAccountingKPIService
         $above = $analisisData;
         $below = max(0, $nilaiTarget - $analisisData);
         $progress = $analisisData > 0 ? round((float) $analisisData, 1) : 0;
-        
+
         $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
         if ($gap === '') $gap = '0';
 
@@ -296,69 +361,16 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $rows = $this->evaluasiPencairan($tahun);
 
-        // DIKEMBALIKAN KE QUERY ASLI untuk menghindari error kolom 'tanggal_selesai' yang tidak ada di tabel
-        $dataPengajuan = PengajuanBarang::with('tracking', 'detail')
-            ->whereBetween('created_at', [$start, $end])
-            ->get();
-
-        $totalPengajuan = 0;
-        $jumlahSesuai = 0;
-
-        $completedStatuses = ['Selesai', 'Pencairan Sudah Selesai'];
-        $excludedStatuses = [
-            'Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi',
-            'Finance Menunggu Approve Direksi',
-            'Membuat Permintaan Ke Direktur Utama',
-            'Diajukan dan Sedang Ditinjau oleh Education Manager',
-            'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management',
-            'Diajukan dan Sedang Ditinjau oleh SPV Sales',
-            'Diajukan dan Sedang Ditinjau oleh General Manager'
-        ];
-
-        foreach ($dataPengajuan as $pengajuan) {
-            $trackingStatus = optional($pengajuan->tracking)->tracking;
-
-            if (in_array($trackingStatus, $excludedStatuses, true)) {
-                continue;
-            }
-
-            $totalPengajuan++;
-            $isCompleted = in_array($trackingStatus, $completedStatuses, true);
-            $score = 0;
-
-            if ($isCompleted) {
-                $tanggalTerimaFinance = $pengajuan->tanggal_terima_finance ? Carbon::parse($pengajuan->tanggal_terima_finance) : null;
-                // Menggunakan property_exists untuk keamanan jika kolom benar-benar tidak ada
-                $tanggalSelesai = property_exists($pengajuan, 'tanggal_selesai') && $pengajuan->tanggal_selesai ? Carbon::parse($pengajuan->tanggal_selesai) : null;
-
-                if ($tanggalTerimaFinance && $tanggalSelesai && $tanggalTerimaFinance->copy()->addDays(7)->isBefore($tanggalSelesai)) {
-                    $score = 0;
-                } else {
-                    $score = 1;
-                }
-            } else {
-                $ageInDays = Carbon::parse($pengajuan->created_at)->diffInDays(now());
-                if ($ageInDays <= 2) {
-                    $score = 1;
-                } elseif ($ageInDays <= 21) {
-                    $decayDays = $ageInDays - 2;
-                    $score = max(0, min(1, exp(-0.05 * $decayDays)));
-                } else {
-                    $score = 0;
-                }
-            }
-
-            $jumlahSesuai += $score;
-        }
-
-        if ($totalPengajuan == 0) {
+        $total = $rows->count();
+        if ($total === 0) {
             return 0;
         }
 
-        return round(($jumlahSesuai / $totalPengajuan) * 100, 1);
+        $berhasil = $rows->where('status', 'berhasil')->count();
+
+        return round(($berhasil / $total) * 100, 1);
     }
 
     public function calculatePencairanBiayaOperasionalDetail($itemDetail, $personId = null)
@@ -376,124 +388,51 @@ class FinanceAccountingKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
-        $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+        $rows = $this->evaluasiPencairan($tahun);
+        $total = $rows->count();
 
-        // DIKEMBALIKAN KE QUERY ASLI untuk menghindari error kolom
-        $dataPengajuan = PengajuanBarang::with('tracking', 'detail')
-            ->whereBetween('created_at', [$start, $end])
-            ->get();
+        if ($total === 0) {
+            $gapKosong = $nilaiTarget > 0 ? rtrim(rtrim(sprintf('%.1f', $nilaiTarget), '0'), '.') : 0;
+            if ($gapKosong === '') $gapKosong = '0';
 
-        $totalPengajuan = 0;
-        $jumlahSesuai = 0;
-
-        $completedStatuses = ['Selesai', 'Pencairan Sudah Selesai'];
-        $excludedStatuses = [
-            'Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi',
-            'Finance Menunggu Approve Direksi',
-            'Membuat Permintaan Ke Direktur Utama',
-            'Diajukan dan Sedang Ditinjau oleh Education Manager',
-            'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management',
-            'Diajukan dan Sedang Ditinjau oleh SPV Sales',
-            'Diajukan dan Sedang Ditinjau oleh General Manager'
-        ];
-
-        $monthlyData = [];
-        $dailyBreakdownPerMonth = [];
-        $monthlyProgress = [];
-        $dailyProgressPerMonth = [];
-
-        foreach ($dataPengajuan as $pengajuan) {
-            $trackingStatus = optional($pengajuan->tracking)->tracking;
-
-            if (in_array($trackingStatus, $excludedStatuses, true)) {
-                continue;
-            }
-
-            $totalPengajuan++;
-            $isCompleted = in_array($trackingStatus, $completedStatuses, true);
-            $score = 0;
-
-            if ($isCompleted) {
-                $tanggalTerimaFinance = $pengajuan->tanggal_terima_finance ? Carbon::parse($pengajuan->tanggal_terima_finance) : null;
-                $tanggalSelesai = property_exists($pengajuan, 'tanggal_selesai') && $pengajuan->tanggal_selesai ? Carbon::parse($pengajuan->tanggal_selesai) : null;
-
-                if ($tanggalTerimaFinance && $tanggalSelesai && $tanggalTerimaFinance->copy()->addDays(7)->isBefore($tanggalSelesai)) {
-                    $score = 0;
-                } else {
-                    $score = 1;
-                }
-            } else {
-                $ageInDays = Carbon::parse($pengajuan->created_at)->diffInDays(now());
-                if ($ageInDays <= 2) {
-                    $score = 1;
-                } elseif ($ageInDays <= 21) {
-                    $decayDays = $ageInDays - 2;
-                    $score = max(0, min(1, exp(-0.05 * $decayDays)));
-                } else {
-                    $score = 0;
-                }
-            }
-
-            $jumlahSesuai += $score;
-
-            $date = Carbon::parse($pengajuan->created_at);
-            $monthKey = $date->format('Y-m');
-            $dayKey = $date->format('Y-m-d');
-
-            if (!isset($monthlyData[$monthKey])) {
-                $monthlyData[$monthKey] = ['total' => 0, 'scored' => 0];
-                $monthlyProgress[$monthKey] = ['total' => 0, 'scored' => 0];
-            }
-            $monthlyData[$monthKey]['total']++;
-            $monthlyData[$monthKey]['scored'] += $score;
-            $monthlyProgress[$monthKey]['total']++;
-            $monthlyProgress[$monthKey]['scored'] += $score * 100;
-
-            if (!isset($dailyBreakdownPerMonth[$monthKey][$dayKey])) {
-                $dailyBreakdownPerMonth[$monthKey][$dayKey] = ['total' => 0, 'scored' => 0];
-                $dailyProgressPerMonth[$monthKey][$dayKey] = ['total' => 0, 'scored' => 0];
-            }
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['total']++;
-            $dailyBreakdownPerMonth[$monthKey][$dayKey]['scored'] += $score;
-            $dailyProgressPerMonth[$monthKey][$dayKey]['total']++;
-            $dailyProgressPerMonth[$monthKey][$dayKey]['scored'] += $score * 100;
+            return array_merge($this->getDefaultDetailResponse(), [
+                'progress' => 0,
+                'gap' => $gapKosong,
+            ]);
         }
 
-        $progress = $totalPengajuan > 0 ? round(($jumlahSesuai / $totalPengajuan) * 100, 1) : 0;
+        $above = $rows->where('status', 'berhasil')->count();
+        $below = $total - $above;
+
+        $progress = round(($above / $total) * 100, 1);
         $gap = $progress < $nilaiTarget ? rtrim(rtrim(sprintf('%.1f', abs($progress - $nilaiTarget)), '0'), '.') : 0;
         if ($gap === '') $gap = '0';
 
-        $above = round($jumlahSesuai, 1);
-        $below = round(max(0, $totalPengajuan - $jumlahSesuai), 1);
+        $byMonth = $rows->groupBy(fn ($r) => $r['date']->format('Y-m'));
 
-        $monthlyAverages = [];
-        $monthlyProgressAverages = [];
-        foreach ($monthlyData as $month => $data) {
-            $monthlyAverages[$month] = $data['total'] > 0 ? round(($data['scored'] / $data['total']) * 100, 1) : 0;
-            $monthlyProgressAverages[$month] = $data['total'] > 0 ? round($data['scored'] / $data['total'], 1) : 0;
-        }
+        $monthlyAverages = $byMonth
+            ->map(fn ($g) => round($g->where('status', 'berhasil')->count() / $g->count() * 100, 1))
+            ->sortKeys()
+            ->all();
 
-        foreach ($dailyBreakdownPerMonth as $month => $days) {
-            foreach ($days as $day => $data) {
-                $dailyBreakdownPerMonth[$month][$day] = $data['total'] > 0 ? round(($data['scored'] / $data['total']) * 100, 1) : 0;
-                $dailyProgressPerMonth[$month][$day] = $data['total'] > 0 ? round($data['scored'] / $data['total'], 1) : 0;
-            }
-        }
-
-        ksort($monthlyAverages);
-        ksort($dailyBreakdownPerMonth);
-        ksort($monthlyProgressAverages);
-        ksort($dailyProgressPerMonth);
+        $dailyPerMonth = $byMonth
+            ->map(fn ($g) => $g
+                ->groupBy(fn ($r) => $r['date']->format('Y-m-d'))
+                ->map(fn ($d) => round($d->where('status', 'berhasil')->count() / $d->count() * 100, 1))
+                ->sortKeys()
+                ->all()
+            )
+            ->sortKeys()
+            ->all();
 
         return [
             'progress' => $progress,
             'gap' => $gap,
             'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => $monthlyAverages,
-            'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
-            'monthly_progress' => $monthlyProgressAverages,
-            'daily_progress_per_month' => $dailyProgressPerMonth,
+            'daily_breakdown_per_month' => $dailyPerMonth,
+            'monthly_progress' => $monthlyAverages,
+            'daily_progress_per_month' => $dailyPerMonth,
         ];
     }
 
@@ -523,9 +462,7 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        $tagihanSelesai = $latestTagihan->filter(function ($row) {
-            return strtolower(trim($row->status ?? '')) === 'selesai' && strtolower(trim($row->tracking ?? '')) === 'selesai';
-        })->count();
+        $tagihanSelesai = $latestTagihan->filter(fn ($row) => $this->tagihanSelesai($row))->count();
 
         return round(($tagihanSelesai / $totalTagihan) * 100, 1);
     }
@@ -562,9 +499,7 @@ class FinanceAccountingKPIService
             return $emptyResponse;
         }
 
-        $tagihanSelesai = $latestTagihan->filter(function ($row) {
-            return strtolower(trim($row->status ?? '')) === 'selesai';
-        })->count();
+        $tagihanSelesai = $latestTagihan->filter(fn ($row) => $this->tagihanSelesai($row))->count();
 
         $progress = round(($tagihanSelesai / $totalTagihan) * 100, 1);
         $nilaiTarget = (float) $detail->nilai_target;
@@ -586,7 +521,7 @@ class FinanceAccountingKPIService
             $monthKey = $date->format('Y-m');
             $dayKey = $date->format('Y-m-d');
 
-            $isSelesai = (strtolower(trim($tagihan->status ?? '')) === 'selesai' && strtolower(trim($tagihan->tracking ?? '')) === 'selesai') ? 1 : 0;
+            $isSelesai = $this->tagihanSelesai($tagihan) ? 1 : 0;
 
             $monthlyDataRaw[$monthKey]['total'] = ($monthlyDataRaw[$monthKey]['total'] ?? 0) + 1;
             $monthlyDataRaw[$monthKey]['selesai'] = ($monthlyDataRaw[$monthKey]['selesai'] ?? 0) + $isSelesai;
@@ -650,7 +585,6 @@ class FinanceAccountingKPIService
             return 0;
         }
 
-        // Tahun berjalan: sampai akhir bulan ini. Tahun lain: sampai 31 Desember.
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
         $endDate = $tahun === now()->year
             ? now()->endOfMonth()
@@ -667,7 +601,7 @@ class FinanceAccountingKPIService
             $pembayaran = (float) ($row->jumlah_pembayaran ?? 0);
             $ppn        = (float) ($row->PPN ?? 0);
             $pph        = (float) ($row->PPH ?? 0);
-            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0); // sama dengan controller
+            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0);
 
             if ($pembayaran === 0.0) {
                 $totalDenganPajak = $pembayaran + $ppn + $pph;
@@ -676,7 +610,6 @@ class FinanceAccountingKPIService
                     || abs($pembayaran - $kotor) < 0.01;
             }
 
-            // SAMA PERSIS dengan OfficeController (optional() tidak pernah null => selalu true)
             return optional($row->total_pemasukan_kotor) !== null;
         })->count();
 
@@ -696,7 +629,6 @@ class FinanceAccountingKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        // Tahun berjalan: sampai akhir bulan ini. Tahun lain: sampai 31 Desember.
         $startOfYear = Carbon::create($tahun, 1, 1)->startOfDay();
         $endDate = $tahun === now()->year
             ? now()->endOfMonth()
@@ -717,7 +649,7 @@ class FinanceAccountingKPIService
             $pembayaran = (float) ($row->jumlah_pembayaran ?? 0);
             $ppn        = (float) ($row->PPN ?? 0);
             $pph        = (float) ($row->PPH ?? 0);
-            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0); // sama dengan controller
+            $kotor      = (float) ($row->total_pemasukan_kotor ?? 0);
 
             if ($pembayaran === 0.0) {
                 $totalDenganPajak = $pembayaran + $ppn + $pph;
@@ -725,7 +657,6 @@ class FinanceAccountingKPIService
                 $isAkurat = abs($totalDenganPajak - $kotor) < 0.01
                     || abs($pembayaran - $kotor) < 0.01;
             } else {
-                // SAMA PERSIS dengan OfficeController (optional() tidak pernah null => selalu true)
                 $isAkurat = optional($row->total_pemasukan_kotor) !== null;
             }
 
