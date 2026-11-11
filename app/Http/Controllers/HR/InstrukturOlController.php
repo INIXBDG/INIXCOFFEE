@@ -11,13 +11,11 @@ use App\Models\InstrukturOlRiwayat;
 use App\Models\InstrukturOlSilabus;
 use App\Models\karyawan;
 use App\Models\RKM;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -170,7 +168,7 @@ class InstrukturOlController extends Controller
                     ? (str_contains($data['kode_karyawan'], 'OL') ? $data['kode_karyawan'] : 'OL' . $data['kode_karyawan'])
                     : null;
 
-                $instruktur = InstrukturOl::create([
+                return InstrukturOl::create([
                     'kode_karyawan' => $kode,
                     'nama'          => $data['nama'],
                     'core'          => $data['core'],
@@ -179,30 +177,6 @@ class InstrukturOlController extends Controller
                     'cv_path'       => $this->simpanFile($request->file('cv'), 'cv', $uploaded),
                     'ktp_path'      => $this->simpanFile($request->file('ktp'), 'ktp', $uploaded),
                 ]);
-
-                $sudahAda = $kode && karyawan::where('kode_karyawan', $kode)->exists();
-
-                if (!$sudahAda) {
-                    $addKaryawan                = new karyawan();
-                    $addKaryawan->nama_lengkap  = $instruktur->nama;
-                    $addKaryawan->divisi        = 'Education';
-                    $addKaryawan->jabatan       = 'Outsource';
-                    $addKaryawan->status_aktif  = '1';
-                    $addKaryawan->kode_karyawan = $instruktur->kode_karyawan;
-                    $addKaryawan->CV            = $instruktur->cv_path;
-                    $addKaryawan->KTP           = $instruktur->ktp_path;
-                    $addKaryawan->save();
-
-                    $dataUser              = new User();
-                    $dataUser->username    = explode(' ', trim($addKaryawan->nama_lengkap))[0];
-                    $dataUser->jabatan     = $addKaryawan->jabatan;
-                    $dataUser->status_akun = $addKaryawan->status_aktif;
-                    $dataUser->password    = Hash::make('password');
-                    $dataUser->karyawan_id = $addKaryawan->id;
-                    $dataUser->save();
-                }
-
-                return $instruktur;
             });
         } catch (Throwable $e) {
             foreach ($uploaded as $path) {
