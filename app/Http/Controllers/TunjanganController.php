@@ -1,1019 +1,1357 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\HR;
 
-use App\Models\AbsensiKaryawan;
-use App\Models\JenisTunjangan;
+use App\Http\Controllers\Controller;
+use App\Mail\EmailKustom;
+use App\Mail\EmailPenolakan;
+use App\Mail\NotifikasiInterview;
+use App\Mail\NotifikasiTahap;
+use App\Mail\OfferLetter;
+use App\Models\Folder;
 use App\Models\karyawan;
-use App\Models\lembur;
-use App\Models\pengajuancuti;
-use App\Models\TunjanganKaryawan;
-use App\Models\User;
+use App\Models\Pelamar;
+use App\Models\PelamarFolder;
+use App\Models\Pelamarriwayat;
+use App\Services\DokumenParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Exports\TunjanganExport;
-use App\Models\AdministrasiKaryawan;
-use App\Models\LogGaji;
-use App\Models\PerhitunganTunjanganHR;
-use App\Models\Pph21Karyawan;
-use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use setasign\Fpdi\Tcpdf\Fpdi;
 
-class TunjanganController extends Controller
+class HireController extends Controller
 {
-    protected $AbsensiKaryawanController;
-    protected $overtimeController;
+    private const BERKAS = [
+        'cv' => ['cv_path', 'pelamar/cv'],
+        'portofolio' => ['portofolio_path', 'pelamar/portofolio'],
+        'foto' => ['foto_path', 'pelamar/foto'],
+        'ktp' => ['ktp_path', 'pelamar/ktp'],
+        'ijazah' => ['ijazah_path', 'pelamar/ijazah'],
+    ];
 
-    public function __construct(AbsensiKaryawanController $AbsensiKaryawanController, OvertimeController $overtimeController)
+    public function __construct()
     {
         $this->middleware('auth');
-        $this->AbsensiKaryawanController = $AbsensiKaryawanController;
-        $this->overtimeController = $overtimeController;
     }
 
-    public function index()
+    /* ============================================================
+     |  HALAMAN UTAMA & DAFTAR (JSON untuk jQuery)
+     * ============================================================ */
+
+    public function index(Request $request)
     {
-        $month = Carbon::now()->format('m');
-        $year = Carbon::now()->format('Y');
-        return view('tunjangan.index', compact('month', 'year'));
-    }
-
-    public function getJenisTunjanganOffice()
-    {
-        $tunjangan = JenisTunjangan::whereIn('divisi', ['Office', 'All'])->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan',
-            'data' => $tunjangan,
-        ]);
-    }
-
-    public function getJenisTunjanganEdu()
-    {
-        $tunjangan = JenisTunjangan::whereIn('divisi', ['Education', 'All'])->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan',
-            'data' => $tunjangan,
-        ]);
-    }
-
-    public function getJenisTunjanganSales()
-    {
-        $tunjangan = JenisTunjangan::whereIn('divisi', ['Sales', 'All'])->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan',
-            'data' => $tunjangan,
-        ]);
-    }
-
-    public function getJenisTunjanganUmum()
-    {
-        $tunjangan = JenisTunjangan::whereIn('nama_tunjangan', ['Absensi', 'Makan', 'Transport', 'Lembur'])->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan',
-            'data' => $tunjangan,
-        ]);
-    }
-
-    public function indexGenerate()
-    {
-        $tunjangan = JenisTunjangan::all();
-        return view('tunjangan.generate', compact('tunjangan'));
-    }
-
-    public function getJenisTunjanganIndex()
-    {
-        $post = JenisTunjangan::where('divisi', 'All')->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan',
-            'data' => $post,
-        ]);
-    }
-
-
-    public function getTunjanganSaya($id, $month, $year)
-    {
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->with('karyawan', 'jenistunjangan')
-            ->get();
-
-        // Cek apakah periode yang di-query adalah periode berjalan (bulan & tahun sekarang)
-        $isPeriodeBerjalan = ($bulan == (int) date('n')) && ($tahun == (int) date('Y'));
-
-        if ($isPeriodeBerjalan) {
-            $karyawan = karyawan::findOrFail($id);
-            $gaji = $karyawan->gaji;
-            $tunjanganJabatan = $karyawan->tunjangan_jabatan ?? 0;
-        } else {
-            $logGaji = LogGaji::where('id_karyawan', $id)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->orderByDesc('created_at')
-                ->first();
-
-            $gaji = $logGaji ? $logGaji->gaji : 0;
-            $tunjanganJabatan = $logGaji ? $logGaji->tunjangan_jabatan : 0;
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan Saya pada bulan ' . $bulan . '-' . $tahun,
-            'data' => $tunjangan,
-            'gaji' => $gaji,
-        ]);
-    }
-
-    public function ambilDataBPJS($id)
-    {
-        $dataBPJS = PerhitunganTunjanganHR::where('karyawan_id', $id)->first();
-        $dataPPH = Pph21Karyawan::where('karyawan_id', $id)->first();
-
-        $jenisBPJSkar = JenisTunjangan::where('nama_tunjangan', 'BPJS Kesehatan')->first();
-        $jenisBPJStk = JenisTunjangan::where('nama_tunjangan', 'BPJS Tenaga Kerja')->first();
-        $jenisPPH = JenisTunjangan::where('nama_tunjangan', 'PPH')->first();
-
-        return response()->json([
-            'valKar' => $dataBPJS?->bpjs_kes_karyawan ?? 0,
-            'valTK' => $dataBPJS?->jht_karyawan ?? 0,
-            'jesKar' => $jenisBPJSkar,
-            'jesTK' => $jenisBPJStk,
-            'pph' => $dataPPH?->total_pph ?? 0,
-            'jesPPH' => $jenisPPH,
-        ]);
-    }
-    
-    // Halaman approval untuk GM
-    // public function indexApproval()
-    // {
-    //     $month = Carbon::now()->format('m');
-    //     $year = Carbon::now()->format('Y');
-    //     return view('tunjangan.approval', compact('month', 'year'));
-    // }
-
-    public function getTunjanganPendingApproval($month, $year)
-    {
-        try {
-            if ($month == 1) {
-                $bulan = 12;
-                $tahun = $year - 1;
-            } else {
-                $bulan = $month - 1;
-                $tahun = $year;
-            }
-
-            $tunjangan = TunjanganKaryawan::where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->where('status_approval', 'pending')
-                ->with(['karyawan', 'jenistunjangan'])
-                ->get();
-
-            if ($tunjangan->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Tidak ada tunjangan pending untuk bulan ' . $bulan . '-' . $tahun,
-                    'data' => []
-                ]);
-            }
-
-            $grouped = $tunjangan->groupBy('id_karyawan');
-            $formattedData = [];
-
-            foreach ($grouped as $karyawanId => $items) {
-                $totalTunjangan = 0;
-                $totalPotongan = 0;
-                $details = [];
-
-                foreach ($items as $item) {
-                    if (!$item->jenistunjangan) {
-                        \Log::warning("Jenis tunjangan null untuk item ID: " . $item->id);
-                        continue;
-                    }
-
-                    $details[] = [
-                        'id' => $item->id,
-                        'nama_tunjangan' => $item->jenistunjangan->nama_tunjangan,
-                        'keterangan' => $item->keterangan,
-                        'total' => (float) $item->total,
-                    ];
-
-                    if ($item->keterangan == 'Tunjangan') {
-                        $totalTunjangan += (float) $item->total;
-                    } else {
-                        $totalPotongan += (float) $item->total;
-                    }
-                }
-
-                $firstItem = $items->first();
-                
-                if (!$firstItem || !$firstItem->karyawan) {
-                    \Log::warning("Karyawan null untuk id_karyawan: " . $karyawanId);
-                    continue;
-                }
-
-                $formattedData[] = [
-                    'id_karyawan' => (int) $karyawanId,
-                    'nama_karyawan' => $firstItem->karyawan->nama_lengkap ?? 'Unknown',
-                    'divisi' => $firstItem->karyawan->divisi ?? '-',
-                    'bulan' => (int) $bulan,
-                    'tahun' => (int) $tahun,
-                    'total_tunjangan' => (float) $totalTunjangan,
-                    'total_potongan' => (float) $totalPotongan,
-                    'total_bersih' => (float) ($totalTunjangan + $totalPotongan),
-                    'details' => $details,
-                    'jumlah_item' => count($items)
-                ];
-            }
+        // Permintaan AJAX: kirim data tabel + info paginasi (tanpa HTML)
+        if ($request->ajax() || $request->wantsJson()) {
+            $pelamars = Pelamar::aktif()
+                ->where(function ($q) {
+                    $q->whereDoesntHave('pelamarFolders')
+                        ->orWhereHas('pelamarFolders', function ($q2) {
+                            $q2->whereHas('folder', fn ($q3) => $q3->where('is_archived', false));
+                        });
+                })
+                ->filter($request->only(['search', 'divisi', 'jabatan', 'tahap', 'sumber', 'tanggal_dari', 'tanggal_sampai', 'talent_pool']))
+                ->latest('tanggal_melamar')
+                ->paginate(10);
 
             return response()->json([
                 'success' => true,
-                'message' => 'List Tunjangan Pending Approval',
-                'data' => $formattedData
+                'data' => $this->formatBaris($pelamars->getCollection()),
+                'meta' => [
+                    'current_page' => $pelamars->currentPage(),
+                    'last_page' => $pelamars->lastPage(),
+                    'total' => $pelamars->total(),
+                    'from' => $pelamars->firstItem() ?? 0,
+                    'to' => $pelamars->lastItem() ?? 0,
+                    'count' => $pelamars->count(),
+                ],
             ]);
-        } catch (\Exception $e) {
-            \Log::error('=== ERROR getTunjanganPendingApproval ===');
-            \Log::error('Message: ' . $e->getMessage());
-            \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
-                'data' => []
-            ], 500);
-        }
-    }
-
-    public function approveTunjangan(Request $request)
-    {
-        $request->validate([
-            'id_karyawan' => 'required',
-            'bulan' => 'required',
-            'tahun' => 'required',
-            'type' => 'required|in:all,selected',
-            'item_ids' => 'required_if:type,selected|array'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            if ($request->type == 'all') {
-                TunjanganKaryawan::where('id_karyawan', $request->id_karyawan)
-                    ->where('bulan', $request->bulan)
-                    ->where('tahun', $request->tahun)
-                    ->where('status_approval', 'pending')
-                    ->update([
-                        'status_approval' => 'approved',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now()
-                    ]);
-            } else {
-                TunjanganKaryawan::whereIn('id', $request->item_ids)
-                    ->where('status_approval', 'pending')
-                    ->update([
-                        'status_approval' => 'approved',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now()
-                    ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tunjangan berhasil di-approve'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error approving tunjangan: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat approve tunjangan'
-            ], 500);
-        }
-    }
-
-    public function rejectTunjangan(Request $request)
-    {
-        $request->validate([
-            'id_karyawan' => 'required',
-            'bulan' => 'required',
-            'tahun' => 'required',
-            'rejection_note' => 'required|string',
-            'type' => 'required|in:all,selected',
-            'item_ids' => 'required_if:type,selected|array'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            if ($request->type == 'all') {
-                TunjanganKaryawan::where('id_karyawan', $request->id_karyawan)
-                    ->where('bulan', $request->bulan)
-                    ->where('tahun', $request->tahun)
-                    ->where('status_approval', 'pending')
-                    ->update([
-                        'status_approval' => 'rejected',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now(),
-                        'rejection_note' => $request->rejection_note
-                    ]);
-            } else {
-                TunjanganKaryawan::whereIn('id', $request->item_ids)
-                    ->where('status_approval', 'pending')
-                    ->update([
-                        'status_approval' => 'rejected',
-                        'approved_by' => auth()->id(),
-                        'approved_at' => now(),
-                        'rejection_note' => $request->rejection_note
-                    ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tunjangan berhasil di-reject'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error rejecting tunjangan: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat reject tunjangan'
-            ], 500);
-        }
-    }
-
-    public function bulkApproveTunjangan(Request $request)
-    {
-        $request->validate([
-            'bulan' => 'required',
-            'tahun' => 'required',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            $updated = TunjanganKaryawan::where('bulan', $request->bulan)
-                ->where('tahun', $request->tahun)
-                ->where('status_approval', 'pending')
-                ->update([
-                    'status_approval' => 'approved',
-                    'approved_by' => auth()->id(),
-                    'approved_at' => now()
-                ]);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Berhasil approve {$updated} tunjangan"
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Error bulk approving: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat bulk approve'
-            ], 500);
-        }
-    }
-
-    public function getApprovalHistory($month, $year)
-    {
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
         }
 
-        $tunjangan = TunjanganKaryawan::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->whereIn('status_approval', ['approved', 'rejected'])
-            ->with(['karyawan', 'jenistunjangan', 'approvedBy'])
-            ->orderBy('approved_at', 'desc')
+        $dataJabatan = karyawan::whereNotIn('jabatan', ['Pilih Jabatan'])
+            ->whereNot('divisi', 'Direksi')
+            ->distinct()
+            ->pluck('jabatan');
+
+        $dataDivisi = karyawan::whereNotIn('divisi', ['Pilih Divisi', 'Direksi'])
+            ->distinct()
+            ->pluck('divisi');
+
+        $Interviewer = karyawan::whereIn('jabatan', ['HRD', 'GM', 'Direktur Utama', 'Direktur', 'Koordinator ITSM', 'SPV Sales', 'Education Manager'])
+            ->whereNotNull('nip')
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $tunjangan
-        ]);
+        $funnel = Pelamar::statsFunnel();
+        $sumberList = Pelamar::SUMBER;
+        $tahapList = Pelamar::TAHAP;
+
+        return view('HR/hire/index', compact('funnel', 'dataJabatan', 'dataDivisi', 'sumberList', 'tahapList', 'Interviewer'));
     }
 
-    public function getTunjanganSayaGenerate($id, $month, $year)
+    /** Ubah koleksi pelamar menjadi baris tabel (dirender oleh jQuery di index.blade.php). */
+    private function formatBaris(Collection $pelamars): array
     {
-        $tunjangan = TunjanganKaryawan::where('id_karyawan', $id)
-            ->where('bulan', $month)
-            ->where('tahun', $year)
-            ->with('karyawan', 'jenistunjangan')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Tunjangan Saya pada bulan ' . $month . '-' . $year,
-            'data' => $tunjangan
-        ]);
-    }
-
-    public function generateTunjanganPDF($id, $month, $year)
-    {
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        $post = TunjanganKaryawan::where('id_karyawan', $id)
-            ->where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->with('karyawan', 'jenistunjangan')
-            ->get();
-
-        $totalTunjangan = 0;
-        $totalPotongan = 0;
-        $dataluar = $this->AbsensiKaryawanController->jumlahAbsensi($id, $bulan, $tahun);
-
-        if ($dataluar instanceof \Illuminate\Http\JsonResponse) {
-            $absensiData = $dataluar->getData();
-        } else {
-            $absensiData = $dataluar;
-        }
-        $jumlahAbsensi = $absensiData->data->jumlah_absensi;
-
-        foreach ($post as $item) {
-            if ($item->keterangan == 'Tunjangan') {
-                $totalTunjangan += $item->total;
-            } else if ($item->keterangan == 'Potongan') {
-                $totalPotongan += $item->total;
-            }
-        }
-
-        $totalBersih = $totalTunjangan + $totalPotongan;
-
-        $hrd = karyawan::where('jabatan', 'Koordinator Office')->first();
-        $direktur = karyawan::where('jabatan', 'Direktur Utama')->first();
-        $me = karyawan::where('id', $id)->first();
-
-        $data = [
-            'absensi' => $jumlahAbsensi,
-            'tunjangan' => $post,
-            'month' => \Carbon\Carbon::createFromFormat('m', $bulan)->format('F Y'),
-            'hrd' => $hrd,
-            'direktur' => $direktur,
-            'me' => $me,
-            'totalTunjangan' => $totalTunjangan,
-            'totalPotongan' => $totalPotongan,
-            'totalBersih' => $totalBersih,
-        ];
-
-        $pdf = Pdf::loadView('tunjangan.pdf', $data);
-        return $pdf->download('Tunjangan_' . $id . '_' . $bulan . '_' . $tahun . '.pdf');
-    }
-
-    public function tunjanganExportPDF($month, $year)
-    {
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        $post = TunjanganKaryawan::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->with('karyawan', 'jenistunjangan')
+        $penilaians = PelamarFolder::whereIn('pelamar_id', $pelamars->pluck('id'))
             ->get()
-            ->groupBy('karyawan.nama_lengkap')
-            ->sortBy(function ($group) {
-                return $group->first()->karyawan->divisi;
-            });
+            ->groupBy('pelamar_id');
 
-        return view('tunjangan.exportpdf', compact('post', 'bulan', 'tahun'));
+        return $pelamars->values()->map(function ($p) use ($penilaians) {
+            $ratings = $penilaians->get($p->id, collect())->whereNotNull('rating')->pluck('rating');
+            $berikutnya = $p->tahapBerikutnya();
+
+            return [
+                'id' => $p->id,
+                'inisial' => $p->inisial,
+                'nama_lengkap' => $p->nama_lengkap,
+                'email' => $p->email,
+                'jabatan' => $p->jabatan,
+                'divisi' => $p->divisi,
+                'sumber_lamaran' => $p->sumber_lamaran,
+                'tanggal_melamar' => $p->tanggal_melamar?->format('d M Y'),
+                'tahap_rekrutmen' => $p->tahap_rekrutmen,
+                'tahap_label' => $p->tahap_label,
+                'tahap_berikutnya' => $berikutnya,
+                'tahap_berikutnya_label' => $berikutnya ? (Pelamar::TAHAP[$berikutnya] ?? $berikutnya) : null,
+                'bisa_lanjut' => $p->bisaLanjut(),
+                'tanggal_mulai_kerja' => $p->tanggal_mulai_kerja?->format('Y-m-d'),
+                'cv_url' => $p->cv_url,
+                'avg_rating' => $ratings->count() ? round($ratings->avg(), 1) : null,
+                'total_penilai' => $ratings->count(),
+                'psikotes_terisi' => $p->psikotes_terisi,
+            ];
+        })->all();
     }
 
-    public function create()
+    public function getPelamarByFolder($folderId = null)
     {
-        return view('tunjangan.create');
+        if ($folderId === 'all') {
+            $pelamars = Pelamar::aktif()->latest('tanggal_melamar')->get();
+        } elseif ($folderId === 'unassigned' || $folderId === null) {
+            $pelamarDiFolder = PelamarFolder::pluck('pelamar_id');
+            $pelamars = Pelamar::aktif()
+                ->whereNotIn('id', $pelamarDiFolder)
+                ->latest('tanggal_melamar')
+                ->get();
+        } else {
+            $folder = Folder::find($folderId);
+            if (!$folder || $folder->is_archived) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Folder tidak ditemukan atau sudah diarsipkan',
+                    'data' => [],
+                ], 404);
+            }
+
+            $pelamarIds = PelamarFolder::where('folder_id', $folderId)->pluck('pelamar_id');
+            $pelamars = Pelamar::aktif()
+                ->whereIn('id', $pelamarIds)
+                ->latest('tanggal_melamar')
+                ->get();
+        }
+
+        $data = $this->formatBaris($pelamars);
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'total' => count($data),
+        ]);
     }
+
+    public function getFolderList()
+    {
+        $folders = Folder::where('is_archived', false)
+            ->with(['children', 'children.children'])
+            ->withCount(['pelamars'])
+            ->orderBy('is_pinned', 'desc')
+            ->orderBy('nama', 'asc')
+            ->get(['id', 'nama', 'is_pinned', 'parent_id']);
+
+        $pelamarDiFolder = PelamarFolder::pluck('pelamar_id')->unique();
+        $unassignedCount = Pelamar::aktif()->whereNotIn('id', $pelamarDiFolder)->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => $folders,
+            'unassigned_count' => $unassignedCount,
+        ]);
+    }
+
+    /* ============================================================
+     |  VALIDASI & BERKAS
+     * ============================================================ */
+
+    private function aturan(?Pelamar $pelamar = null): array
+    {
+        return [
+            'nama_lengkap' => 'required|string|max:100',
+            'email' => ['required', 'email', 'max:150', Rule::unique('pelamars', 'email')->ignore($pelamar?->id)],
+            'no_telepon' => 'required|string|max:20',
+            'nik_ktp' => 'nullable|string|max:20',
+            'tempat_lahir' => 'nullable|string|max:100',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|in:L,P',
+            'status_pernikahan' => 'nullable|string|max:30',
+            'agama' => 'nullable|string|max:30',
+            'domisili' => 'nullable|string|max:100',
+            'alamat' => 'nullable|string|max:500',
+            'linkedin_url' => 'nullable|string|max:255',
+            'pendidikan_terakhir' => 'nullable|string|max:50',
+            'jurusan' => 'nullable|string|max:100',
+            'institusi' => 'nullable|string|max:150',
+            'ipk' => 'nullable|numeric|min:0|max:4',
+            'divisi' => 'required|string|max:100',
+            'jabatan' => 'required|string|max:100',
+            'detail_jabatan' => 'nullable|string|max:100',
+            'tanggal_melamar' => 'required|date',
+            'sumber_lamaran' => 'required|string|max:100',
+            'pengalaman_tahun' => 'nullable|integer|min:0|max:50',
+            'gaji_diharapkan' => 'nullable|string|max:30',
+            'notice_period' => 'nullable|string|max:50',
+            'keahlian' => 'nullable|string',
+            'catatan_hr' => 'nullable|string',
+            'cv' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+            'portofolio' => 'nullable|file|mimes:pdf,doc,docx,zip|max:10240',
+            'foto' => 'nullable|image|max:3072',
+            'ktp' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'ijazah' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ];
+    }
+
+    private function siapkanData(array $validated): array
+    {
+        foreach (array_keys(self::BERKAS) as $field) {
+            unset($validated[$field]);
+        }
+
+        if (array_key_exists('gaji_diharapkan', $validated)) {
+            $angka = preg_replace('/[^0-9]/', '', (string) $validated['gaji_diharapkan']);
+            $validated['gaji_diharapkan'] = $angka === '' ? null : (int) $angka;
+        }
+
+        if (array_key_exists('keahlian', $validated)) {
+            $daftar = array_values(array_filter(array_map('trim', explode(',', (string) $validated['keahlian']))));
+            $validated['keahlian'] = $daftar ?: null;
+        }
+
+        return $validated;
+    }
+
+    private function simpanBerkas(Request $request): array
+    {
+        $hasil = [];
+
+        foreach (self::BERKAS as $field => [$kolom, $folder]) {
+            if ($request->hasFile($field)) {
+                $hasil[$kolom] = $request->file($field)->store($folder, 'public');
+            }
+        }
+
+        return $hasil;
+    }
+
+    private function hapusBerkas(array $paths): void
+    {
+        foreach ($paths as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+    }
+
+    public function scanDokumen(Request $request, DokumenParser $parser)
+    {
+        $request->validate([
+            'dokumen' => 'required_without:teks|nullable|file|mimes:pdf,docx,jpg,jpeg,png|max:10240',
+            'teks' => 'required_without:dokumen|nullable|string|max:60000',
+            'jenis' => 'nullable|in:cv,ktp,ijazah',
+        ]);
+
+        $teks = (string) $request->input('teks', '');
+
+        if ($request->hasFile('dokumen')) {
+            $teks = $parser->ekstrakTeks($request->file('dokumen'));
+        }
+
+        if (trim($teks) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Teks pada dokumen tidak terbaca. Jika dokumen berupa hasil scan, unggah dalam bentuk gambar (JPG/PNG).',
+            ], 422);
+        }
+
+        $data = $parser->parse($teks);
+
+        if (empty($data)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dokumen terbaca, tetapi tidak ada data yang dapat dikenali.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => count($data) . ' kolom berhasil dikenali dari dokumen.',
+            'data' => $data,
+            'total' => count($data),
+        ]);
+    }
+
+    /* ============================================================
+     |  CRUD PELAMAR
+     * ============================================================ */
 
     public function store(Request $request)
     {
-        $this->validate($request, [
-            'nama_tunjangan' => 'required',
-            'tipe' => 'required',
-            'nilai' => 'required',
-            'divisi' => 'required',
-            'hitung' => 'required',
-        ]);
+        $validated = $request->validate($this->aturan());
 
-        $existingdivisi = JenisTunjangan::where('nama_tunjangan', $request->nama_tunjangan)
-            ->where('tipe', $request->tipe)
-            ->where('nilai', $request->nilai)
-            ->first();
-
-        if ($existingdivisi) {
-            return redirect()->back()->withErrors(['duplicate' => 'Data ini sudah ada!'])->withInput();
-        }
-
-        $nilai = $request->nilai;
-        if ($request->tipe === 'potongan') {
-            $nilai = '-' . abs($nilai);
-        }
-
-        JenisTunjangan::create([
-            'nama_tunjangan' => $request->nama_tunjangan,
-            'tipe' => $request->tipe,
-            'nilai' => $nilai,
-            'divisi' => $request->divisi,
-            'hitung' => $request->hitung,
-        ]);
-
-        return redirect()->back()->with(['success' => 'Data Berhasil Disimpan!']);
-    }
-
-    public function edit($id)
-    {
-        $tunjangan = JenisTunjangan::findOrFail($id);
-        return view('tunjangan.edit', compact('tunjangan'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $this->validate($request, [
-            'nama_tunjangan' => 'required',
-            'tipe' => 'required',
-            'nilai' => 'required',
-            'divisi' => 'required',
-            'hitung' => 'required',
-        ]);
-
-        $tunjangan = JenisTunjangan::findOrFail($id);
-
-        $tunjangan->update([
-            'nama_tunjangan' => $request->nama_tunjangan,
-            'tipe' => $request->tipe,
-            'nilai' => $request->nilai,
-            'divisi' => $request->divisi,
-            'hitung' => $request->hitung,
-        ]);
-
-        return redirect()->back()->with(['success' => 'Data Berhasil Diupdate!']);
-    }
-
-    public function penghitunganTunjangan()
-    {
-        $month = now()->month;
-        $year = now()->year;
-
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        $karyawanList = karyawan::whereNotIn('jabatan', ['Komisaris', 'Direktur'])
-            ->whereNotIn('id', [1, 3])
-            ->where('kode_karyawan', 'not like', '%OL%')
-            ->where('status_aktif', '1')
-            ->get();
-
-        foreach ($karyawanList as $karyawan) {
-            $karyawanId = $karyawan->id;
-
-            $existingCalculation = TunjanganKaryawan::where('id_karyawan', $karyawanId)
-                ->where('bulan', $bulan)
-                ->where('tahun', $tahun)
-                ->first();
-
-            if ($existingCalculation) {
-                continue; // Skip if calculation already exists
-            }
-
-            $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
-                ->whereYear('tanggal', $tahun)
-                ->where('id_karyawan', $karyawanId)
-                ->get();
-
-            $absen_pulang = AbsensiKaryawan::whereMonth('tanggal', $bulan)
-                ->whereYear('tanggal', $tahun)
-                ->where('jam_keluar', '=', null)
-                ->where('id_karyawan', $karyawanId)
-                ->get();
-
-            $jumlahAbsen = $absensiKaryawan->count();
-            $jumlahAbsensiPulang = $absen_pulang->count();
-            $jumlahAbsensi = $jumlahAbsen - $jumlahAbsensiPulang;
-
-            $totalSeconds = $absensiKaryawan->sum(function ($item) {
-                if (!empty($item->waktu_keterlambatan) && strpos($item->waktu_keterlambatan, ':') !== false) {
-                    list($hours, $minutes, $seconds) = explode(':', $item->waktu_keterlambatan);
-                    return $hours * 3600 + $minutes * 60 + $seconds;
-                }
-                return 0;
-            });
-
-            $includeTunjangan = ['Makan', 'Transport', 'Lembur'];
-            if ($totalSeconds > 0) {
-                if ($totalSeconds > 900) {
-                    $keterangan = "Terlambat > 15 menit";
-                } else {
-                    $keterangan = "Terlambat " . floor($totalSeconds / 60) . " menit";
-                    $includeTunjangan[] = 'Absensi';
-                }
-            } else {
-                $keterangan = "Tidak pernah terlambat";
-                $includeTunjangan[] = 'Absensi';
-            }
-
-            $jenisTunjangan = JenisTunjangan::where('divisi', 'All')
-                ->whereIn('nama_tunjangan', $includeTunjangan)
-                ->get();
-
-            $cuti = pengajuancuti::where('id_karyawan', $karyawanId)
-                ->whereYear('tanggal_awal', $tahun)
-                ->whereMonth('tanggal_awal', $bulan)
-                ->get();
-
-            if ($cuti->isNotEmpty()) {
-                $cutikaryawan = $cuti->sum('durasi');
-                if ($cutikaryawan >= 3) {
-                    $jumlahcuti = $cutikaryawan - 3;
-                    $jumlahAbsensi = $jumlahAbsensi - $jumlahcuti;
-                }
-            }
-
-            foreach ($jenisTunjangan as $tunjangan) {
-                if ($tunjangan->nama_tunjangan == 'Lembur') {
-                    $lembur = lembur::with('karyawan', 'hitunglembur')
-                        ->where('id_karyawan', $karyawanId)
-                        ->whereMonth('tanggal_spl', $bulan)
-                        ->whereYear('tanggal_spl', $tahun)
-                        ->get();
-
-                    $totalLemburan = 0;
-
-                    foreach ($lembur as $data) {
-                        if ($data->id_hitung_lembur == null || $data->id_hitung_lembur == '') {
-                            continue;
-                        }
-
-                        if ($data->hitunglembur === null) {
-                            continue;
-                        }
-
-                        $nilaiLembur = $data->hitunglembur->nilai_lembur;
-                        $jamLembur = (strtotime($data->jam_selesai) - strtotime($data->jam_mulai)) / 3600;
-                        $subtotal = $jamLembur * $nilaiLembur;
-                        $totalLemburan += $subtotal;
-                    }
-
-                    if ($totalLemburan > 0) {
-                        $jenisTunjangans = JenisTunjangan::where('nama_tunjangan', 'Lembur')->first();
-                        $tunjanganKaryawan = new TunjanganKaryawan();
-                        $tunjanganKaryawan->id_karyawan = $karyawanId;
-                        $tunjanganKaryawan->bulan = $bulan;
-                        $tunjanganKaryawan->tahun = $tahun;
-                        $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangans->id;
-                        $tunjanganKaryawan->keterangan = $tunjangan->tipe;
-                        $tunjanganKaryawan->total = $totalLemburan;
-                        $tunjanganKaryawan->save();
-                    }
-                } elseif ($tunjangan->hitung == 'Perhari' && $tunjangan->tipe == 'Tunjangan') {
-                    if ($karyawan->jabatan == 'Direktur Utama') {
-                        $jumlahAbsensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)
-                            ->whereYear('tanggal', $tahun)
-                            ->whereRaw('DAYOFWEEK(tanggal) NOT IN (1, 7)')
-                            ->distinct()
-                            ->count('tanggal');
-
-                        $sebelumtigaratus = (float) $tunjangan->nilai * $jumlahAbsensi;
-                        $jumlahTunjangan = $sebelumtigaratus + 300000;
-                    } else {
-                        $jumlahTunjangan = $tunjangan->nilai * $jumlahAbsensi;
-                    }
-
-                    $tunjanganKaryawan = new TunjanganKaryawan();
-                    $tunjanganKaryawan->id_karyawan = $karyawanId;
-                    $tunjanganKaryawan->bulan = $bulan;
-                    $tunjanganKaryawan->tahun = $tahun;
-                    $tunjanganKaryawan->jenis_tunjangan = $tunjangan->id;
-                    $tunjanganKaryawan->keterangan = $tunjangan->tipe;
-                    $tunjanganKaryawan->total = (float) $jumlahTunjangan;
-                    $tunjanganKaryawan->save();
-                } elseif ($tunjangan->hitung == 'Perbulan' && $tunjangan->tipe == 'Tunjangan') {
-                    $tunjanganKaryawan = new TunjanganKaryawan();
-                    $tunjanganKaryawan->id_karyawan = $karyawanId;
-                    $tunjanganKaryawan->bulan = $bulan;
-                    $tunjanganKaryawan->tahun = $tahun;
-                    $tunjanganKaryawan->jenis_tunjangan = $tunjangan->id;
-                    $tunjanganKaryawan->keterangan = $tunjangan->tipe;
-                    $tunjanganKaryawan->total = (float) $tunjangan->nilai;
-                    $tunjanganKaryawan->save();
-                }
-            }
-
-            // update administrasi 
-            $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
-                                ->whereYear('created_at', $tahun)
-                                ->whereMonth('created_at', $bulan)
-                                ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
-                                ->first();
-
-            if ($administrasi) {
-                $administrasi->update([
-                    'status' => 'selesai',
-                    'tanggal_selesai' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        return redirect()->route('tunjangangenerate.index')->with(['success' => 'Penghitungan tunjangan berhasil!']);
-    }
-
-    public function createManual()
-    {
-        $month = now()->month;
-        $year = now()->year;
-
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        $karyawan = karyawan::where('status_aktif', '1')->get();
-        $tunjangan = JenisTunjangan::all();
-
-        return view('tunjangan.createManual', compact('karyawan', 'tunjangan', 'bulan', 'tahun'));
-    }
-
-    public function storeManualTunjangan(Request $request)
-    {
-        $request->validate([
-            'id_tunjangan' => 'required|exists:jenis_tunjangans,id',
-            'karyawan_id' => 'required|array',
-            'karyawan_id.*' => 'required|numeric',
-            'nilai' => 'nullable|string|max:255',
-            'kelipatan' => 'nullable|string|max:255',
-            'hitung' => 'nullable|string|max:255',
-        ]);
-
-        $month = now()->month;
-        $year = now()->year;
-
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
-        }
-
-        foreach ($request->karyawan_id as $karyawanId) {
-            $jenisTunjangan = JenisTunjangan::findOrFail($request->id_tunjangan);
-
-            if ($jenisTunjangan->nama_tunjangan == 'BPJS Keluarga') {
-                $nilai = $request->nilai * $request->kelipatan;
-            } else {
-                $nilai = $request->nilai;
-            }
-
-            if ($request->hitung == 'Perhari') {
-                $absensiKaryawan = AbsensiKaryawan::whereMonth('tanggal', $bulan)
-                    ->whereYear('tanggal', $tahun)
-                    ->where('id_karyawan', $karyawanId)
-                    ->get();
-
-                $jumlahAbsensi = $absensiKaryawan->count();
-                $nilaitotal = $nilai * $jumlahAbsensi;
-            } else {
-                $nilaitotal = $nilai;
-            }
-
-            $tunjanganKaryawan = new TunjanganKaryawan();
-            $tunjanganKaryawan->id_karyawan = $karyawanId;
-            $tunjanganKaryawan->bulan = $bulan;
-            $tunjanganKaryawan->tahun = $tahun;
-            $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangan->id;
-            $tunjanganKaryawan->keterangan = $jenisTunjangan->tipe;
-            $tunjanganKaryawan->total = (float) $nilaitotal;
-            $tunjanganKaryawan->save();
-        }
-
-        // update administrasi 
-        $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
-                            ->whereYear('created_at', $tahun)
-                            ->whereMonth('created_at', $bulan)
-                            ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
-                            ->first();
-
-        if ($administrasi) {
-            $administrasi->update([
-                'status' => 'selesai',
-                'tanggal_selesai' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        return redirect()->route('tunjangangenerate.index')->with(['success' => 'Data Berhasil Disimpan!']);
-    }
-
-    public function storeManual(Request $request)
-    {
-        $bulan = $request->input('bulan_tunjangan');
-        $tahun = $request->input('tahun_tunjangan');
-        $karyawanId = $request->input('karyawan_id');
-        $dataTunjangan = $request->input('dataTunjangan');
-        $deletedata = $request->input('deletedata');
+        $berkas = [];
 
         DB::beginTransaction();
-
         try {
-            if ($deletedata) {
-                foreach ($deletedata as $nama_tunjangan) {
-                    $jenisTunjangan = JenisTunjangan::where('nama_tunjangan', $nama_tunjangan)->first();
-                    $tunjanganKaryawan = TunjanganKaryawan::where('id_karyawan', $karyawanId)
-                        ->where('bulan', $bulan)
-                        ->where('tahun', $tahun)
-                        ->where('jenis_tunjangan', $jenisTunjangan->id)
-                        ->first();
-                    if ($tunjanganKaryawan) {
-                        $tunjanganKaryawan->delete();
-                    }
+            $data = $this->siapkanData($validated);
+            $berkas = $this->simpanBerkas($request);
+
+            $pelamar = Pelamar::create(array_merge($data, $berkas, [
+                'tahap_rekrutmen' => 'applied',
+                'status_aktif' => true,
+            ]));
+
+            Pelamarriwayat::catat($pelamar->id, 'created', [
+                'tahap_ke' => 'applied',
+                'keterangan' => 'Pelamar ditambahkan secara manual oleh HR.',
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Pelamar berhasil ditambahkan.', 'data' => $pelamar]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->hapusBerkas($berkas);
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function show(Pelamar $pelamar)
+    {
+        $pelamar->load('riwayatTahap');
+
+        $penilaians = PelamarFolder::where('pelamar_id', $pelamar->id)
+            ->with(['folder', 'interviewer'])
+            ->orderBy('tanggal_dinilai', 'desc')
+            ->get()
+            ->map(function ($pf) {
+                return [
+                    'id' => $pf->id,
+                    'rating' => $pf->rating,
+                    'catatan' => $pf->catatan,
+                    'tanggal_dinilai' => $pf->tanggal_dinilai?->format('d M Y H:i'),
+                    'folder_nama' => $pf->folder?->nama ?? '-',
+                    'interviewer_nama' => $pf->interviewer?->name ?? 'Unknown',
+                    'interviewer_jabatan' => $pf->interviewer?->jabatan ?? '-',
+                    'file_penilaian' => $pf->file_penilaian,
+                ];
+            });
+
+        $ratings = $penilaians->whereNotNull('rating')->pluck('rating');
+        $avgRating = $ratings->count() > 0 ? round($ratings->avg(), 1) : null;
+
+        $kolom = [
+            'nama_lengkap', 'email', 'no_telepon', 'nik_ktp', 'tempat_lahir', 'jenis_kelamin',
+            'status_pernikahan', 'agama', 'domisili', 'alamat', 'linkedin_url', 'pendidikan_terakhir',
+            'jurusan', 'institusi', 'ipk', 'divisi', 'jabatan', 'detail_jabatan', 'sumber_lamaran',
+            'pengalaman_tahun', 'gaji_diharapkan', 'notice_period', 'catatan_hr',
+        ];
+
+        $form = collect($kolom)->mapWithKeys(fn ($k) => [$k => $pelamar->{$k}])->all();
+        $form['tanggal_lahir'] = $pelamar->tanggal_lahir ? Carbon::parse($pelamar->tanggal_lahir)->format('Y-m-d') : null;
+        $form['tanggal_melamar'] = $pelamar->tanggal_melamar ? Carbon::parse($pelamar->tanggal_melamar)->format('Y-m-d') : null;
+        $form['keahlian'] = is_array($pelamar->keahlian) ? implode(', ', $pelamar->keahlian) : ($pelamar->keahlian ?? '');
+
+        $dokumen = [];
+        foreach (self::BERKAS as $field => [$kolomPath]) {
+            $dokumen[$field] = $pelamar->{$kolomPath} ? Storage::url($pelamar->{$kolomPath}) : null;
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pelamar' => $pelamar,
+                'form' => $form,
+                'dokumen' => $dokumen,
+                'riwayat' => $pelamar->riwayatTahap,
+                'cv_url' => $pelamar->cv_url,
+                'portofolio_url' => $pelamar->portofolio_url,
+                'usia' => $pelamar->usia,
+                'inisial' => $pelamar->inisial,
+                'tahap_label' => $pelamar->tahap_label,
+                'progress' => $pelamar->progressPersen(),
+                'bisa_lanjut' => $pelamar->bisaLanjut(),
+                'tahap_berikutnya' => $pelamar->tahapBerikutnya(),
+                'estimasi_bulanan' => $pelamar->estimasi_pendapatan_bulanan_format,
+                'penilaians' => $penilaians,
+                'avg_rating' => $avgRating,
+                'total_penilai' => $ratings->count(),
+                'psikotes' => $pelamar->psikotesDetail(),
+            ],
+        ]);
+    }
+
+    public function update(Request $request, Pelamar $pelamar)
+    {
+        $validated = $request->validate($this->aturan($pelamar));
+
+        $berkas = [];
+        $pathLama = $pelamar->only(array_column(self::BERKAS, 0));
+
+        DB::beginTransaction();
+        try {
+            $data = $this->siapkanData($validated);
+            $berkas = $this->simpanBerkas($request);
+
+            $pelamar->update(array_merge($data, $berkas));
+
+            Pelamarriwayat::catat($pelamar->id, 'updated', [
+                'keterangan' => 'Data pelamar diperbarui.',
+                'metadata' => ['kolom_berubah' => array_keys($pelamar->getChanges())],
+            ]);
+
+            DB::commit();
+
+            foreach ($berkas as $kolom => $path) {
+                if (!empty($pathLama[$kolom])) {
+                    Storage::disk('public')->delete($pathLama[$kolom]);
                 }
             }
 
-            if ($dataTunjangan) {
-                foreach ($dataTunjangan as $namaTunjangan => $nilai) {
-                    $namaTunjanganId = str_replace('_', ' ', $namaTunjangan);
+            return response()->json(['success' => true, 'message' => 'Data pelamar berhasil diperbarui.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->hapusBerkas($berkas);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
-                    $jenisTunjangan = JenisTunjangan::where('nama_tunjangan', $namaTunjanganId)->first();
+    public function destroy(Pelamar $pelamar)
+    {
+        $this->hapusBerkas($pelamar->only(array_column(self::BERKAS, 0)));
+        $this->hapusBerkas(collect($pelamar->psikotes ?? [])->pluck('file_path')->all());
 
-                    if (!$jenisTunjangan) {
-                        continue;
-                    }
+        $pelamar->delete();
 
-                    $keterangan = $nilai < 0 ? 'Potongan' : 'Tunjangan';
+        return response()->json(['success' => true, 'message' => 'Pelamar berhasil dihapus.']);
+    }
 
-                    $tunjanganKaryawan = TunjanganKaryawan::where('id_karyawan', $karyawanId)
-                        ->where('bulan', $bulan)
-                        ->where('tahun', $tahun)
-                        ->where('jenis_tunjangan', $jenisTunjangan->id)
-                        ->first();
+    /* ============================================================
+     |  TAHAPAN REKRUTMEN
+     * ============================================================ */
 
-                    if ($tunjanganKaryawan) {
-                        $tunjanganKaryawan->total = (float) $nilai;
-                        $tunjanganKaryawan->save();
-                    } else {
-                        $tunjanganKaryawan = new TunjanganKaryawan();
-                        $tunjanganKaryawan->id_karyawan = $karyawanId;
-                        $tunjanganKaryawan->bulan = $bulan;
-                        $tunjanganKaryawan->tahun = $tahun;
-                        $tunjanganKaryawan->jenis_tunjangan = $jenisTunjangan->id;
-                        $tunjanganKaryawan->keterangan = $keterangan;
-                        $tunjanganKaryawan->total = (float) $nilai;
-                        $tunjanganKaryawan->save();
-                    }
-                }
+    public function lanjutTahap(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'tahap_ke' => ['required', Rule::in(array_keys(Pelamar::TAHAP))],
+            'rating' => 'nullable|integer|min:1|max:4',
+            'keterangan' => 'nullable|string',
+            'notif_email' => 'nullable|boolean',
+        ]);
+
+        if (!$pelamar->bisaLanjut()) {
+            return response()->json(['success' => false, 'message' => 'Pelamar sudah pada tahap akhir.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $tahapLama = $pelamar->tahap_rekrutmen;
+
+            $pelamar->update([
+                'tahap_rekrutmen' => $request->tahap_ke,
+                'rating' => $request->rating ?? $pelamar->rating,
+            ]);
+
+            Pelamarriwayat::catat($pelamar->id, 'moved', [
+                'tahap_dari' => $tahapLama,
+                'tahap_ke' => $request->tahap_ke,
+                'rating' => $request->rating,
+                'keterangan' => $request->keterangan,
+            ]);
+
+            if ($request->boolean('notif_email')) {
+                $this->kirimNotifikasiTahap($pelamar, $request->tahap_ke);
             }
 
             DB::commit();
-            // update administrasi
-            $administrasi = AdministrasiKaryawan::whereNotIn('status', ['selesai', 'terlambat'])
-                                ->whereYear('created_at', $tahun)
-                                ->whereMonth('created_at', $bulan)
-                                ->where('nama_administrasi', 'like', '%Tunjangan bulan%')
-                                ->first();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pelamar berhasil dilanjutkan ke tahap ' . Pelamar::TAHAP[$request->tahap_ke] . '.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
-            if ($administrasi) {
-                $administrasi->update([
-                    'status' => 'selesai',
-                    'tanggal_selesai' => now(),
-                    'updated_at' => now(),
+    public function tolak(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'alasan_penolakan' => 'nullable|string',
+            'alasan_lainnya' => 'nullable|string',
+            'catatan_internal' => 'nullable|string',
+            'notif_email' => 'nullable|boolean',
+            'simpan_talent_pool' => 'nullable|boolean',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $tahapLama = $pelamar->tahap_rekrutmen;
+
+            $alasan = $request->alasan_penolakan;
+            if ($alasan === 'lainnya' && filled($request->alasan_lainnya)) {
+                $alasan = $request->alasan_lainnya;
+            }
+
+            $pelamar->update([
+                'tahap_rekrutmen' => 'rejected',
+                'alasan_penolakan' => $alasan,
+                'catatan_internal' => $request->catatan_internal,
+                'simpan_talent_pool' => $request->boolean('simpan_talent_pool'),
+            ]);
+
+            Pelamarriwayat::catat($pelamar->id, 'rejected', [
+                'tahap_dari' => $tahapLama,
+                'tahap_ke' => 'rejected',
+                'keterangan' => $alasan ?? $request->catatan_internal,
+            ]);
+
+            if ($request->boolean('notif_email')) {
+                $this->kirimEmailPenolakan($pelamar);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Pelamar berhasil ditolak.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function jadwalkanInterview(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'tahap_interview' => ['required', Rule::in(array_keys(Pelamar::TAHAP_INTERVIEW))],
+            'tanggal' => 'required|date|after_or_equal:today',
+            'waktu' => 'required|date_format:H:i',
+            'metode_interview' => ['required', Rule::in(array_keys(Pelamar::METODE_INTERVIEW))],
+            'link_meeting' => 'nullable|url',
+            'lokasi_interview' => 'nullable|string|max:200',
+            'interviewer' => 'required|array|min:1',
+            'interviewer.*' => 'required|string|max:100',
+            'catatan' => 'nullable|string',
+            'notif_email' => 'nullable|boolean',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $jadwal = $request->tanggal . ' ' . $request->waktu . ':00';
+
+            $interviewers = json_encode($request->interviewer);
+
+            $pelamar->update([
+                'jadwal_interview' => $jadwal,
+                'metode_interview' => $request->metode_interview,
+                'link_meeting' => $request->link_meeting,
+                'lokasi_interview' => $request->lokasi_interview,
+                'interviewer' => $interviewers,
+                'tahap_interview' => $request->tahap_interview,
+                'tahap_rekrutmen' => 'interview',
+            ]);
+
+            Pelamarriwayat::catat($pelamar->id, 'interview_scheduled', [
+                'tahap_ke' => 'interview',
+                'keterangan' => $request->catatan,
+                'metadata' => [
+                    'jadwal' => $jadwal,
+                    'metode' => $request->metode_interview,
+                    'link' => $request->link_meeting,
+                    'lokasi' => $request->lokasi_interview,
+                    'interviewer' => $request->interviewer,
+                    'tahap' => $request->tahap_interview,
+                ],
+            ]);
+
+            if ($request->boolean('notif_email')) {
+                $this->kirimNotifikasiInterview($pelamar);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Jadwal interview berhasil disimpan.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function kirimOffer(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'gaji_ditawarkan' => 'required|string',
+            'tunjangan_makan' => 'required|string',
+            'tunjangan_transport' => 'required|string',
+            'tanggal_mulai_kerja' => 'required|date|after_or_equal:today',
+            'status_kepegawaian' => ['required', Rule::in(array_keys(Pelamar::STATUS_KEPEGAWAIAN))],
+            'benefit_lainnya' => 'nullable|string',
+            'pesan_tambahan' => 'nullable|string',
+            'lampiran_offer' => 'required|file|mimes:pdf|max:5120',
+            'password_offer' => 'required|string|min:4|max:20',
+        ]);
+
+        $offerPath = null;
+
+        DB::beginTransaction();
+        try {
+            $gaji = (int) preg_replace('/[^0-9]/', '', $request->gaji_ditawarkan);
+            $tunjanganMakan = (int) preg_replace('/[^0-9]/', '', $request->tunjangan_makan);
+            $tunjanganTransport = (int) preg_replace('/[^0-9]/', '', $request->tunjangan_transport);
+
+            if ($request->hasFile('lampiran_offer')) {
+                $offerPath = $request->file('lampiran_offer')->store('pelamar/offer', 'public');
+            }
+
+            $pelamar->update([
+                'gaji_ditawarkan' => $gaji,
+                'tunjangan_makan' => $tunjanganMakan,
+                'tunjangan_transport' => $tunjanganTransport,
+                'tanggal_mulai_kerja' => $request->tanggal_mulai_kerja,
+                'status_kepegawaian' => $request->status_kepegawaian,
+                'benefit_lainnya' => $request->benefit_lainnya,
+                'tahap_rekrutmen' => 'offer',
+                'status_offer' => 'pending',
+                'tanggal_offer_dikirim' => now(),
+            ]);
+
+            $totalTunjanganHarian = $tunjanganMakan + $tunjanganTransport;
+
+            Pelamarriwayat::catat($pelamar->id, 'offer_sent', [
+                'tahap_ke' => 'offer',
+                'keterangan' => $request->pesan_tambahan,
+                'metadata' => [
+                    'gaji_pokok' => $gaji,
+                    'tunjangan_makan' => $tunjanganMakan,
+                    'tunjangan_transport' => $tunjanganTransport,
+                    'total_tunjangan_harian' => $totalTunjanganHarian,
+                    'tanggal_mulai' => $request->tanggal_mulai_kerja,
+                    'status_kepegawaian' => $request->status_kepegawaian,
+                    'offer_path' => $offerPath,
+                ],
+            ]);
+
+            $this->kirimEmailOffer(
+                $pelamar,
+                $request->pesan_tambahan,
+                $offerPath,
+                $request->password_offer
+            );
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Penawaran berhasil dikirim ke pelamar.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->hapusBerkas([$offerPath]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    private function protectPdf($sourcePath, $password, $pelamarId)
+    {
+        $pdf = new Fpdi();
+
+        $pdf->setProtection(
+            ['print', 'copy'],
+            $password,
+            $password,
+            2
+        );
+
+        $pageCount = $pdf->setSourceFile($sourcePath);
+
+        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+            $templateId = $pdf->importPage($pageNo);
+            $size = $pdf->getTemplateSize($templateId);
+
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            $pdf->useTemplate($templateId);
+        }
+
+        $outputDir = storage_path('app/public/pelamar/offer');
+        if (!file_exists($outputDir)) {
+            mkdir($outputDir, 0755, true);
+        }
+
+        $outputPath = $outputDir . '/offer_' . $pelamarId . '_' . time() . '.pdf';
+
+        $pdf->Output($outputPath, 'F');
+
+        return $outputPath;
+    }
+
+    public function onboarding(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'nik_karyawan' => 'required|string|max:30',
+            'tanggal_mulai_kerja' => 'required|date',
+            'atasan_langsung' => 'required|string|max:100',
+            'status_kepegawaian' => ['required', Rule::in(array_keys(Pelamar::STATUS_KEPEGAWAIAN))],
+            'checklist_onboarding' => 'nullable|array',
+        ]);
+
+        if (!$pelamar->sudahDiterima() && $pelamar->tahap_rekrutmen !== 'offer') {
+            return response()->json(['success' => false, 'message' => 'Pelamar belum pada tahap yang sesuai untuk onboarding.'], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $pelamar->update([
+                'tahap_rekrutmen' => 'hired',
+                'nik_karyawan' => $request->nik_karyawan,
+                'tanggal_mulai_kerja' => $request->tanggal_mulai_kerja,
+                'atasan_langsung' => $request->atasan_langsung,
+                'status_kepegawaian' => $request->status_kepegawaian,
+                'checklist_onboarding' => $request->checklist_onboarding ?? [],
+                'status_offer' => 'accepted',
+            ]);
+
+            Pelamarriwayat::catat($pelamar->id, 'onboarded', [
+                'tahap_ke' => 'hired',
+                'keterangan' => 'Pelamar resmi dijadikan karyawan.',
+                'metadata' => [
+                    'nik' => $request->nik_karyawan,
+                    'tanggal_mulai' => $request->tanggal_mulai_kerja,
+                    'atasan' => $request->atasan_langsung,
+                    'status' => $request->status_kepegawaian,
+                    'gaji_pokok' => $pelamar->gaji_ditawarkan,
+                    'tunjangan_makan' => $pelamar->tunjangan_makan,
+                    'tunjangan_transport' => $pelamar->tunjangan_transport,
+                ],
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Pelamar berhasil diproses menjadi karyawan.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /* ============================================================
+     |  PSIKOTES (disimpan di kolom JSON pelamars.psikotes)
+     * ============================================================ */
+
+    public function simpanPsikotes(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'kategori' => ['required', Rule::in(array_keys(Pelamar::KATEGORI_PSIKOTES))],
+            'hasil' => 'nullable|string|max:50',
+            'skor' => 'nullable|numeric|min:0|max:100',
+            'tanggal_tes' => 'nullable|date',
+            'catatan' => 'nullable|string|max:2000',
+            'dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+            'lanjut_tahap' => 'nullable|boolean',
+        ]);
+
+        $kategori = $request->kategori;
+        $label = Pelamar::KATEGORI_PSIKOTES[$kategori];
+        $hasil = strtoupper(trim((string) $request->hasil));
+        $skor = $request->filled('skor') ? round((float) $request->skor, 2) : null;
+
+        if ($kategori === 'mbti') {
+            if (!in_array($hasil, Pelamar::MBTI_TIPE, true)) {
+                throw ValidationException::withMessages(['hasil' => 'Tipe MBTI tidak valid (contoh: INTJ).']);
+            }
+            $skor = null;
+        } elseif ($kategori === 'riasec') {
+            if (!preg_match('/^(?!.*(.).*\1)[RIASEC]{1,3}$/', $hasil)) {
+                throw ValidationException::withMessages(['hasil' => 'Kode RIASEC harus 1-3 huruf unik dari R, I, A, S, E, C (contoh: IAS).']);
+            }
+            $skor = null;
+        } else {
+            if ($skor === null) {
+                throw ValidationException::withMessages(['skor' => 'Skor (0-100) wajib diisi.']);
+            }
+            $hasil = null;
+        }
+
+        $semua = is_array($pelamar->psikotes) ? $pelamar->psikotes : [];
+        $lama = $semua[$kategori] ?? null;
+
+        if (!$lama && !$request->hasFile('dokumen')) {
+            throw ValidationException::withMessages(['dokumen' => 'Dokumen hasil psikotes wajib diunggah.']);
+        }
+
+        $pathLama = $lama['file_path'] ?? null;
+        $pathBaru = null;
+
+        DB::beginTransaction();
+        try {
+            $entri = [
+                'hasil' => $hasil,
+                'skor' => $skor,
+                'tanggal' => $request->tanggal_tes,
+                'catatan' => $request->catatan,
+                'file_path' => $pathLama,
+                'file_nama' => $lama['file_nama'] ?? null,
+                'diinput_oleh' => auth()->id(),
+                'diperbarui' => now()->toDateTimeString(),
+            ];
+
+            if ($request->hasFile('dokumen')) {
+                $file = $request->file('dokumen');
+                $pathBaru = $file->store('pelamar/psikotes', 'public');
+                $entri['file_path'] = $pathBaru;
+                $entri['file_nama'] = $file->getClientOriginalName();
+            }
+
+            $semua[$kategori] = $entri;
+            $perubahan = ['psikotes' => $semua];
+            $tahapLama = $pelamar->tahap_rekrutmen;
+            $pindah = $request->boolean('lanjut_tahap') && in_array($tahapLama, ['applied', 'screening'], true);
+
+            if ($pindah) {
+                $perubahan['tahap_rekrutmen'] = 'psikotest';
+            }
+
+            $pelamar->update($perubahan);
+
+            Pelamarriwayat::catat($pelamar->id, 'note', [
+                'tahap_ke' => $pelamar->tahap_rekrutmen,
+                'keterangan' => "Hasil psikotes {$label} disimpan: " . ($hasil ?: 'skor ' . $skor),
+                'metadata' => ['kategori' => $kategori],
+            ]);
+
+            if ($pindah) {
+                Pelamarriwayat::catat($pelamar->id, 'moved', [
+                    'tahap_dari' => $tahapLama,
+                    'tahap_ke' => 'psikotest',
+                    'keterangan' => 'Dipindahkan otomatis ke tahap Psikotes saat hasil diunggah.',
                 ]);
             }
 
-            return redirect()->route('tunjangangenerate.index')->with(['success' => 'Data Berhasil Disimpan!']);
-        } catch (\Exception $e) {
-            DB::rollback();
-            Log::error('Failed : ' . $e->getMessage());
-            return redirect()->route('tunjangangenerate.index')->with(['error' => 'Terjadi kesalahan, coba lagi.']);
+            DB::commit();
+
+            if ($pathBaru && $pathLama) {
+                Storage::disk('public')->delete($pathLama);
+            }
+
+            return response()->json(['success' => true, 'message' => "Hasil psikotes {$label} berhasil disimpan."]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->hapusBerkas([$pathBaru]);
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan psikotes: ' . $e->getMessage()], 500);
         }
     }
 
-    public function tunjanganExportExcel($month, $year)
+    public function hapusPsikotes(Pelamar $pelamar, string $kategori)
     {
-        if ($month == 1) {
-            $bulan = 12;
-            $tahun = $year - 1;
-        } else {
-            $bulan = $month - 1;
-            $tahun = $year;
+        if (!array_key_exists($kategori, Pelamar::KATEGORI_PSIKOTES)) {
+            return response()->json(['success' => false, 'message' => 'Kategori tidak dikenal.'], 422);
         }
 
-        $post = TunjanganKaryawan::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->with('karyawan', 'jenistunjangan')
-            ->get()
-            ->groupBy('karyawan.nama_lengkap')
-            ->sortBy(function ($group) {
-                return $group->first()->karyawan->divisi;
-            });
+        $semua = is_array($pelamar->psikotes) ? $pelamar->psikotes : [];
+        $path = $semua[$kategori]['file_path'] ?? null;
+        unset($semua[$kategori]);
 
-        $nama_tunjangan = JenisTunjangan::get();
+        $pelamar->update(['psikotes' => $semua ?: null]);
+        $this->hapusBerkas([$path]);
 
-        return Excel::download(new TunjanganExport($post, $nama_tunjangan), 'rekap_tunjangan.xlsx');
+        $label = Pelamar::KATEGORI_PSIKOTES[$kategori];
+        Pelamarriwayat::catat($pelamar->id, 'note', ['keterangan' => "Hasil psikotes {$label} dihapus."]);
+
+        return response()->json(['success' => true, 'message' => "Hasil psikotes {$label} dihapus."]);
     }
-    
+
+    /* ============================================================
+     |  ANALITIK (tab kedua)
+     * ============================================================ */
+
+    private function distribusi(Collection $values, int $limit = 8): array
+    {
+        $hitung = $values->filter()->countBy()->sortDesc()->take($limit);
+
+        return ['labels' => $hitung->keys()->values()->all(), 'values' => $hitung->values()->all()];
+    }
+
+    private function ringkasSkor(Collection $daftar): array
+    {
+        $skor = $daftar->pluck('skor');
+
+        if ($skor->isEmpty()) {
+            return ['n' => 0, 'avg' => null, 'min' => null, 'max' => null, 'dist' => [0, 0, 0, 0]];
+        }
+
+        $dist = [0, 0, 0, 0];
+        foreach ($skor as $v) {
+            $dist[$v >= 80 ? 3 : ($v >= 60 ? 2 : ($v >= 40 ? 1 : 0))]++;
+        }
+
+        return ['n' => $skor->count(), 'avg' => round($skor->avg(), 1), 'min' => $skor->min(), 'max' => $skor->max(), 'dist' => $dist];
+    }
+
+    public function analitik()
+    {
+        $semua = Pelamar::aktif()->get();
+
+        // Kartu & tahap
+        $funnel = Pelamar::statsFunnel();
+        $perTahap = $semua->groupBy('tahap_rekrutmen')->map->count();
+        $tahap = [
+            'labels' => array_values(Pelamar::TAHAP),
+            'values' => collect(array_keys(Pelamar::TAHAP))->map(fn ($k) => (int) $perTahap->get($k, 0))->all(),
+        ];
+
+        // Tren 12 bulan
+        $bulan = collect(range(11, 0))->map(fn ($i) => now()->startOfMonth()->subMonths($i)->format('Y-m'))->all();
+        $perBulan = $semua->groupBy(fn ($p) => $p->tanggal_melamar ? Carbon::parse($p->tanggal_melamar)->format('Y-m') : 'x');
+
+        $trend = [
+            'labels' => $bulan,
+            'lamaran' => collect($bulan)->map(fn ($b) => $perBulan->get($b, collect())->count())->all(),
+            'diterima' => collect($bulan)->map(fn ($b) => $perBulan->get($b, collect())->where('tahap_rekrutmen', 'hired')->count())->all(),
+        ];
+
+        // Rating interviewer
+        $nilai = PelamarFolder::whereNotNull('rating')->whereIn('pelamar_id', $semua->pluck('id'))->pluck('rating');
+        $rating = [
+            'values' => collect([1, 2, 3, 4])->map(fn ($r) => $nilai->filter(fn ($v) => (int) $v === $r)->count())->all(),
+            'avg' => $nilai->count() ? round($nilai->avg(), 1) : null,
+        ];
+
+        // Psikotes: MBTI
+        $mbtiList = $semua->map(fn ($p) => strtoupper((string) data_get($p->psikotes, 'mbti.hasil')))
+            ->filter(fn ($h) => strlen($h) === 4)->values();
+
+        $dims = [];
+        foreach ([['E', 'I', 0], ['S', 'N', 1], ['T', 'F', 2], ['J', 'P', 3]] as [$a, $b, $idx]) {
+            $dims[] = [
+                'a' => $a,
+                'b' => $b,
+                'na' => $mbtiList->filter(fn ($h) => $h[$idx] === $a)->count(),
+                'nb' => $mbtiList->filter(fn ($h) => $h[$idx] === $b)->count(),
+            ];
+        }
+
+        // RIASEC: huruf pertama bobot 3, kedua 2, ketiga 1
+        $riasecList = $semua->map(fn ($p) => strtoupper((string) data_get($p->psikotes, 'riasec.hasil')))
+            ->filter()->values();
+
+        $bobot = array_fill_keys(['R', 'I', 'A', 'S', 'E', 'C'], 0);
+        foreach ($riasecList as $kode) {
+            foreach (str_split($kode) as $i => $huruf) {
+                if (isset($bobot[$huruf])) {
+                    $bobot[$huruf] += 3 - $i;
+                }
+            }
+        }
+
+        // Skor kognitif
+        $daftarSkor = function (string $kategori) use ($semua) {
+            return $semua->map(function ($p) use ($kategori) {
+                $r = data_get($p->psikotes, $kategori);
+                if (!$r || !isset($r['skor']) || $r['skor'] === '' || $r['skor'] === null) {
+                    return null;
+                }
+
+                return [
+                    'skor' => (float) $r['skor'],
+                    'bulan' => Carbon::parse($r['tanggal'] ?? $p->updated_at)->format('Y-m'),
+                ];
+            })->filter()->values();
+        };
+
+        $numerik = $daftarSkor('logika_numerik');
+        $verbal = $daftarSkor('analogi_verbal');
+
+        $rataBulanan = function (Collection $daftar) use ($bulan) {
+            $grup = $daftar->groupBy('bulan');
+
+            return collect($bulan)->map(function ($b) use ($grup) {
+                $g = $grup->get($b);
+                return $g && $g->count() ? round($g->avg('skor'), 1) : null;
+            })->all();
+        };
+
+        // Ringkasan per pelamar
+        $peserta = $semua->filter(fn ($p) => $p->psikotes_terisi > 0)->map(fn ($p) => [
+            'id' => $p->id,
+            'nama' => $p->nama_lengkap,
+            'jabatan' => $p->jabatan,
+            'mbti' => data_get($p->psikotes, 'mbti.hasil'),
+            'riasec' => data_get($p->psikotes, 'riasec.hasil'),
+            'logika_numerik' => data_get($p->psikotes, 'logika_numerik.skor'),
+            'analogi_verbal' => data_get($p->psikotes, 'analogi_verbal.skor'),
+        ])->values();
+
+        $coverage = ['total_pelamar' => $semua->count()];
+        foreach (array_keys(Pelamar::KATEGORI_PSIKOTES) as $k) {
+            $coverage[$k] = $semua->filter(fn ($p) => !empty(data_get($p->psikotes, $k)))->count();
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'funnel' => $funnel,
+                'tahap' => $tahap,
+                'trend' => $trend,
+                'sumber' => $this->distribusi($semua->pluck('sumber_lamaran')),
+                'divisi' => $this->distribusi($semua->pluck('divisi')),
+                'rating' => $rating,
+                'psikotes' => [
+                    'coverage' => $coverage,
+                    'mbti' => [
+                        'total' => $mbtiList->count(),
+                        'types' => $this->distribusi($mbtiList, 16),
+                        'dims' => $dims,
+                    ],
+                    'riasec' => [
+                        'total' => $riasecList->count(),
+                        'labels' => array_keys($bobot),
+                        'values' => array_values($bobot),
+                    ],
+                    'skor' => [
+                        'logika_numerik' => $this->ringkasSkor($numerik),
+                        'analogi_verbal' => $this->ringkasSkor($verbal),
+                        'trend' => [
+                            'labels' => $bulan,
+                            'logika_numerik' => $rataBulanan($numerik),
+                            'analogi_verbal' => $rataBulanan($verbal),
+                        ],
+                    ],
+                    'peserta' => $peserta,
+                ],
+            ],
+        ]);
+    }
+
+    /* ============================================================
+     |  EMAIL, CATATAN, TALENT POOL, EXPORT
+     * ============================================================ */
+
+    public function kirimEmail(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'subjek' => 'required|string|max:200',
+            'isi_email' => 'required|string',
+            'lampiran' => 'nullable|array',
+            'lampiran.*' => 'nullable|file|max:5120',
+        ]);
+
+        try {
+            $lampiranPaths = [];
+            if ($request->hasFile('lampiran')) {
+                foreach ($request->file('lampiran') as $file) {
+                    $lampiranPaths[] = $file->store('pelamar/email-lampiran', 'public');
+                }
+            }
+
+            Mail::to($pelamar->email)->send(new EmailKustom($pelamar, $request->subjek, $request->isi_email, $lampiranPaths));
+
+            Pelamarriwayat::catat($pelamar->id, 'email_sent', [
+                'keterangan' => 'Email kustom dikirim: ' . $request->subjek,
+                'metadata' => [
+                    'subjek' => $request->subjek,
+                    'lampiran' => $lampiranPaths,
+                    'penerima' => $pelamar->email,
+                ],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Email berhasil dikirim ke ' . $pelamar->email . '.',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim email kustom: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengirim email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function tambahCatatan(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'catatan' => 'required|string',
+            'tipe' => 'in:hr,internal',
+        ]);
+
+        $field = $request->tipe === 'internal' ? 'catatan_internal' : 'catatan_hr';
+        $pelamar->update([$field => $request->catatan]);
+
+        Pelamarriwayat::catat($pelamar->id, 'note', [
+            'keterangan' => $request->catatan,
+            'metadata' => ['tipe' => $request->tipe],
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Catatan berhasil disimpan.']);
+    }
+
+    public function toggleTalentPool(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'simpan' => 'required|boolean',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $pelamar->update([
+            'simpan_talent_pool' => $request->simpan,
+            'talent_pool_catatan' => $request->catatan,
+        ]);
+
+        $msg = $request->simpan ? 'Pelamar disimpan ke talent pool.' : 'Pelamar dihapus dari talent pool.';
+        return response()->json(['success' => true, 'message' => $msg]);
+    }
+
+    public function riwayat(Pelamar $pelamar)
+    {
+        $riwayat = $pelamar->riwayatTahap()->get();
+        return response()->json(['success' => true, 'data' => $riwayat]);
+    }
+
+    public function export(Request $request)
+    {
+        $pelamars = Pelamar::aktif()
+            ->filter($request->only(['search', 'tahap', 'divisi', 'jabatan', 'sumber', 'tanggal_dari', 'tanggal_sampai']))
+            ->latest('tanggal_melamar')
+            ->get();
+
+        $namaFile = 'pelamar_' . now()->format('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($pelamars) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                'Nama Lengkap', 'Email', 'No. Telepon', 'NIK', 'Tempat Lahir', 'Tanggal Lahir', 'Jenis Kelamin',
+                'Status Pernikahan', 'Agama', 'Domisili', 'Alamat', 'LinkedIn', 'Pendidikan', 'Institusi',
+                'Jurusan', 'IPK', 'Divisi', 'Posisi', 'Detail Posisi', 'Tanggal Melamar', 'Sumber',
+                'Pengalaman (Tahun)', 'Gaji Diharapkan', 'Notice Period', 'Keahlian', 'Tahapan',
+                'MBTI', 'RIASEC', 'Skor Logika Numerik', 'Skor Analogi Verbal', 'Catatan HR',
+            ]);
+
+            foreach ($pelamars as $p) {
+                fputcsv($out, [
+                    $p->nama_lengkap,
+                    $p->email,
+                    $p->no_telepon,
+                    $p->nik_ktp,
+                    $p->tempat_lahir,
+                    $p->tanggal_lahir ? Carbon::parse($p->tanggal_lahir)->format('Y-m-d') : '',
+                    $p->jenis_kelamin,
+                    $p->status_pernikahan,
+                    $p->agama,
+                    $p->domisili,
+                    $p->alamat,
+                    $p->linkedin_url,
+                    $p->pendidikan_terakhir,
+                    $p->institusi,
+                    $p->jurusan,
+                    $p->ipk,
+                    $p->divisi,
+                    $p->jabatan,
+                    $p->detail_jabatan,
+                    $p->tanggal_melamar?->format('Y-m-d'),
+                    $p->sumber_lamaran,
+                    $p->pengalaman_tahun,
+                    $p->gaji_diharapkan,
+                    $p->notice_period,
+                    is_array($p->keahlian) ? implode(', ', $p->keahlian) : $p->keahlian,
+                    $p->tahap_label,
+                    data_get($p->psikotes, 'mbti.hasil'),
+                    data_get($p->psikotes, 'riasec.hasil'),
+                    data_get($p->psikotes, 'logika_numerik.skor'),
+                    data_get($p->psikotes, 'analogi_verbal.skor'),
+                    $p->catatan_hr,
+                ]);
+            }
+
+            fclose($out);
+        }, $namaFile, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    public function funnelStats()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => Pelamar::statsFunnel(),
+        ]);
+    }
+
+    private function kirimNotifikasiTahap(Pelamar $pelamar, string $tahap): void
+    {
+        try {
+            Mail::to($pelamar->email)->send(new NotifikasiTahap($pelamar, Pelamar::TAHAP[$tahap] ?? $tahap));
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim notifikasi tahap: ' . $e->getMessage());
+        }
+    }
+
+    private function kirimNotifikasiInterview(Pelamar $pelamar): void
+    {
+        try {
+            $metodeLabel = Pelamar::METODE_INTERVIEW[$pelamar->metode_interview] ?? $pelamar->metode_interview;
+            $tahapLabel = Pelamar::TAHAP_INTERVIEW[$pelamar->tahap_interview] ?? $pelamar->tahap_interview;
+
+            Mail::to($pelamar->email)->send(new NotifikasiInterview(
+                pelamar: $pelamar,
+                jadwal: $pelamar->jadwal_interview,
+                metode: $metodeLabel,
+                linkMeeting: $pelamar->link_meeting,
+                lokasi: $pelamar->lokasi_interview,
+                interviewer: $pelamar->interviewer,
+                tahapInterview: $tahapLabel,
+                catatan: null
+            ));
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim notifikasi interview: ' . $e->getMessage());
+        }
+    }
+
+    private function kirimEmailOffer(Pelamar $pelamar, ?string $pesanTambahan, ?string $offerPath, string $offerPassword): void
+    {
+        try {
+            $totalTunjanganHarian = ($pelamar->tunjangan_makan ?? 0) + ($pelamar->tunjangan_transport ?? 0);
+            $estimasiBulanan = ($pelamar->gaji_ditawarkan ?? 0) + $totalTunjanganHarian * Pelamar::HARI_KERJA_PER_BULAN;
+
+            Mail::to($pelamar->email)->send(new OfferLetter(
+                pelamar: $pelamar,
+                gaji: $pelamar->gaji_ditawarkan ?? 0,
+                tunjanganMakan: $pelamar->tunjangan_makan ?? 0,
+                tunjanganTransport: $pelamar->tunjangan_transport ?? 0,
+                estimasiBulanan: $estimasiBulanan,
+                tanggalMulai: $pelamar->tanggal_mulai_kerja->format('Y-m-d'),
+                statusKepegawaian: Pelamar::STATUS_KEPEGAWAIAN[$pelamar->status_kepegawaian] ?? $pelamar->status_kepegawaian,
+                benefitLainnya: $pelamar->benefit_lainnya,
+                pesanTambahan: $pesanTambahan,
+                offerPassword: $offerPassword,
+                offerPath: $offerPath
+            ));
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim email offer: ' . $e->getMessage());
+        }
+    }
+
+    private function kirimEmailPenolakan(Pelamar $pelamar): void
+    {
+        try {
+            $alasanLabel = $pelamar->alasan_penolakan;
+            if (isset(Pelamar::ALASAN_PENOLAKAN[$pelamar->alasan_penolakan])) {
+                $alasanLabel = Pelamar::ALASAN_PENOLAKAN[$pelamar->alasan_penolakan];
+            }
+
+            Mail::to($pelamar->email)->send(new EmailPenolakan($pelamar, $alasanLabel));
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim email penolakan: ' . $e->getMessage());
+        }
+    }
+
+    /* ============================================================
+     |  PENILAIAN & CV
+     * ============================================================ */
+
+    public function storePenilaian(Request $request)
+    {
+        $request->validate([
+            'pelamar_id' => 'required|exists:pelamars,id',
+            'folder_id' => 'required|exists:folders,id',
+            'rating' => 'required|integer|min:1|max:4',
+            'catatan' => 'nullable|string',
+            'file_penilaian' => 'nullable|file|mimes:pdf,doc,docx|max:5120',
+        ]);
+
+        $folder = Folder::find($request->folder_id);
+        if (!$folder || $folder->is_archived) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Folder tidak ditemukan atau sudah diarsipkan.',
+            ], 422);
+        }
+
+        $filePath = null;
+
+        DB::beginTransaction();
+        try {
+            if ($request->hasFile('file_penilaian')) {
+                $filePath = $request->file('file_penilaian')->store('penilaian', 'public');
+            }
+
+            $pelamarFolder = PelamarFolder::where('pelamar_id', $request->pelamar_id)->first();
+
+            if ($pelamarFolder) {
+                $pelamarFolder->update([
+                    'folder_id' => $request->folder_id,
+                    'rating' => $request->rating,
+                    'catatan' => $request->catatan,
+                    'file_penilaian' => $filePath ?? $pelamarFolder->file_penilaian,
+                    'dinilai_oleh' => auth()->id(),
+                    'tanggal_dinilai' => now(),
+                ]);
+            } else {
+                PelamarFolder::create([
+                    'folder_id' => $request->folder_id,
+                    'pelamar_id' => $request->pelamar_id,
+                    'rating' => $request->rating,
+                    'catatan' => $request->catatan,
+                    'file_penilaian' => $filePath,
+                    'dinilai_oleh' => auth()->id(),
+                    'tanggal_dinilai' => now(),
+                ]);
+            }
+
+            Pelamarriwayat::catat($request->pelamar_id, 'rated', [
+                'tahap_ke' => Pelamar::where('id', $request->pelamar_id)->value('tahap_rekrutmen'),
+                'rating' => $request->rating,
+                'keterangan' => 'Penilaian disimpan oleh ' . auth()->user()->nama_lengkap . '. Catatan: ' . ($request->catatan ?? '-'),
+            ]);
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Penilaian berhasil disimpan dan pelamar dimasukkan ke folder.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $this->hapusBerkas([$filePath]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan penilaian: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function lihatCV(Pelamar $pelamar)
+    {
+        if (!$pelamar->cv_path) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pelamar belum mengupload CV.',
+            ], 404);
+        }
+
+        $cvUrl = asset('storage/' . $pelamar->cv_path);
+        $fileExtension = pathinfo($pelamar->cv_path, PATHINFO_EXTENSION);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'cv_url' => $cvUrl,
+                'file_extension' => $fileExtension,
+                'nama_pelamar' => $pelamar->nama_lengkap,
+                'is_pdf' => strtolower($fileExtension) === 'pdf',
+            ],
+        ]);
+    }
 }
-
-// foreach ($dataTunjangan as $tunjangan) {
-
-        // $jenisTunjangan = JenisTunjangan::where('nama_tunjangan', $tunjangan)->first();
-        // $nama_tunjangan = $jenisTunjangan->nama_tunjangan;
-        // // Data tunjangan yang akan ditambahkan
-        // $dataTunjangan = [];
-
-        // // Cek jika tipe tunjangan adalah 'Perbulan' dan jenis tunjangan adalah 'Tunjangan'
-        // if ($request->input('hitung') == 'Perbulan' && $jenisTunjangan->tipe == 'Tunjangan') {
-        //     $tunjangan->total_tunjangan += $request->input('nilai');
-        //         $dataTunjangan[] = [
-        //             'nama_tunjangan' => $jenisTunjangan->nama_tunjangan,
-        //             'tipe' => $jenisTunjangan->tipe,
-        //             'jumlah' => $request->input('nilai'),
-        //             'total' => $request->input('nilai'),
-        //         ];
-        // }
-
-        // if ($request->input('hitung') == 'Perhari' && $jenisTunjangan->tipe == 'Tunjangan') {
-        //     $jumlahTunjangan = $request->input('nilai') * $jumlahAbsensi;
-        //     $tunjangan->total_tunjangan += $jumlahTunjangan;
-        //     $dataTunjangan[] = [
-        //         'nama_tunjangan' => $tunjangan->nama_tunjangan,
-        //         'tipe' => $tunjangan->tipe,
-        //         'jumlah' => $tunjangan->nilai,
-        //         'jumlah_absensi' => $jumlahAbsensi,
-        //         'total' => $jumlahTunjangan
-        //     ];
-        // }
-
-        // if ($request->input('hitung') == 'Perbulan' && $jenisTunjangan->tipe == 'Potongan' && $nama_tunjangan == 'BPJS Keluarga') {
-        //     $totalkelipatan = $request->input('nilai') * $request->input('kelipatan');
-        //     $tunjangan->total_potongan += $totalkelipatan;
-        //     $dataTunjangan[] = [
-        //         'nama_tunjangan' => $jenisTunjangan->nama_tunjangan,
-        //         'tipe' => $jenisTunjangan->tipe,
-        //         'jumlah' => -$request->input('nilai'),
-        //         'total' => $totalkelipatan,
-        //     ];
-        // } elseif ($jenisTunjangan->tipe == 'Potongan' && $nama_tunjangan != 'BPJS Keluarga') {
-        //     // Hanya untuk tunjangan potongan lainnya, bukan BPJS Keluarga
-        //     $tunjangan->total_potongan += $request->input('nilai');
-        //     $dataTunjangan[] = [
-        //         'nama_tunjangan' => $jenisTunjangan->nama_tunjangan,
-        //         'tipe' => $jenisTunjangan->tipe,
-        //         'jumlah' => -$request->input('nilai'),
-        //         'total' => -$request->input('nilai'),
-        //     ];
-        // }
-
-        // $tunjangansebelumnya = array_merge($tunjangansebelumnya, $dataTunjangan);
-        // // dd($tunjangansebelumnya);
-        // $tunjangan->data_tunjangan = json_encode($tunjangansebelumnya);
-        // $totalBersih = $tunjangan->total_tunjangan - $tunjangan->total_potongan;
-        // $tunjangan->total_bersih = $totalBersih;
-        // $tunjangan->save();
-        // }

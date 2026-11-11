@@ -1768,6 +1768,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::prefix('hire')->name('hire.')->group(function () {
             Route::get('/', [HireController::class, 'index'])->name('index');
+            Route::get('/data', [HireController::class, 'data'])->name('data');
             Route::post('/store', [HireController::class, 'store'])->name('store');
             Route::get('/show/{pelamar}', [HireController::class, 'show'])->name('show');
             Route::put('/update/{pelamar}', [HireController::class, 'update'])->name('update');
@@ -1789,6 +1790,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/{pelamar}/cv', [HireController::class, 'lihatCV'])->name('cv');
             Route::post('/scan-dokumen', [HireController::class, 'scanDokumen'])->name('scan-dokumen');
             Route::post('/{pelamar}/update', [HireController::class, 'update'])->name('update');
+            Route::get('/analitik', [HireController::class, 'analitik'])->name('analitik');
+            Route::get('/{pelamar}/psikotest', [HireController::class, 'psikotestIndex'])->name('psikotest.index');
+            Route::post('/{pelamar}/psikotest', [HireController::class, 'psikotestSimpan'])->name('psikotest.store');
+            Route::delete('/{pelamar}/psikotest/{kategori}', [HireController::class, 'psikotestHapus'])->name('psikotest.destroy');
+            Route::get('/{pelamar}/psikotest/{kategori}/file', [HireController::class, 'psikotestFile'])->name('psikotest.file');
+            Route::get('/{pelamar}/penilaian', [HireController::class, 'penilaianIndex'])->name('penilaian.index');
         });
 
         Route::prefix('folders')->name('folders.')->group(function () {
@@ -1807,6 +1814,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{folder}/archive', [FolderController::class, 'archiveFolder'])->name('archive');
             Route::delete('/{folder}', [FolderController::class, 'destroyFolder'])->name('destroy');
             Route::post('/{folder}/move', [FolderController::class, 'moveFolder'])->name('move');
+            Route::get('/pelamar/{pelamar}/rekap', [FolderController::class, 'rekapPenilaian'])->name('pelamar.rekap');
         });
 
         Route::prefix('arsip')->name('arsip.')->group(function () {
