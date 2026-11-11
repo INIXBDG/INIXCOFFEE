@@ -18,19 +18,21 @@ class Pelamar extends Model
     public const TAHAP = [
         'applied' => 'Lamaran Masuk',
         'screening' => 'Screening',
+        'psikotest' => 'Psikotest',
         'interview' => 'Interview',
         'offer' => 'Offer',
         'hired' => 'Diterima',
         'rejected' => 'Ditolak',
     ];
 
-    public const URUTAN_TAHAP = ['applied', 'screening', 'interview', 'offer', 'hired'];
+    public const URUTAN_TAHAP = ['applied', 'screening', 'psikotest', 'interview', 'offer', 'hired'];
 
     public const PROGRESS_TAHAP = [
         'applied' => 10,
-        'screening' => 30,
-        'interview' => 55,
-        'offer' => 75,
+        'screening' => 25,
+        'psikotest' => 40,
+        'interview' => 60,
+        'offer' => 80,
         'hired' => 100,
         'rejected' => 0,
     ];
@@ -187,9 +189,19 @@ class Pelamar extends Model
         return $this->hasMany(Pelamarriwayat::class, 'pelamar_id')->orderBy('created_at', 'asc');
     }
 
+    public function penilaians()
+    {
+        return $this->hasMany(PelamarPenilaian::class);
+    }
+
     public function pelamarFolders()
     {
         return $this->hasMany(PelamarFolder::class);
+    }
+
+    public function psikotests()
+    {
+        return $this->hasMany(PelamarPsikotest::class, 'pelamar_id');
     }
 
     public function scopeAktif($query)
@@ -377,6 +389,7 @@ class Pelamar extends Model
         return [
             'total' => self::aktif()->count(),
             'screening' => self::aktif()->tahap('screening')->count(),
+            'psikotest' => self::aktif()->tahap('psikotest')->count(),
             'interview' => self::aktif()->tahap('interview')->count(),
             'offer' => self::aktif()->tahap('offer')->count(),
             'hired' => self::aktif()->tahap('hired')->count(),

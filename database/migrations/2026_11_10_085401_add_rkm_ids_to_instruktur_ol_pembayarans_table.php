@@ -28,4 +28,4 @@ return new class extends Migration
             $table->index('rkm_id');
         });
     }
-};
+};  

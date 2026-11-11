@@ -421,7 +421,7 @@
                 let formData = $('#form-filter-rekap').serialize();
 
                 $('#tbody_divisi').html(skeletonTableRows(6, 5));
-                $('#tbody_status').html(skeletonTableRows(7, 6));
+                $('#tbody_status').html(skeletonTableRows(4, 6));
                 $('#statistikContent').html(skeletonStatistik());
                 $('#tfoot_divisi, #tfoot_status').addClass('d-none');
 
@@ -472,11 +472,8 @@
 
             function renderTabStatus(data) {
                 const badge = {
-                    'Menunggu Manager Divisi': 'bg-warning text-dark',
-                    'Menunggu HRD': 'bg-warning text-dark',
-                    'Menunggu GM & Direksi': 'bg-warning text-dark',
+                    'Menunggu Persetujuan': 'bg-warning text-dark',
                     'Menunggu Isi Rate SPJ': 'bg-info text-dark',
-                    'Menunggu Upload Bukti dari Karyawan': 'bg-info text-dark',
                     'Selesai': 'bg-success',
                     'Ditolak': 'bg-danger'
                 };

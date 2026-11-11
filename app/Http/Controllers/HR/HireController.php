@@ -12,16 +12,19 @@ use App\Models\Folder;
 use App\Models\karyawan;
 use App\Models\Pelamar;
 use App\Models\PelamarFolder;
+use App\Models\PelamarPsikotest;
 use App\Models\Pelamarriwayat;
 use App\Services\DokumenParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use setasign\Fpdi\Tcpdf\Fpdi;
+use App\Models\PelamarPenilaian;
 
 class HireController extends Controller
 {
@@ -33,12 +36,14 @@ class HireController extends Controller
         'ijazah' => ['ijazah_path', 'pelamar/ijazah'],
     ];
 
+    private const FILTER = ['search', 'divisi', 'jabatan', 'tahap', 'sumber', 'tanggal_dari', 'tanggal_sampai', 'talent_pool'];
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function index()
     {
         $dataJabatan = karyawan::whereNotIn('jabatan', ['Pilih Jabatan'])
             ->whereNot('divisi', 'Direksi')
@@ -53,44 +58,45 @@ class HireController extends Controller
             ->whereNotNull('nip')
             ->get();
 
+        return view('HR/hire/index', [
+            'dataJabatan' => $dataJabatan,
+            'dataDivisi' => $dataDivisi,
+            'Interviewer' => $Interviewer,
+            'sumberList' => Pelamar::SUMBER,
+            'tahapList' => Pelamar::TAHAP,
+            'kategoriPsikotest' => PelamarPsikotest::KATEGORI,
+            'infoPsikotest' => PelamarPsikotest::info(),
+        ]);
+    }
+
+    public function data(Request $request)
+    {
+        $request->validate([
+            'folder' => 'nullable|string|max:20',
+            'per_page' => 'nullable|integer|min:5|max:100',
+        ]);
+
+        $folder = (string) $request->input('folder', 'all');
+
         $query = Pelamar::aktif()
-            ->with('pelamarFolders')
-            ->where(function ($q) {
+            ->with(['pelamarFolders', 'psikotests', 'penilaians'])
+            ->filter($request->only(self::FILTER));
+
+        if ($folder === 'unassigned') {
+            $query->whereDoesntHave('pelamarFolders');
+        } elseif ($folder === 'all') {
+            $query->where(function ($q) {
                 $q->whereDoesntHave('pelamarFolders')
                     ->orWhereHas('pelamarFolders', function ($q2) {
                         $q2->whereHas('folder', function ($q3) {
                             $q3->where('is_archived', false);
                         });
                     });
-            })
-            ->filter($request->only(['search', 'divisi', 'jabatan', 'tahap', 'sumber', 'tanggal_dari', 'tanggal_sampai', 'talent_pool']))
-            ->latest('tanggal_melamar');
-
-        $pelamars = $query->paginate(10)->withQueryString();
-        $funnel = Pelamar::statsFunnel();
-        $sumberList = Pelamar::SUMBER;
-        $tahapList = Pelamar::TAHAP;
-
-        return view('HR/hire/index', compact('pelamars', 'funnel', 'dataJabatan', 'dataDivisi', 'sumberList', 'tahapList', 'Interviewer'));
-    }
-
-    public function getPelamarByFolder($folderId = null)
-    {
-        if ($folderId === 'all') {
-            $pelamars = Pelamar::aktif()
-                ->with('pelamarFolders')
-                ->latest('tanggal_melamar')
-                ->get();
-        } elseif ($folderId === 'unassigned' || $folderId === null) {
-            $pelamarDiFolder = PelamarFolder::pluck('pelamar_id');
-            $pelamars = Pelamar::aktif()
-                ->with('pelamarFolders')
-                ->whereNotIn('id', $pelamarDiFolder)
-                ->latest('tanggal_melamar')
-                ->get();
+            });
         } else {
-            $folder = Folder::find($folderId);
-            if (!$folder || $folder->is_archived) {
+            $target = Folder::find($folder);
+
+            if (!$target || $target->is_archived) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Folder tidak ditemukan atau sudah diarsipkan',
@@ -98,61 +104,254 @@ class HireController extends Controller
                 ], 404);
             }
 
-            $pelamarIds = PelamarFolder::where('folder_id', $folderId)->pluck('pelamar_id');
-            $pelamars = Pelamar::aktif()
-                ->with('pelamarFolders')
-                ->whereIn('id', $pelamarIds)
-                ->latest('tanggal_melamar')
-                ->get();
+            $query->whereHas('pelamarFolders', function ($q) use ($target) {
+                $q->where('folder_id', $target->id);
+            });
         }
 
-        $pelamarIds = $pelamars->pluck('id');
-        $penilaians = PelamarFolder::whereIn('pelamar_id', $pelamarIds)
-            ->with(['interviewer', 'folder'])
-            ->get()
-            ->groupBy('pelamar_id');
-
-        $data = $pelamars->map(function ($p, $index) use ($penilaians) {
-            $penilaianPelamar = $penilaians->get($p->id, collect());
-            $ratings = $penilaianPelamar->whereNotNull('rating')->pluck('rating');
-            $avgRating = $ratings->count() > 0 ? round($ratings->avg(), 1) : null;
-
-            return [
-                'id' => $p->id,
-                'no' => $index + 1,
-                'inisial' => $p->inisial,
-                'nama_lengkap' => $p->nama_lengkap,
-                'email' => $p->email,
-                'jabatan' => $p->jabatan,
-                'divisi' => $p->divisi,
-                'sumber_lamaran' => $p->sumber_lamaran,
-                'tanggal_melamar' => $p->tanggal_melamar?->format('d M Y'),
-                'tahap_rekrutmen' => $p->tahap_rekrutmen,
-                'tahap_label' => $p->tahap_label,
-                'cv_path' => $p->cv_path,
-                'avg_rating' => $avgRating,
-                'total_penilai' => $ratings->count(),
-                'penilaian_list' => $penilaianPelamar->map(function ($pf) {
-                    return [
-                        'id' => $pf->id,
-                        'rating' => $pf->rating,
-                        'catatan' => $pf->catatan,
-                        'tanggal_dinilai' => $pf->tanggal_dinilai?->format('d M Y H:i'),
-                        'folder_nama' => $pf->folder?->nama ?? '-',
-                        'interviewer_nama' => $pf->interviewer?->name ?? 'Unknown',
-                        'interviewer_jabatan' => $pf->interviewer?->jabatan ?? '-',
-                        'file_penilaian' => $pf->file_penilaian,
-                    ];
-                })->values()->all(),
-            ];
-        });
+        $paginator = $query
+            ->latest('tanggal_melamar')
+            ->orderByDesc('id')
+            ->paginate((int) $request->input('per_page', 10));
 
         return response()->json([
             'success' => true,
-            'data' => $data,
-            'total' => $data->count(),
-            'html' => view('HR.hire._pelamar_table', ['pelamars' => $pelamars])->render(),
+            'data' => $paginator->getCollection()->map(fn (Pelamar $p) => $this->barisPelamar($p))->values(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ],
+            'funnel' => Pelamar::statsFunnel(),
         ]);
+    }
+
+    private function barisPelamar(Pelamar $p): array
+    {
+        $ratings = $p->penilaians->pluck('rating');
+
+        return [
+            'id' => $p->id,
+            'inisial' => $p->inisial,
+            'nama_lengkap' => $p->nama_lengkap,
+            'email' => $p->email,
+            'jabatan' => $p->jabatan,
+            'divisi' => $p->divisi,
+            'detail_jabatan' => $p->detail_jabatan,
+            'sumber_lamaran' => $p->sumber_lamaran,
+            'tanggal_melamar' => $p->tanggal_melamar?->format('d M Y'),
+            'tahap_rekrutmen' => $p->tahap_rekrutmen,
+            'tahap_label' => $p->tahap_label,
+            'tahap_berikutnya' => $p->tahapBerikutnya(),
+            'bisa_lanjut' => $p->bisaLanjut(),
+            'mulai_kerja' => $p->tanggal_mulai_kerja?->format('Y-m-d'),
+            'cv_url' => $p->cv_url,
+            'avg_rating' => $ratings->count() > 0 ? round($ratings->avg(), 1) : null,
+            'total_penilai' => $ratings->count(),
+            'psikotest' => $p->psikotests->pluck('kategori')->values()->all(),
+        ];
+    }
+
+    public function analitik(Request $request)
+    {
+        $request->validate([
+            'tanggal_dari' => 'nullable|date',
+            'tanggal_sampai' => 'nullable|date',
+        ]);
+
+        $pelamars = Pelamar::aktif()
+            ->when($request->filled('tanggal_dari'), fn ($q) => $q->whereDate('tanggal_melamar', '>=', $request->tanggal_dari))
+            ->when($request->filled('tanggal_sampai'), fn ($q) => $q->whereDate('tanggal_melamar', '<=', $request->tanggal_sampai))
+            ->get(['id', 'divisi', 'sumber_lamaran', 'tahap_rekrutmen', 'tanggal_melamar', 'pendidikan_terakhir']);
+
+        $total = $pelamars->count();
+
+        $kartu = ['total' => $total];
+        foreach (Pelamar::TAHAP as $kode => $label) {
+            $kartu[$kode] = $pelamars->where('tahap_rekrutmen', $kode)->count();
+        }
+        $kartu['rasio_diterima'] = $total > 0 ? round($kartu['hired'] / $total * 100, 1) : 0;
+
+        $funnel = [
+            'label' => array_values(Pelamar::TAHAP),
+            'nilai' => array_map(fn ($kode) => $kartu[$kode], array_keys(Pelamar::TAHAP)),
+        ];
+
+        $perBulan = $pelamars
+            ->filter(fn ($p) => $p->tanggal_melamar)
+            ->groupBy(fn ($p) => $p->tanggal_melamar->format('Y-m'))
+            ->sortKeys()
+            ->slice(-12);
+
+        $trend = ['label' => [], 'lamaran' => [], 'diterima' => [], 'ditolak' => []];
+        foreach ($perBulan as $bulan => $grup) {
+            $trend['label'][] = Carbon::parse($bulan . '-01')->format('M Y');
+            $trend['lamaran'][] = $grup->count();
+            $trend['diterima'][] = $grup->where('tahap_rekrutmen', 'hired')->count();
+            $trend['ditolak'][] = $grup->where('tahap_rekrutmen', 'rejected')->count();
+        }
+
+        $semua = PelamarPsikotest::whereIn('pelamar_id', $pelamars->pluck('id'))->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'kartu' => $kartu,
+                'funnel' => $funnel,
+                'trend' => $trend,
+                'sumber' => $this->hitung($pelamars, 'sumber_lamaran'),
+                'divisi' => $this->hitung($pelamars, 'divisi'),
+                'pendidikan' => $this->hitung($pelamars, 'pendidikan_terakhir'),
+                'psikotest' => $this->analitikPsikotest($semua, $total),
+            ],
+        ]);
+    }
+
+    private function hitung(Collection $data, string $kolom, int $batas = 8): array
+    {
+        $hitung = $data
+            ->groupBy(fn ($p) => filled($p->{$kolom}) ? $p->{$kolom} : 'Tidak diketahui')
+            ->map->count()
+            ->sortDesc()
+            ->take($batas);
+
+        return [
+            'label' => $hitung->keys()->values()->all(),
+            'nilai' => $hitung->values()->all(),
+        ];
+    }
+
+    private function analitikPsikotest(Collection $semua, int $totalPelamar): array
+    {
+        $perKategori = $semua->groupBy('kategori');
+        $jumlahKategori = count(PelamarPsikotest::KATEGORI);
+
+        $cakupan = [];
+        foreach (PelamarPsikotest::KATEGORI as $kode => $label) {
+            $cakupan[] = [
+                'kode' => $kode,
+                'label' => $label,
+                'jumlah' => $perKategori->get($kode, collect())->count(),
+            ];
+        }
+
+        $lengkap = $semua
+            ->groupBy('pelamar_id')
+            ->filter(fn ($grup) => $grup->pluck('kategori')->unique()->count() === $jumlahKategori)
+            ->count();
+
+        $mbti = $perKategori->get('mbti', collect())->filter(fn ($t) => filled($t->hasil));
+
+        $tipe = $mbti
+            ->groupBy('hasil')
+            ->map->count()
+            ->sortDesc()
+            ->map(fn ($jumlah, $kode) => [
+                'kode' => $kode,
+                'nama' => PelamarPsikotest::MBTI_TIPE[$kode]['nama'] ?? '-',
+                'ringkas' => PelamarPsikotest::MBTI_TIPE[$kode]['ringkas'] ?? '',
+                'jumlah' => $jumlah,
+            ])
+            ->values()
+            ->all();
+
+        $hitungHuruf = fn (string $h) => $mbti->filter(fn ($t) => str_contains($t->hasil, $h))->count();
+
+        $dimensi = [
+            ['nama' => 'Extraversion vs Introversion', 'kiri' => 'E', 'kanan' => 'I'],
+            ['nama' => 'Sensing vs Intuition', 'kiri' => 'S', 'kanan' => 'N'],
+            ['nama' => 'Thinking vs Feeling', 'kiri' => 'T', 'kanan' => 'F'],
+            ['nama' => 'Judging vs Perceiving', 'kiri' => 'J', 'kanan' => 'P'],
+        ];
+
+        foreach ($dimensi as $i => $d) {
+            $dimensi[$i]['jumlah_kiri'] = $hitungHuruf($d['kiri']);
+            $dimensi[$i]['jumlah_kanan'] = $hitungHuruf($d['kanan']);
+        }
+
+        $riasec = $perKategori->get('riasec', collect())->filter(fn ($t) => filled($t->hasil));
+        $dominan = $riasec->groupBy(fn ($t) => substr($t->hasil, 0, 1))->map->count();
+
+        $huruf = [];
+        foreach (PelamarPsikotest::RIASEC_HURUF as $kode => $info) {
+            $nilai = $riasec
+                ->map(fn ($t) => $t->skor_detail[strtolower($kode)] ?? null)
+                ->filter(fn ($v) => $v !== null && $v !== '')
+                ->map(fn ($v) => (float) $v);
+
+            $huruf[] = [
+                'kode' => $kode,
+                'nama' => $info['nama'],
+                'ringkas' => $info['ringkas'],
+                'dominan' => $dominan->get($kode, 0),
+                'rata' => $nilai->count() > 0 ? round($nilai->avg(), 1) : null,
+            ];
+        }
+
+        $trenSkor = ['label' => [], 'logika_numerik' => [], 'analogi_verbal' => []];
+        $perBulan = $semua
+            ->whereIn('kategori', ['logika_numerik', 'analogi_verbal'])
+            ->filter(fn ($t) => $t->skor !== null)
+            ->groupBy(fn ($t) => ($t->tanggal_tes ?? $t->created_at)->format('Y-m'))
+            ->sortKeys()
+            ->slice(-12);
+
+        foreach ($perBulan as $bulan => $grup) {
+            $trenSkor['label'][] = Carbon::parse($bulan . '-01')->format('M Y');
+            foreach (['logika_numerik', 'analogi_verbal'] as $kode) {
+                $skor = $grup->where('kategori', $kode);
+                $trenSkor[$kode][] = $skor->count() > 0 ? round($skor->avg('skor'), 1) : null;
+            }
+        }
+
+        return [
+            'total_pelamar' => $totalPelamar,
+            'lengkap' => $lengkap,
+            'cakupan' => $cakupan,
+            'mbti' => [
+                'jumlah' => $mbti->count(),
+                'tipe' => $tipe,
+                'dimensi' => $dimensi,
+            ],
+            'riasec' => [
+                'jumlah' => $riasec->count(),
+                'huruf' => $huruf,
+            ],
+            'logika_numerik' => $this->ringkasSkor($perKategori->get('logika_numerik', collect())),
+            'analogi_verbal' => $this->ringkasSkor($perKategori->get('analogi_verbal', collect())),
+            'tren_skor' => $trenSkor,
+        ];
+    }
+
+    private function ringkasSkor(Collection $koleksi): array
+    {
+        $skor = $koleksi
+            ->pluck('skor')
+            ->filter(fn ($s) => $s !== null)
+            ->map(fn ($s) => (float) $s)
+            ->values();
+
+        $level = [];
+        foreach (PelamarPsikotest::LEVEL_SKOR as $l) {
+            $level[$l['label']] = 0;
+        }
+        foreach ($skor as $s) {
+            $level[PelamarPsikotest::levelSkor($s)]++;
+        }
+
+        return [
+            'jumlah' => $skor->count(),
+            'rata' => $skor->count() > 0 ? round($skor->avg(), 1) : null,
+            'tertinggi' => $skor->count() > 0 ? $skor->max() : null,
+            'terendah' => $skor->count() > 0 ? $skor->min() : null,
+            'level' => [
+                'label' => array_keys($level),
+                'nilai' => array_values($level),
+            ],
+        ];
     }
 
     public function getFolderList()
@@ -322,26 +521,15 @@ class HireController extends Controller
 
     public function show(Pelamar $pelamar)
     {
-        $pelamar->load('riwayatTahap');
+        $pelamar->load(['riwayatTahap', 'psikotests']);
 
-        $penilaians = PelamarFolder::where('pelamar_id', $pelamar->id)
-            ->with(['folder', 'interviewer'])
-            ->orderBy('tanggal_dinilai', 'desc')
+        $penilaians = $pelamar->penilaians()
+            ->with(['folder', 'penilai'])
+            ->orderByDesc('tanggal_dinilai')
             ->get()
-            ->map(function ($pf) {
-                return [
-                    'id' => $pf->id,
-                    'rating' => $pf->rating,
-                    'catatan' => $pf->catatan,
-                    'tanggal_dinilai' => $pf->tanggal_dinilai?->format('d M Y H:i'),
-                    'folder_nama' => $pf->folder?->nama ?? '-',
-                    'interviewer_nama' => $pf->interviewer?->name ?? 'Unknown',
-                    'interviewer_jabatan' => $pf->interviewer?->jabatan ?? '-',
-                    'file_penilaian' => $pf->file_penilaian,
-                ];
-            });
+            ->map(fn (PelamarPenilaian $n) => $n->ringkas());
 
-        $ratings = $penilaians->whereNotNull('rating')->pluck('rating');
+        $ratings = $penilaians->pluck('rating');
         $avgRating = $ratings->count() > 0 ? round($ratings->avg(), 1) : null;
 
         $kolom = [
@@ -380,6 +568,7 @@ class HireController extends Controller
                 'penilaians' => $penilaians,
                 'avg_rating' => $avgRating,
                 'total_penilai' => $ratings->count(),
+                'psikotests' => $this->psikotestPelamar($pelamar),
             ],
         ]);
     }
@@ -422,6 +611,15 @@ class HireController extends Controller
     public function destroy(Pelamar $pelamar)
     {
         $this->hapusBerkas($pelamar->only(array_column(self::BERKAS, 0)));
+
+        foreach ($pelamar->psikotests as $tes) {
+            if ($tes->file_path) {
+                Storage::disk('local')->delete($tes->file_path);
+            }
+        }
+        $pelamar->psikotests()->delete();
+        
+        $this->hapusBerkas($pelamar->penilaians()->pluck('file_penilaian')->all());
 
         $pelamar->delete();
 
@@ -810,6 +1008,7 @@ class HireController extends Controller
     public function export(Request $request)
     {
         $pelamars = Pelamar::aktif()
+            ->with('psikotests')
             ->filter($request->only(['search', 'tahap', 'divisi', 'jabatan', 'sumber', 'tanggal_dari', 'tanggal_sampai']))
             ->latest('tanggal_melamar')
             ->get();
@@ -825,9 +1024,12 @@ class HireController extends Controller
                 'Status Pernikahan', 'Agama', 'Domisili', 'Alamat', 'LinkedIn', 'Pendidikan', 'Institusi',
                 'Jurusan', 'IPK', 'Divisi', 'Posisi', 'Detail Posisi', 'Tanggal Melamar', 'Sumber',
                 'Pengalaman (Tahun)', 'Gaji Diharapkan', 'Notice Period', 'Keahlian', 'Tahapan', 'Catatan HR',
+                'MBTI', 'RIASEC', 'Skor Logika Numerik', 'Skor Analogi Verbal',
             ]);
 
             foreach ($pelamars as $p) {
+                $tes = $p->psikotests->keyBy('kategori');
+
                 fputcsv($out, [
                     $p->nama_lengkap,
                     $p->email,
@@ -856,6 +1058,10 @@ class HireController extends Controller
                     is_array($p->keahlian) ? implode(', ', $p->keahlian) : $p->keahlian,
                     $p->tahap_label,
                     $p->catatan_hr,
+                    $tes->get('mbti')?->hasil,
+                    $tes->get('riasec')?->hasil,
+                    $tes->get('logika_numerik')?->skor,
+                    $tes->get('analogi_verbal')?->skor,
                 ]);
             }
 
@@ -868,6 +1074,222 @@ class HireController extends Controller
         return response()->json([
             'success' => true,
             'data' => Pelamar::statsFunnel(),
+        ]);
+    }
+
+    private function psikotestPelamar(Pelamar $pelamar): array
+    {
+        $tes = $pelamar->psikotests->keyBy('kategori');
+        $hasil = [];
+
+        foreach (PelamarPsikotest::KATEGORI as $kode => $label) {
+            $hasil[$kode] = $tes->get($kode)?->ringkas();
+        }
+
+        return $hasil;
+    }
+
+    public function penilaianIndex(Pelamar $pelamar)
+    {
+        $items = $pelamar->penilaians()
+            ->with(['folder', 'penilai'])
+            ->orderByDesc('tanggal_dinilai')
+            ->get()
+            ->map(fn (PelamarPenilaian $n) => $n->ringkas())
+            ->values();
+
+        $perTahap = $items
+            ->groupBy(fn ($i) => $i['tahap'] ?? 'tidak_tercatat')
+            ->map(fn ($grup, $kode) => [
+                'tahap' => $kode,
+                'label' => $grup->first()['tahap_label'],
+                'jumlah' => $grup->count(),
+                'rata' => round($grup->avg('rating'), 1),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'pelamar' => ['id' => $pelamar->id, 'nama_lengkap' => $pelamar->nama_lengkap],
+            'rata' => $items->count() ? round($items->avg('rating'), 1) : null,
+            'total' => $items->count(),
+            'per_tahap' => $perTahap,
+            'items' => $items,
+        ]);
+    }
+
+    public function psikotestIndex(Pelamar $pelamar)
+    {
+        $pelamar->load('psikotests');
+
+        return response()->json([
+            'success' => true,
+            'pelamar' => ['id' => $pelamar->id, 'nama_lengkap' => $pelamar->nama_lengkap],
+            'data' => $this->psikotestPelamar($pelamar),
+        ]);
+    }
+
+    public function psikotestSimpan(Request $request, Pelamar $pelamar)
+    {
+        $request->validate([
+            'kategori' => ['required', Rule::in(array_keys(PelamarPsikotest::KATEGORI))],
+        ]);
+
+        $kategori = $request->input('kategori');
+        $lama = $pelamar->psikotests()->where('kategori', $kategori)->first();
+
+        $aturan = [
+            'tanggal_tes' => 'nullable|date',
+            'catatan' => 'nullable|string|max:2000',
+            'file' => [
+                $lama && $lama->file_path ? 'nullable' : 'required',
+                'file',
+                'mimes:pdf,jpg,jpeg,png,doc,docx',
+                'max:10240',
+            ],
+        ];
+
+        if ($kategori === 'mbti') {
+            $aturan['hasil'] = ['required', 'regex:/^[EI][SN][TF][JP]$/i'];
+        } elseif ($kategori === 'riasec') {
+            $aturan['hasil'] = [
+                'required',
+                'regex:/^[RIASEC]{1,6}$/i',
+                function ($atribut, $nilai, $gagal) {
+                    if (count(array_unique(str_split(strtoupper($nilai)))) !== strlen($nilai)) {
+                        $gagal('Kode RIASEC tidak boleh mengulang huruf.');
+                    }
+                },
+            ];
+            $aturan['skor_detail'] = 'nullable|array';
+            $aturan['skor_detail.*'] = 'nullable|numeric|min:0|max:100';
+        } else {
+            $aturan['skor'] = 'required|numeric|min:0|max:100';
+        }
+
+        $request->validate($aturan, [
+            'hasil.regex' => 'Format hasil tidak sesuai untuk kategori ini.',
+            'file.required' => 'Dokumen hasil psikotest wajib diunggah.',
+        ]);
+
+        $fileBaru = null;
+        $fileLama = $lama?->file_path;
+
+        DB::beginTransaction();
+        try {
+            $payload = [
+                'hasil' => in_array($kategori, ['mbti', 'riasec'], true) ? strtoupper((string) $request->input('hasil')) : null,
+                'skor' => in_array($kategori, ['logika_numerik', 'analogi_verbal'], true) ? $request->input('skor') : null,
+                'skor_detail' => $kategori === 'riasec' ? $this->bersihkanDetail((array) $request->input('skor_detail', [])) : null,
+                'tanggal_tes' => $request->input('tanggal_tes'),
+                'catatan' => $request->input('catatan'),
+                'diinput_oleh' => auth()->id(),
+            ];
+
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $fileBaru = $file->store('pelamar/psikotest', 'local');
+
+                $payload['file_path'] = $fileBaru;
+                $payload['file_nama'] = $file->getClientOriginalName();
+                $payload['file_mime'] = $file->getMimeType() ?: $file->getClientMimeType();
+            }
+
+            $tes = PelamarPsikotest::updateOrCreate(
+                ['pelamar_id' => $pelamar->id, 'kategori' => $kategori],
+                $payload
+            );
+
+            $nilai = $tes->hasil ?: ($tes->skor !== null ? rtrim(rtrim(number_format($tes->skor, 2, '.', ''), '0'), '.') : '-');
+
+            Pelamarriwayat::catat($pelamar->id, 'psikotest', [
+                'keterangan' => sprintf(
+                    'Hasil psikotest %s %s: %s',
+                    PelamarPsikotest::KATEGORI[$kategori],
+                    $lama ? 'diperbarui' : 'diunggah',
+                    $nilai
+                ),
+                'metadata' => ['kategori' => $kategori, 'hasil' => $tes->hasil, 'skor' => $tes->skor],
+            ]);
+
+            DB::commit();
+
+            if ($fileBaru && $fileLama) {
+                Storage::disk('local')->delete($fileLama);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil psikotest ' . PelamarPsikotest::KATEGORI[$kategori] . ' berhasil disimpan.',
+                'data' => $tes->ringkas(),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            if ($fileBaru) {
+                Storage::disk('local')->delete($fileBaru);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan psikotest: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function bersihkanDetail(array $detail): ?array
+    {
+        $hasil = [];
+
+        foreach (['r', 'i', 'a', 's', 'e', 'c'] as $huruf) {
+            if (isset($detail[$huruf]) && $detail[$huruf] !== '') {
+                $hasil[$huruf] = (float) $detail[$huruf];
+            }
+        }
+
+        return $hasil ?: null;
+    }
+
+    public function psikotestHapus(Pelamar $pelamar, string $kategori)
+    {
+        $tes = $pelamar->psikotests()->where('kategori', $kategori)->firstOrFail();
+
+        DB::beginTransaction();
+        try {
+            $path = $tes->file_path;
+            $tes->delete();
+
+            Pelamarriwayat::catat($pelamar->id, 'psikotest_dihapus', [
+                'keterangan' => 'Hasil psikotest ' . (PelamarPsikotest::KATEGORI[$kategori] ?? $kategori) . ' dihapus.',
+                'metadata' => ['kategori' => $kategori],
+            ]);
+
+            DB::commit();
+
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }
+
+            return response()->json(['success' => true, 'message' => 'Hasil psikotest berhasil dihapus.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function psikotestFile(Request $request, Pelamar $pelamar, string $kategori)
+    {
+        $tes = $pelamar->psikotests()->where('kategori', $kategori)->firstOrFail();
+
+        abort_unless($tes->file_path && Storage::disk('local')->exists($tes->file_path), 404);
+
+        $path = Storage::disk('local')->path($tes->file_path);
+        $nama = $tes->file_nama ?: basename($path);
+
+        if ($request->boolean('unduh')) {
+            return response()->download($path, $nama);
+        }
+
+        return response()->file($path, [
+            'Content-Type' => $tes->file_mime ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="' . addslashes($nama) . '"',
         ]);
     }
 
@@ -957,7 +1379,9 @@ class HireController extends Controller
             ], 422);
         }
 
+        $pelamar = Pelamar::findOrFail($request->pelamar_id);
         $filePath = null;
+        $fileLama = null;
 
         DB::beginTransaction();
         try {
@@ -965,39 +1389,55 @@ class HireController extends Controller
                 $filePath = $request->file('file_penilaian')->store('penilaian', 'public');
             }
 
-            $pelamarFolder = PelamarFolder::where('pelamar_id', $request->pelamar_id)->first();
-
-            if ($pelamarFolder) {
-                $pelamarFolder->update([
-                    'folder_id' => $request->folder_id,
-                    'rating' => $request->rating,
-                    'catatan' => $request->catatan,
-                    'file_penilaian' => $filePath ?? $pelamarFolder->file_penilaian,
-                    'dinilai_oleh' => auth()->id(),
-                    'tanggal_dinilai' => now(),
-                ]);
+            // Folder hanya menyimpan keanggotaan. Penilaian disimpan di tabel sendiri.
+            $keanggotaan = PelamarFolder::where('pelamar_id', $pelamar->id)->first();
+            if ($keanggotaan) {
+                $keanggotaan->update(['folder_id' => $request->folder_id]);
             } else {
                 PelamarFolder::create([
                     'folder_id' => $request->folder_id,
-                    'pelamar_id' => $request->pelamar_id,
-                    'rating' => $request->rating,
-                    'catatan' => $request->catatan,
-                    'file_penilaian' => $filePath,
+                    'pelamar_id' => $pelamar->id,
                     'dinilai_oleh' => auth()->id(),
                     'tanggal_dinilai' => now(),
                 ]);
             }
 
-            Pelamarriwayat::catat($request->pelamar_id, 'rated', [
-                'tahap_ke' => Pelamar::where('id', $request->pelamar_id)->value('tahap_rekrutmen'),
+            // Satu penilaian per penilai per tahap. Menilai ulang di tahap yang sama memperbarui penilaian lama.
+            $kunci = [
+                'pelamar_id' => $pelamar->id,
+                'dinilai_oleh' => auth()->id(),
+                'tahap_rekrutmen' => $pelamar->tahap_rekrutmen,
+            ];
+
+            $lama = PelamarPenilaian::where($kunci)->first();
+            $fileLama = $filePath ? $lama?->file_penilaian : null;
+
+            PelamarPenilaian::updateOrCreate($kunci, [
+                'folder_id' => $request->folder_id,
+                'tahap_interview' => $pelamar->tahap_rekrutmen === 'interview' ? $pelamar->tahap_interview : null,
+                'rating' => $request->rating,
+                'catatan' => $request->catatan,
+                'file_penilaian' => $filePath ?? $lama?->file_penilaian,
+                'tanggal_dinilai' => now(),
+            ]);
+
+            Pelamarriwayat::catat($pelamar->id, 'rated', [
+                'tahap_ke' => $pelamar->tahap_rekrutmen,
                 'rating' => $request->rating,
                 'keterangan' => 'Penilaian disimpan oleh ' . auth()->user()->nama_lengkap . '. Catatan: ' . ($request->catatan ?? '-'),
             ]);
 
             DB::commit();
+
+            if ($fileLama) {
+                Storage::disk('public')->delete($fileLama);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Penilaian berhasil disimpan dan pelamar dimasukkan ke folder.',
+                'message' => $lama
+                    ? 'Penilaian Anda untuk tahap ini berhasil diperbarui.'
+                    : 'Penilaian berhasil disimpan.',
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
