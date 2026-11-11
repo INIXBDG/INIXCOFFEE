@@ -14,6 +14,9 @@ use App\Traits\KPIDefaultResponseTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\Peluang;
+use App\Models\TargetPenjualan;
+use App\Models\User;
 
 class GMKPIService
 {
@@ -363,6 +366,7 @@ class GMKPIService
         $defaultResponse = array_merge($this->getDefaultDetailResponse(), [
             'triwulan_data' => [],
             'sales_performance' => null,
+            'kontribusi_sales' => null,
             'dataManual' => [
                 'manual_document' => $detail->manual_document ?? null,
             ],
@@ -505,6 +509,90 @@ class GMKPIService
             'daily_progress_per_month' => $dailyProgressPerMonth,
             'triwulan_data' => $triwulanData,
             'sales_performance' => ['type' => 'all', 'data' => $allSalesData],
+            'kontribusi_sales' => $this->buildKontribusiSales($tahun),
+        ];
+    }
+
+    private function statusKontribusi(float $total, float $target, int $tahun): string
+    {
+        if ($tahun >= now()->year) {
+            return 'on_track';
+        }
+
+        return $total >= $target ? 'selesai' : 'gagal';
+    }
+
+    private function buildKontribusiSales(int $tahun): array
+    {
+        $targets = TargetPenjualan::where('tahun', $tahun)
+            ->pluck('nilai_target', 'id_sales')
+            ->toArray();
+
+        if (empty($targets)) {
+            return ['tahun' => $tahun, 'rows' => [], 'total' => null];
+        }
+
+        $users = User::where('status_akun', '1')
+            ->whereNotNull('id_sales')
+            ->whereIn('id_sales', array_keys($targets))
+            ->get();
+
+        $peluang = Peluang::selectRaw('id_sales, MONTH(periode_mulai) as bulan, SUM(netsales) as total_netsales')
+            ->whereYear('periode_mulai', $tahun)
+            ->where(function ($q) {
+                $q->where('tahap', 'LIKE', '%merah%')->orWhere('merah', 1);
+            })
+            ->where(function ($q) {
+                $q->where('lost', 0)->orWhereNull('lost');
+            })
+            ->groupBy('id_sales', 'bulan')
+            ->get()
+            ->groupBy('id_sales');
+
+        $rows = [];
+        $grand = ['triwulan' => [1 => 0, 2 => 0, 3 => 0, 4 => 0], 'total' => 0, 'target' => 0];
+
+        foreach ($users as $user) {
+            $perBulan = $peluang->get($user->id_sales, collect())->pluck('total_netsales', 'bulan');
+            $target = (float) ($targets[$user->id_sales] ?? 0);
+
+            $triwulan = [];
+            $total = 0;
+            for ($q = 1; $q <= 4; ++$q) {
+                $sum = 0;
+                for ($m = ($q - 1) * 3 + 1; $m <= $q * 3; ++$m) {
+                    $sum += (float) $perBulan->get($m, 0);
+                }
+                $triwulan[$q] = round($sum);
+                $total += $sum;
+                $grand['triwulan'][$q] += $sum;
+            }
+
+            $grand['total'] += $total;
+            $grand['target'] += $target;
+
+            $rows[] = [
+                'nama' => $user->username,
+                'triwulan' => $triwulan,
+                'total' => round($total),
+                'target' => round($target),
+                'selisih' => round($total - $target),
+                'persentase' => $target > 0 ? round(($total / $target) * 100, 1) : 0,
+                'status' => $this->statusKontribusi($total, $target, $tahun),
+            ];
+        }
+
+        return [
+            'tahun' => $tahun,
+            'rows' => $rows,
+            'total' => [
+                'triwulan' => array_map('round', $grand['triwulan']),
+                'total' => round($grand['total']),
+                'target' => round($grand['target']),
+                'selisih' => round($grand['total'] - $grand['target']),
+                'persentase' => $grand['target'] > 0 ? round(($grand['total'] / $grand['target']) * 100, 1) : 0,
+                'status' => $this->statusKontribusi($grand['total'], $grand['target'], $tahun),
+            ],
         ];
     }
 
@@ -619,7 +707,7 @@ class GMKPIService
         ];
     }
 
-    public function calculateTargetPenjualanProjectTahunan($item, $personId)
+    public function calculateTargetPenjualanProjectTahunan($item, $personId = null)
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail || !$detail->detail_jangka) {
@@ -635,17 +723,10 @@ class GMKPIService
             return 0;
         }
 
-        $query = LeadProject::where('status', 'won')->where('tahun_periode', $tahun);
-
-        if ($personId !== null) {
-            $kodeKaryawan = karyawan::where('id', $personId)->value('kode_karyawan');
-            if (!$kodeKaryawan) {
-                return 0;
-            }
-            $query->where('lead_projects.sales_id', $kodeKaryawan);
-        }
-
-        $totalSales = (float) ($query->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))->value('total_sales') ?? 0);
+        $totalSales = (float) (LeadProject::where('status', 'won')
+            ->where('tahun_periode', $tahun)
+            ->select(DB::raw('SUM(lead_projects.estimasi_nilai) as total_sales'))
+            ->value('total_sales') ?? 0);
 
         return round($totalSales);
     }
@@ -666,20 +747,9 @@ class GMKPIService
             return $empty;
         }
 
-        $kodeKaryawan = null;
-        $karyawanData = null;
-
-        if ($personId !== null) {
-            $karyawanData = karyawan::find($personId);
-            $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
-        }
-
-        $query = LeadProject::where('status', 'won')->where('tahun_periode', $tahun);
-        if ($kodeKaryawan) {
-            $query->where('lead_projects.sales_id', $kodeKaryawan);
-        }
-
-        $sales = $query->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
+        $sales = LeadProject::where('status', 'won')
+            ->where('tahun_periode', $tahun)
+            ->select('lead_projects.tahun_periode', DB::raw('SUM(lead_projects.estimasi_nilai) as total'))
             ->groupBy('lead_projects.tahun_periode')
             ->get();
 
@@ -739,78 +809,54 @@ class GMKPIService
             }
         }
 
-        $salesPerformance = null;
+        $allKaryawan = karyawan::where(function ($q) {
+            $q->where('status_aktif', '1')
+                ->whereNot('jabatan', 'Outsource')
+                ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+                ->whereNot('jabatan', 'Pilih Jabatan')
+                ->whereNotNull('nip')
+                ->whereNot('divisi', 'Direksi')
+                ->orWhereNull('status_aktif');
+        })
+        ->where(function ($q) {
+            $q->where('jabatan', 'Sales')
+                ->orWhere('jabatan', 'Sales Executive')
+                ->orWhere('jabatan', 'Account Manager')
+                ->orWhereNull('jabatan')
+                ->where('status_aktif', '1');
+        })->get();
 
-        if ($personId === null) {
-            $allKaryawan = karyawan::where(function ($q) {
-                $q->where('status_aktif', '1')
-                    ->whereNot('jabatan', 'Outsource')
-                    ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-                    ->whereNot('jabatan', 'Pilih Jabatan')
-                    ->whereNotNull('nip')
-                    ->whereNot('divisi', 'Direksi')
-                    ->orWhereNull('status_aktif');
-            })
-            ->where(function ($q) {
-                $q->where('jabatan', 'Sales')
-                    ->orWhere('jabatan', 'Sales Executive')
-                    ->orWhere('jabatan', 'Account Manager')
-                    ->orWhereNull('jabatan')
-                    ->where('status_aktif', '1');
-            })->get();
+        $salesRevenues = LeadProject::where('status', 'won')
+            ->where('tahun_periode', $tahun)
+            ->select('sales_id', DB::raw('SUM(estimasi_nilai) as total'))
+            ->groupBy('sales_id')
+            ->pluck('total', 'sales_id');
 
-            $salesRevenues = LeadProject::where('status', 'won')
-                ->where('tahun_periode', $tahun)
-                ->select('sales_id', DB::raw('SUM(estimasi_nilai) as total'))
-                ->groupBy('sales_id')
-                ->pluck('total', 'sales_id');
+        $detailPersons = detailPersonKPI::where('id_target', $itemDetail->id)
+            ->whereIn('id_karyawan', $allKaryawan->pluck('id'))
+            ->get()
+            ->keyBy('id_karyawan');
 
-            $detailPersons = detailPersonKPI::where('id_target', $itemDetail->id)
-                ->whereIn('id_karyawan', $allKaryawan->pluck('id'))
-                ->get()
-                ->keyBy('id_karyawan');
-
-            $allSalesData = [];
-            foreach ($allKaryawan as $karyawanItem) {
-                $salesKey = $karyawanItem->kode_karyawan;
-                if (!$salesKey) {
-                    continue;
-                }
-
-                $salesRevenue = (float) ($salesRevenues[$salesKey] ?? 0);
-                $detailPerson = $detailPersons->get($karyawanItem->id);
-                $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-                $percentage = $presentaseKemampuan > 0 ? ($salesRevenue / $presentaseKemampuan) * 100 : 0;
-
-                $allSalesData[] = [
-                    'kode_karyawan' => (string) $salesKey,
-                    'nama' => (string) ($karyawanItem->nama_lengkap ?? $karyawanItem->nama ?? $salesKey),
-                    'revenue' => (float) number_format($salesRevenue, 1, '.', ''),
-                    'id_detailPerson' => $detailPerson?->id,
-                    'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
-                    'percentage' => (float) number_format($percentage, 1, '.', ''),
-                    'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending',
-                ];
+        $allSalesData = [];
+        foreach ($allKaryawan as $karyawanItem) {
+            $salesKey = $karyawanItem->kode_karyawan;
+            if (!$salesKey) {
+                continue;
             }
 
-            $salesPerformance = ['type' => 'all', 'data' => $allSalesData];
-        } else {
-            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)->where('id_karyawan', $personId)->first();
+            $salesRevenue = (float) ($salesRevenues[$salesKey] ?? 0);
+            $detailPerson = $detailPersons->get($karyawanItem->id);
             $presentaseKemampuan = (float) ($detailPerson->presentase_kemampuan ?? 0);
-            $percentage = $presentaseKemampuan > 0 ? ($totalSales / $presentaseKemampuan) * 100 : 0;
-            $karyawanName = $karyawanData ? ($karyawanData->nama_lengkap ?? $karyawanData->nama ?? '') : '';
+            $percentage = $presentaseKemampuan > 0 ? ($salesRevenue / $presentaseKemampuan) * 100 : 0;
 
-            $salesPerformance = [
-                'type' => 'individual',
-                'data' => [
-                    'kode_karyawan' => (string) $kodeKaryawan,
-                    'nama' => (string) $karyawanName,
-                    'revenue' => (float) number_format($totalSales, 1, '.', ''),
-                    'id_detailPerson' => $detailPerson?->id,
-                    'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
-                    'percentage' => (float) number_format($percentage, 1, '.', ''),
-                    'status' => $totalSales >= $presentaseKemampuan ? 'achieved' : 'pending',
-                ],
+            $allSalesData[] = [
+                'kode_karyawan' => (string) $salesKey,
+                'nama' => (string) ($karyawanItem->nama_lengkap ?? $karyawanItem->nama ?? $salesKey),
+                'revenue' => (float) number_format($salesRevenue, 1, '.', ''),
+                'id_detailPerson' => $detailPerson?->id,
+                'presentase_kemampuan' => (float) number_format($presentaseKemampuan, 1, '.', ''),
+                'percentage' => (float) number_format($percentage, 1, '.', ''),
+                'status' => $salesRevenue >= $presentaseKemampuan ? 'achieved' : 'pending',
             ];
         }
 
@@ -824,7 +870,7 @@ class GMKPIService
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
             'triwulan_data' => $triwulanData,
-            'sales_performance' => $salesPerformance,
+            'sales_performance' => ['type' => 'all', 'data' => $allSalesData],
         ];
     }
 
@@ -971,10 +1017,6 @@ class GMKPIService
 
     private function getBiayaOperasional($detail, int $tahun): float
     {
-        if (!is_null($detail->manual_value) && is_numeric($detail->manual_value)) {
-            return max(0, (float) $detail->manual_value);
-        }
-
         return (float) IncomeTransaction::where('year', $tahun)
             ->whereIn('item_code', $this->getFixedCostItemCodes())
             ->sum('amount');

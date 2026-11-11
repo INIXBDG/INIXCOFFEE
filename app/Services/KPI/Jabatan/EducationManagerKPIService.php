@@ -124,8 +124,7 @@ class EducationManagerKPIService
 
         $jumlahMingguTerisi = ActivityInstruktur::whereYear('activity_date', $tahun)
             ->where('activity_type', 'Sharing Knowledge')
-            ->when($personId !== null, fn($q) => $q->where('user_id', $personId))
-            ->selectRaw('COUNT(DISTINCT WEEK(activity_date)) as total_minggu')
+            ->selectRaw('COUNT(DISTINCT WEEK(activity_date, 3)) as total_minggu')
             ->value('total_minggu') ?? 0;
 
         return (int) $jumlahMingguTerisi;
@@ -156,7 +155,6 @@ class EducationManagerKPIService
         $activityData = ActivityInstruktur::select('activity_date')
             ->whereYear('activity_date', $tahun)
             ->where('activity_type', 'Sharing Knowledge')
-            ->when($personId !== null, fn($q) => $q->where('user_id', $personId))
             ->get();
 
         if ($activityData->isEmpty()) {
@@ -175,7 +173,7 @@ class EducationManagerKPIService
 
         foreach ($activityData as $activity) {
             $tanggal = Carbon::parse($activity->activity_date);
-            $mingguYangSudahJalan[$tanggal->week] = true;
+            $mingguYangSudahJalan[$tanggal->isoWeek] = true;
 
             $dateKey = $tanggal->format('Y-m-d');
             $monthKey = $tanggal->format('Y-m');
@@ -375,17 +373,13 @@ class EducationManagerKPIService
             return 0;
         }
 
-        $instruktursQuery = karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
             ->whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNotNull('nip');
+            ->whereNotNull('nip')
+            ->get();
 
-        if ($personId !== null) {
-            $instruktursQuery->where('id', $personId);
-        }
-
-        $instrukturs = $instruktursQuery->get();
         if ($instrukturs->isEmpty()) {
             return 0;
         }
@@ -404,7 +398,7 @@ class EducationManagerKPIService
             ->toArray();
 
         $instrukturIds = $instrukturs->pluck('id');
-        
+
         $activitiesByDate = ActivityInstruktur::whereYear('activity_date', $tahun)
             ->whereIn('user_id', $instrukturIds)
             ->selectRaw('DATE(activity_date) as tanggal, COUNT(DISTINCT user_id) as aktif_count')
@@ -457,17 +451,13 @@ class EducationManagerKPIService
             return $emptyResponse;
         }
 
-        $instruktursQuery = karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
             ->whereIn('jabatan', ['Instruktur', 'Education Manager'])
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNotNull('nip');
+            ->whereNotNull('nip')
+            ->get();
 
-        if ($personId !== null) {
-            $instruktursQuery->where('id', $personId);
-        }
-
-        $instrukturs = $instruktursQuery->get();
         if ($instrukturs->isEmpty()) {
             return $emptyResponse;
         }

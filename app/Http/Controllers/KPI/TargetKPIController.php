@@ -593,7 +593,7 @@ class TargetKPIController extends Controller
             if (!$detail) return null;
 
             $personId = filled($idUser) ? (int) $idUser : null;
-            $progress = $this->resolveProgress($item, $personId);
+            $progress = round((float) $this->resolveProgress($item, $personId), 1);
 
             $totalPeserta = $item->detailTargetKPI->flatMap(function ($detailItem) {
                 return $detailItem->detailPersonKPI->pluck('id_karyawan');

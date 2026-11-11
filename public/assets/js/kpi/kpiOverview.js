@@ -1,3 +1,5 @@
+const fmt1 = (v) => (Number(v) || 0).toFixed(1);
+
 (function() {
     'use strict';
 
@@ -286,7 +288,7 @@
                             padding: 12,
                             cornerRadius: 8,
                             callbacks: {
-                                label: ctx => ctx.dataset.label === 'Progress (%)' ? `Progress: ${ctx.parsed.y}%` : `Total Target: ${ctx.parsed.y}`
+                                label: ctx => ctx.dataset.label === 'Progress (%)' ? `Progress: ${Number(ctx.parsed.y).toFixed(1)}%` : `Total Target: ${ctx.parsed.y}`
                             }
                         }
                     },
@@ -362,7 +364,7 @@
         }
 
         const tableData = targets.map(t => {
-            const pct = parseFloat((t.progress ?? 0).toFixed(2));
+            const pct = Number(t.progress ?? 0).toFixed(1);
             let barColor, badgeCls;
             
             switch (t.status) {

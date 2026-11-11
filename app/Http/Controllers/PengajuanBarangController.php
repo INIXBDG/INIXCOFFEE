@@ -884,7 +884,10 @@ class PengajuanBarangController extends Controller
         }
 
         return redirect()
-            ->route('pengajuanbarang.show', array_filter(['id' => $id, 'return_url' => $returnUrl]))
+            ->route('pengajuanbarang.show', array_filter([
+                'pengajuanbarang' => $id,
+                'return_url' => $returnUrl
+            ]))
             ->with('success', 'Data Berhasil diperbarui.');
     }
 

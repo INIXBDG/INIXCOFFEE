@@ -162,7 +162,7 @@ class ExecutiveAnalyticsService
                         if (!$result || !isset($result['progress'])) continue;
 
                         $rawProgress = $this->normalizeNumber($result['progress']);
-                        $percent = max(0, min(100, round($rawProgress, 2)));
+                        $percent = max(0, min(100, round($rawProgress, 1)));
                         $progressValues[] = $percent;
                     }
                 }
@@ -376,20 +376,20 @@ class ExecutiveAnalyticsService
             if ($count === 0) continue;
 
             $middle = floor(($count - 1) / 2);
-            $median = $count % 2 ? round($sorted->get($middle), 2) : round(($sorted->get($middle) + $sorted->get($middle + 1)) / 2, 2);
+            $median = $count % 2 ? round($sorted->get($middle), 1) : round(($sorted->get($middle) + $sorted->get($middle + 1)) / 2, 1);
 
             $mean = $progressValues->avg();
             $variance = $progressValues->map(fn($v) => pow($v - $mean, 2))->avg();
             $stdDev = sqrt($variance);
 
             $metrics[$period] = [
-                'avg_progress' => round($mean, 2),
+                'avg_progress' => round($mean, 1),
                 'median_progress' => $median,
                 'total_targets' => $items->unique('target_id')->count(),
                 'completed' => $progressValues->filter(fn($v) => $v >= 100)->count(),
-                'std_deviation' => round($stdDev, 2),
-                'min_progress' => $progressValues->min() ?? 0,
-                'max_progress' => $progressValues->max() ?? 0,
+                'std_deviation' => round($stdDev, 1),
+                'min_progress' => round($progressValues->min() ?? 0, 1),
+                'max_progress' => round($progressValues->max() ?? 0, 1),
             ];
         }
 
@@ -406,7 +406,7 @@ class ExecutiveAnalyticsService
 
             if ($last > $prev + 1) $metrics['trend_direction'] = 'up';
             elseif ($last < $prev - 1) $metrics['trend_direction'] = 'down';
-            $metrics['trend_delta'] = round($last - $prev, 2);
+            $metrics['trend_delta'] = round($last - $prev, 1);
         }
 
         $metrics['count'] = $progressData->unique('target_id')->count();
