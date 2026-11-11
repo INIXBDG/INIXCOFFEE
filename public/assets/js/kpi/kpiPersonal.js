@@ -1,3 +1,5 @@
+const fmt1 = (v) => (Number(v) || 0).toFixed(1);
+
 (function() {
     'use strict';
 
@@ -187,7 +189,7 @@
                             ['Selesai', 'Mencapai Target'].includes(t.status)
                         ).length;
                         response.rata_rata_progress = daftarTarget.length
-                            ? daftarTarget.reduce((a, t) => a + (parseFloat(t.progress) || 0), 0) / daftarTarget.length
+                            ? daftarTarget.reduce((a, t) => a + (parseFloat(t.progress_percent) || 0), 0) / daftarTarget.length
                             : 0;
                     }
 
@@ -220,7 +222,7 @@
 
     function updateStats(data) {
         $('#stat0').text(data.total_target + ' Target');
-        $('#stat1').text(Math.round(data.rata_rata_progress) + '%');
+        $('#stat1').text(fmt1(data.rata_rata_progress) + '%');
         $('#stat2').text(data.kpi_aktif);
         $('#stat3').text(data.kpi_selesai);
     }
@@ -232,9 +234,9 @@
         const targetLabels = statistikTargets.map(item => item.judul.length > 20 ? item.judul.substring(0, 20) + '...' : item.judul);
         const targetProgress = statistikTargets.map(item => {
             if ((item.tipe_target === "rupiah" || item.tipe_target === "angka") && item.target > 0) {
-                return Math.round((item.progress / item.target) * 100);
+                return Number(fmt1((item.progress / item.target) * 100));
             }
-            return Math.round(item.progress || 0);
+            return Number(fmt1(item.progress));
         });
 
         const backgroundColors = statistikTargets.map(item => {
@@ -267,7 +269,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'Progress: ' + fmt1(c.parsed.y) + '%' } } },
                     scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
                 }
             });
@@ -319,7 +321,7 @@
                                (target.tipe_target === "persen" ? target.target + "%" : target.target);
             
             let realisasiChange = target.tipe_target === "rupiah" ? "Rp " + Number(target.progress).toLocaleString("id-ID") : 
-                                  (target.tipe_target === "angka" ? target.progress : target.progress + "%");
+                                  (target.tipe_target === "angka" ? target.progress : fmt1(target.progress) + "%");
 
             let buttonIsiForm = allowedAssistantRoutes.includes(target.asistant_route) ? 'true' : '';
 
@@ -530,8 +532,8 @@
                         let targetValue, progressValue, gapValue;
                         if (data.tipe_target === "persen") {
                             targetValue = data.nilai_target + ' %';
-                            progressValue = data.data_detail.progress + ' %';
-                            gapValue = data.data_detail.gap + ' %';
+                            progressValue = fmt1(data.data_detail.progress) + ' %';
+                            gapValue = fmt1(data.data_detail.gap) + ' %';
                         } else if (data.tipe_target === "rupiah") {
                             const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
                             targetValue = formatter.format(data.nilai_target);
@@ -595,11 +597,11 @@
                         let FormatedProgress = 0;
                         if (data.nilai_target && data.nilai_target > 0) {
                             if (data.tipe_target === "rupiah") {
-                                FormatedProgress = Math.min((data.data_detail.progress / data.nilai_target) * 100, 100).toFixed(2);
+                                FormatedProgress = Math.min((data.data_detail.progress / data.nilai_target) * 100, 100).toFixed(1);
                             } else if (data.tipe_target === "angka") {
-                                FormatedProgress = ((data.data_detail.progress / data.nilai_target) * 100).toFixed(2);
+                                FormatedProgress = ((data.data_detail.progress / data.nilai_target) * 100).toFixed(1);
                             } else {
-                                FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(2);
+                                FormatedProgress = Math.min(data.data_detail.progress, 100).toFixed(1);
                             }
                         }
 
@@ -630,7 +632,7 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <div class="mb-2">
-                                                    <div class="d-flex justify-content-between"><span>Progress</span><span>${s.percentage}%</span></div>
+                                                    <div class="d-flex justify-content-between"><span>Progress</span><span>${fmt1(s.percentage)}%</span></div>
                                                     <div class="progress" style="height: 10px;"><div class="progress-bar" role="progressbar" style="width: ${progressWidth}%; background-color: ${progressColor};"></div></div>
                                                 </div>
                                                 <div class="text-end"><span class="badge ${statusClass} p-2">${(s.status || '').toUpperCase()}</span></div>
@@ -656,7 +658,7 @@
                                                     <div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="fa-solid fa-check-circle text-success"></i></div>
                                                     <div class="clearfix"></div>
                                                 </td>
-                                                <td class="text-center ${textClass}"><strong>${sales.percentage}%</strong></td>
+                                                <td class="text-center ${textClass}"><strong>${fmt1(sales.percentage)}%</strong></td>
                                                 <td class="text-center"><span class="badge ${statusClass}">${(sales.status || '').toUpperCase()}</span></td>
                                             </tr>
                                         `;
@@ -700,7 +702,7 @@
                                                             if (response?.data) {
                                                                 const percentageCell = row.querySelector('td:nth-child(5)');
                                                                 const statusCell = row.querySelector('td:nth-child(6)');
-                                                                if (percentageCell && response.data.percentage) percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${response.data.percentage}%</strong>`;
+                                                                if (percentageCell && response.data.percentage) percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${fmt1(response.data.percentage)}%</strong>`;
                                                                 if (statusCell && response.data.status) {
                                                                     const statusClass = response.data.status === 'achieved' ? 'badge-success' : 'badge-warning';
                                                                     statusCell.innerHTML = `<span class="badge ${statusClass}">${response.data.status.toUpperCase()}</span>`;
@@ -753,6 +755,74 @@
                             `;
                         }
 
+                        let contentKontribusiSales = '';
+                        const kontribusi = ['pemasukan kotor'].includes(String(data.condition).toLowerCase().trim()) ? (data.data_detail?.kontribusi_sales ?? null) : null;
+
+                        if (kontribusi) {
+                            const statusMap = {
+                                on_track: ['bg-primary', 'On Track'],
+                                selesai: ['bg-success', 'Selesai'],
+                                gagal: ['bg-danger', 'Gagal']
+                            };
+                            const badge = (s) => {
+                                const [cls, label] = statusMap[s] || ['bg-secondary', '-'];
+                                return `<span class="badge ${cls}">${label}</span>`;
+                            };
+                            const selisihCls = (n) => (n < 0 ? 'text-danger' : 'text-success');
+
+                            const rows = (kontribusi.rows || []).map((r, i) => `
+                                <tr>
+                                    <td class="text-center">${i + 1}</td>
+                                    <td class="fw-semibold">${r.nama || '-'}</td>
+                                    <td class="text-end">${formatRupiah(r.triwulan[1])}</td>
+                                    <td class="text-end">${formatRupiah(r.triwulan[2])}</td>
+                                    <td class="text-end">${formatRupiah(r.triwulan[3])}</td>
+                                    <td class="text-end">${formatRupiah(r.triwulan[4])}</td>
+                                    <td class="text-end fw-bold text-primary">${formatRupiah(r.total)}</td>
+                                    <td class="text-end">${formatRupiah(r.target)}</td>
+                                    <td class="text-end fw-semibold ${selisihCls(r.selisih)}">${formatRupiah(r.selisih)}</td>
+                                    <td class="text-center">${fmt1(r.persentase)}%</td>
+                                    <td class="text-center">${badge(r.status)}</td>
+                                </tr>`).join('');
+
+                            const t = kontribusi.total;
+                            const footer = t ? `
+                                <tfoot class="table-light fw-bold">
+                                    <tr>
+                                        <td colspan="2" class="text-center">TOTAL</td>
+                                        <td class="text-end">${formatRupiah(t.triwulan[1])}</td>
+                                        <td class="text-end">${formatRupiah(t.triwulan[2])}</td>
+                                        <td class="text-end">${formatRupiah(t.triwulan[3])}</td>
+                                        <td class="text-end">${formatRupiah(t.triwulan[4])}</td>
+                                        <td class="text-end text-primary">${formatRupiah(t.total)}</td>
+                                        <td class="text-end">${formatRupiah(t.target)}</td>
+                                        <td class="text-end ${selisihCls(t.selisih)}">${formatRupiah(t.selisih)}</td>
+                                        <td class="text-center">${fmt1(t.persentase)}%</td>
+                                        <td class="text-center">${badge(t.status)}</td>
+                                    </tr>
+                                </tfoot>` : '';
+
+                            contentKontribusiSales = `
+                                <div class="card shadow-sm border-0 rounded-4">
+                                    <div class="card-body">
+                                        <h6 class="fw-semibold mb-3"><i class="fa-solid fa-users me-2"></i>Kontribusi Sales ${kontribusi.tahun ?? ''}</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover table-bordered align-middle mb-0">
+                                                <thead class="table-light text-center">
+                                                    <tr>
+                                                        <th width="4%">No</th><th>Sales</th>
+                                                        <th>Triwulan I</th><th>Triwulan II</th><th>Triwulan III</th><th>Triwulan IV</th>
+                                                        <th>Total</th><th>Target</th><th>Selisih</th><th>Persentase</th><th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>${rows || '<tr><td colspan="11" class="text-center text-muted">Belum ada target penjualan sales untuk tahun ini</td></tr>'}</tbody>
+                                                ${footer}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        }
+                        
                         let contentPieChart = '';
                         if (allowedDetailAssistantRoutes.includes(data.condition)) {
                             const fileUrl = data.data_detail.dataManual?.manual_document || '';
@@ -1002,7 +1072,7 @@
                                                         <div class="small text-muted">${instruktur.kode_karyawan} • ${instruktur.jabatan}</div>
                                                     </div>
                                                     <div class="text-end">
-                                                        <div class="fw-bold text-${persentaseColor}">${instruktur.persentase}%</div>
+                                                        <div class="fw-bold text-${persentaseColor}">${fmt1(instruktur.persentase)}%</div>
                                                         <div class="small text-muted">${instruktur.jam_aktif} / ${instruktur.target_jam} jam</div>
                                                     </div>
                                                 </div>
@@ -1136,6 +1206,7 @@
                                         </div>
                                     </div>
                                     ${ContentTrafikSales}
+                                    ${contentKontribusiSales}
                                     ${contentStatisticChart}
                                     ${contentKalenderInstruktur}
                                 </div>
@@ -1234,7 +1305,7 @@
                 const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
                 const badge = skala === null
                     ? '<span class="badge bg-secondary">Belum dinilai</span>'
-                    : `<span class="badge bg-info text-dark">${Math.round(skala * 10)}%</span>`;
+                    : `<span class="badge bg-info text-dark${fmt1(skala * 10)}%</span>`;
 
                 return `
                     <div class="row mb-2 align-items-center p-2 rounded">

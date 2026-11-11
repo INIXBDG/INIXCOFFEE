@@ -156,7 +156,7 @@ class OverviewDashboardService
                     'progress' => $progress,
                     'status' => $resolved['target_status'] ?? 'behind',
                     'trend' => $resolved['trend'] ?? 'stable',
-                    'trend_value' => $calculation['trend_value'] ?? 0,
+                    'trend_value' => round($calculation['trend_value'], 1) ?? 0,
                     'sparkline' => array_slice($mp, -6, 6, true),
                 ];
             }
@@ -180,13 +180,13 @@ class OverviewDashboardService
             $nilaiKpiAnda = 0;
             $titleGetData = 'Tidak ada data';
         } elseif ($avgTargetYearly == 0) {
-            $nilaiKpiAnda = round($avgPenilaianYearly * 0.4, 2);
+            $nilaiKpiAnda = round($avgPenilaianYearly * 0.4, 1);
             $titleGetData = 'Dari Penilaian';
         } elseif ($avgPenilaianYearly == 0) {
             $nilaiKpiAnda = $avgTargetYearly;
             $titleGetData = 'Dari Target KPI';
         } else {
-            $nilaiKpiAnda = round($avgTargetYearly * 0.6 + $avgPenilaianYearly * 0.4, 2);
+            $nilaiKpiAnda = round($avgTargetYearly * 0.6 + $avgPenilaianYearly * 0.4, 1);
             $titleGetData = 'Gabungan Target KPI & Penilaian';
         }
 
@@ -286,7 +286,7 @@ class OverviewDashboardService
             $raw = ($raw / $target) * 100;
         }
 
-        return max(0, min(100, $raw));
+        return round(max(0, min(100, $raw)), 1);
     }
 
     protected function getRouteCalculators(): array
@@ -877,7 +877,7 @@ class OverviewDashboardService
 
                 $progressDisplay = match ($tipeTarget) {
                     'rupiah' => 'Rp ' . number_format($rawProgress, 0, ',', '.'),
-                    'persen' => round($rawProgress, 2) . '%',
+                    'persen' => number_format($rawProgress, 1, '.', '') . '%',
                     default => number_format($rawProgress, 0, ',', '.'),
                 };
 
@@ -888,9 +888,9 @@ class OverviewDashboardService
                     'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
                     'tipe_target' => $tipeTarget,
                     'target' => $nilaiTarget,
-                    'progress' => round($rawProgress),
+                    'progress' => round($rawProgress, 1),
                     'progress_display' => $progressDisplay,
-                    'progress_percent' => round($percent, 2),
+                    'progress_percent' => round($percent, 1),
                     'status' => $status,
                     'status_badge' => $statusBadge,
                     'deskripsi' => $detail->deskripsi ?? '-',
@@ -904,13 +904,13 @@ class OverviewDashboardService
         }
 
         $rataRataProgress = $progressPercentagesRaw->isNotEmpty()
-            ? round($progressPercentagesRaw->sum() / $progressPercentagesRaw->count(), 2)
+            ? round($progressPercentagesRaw->sum() / $progressPercentagesRaw->count(), 1)
             : 0;
 
         $finalMonthlyProgress = [];
         for ($m = 1; $m <= 12; $m++) {
             $finalMonthlyProgress[$m] = isset($aggregatedMonthlyCount[$m]) && $aggregatedMonthlyCount[$m] > 0
-                ? round($aggregatedMonthlyProgress[$m] / $aggregatedMonthlyCount[$m], 2)
+                ? round($aggregatedMonthlyProgress[$m] / $aggregatedMonthlyCount[$m], 1)
                 : null;
         }
 
@@ -1089,7 +1089,7 @@ class OverviewDashboardService
                     $percent = $rawProgress;
                 }
                 $percent = max(0.0, min(100.0, $percent));
-                $roundedPercent = round($percent, 2);
+                $roundedPercent = round($percent, 1);
 
                 // Tentukan status target
                 if ($tahunFilter < $currentYear) {
@@ -1112,7 +1112,7 @@ class OverviewDashboardService
 
                 $progressDisplay = match ($tipeTarget) {
                     'rupiah' => 'Rp ' . number_format($rawProgress, 2, ',', '.'),
-                    'persen' => number_format($rawProgress, 2, ',', '.') . '%',
+                    'persen' => number_format($rawProgress, 1, ',', '.') . '%',
                     default => number_format($rawProgress, 2, ',', '.'),
                 };
 
@@ -1121,7 +1121,7 @@ class OverviewDashboardService
                     'periode' => $detail->jangka_target . ' ' . $detail->detail_jangka,
                     'tipe_target' => $tipeTarget,
                     'target' => $nilaiTarget,
-                    'progress' => round($rawProgress, 2),
+                    'progress' => round($rawProgress, 1),
                     'progress_display' => $progressDisplay,
                     'progress_percent' => $roundedPercent,
                     'status' => $statusTarget,
@@ -1133,7 +1133,7 @@ class OverviewDashboardService
 
             // Rata-rata progress target ini (across all assigned persons in this division)
             $avgTarget = !empty($targetProgressPercentagesRaw)
-                ? round(array_sum($targetProgressPercentagesRaw) / count($targetProgressPercentagesRaw), 2)
+                ? round(array_sum($targetProgressPercentagesRaw) / count($targetProgressPercentagesRaw), 1)
                 : 0.0;
 
             // Status agregat target
@@ -1190,7 +1190,7 @@ class OverviewDashboardService
             ];
 
             $rataRataProgressKaryawan = !empty($rawProgressList)
-                ? round(array_sum($rawProgressList) / count($rawProgressList), 2)
+                ? round(array_sum($rawProgressList) / count($rawProgressList), 1)
                 : 0.0;
 
             if (!empty($rawProgressList)) {
@@ -1213,14 +1213,14 @@ class OverviewDashboardService
         }
 
         $rataRataProgress = $totalEmployeeWithProgress > 0
-            ? round($totalProgressSum / $totalEmployeeWithProgress, 2)
+            ? round($totalProgressSum / $totalEmployeeWithProgress, 1)
             : 0.0;
 
         // Build monthly progress final
         $finalMonthlyProgress = [];
         for ($m = 1; $m <= 12; $m++) {
             $finalMonthlyProgress[$m] = isset($aggregatedMonthlyCount[$m]) && $aggregatedMonthlyCount[$m] > 0
-                ? round($aggregatedMonthlyProgress[$m] / $aggregatedMonthlyCount[$m], 2)
+                ? round($aggregatedMonthlyProgress[$m] / $aggregatedMonthlyCount[$m], 1)
                 : null;
         }
 

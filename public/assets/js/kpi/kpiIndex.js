@@ -1,6 +1,7 @@
 // ==========================================================================
 // KPI INDEX MANAGEMENT - EXTERNAL JS
 // ==========================================================================
+const fmt1 = (v) => (Number(v) || 0).toFixed(1);
 
 let allTargetData = [];
 let currentFilteredData = [];
@@ -13,7 +14,6 @@ const itemsPerPage = 10;
 const allowedAssistantRoutes = [
     'dorong inovasi pelayanan',
     'inisiatif efisiensi keuangan',
-    'rasio biaya operasional terhadap revenue',
     'mengurangi manual work dan error',
 ];
 
@@ -536,8 +536,8 @@ $(document).ready(function() {
                 let targetValue, progressValue, gapValue;
                 if (data.tipe_target === "persen") {
                     targetValue = targetValueRaw + ' %';
-                    progressValue = progressValueRaw + ' %';
-                    gapValue = gapValueRaw + ' %';
+                    progressValue = fmt1(progressValueRaw) + ' %';
+                    gapValue = fmt1(gapValueRaw) + ' %';
                 } else if (data.tipe_target === "rupiah") {
                     const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
                     targetValue = formatter.format(actualTarget);
@@ -711,7 +711,7 @@ $(document).ready(function() {
                                                 <div class="small text-muted">${instruktur.kode_karyawan} • ${instruktur.jabatan}</div>
                                             </div>
                                             <div class="text-end">
-                                                <div class="fw-bold text-${persentaseColor}">${instruktur.persentase}%</div>
+                                                <div class="fw-bold text-${persentaseColor}">${fmt1(instruktur.persentase)}%</div>
                                                 <div class="small text-muted">${instruktur.jam_aktif} / ${instruktur.target_jam} jam</div>
                                             </div>
                                         </div>
@@ -912,7 +912,7 @@ $(document).ready(function() {
                             const statusClass = s.status === 'achieved' ? 'badge-success' : 'badge-warning';
                             const progressColor = s.status === 'achieved' ? '#28a745' : '#ffc107';
                             const progressWidth = Math.min(s.percentage ?? 0, 100);
-                            ContentTrafikSales = `<div class="card shadow-sm mb-4 mt-2"><div class="card-body"><div class="row"><div class="col-md-6"><p class="mb-2"><strong>Sales:</strong> ${s.nama || '-'}</p><p class="mb-2"><strong>Revenue:</strong> ${formatRupiah(s.revenue)}</p><p class="mb-3"><strong>Target:</strong> ${formatRupiah(s.presentase_kemampuan)}</p></div><div class="col-md-6"><div class="mb-2"><div class="d-flex justify-content-between"><span>Progress</span><span>${s.percentage ?? 0}%</span></div><div class="progress" style="height: 10px;"><div class="progress-bar" role="progressbar" style="width: ${progressWidth}%; background-color: ${progressColor};"></div></div></div><div class="text-end"><span class="badge ${statusClass} p-2">${(s.status || '').toUpperCase()}</span></div></div></div></div></div>`;
+                            ContentTrafikSales = `<div class="card shadow-sm mb-4 mt-2"><div class="card-body"><div class="row"><div class="col-md-6"><p class="mb-2"><strong>Sales:</strong> ${s.nama || '-'}</p><p class="mb-2"><strong>Revenue:</strong> ${formatRupiah(s.revenue)}</p><p class="mb-3"><strong>Target:</strong> ${formatRupiah(s.presentase_kemampuan)}</p></div><div class="col-md-6"><div class="mb-2"><div class="d-flex justify-content-between"><span>Progress</span><span>${fmt1(s.percentage)}%</span></div><div class="progress" style="height: 10px;"><div class="progress-bar" role="progressbar" style="width: ${progressWidth}%; background-color: ${progressColor};"></div></div></div><div class="text-end"><span class="badge ${statusClass} p-2">${(s.status || '').toUpperCase()}</span></div></div></div></div></div>`;
                         } else if (salesPerf.type === 'all' && Array.isArray(salesPerf.data)) {
                             let rows = '';
                             salesPerf.data.forEach((sales, index) => {
@@ -920,7 +920,7 @@ $(document).ready(function() {
                                 const statusClass = sales.status === 'achieved' ? 'badge-success' : 'badge-warning';
                                 const textClass = sales.status === 'achieved' ? 'text-success' : 'text-warning';
                                 const targetValue = Number(sales.presentase_kemampuan || 0).toLocaleString('id-ID', { useGrouping: false });
-                                rows += `<tr id="row-${sales.kode_karyawan || index}"><td class="text-center">${index + 1}</td><td><strong>${sales.nama || '-'}</strong></td><td class="text-end">${formatRupiah(sales.revenue)}</td><td class="text-center"><div class="input-group input-group-sm" style="max-width: 150px; float: right;"><input type="text" class="form-control text-end target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" value="${targetValue}" data-id-detail="${sales.id_detailPerson || ''}" data-kode-karyawan="${sales.kode_karyawan || ''}" placeholder="Target" ${!sales.id_detailPerson ? 'disabled' : ''}></div><div class="loading-spinner" style="display: none; float: right; margin-right: 10px;"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div><div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="menu-icon fa-solid fa-check-circle text-success"></i></div><div class="clearfix"></div></td><td class="text-center ${textClass}"><strong>${sales.percentage ?? 0}%</strong></td><td class="text-center"><span class="badge ${statusClass}">${(sales.status || '').toUpperCase()}</span></td></tr>`;
+                                rows += `<tr id="row-${sales.kode_karyawan || index}"><td class="text-center">${index + 1}</td><td><strong>${sales.nama || '-'}</strong></td><td class="text-end">${formatRupiah(sales.revenue)}</td><td class="text-center"><div class="input-group input-group-sm" style="max-width: 150px; float: right;"><input type="text" class="form-control text-end target-input ${sales.id_detailPerson ? '' : 'is-invalid'}" value="${targetValue}" data-id-detail="${sales.id_detailPerson || ''}" data-kode-karyawan="${sales.kode_karyawan || ''}" placeholder="Target" ${!sales.id_detailPerson ? 'disabled' : ''}></div><div class="loading-spinner" style="display: none; float: right; margin-right: 10px;"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div><div class="update-feedback" style="display: none; float: right; margin-right: 10px; margin-top: 5px;"><i class="menu-icon fa-solid fa-check-circle text-success"></i></div><div class="clearfix"></div></td><td class="text-center ${textClass}"><strong>${fmt1(sales.percentage)}%</strong></td><td class="text-center"><span class="badge ${statusClass}">${(sales.status || '').toUpperCase()}</span></td></tr>`;
                             });
                             let htmlTargetTahunanSales = '';
                             const triwulanData = dataDetail.triwulan_data || {};
@@ -937,11 +937,80 @@ $(document).ready(function() {
                     ContentTrafikSales = `<div class="mt-4"><div class="row g-4">${previousData.map((item, index) => `<div class="col-12 col-md-6 col-lg-4"><div class="card border-0 shadow-sm h-100 quarter-card"><div class="card-body d-flex flex-column p-4"><div class="d-flex justify-content-between align-items-start mb-3"><div><h6 class="fw-semibold text-muted mb-1">Periode</h6><h5 class="fw-bold mb-0">${bulanIndo[(item.month || 1) - 1] ?? '-'}</h5></div><span class="badge rounded-pill bg-${item.color || 'secondary'} bg-opacity-10 text-${item.color || 'secondary'} px-3 py-2">Laporan</span></div><div class="mb-3"><h3 class="fw-bold text-dark mb-0">Rp ${item.nilai ? Number(item.nilai).toLocaleString('id-ID') : '-'}</h3><small class="text-muted">Total Pemasukan</small></div><div class="flex-grow-1"><p class="text-muted small mb-2 description-text" id="desc-${index}">${item.description ?? '-'}</p>${(item.description && item.description.length > 100) ? `<button class="btn btn-sm btn-link p-0 text-primary btn-toggle-desc" data-target="desc-${index}">Lihat Selengkapnya</button>` : ''}</div><div class="d-flex justify-content-end align-items-center mt-4"><a href="${window.KPI_CONFIG.storageBase}/${item.file_paths ? item.file_paths : ''}" class="btn btn-sm btn-dark d-flex align-items-center gap-2" download="${item.file_paths ? 'true' : 'false'}"><i class="menu-icon fa-solid fa-download"></i> Download</a></div></div></div></div>`).join('')}</div></div><style>.quarter-card { border-radius: 16px; transition: all 0.25s ease; background: #ffffff; }.quarter-card:hover { transform: translateY(-6px) scale(1.01); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }.quarter-card h3 { letter-spacing: 0.5px; }.quarter-card .badge { font-size: 12px; font-weight: 500; }.description-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }.description-text.expanded { -webkit-line-clamp: unset; overflow: visible; }.quarter-card .btn { border-radius: 8px; font-size: 13px; }</style>`;
                 } else if (allowedAssistantRoutesForKepuasanPelanggan.includes(condition)) {
                     const item = dataDetail || {};
-                    ContentTrafikSales = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Feedback</span><span class="fw-bold">${item.total_feedback ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Sesi</span><span class="fw-bold">${item.total_sessions ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Prediksi</span><span class="fw-bold text-primary">${item.prediction ?? 0}</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA</h6><div class="mb-3"><small class="text-muted d-block">Top Performer</small><span class="fw-bold text-success">${item.top_performer?.label ?? '-'} (${item.top_performer?.value ?? 0})</span></div><div><small class="text-muted d-block">Lowest Performer</small><span class="fw-bold text-danger">${item.lowest_performer?.label ?? '-'} (${item.lowest_performer?.value ?? 0})</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${item.trend === 'up' ? 'success' : (item.trend === 'down' ? 'danger' : 'secondary')}">Trend: ${item.trend || '-'} (${item.trend_value || 0})</span></div><div class="mb-2"><span class="badge bg-${item.consistency === 'stable' ? 'success' : 'warning'}">Konsistensi: ${item.consistency || '-'}</span></div><div><span class="badge bg-${item.target_status === 'on_track' ? 'success' : (item.target_status === 'at_risk' ? 'warning' : 'danger')}">Target: ${item.target_status || '-'}</span></div></div></div></div><div class="col-12"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">KATEGORI PENILAIAN</h6><div class="row text-center">${Object.entries(item.category_scores || {}).map(([key, val]) => `<div class="col"><div class="p-2 border rounded-3"><small class="text-muted d-block">${key}</small><h5 class="fw-bold mb-0">${val ?? 0}</h5></div></div>`).join('')}</div></div></div></div><div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
+                    ContentTrafikSales = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Feedback</span><span class="fw-bold">${item.total_feedback ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Sesi</span><span class="fw-bold">${item.total_sessions ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Prediksi</span><span class="fw-bold text-primary">${item.prediction ?? 0}</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA</h6><div class="mb-3"><small class="text-muted d-block">Top Performer</small><span class="fw-bold text-success">${item.top_performer?.label ?? '-'} (${item.top_performer?.value ?? 0})</span></div><div><small class="text-muted d-block">Lowest Performer</small><span class="fw-bold text-danger">${item.lowest_performer?.label ?? '-'} (${item.lowest_performer?.value ?? 0})</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${item.trend === 'up' ? 'success' : (item.trend === 'down' ? 'danger' : 'secondary')}">Trend: ${item.trend || '-'} (${fmt1(item.trend_value)})</span></div><div class="mb-2"><span class="badge bg-${item.consistency === 'stable' ? 'success' : 'warning'}">Konsistensi: ${item.consistency || '-'}</span></div><div><span class="badge bg-${item.target_status === 'on_track' ? 'success' : (item.target_status === 'at_risk' ? 'warning' : 'danger')}">Target: ${item.target_status || '-'}</span></div></div></div></div><div class="col-12"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">KATEGORI PENILAIAN</h6><div class="row text-center">${Object.entries(item.category_scores || {}).map(([key, val]) => `<div class="col"><div class="p-2 border rounded-3"><small class="text-muted d-block">${key}</small><h5 class="fw-bold mb-0">${val ?? 0}</h5></div></div>`).join('')}</div></div></div></div><div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
                 } else if (allowedAssistantRoutesForPeningkatanKontribusiPelatihan.includes(condition)) {
                     const classBreakdown = dataDetail.class_breakdown || {};
                     const inhouseData = classBreakdown.Inhouse || {};
                     ContentTrafikSales = `<div class="card mt-4 border-0 rounded-4" style="background:#f8fafc;"><div class="card-body p-4"><div class="d-flex justify-content-between align-items-end mb-4"><div><div class="text-muted small">Total Kelas</div><div class="fs-2 fw-semibold text-dark">${classBreakdown.total ?? 0}</div></div></div><div class="row g-3 mb-4"><div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Inixindo</div><div class="fs-4 fw-semibold text-dark">${classBreakdown.kelas_od ?? 0}</div></div></div><div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Orang Luar</div><div class="fs-4 fw-semibold text-dark">${classBreakdown.kelas_ol ?? 0}</div></div></div><div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Offline</div><div class="fs-4 fw-semibold text-dark">${classBreakdown.kelas_offline ?? 0}</div></div></div><div class="col-md-6"><div class="p-3 rounded-3 bg-white border h-100"><div class="text-muted small mb-2">Kelas Online</div><div class="fs-4 fw-semibold text-dark">${classBreakdown.kelas_online ?? 0}</div></div></div></div><div class="p-3 rounded-3 bg-white border"><div class="fw-semibold mb-3">Kelas Inhouse</div><div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted small">Bandung</span><span class="fw-semibold text-dark">${inhouseData.kelas_inhouse ?? 0}</span></div><div class="d-flex justify-content-between py-2"><span class="text-muted small">Luar Bandung</span><span class="fw-semibold text-dark">${inhouseData.kelas_inhouse_luar ?? 0}</span></div></div></div></div>`;
+                }
+
+                let contentKontribusiSales = '';
+                const routeKontribusiSales = ['pemasukan kotor'];
+                const kontribusi = dataDetail.kontribusi_sales;
+
+                if (kontribusi && routeKontribusiSales.includes(String(condition).toLowerCase().trim())) {
+                    const statusMap = {
+                        on_track: ['bg-primary', 'On Track'],
+                        selesai: ['bg-success', 'Selesai'],
+                        gagal: ['bg-danger', 'Gagal']
+                    };
+                    const badge = (s) => {
+                        const [cls, label] = statusMap[s] || ['bg-secondary', '-'];
+                        return `<span class="badge ${cls}">${label}</span>`;
+                    };
+                    const selisihCls = (n) => (n < 0 ? 'text-danger' : 'text-success');
+
+                    const rows = (kontribusi.rows || []).map((r, i) => `
+                        <tr>
+                            <td class="text-center">${i + 1}</td>
+                            <td class="fw-semibold">${r.nama || '-'}</td>
+                            <td class="text-end">${formatRupiah(r.triwulan[1])}</td>
+                            <td class="text-end">${formatRupiah(r.triwulan[2])}</td>
+                            <td class="text-end">${formatRupiah(r.triwulan[3])}</td>
+                            <td class="text-end">${formatRupiah(r.triwulan[4])}</td>
+                            <td class="text-end fw-bold text-primary">${formatRupiah(r.total)}</td>
+                            <td class="text-end">${formatRupiah(r.target)}</td>
+                            <td class="text-end fw-semibold ${selisihCls(r.selisih)}">${formatRupiah(r.selisih)}</td>
+                            <td class="text-center">${fmt1(r.persentase)}%</td>
+                            <td class="text-center">${badge(r.status)}</td>
+                        </tr>`).join('');
+
+                    const t = kontribusi.total;
+                    const footer = t ? `
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="2" class="text-center">TOTAL</td>
+                                <td class="text-end">${formatRupiah(t.triwulan[1])}</td>
+                                <td class="text-end">${formatRupiah(t.triwulan[2])}</td>
+                                <td class="text-end">${formatRupiah(t.triwulan[3])}</td>
+                                <td class="text-end">${formatRupiah(t.triwulan[4])}</td>
+                                <td class="text-end text-primary">${formatRupiah(t.total)}</td>
+                                <td class="text-end">${formatRupiah(t.target)}</td>
+                                <td class="text-end ${selisihCls(t.selisih)}">${formatRupiah(t.selisih)}</td>
+                                <td class="text-center">${fmt1(t.persentase)}%</td>
+                                <td class="text-center">${badge(t.status)}</td>
+                            </tr>
+                        </tfoot>` : '';
+
+                    contentKontribusiSales = `
+                        <div class="card shadow-sm border-0 rounded-4">
+                            <div class="card-body">
+                                <h6 class="fw-semibold mb-3"><i class="fa-solid fa-users me-2"></i>Kontribusi Sales ${kontribusi.tahun ?? ''}</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-bordered align-middle mb-0">
+                                        <thead class="table-light text-center">
+                                            <tr>
+                                                <th width="4%">No</th><th>Sales</th>
+                                                <th>Triwulan I</th><th>Triwulan II</th><th>Triwulan III</th><th>Triwulan IV</th>
+                                                <th>Total</th><th>Target</th><th>Selisih</th><th>Persentase</th><th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${rows || '<tr><td colspan="11" class="text-center text-muted">Belum ada target penjualan sales untuk tahun ini</td></tr>'}</tbody>
+                                        ${footer}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>`;
                 }
 
                 let contentPieChart = '';
@@ -980,9 +1049,9 @@ $(document).ready(function() {
                     const trendColor = trend === 'up' ? 'success' : (trend === 'down' ? 'danger' : 'secondary');
                     const consistencyColor = consistency === 'stable' ? 'success' : 'warning';
                     const targetColor = targetStatus === 'on_track' ? 'success' : (targetStatus === 'at_risk' ? 'warning' : 'danger');
-                    const divisionHtml = Object.entries(item.division_breakdown || {}).map(([div, val]) => `<div class="col mb-3"><div class="p-2 border rounded-3"><small class="text-muted d-block">${div}</small><h5 class="fw-bold mb-0">${val ?? 0}%</h5></div></div>`).join('');
-                    const riskHtml = (item.risk_divisions && item.risk_divisions.length > 0) ? `<div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-danger mb-3">DIVISI BERISIKO</h6><div class="row">${item.risk_divisions.map(risk => `<div class="col mb-2"><div class="p-2 border rounded-3 text-center"><small class="text-muted d-block">${risk.name || '-'}</small><span class="fw-bold text-danger">${risk.value ?? 0}%</span></div></div>`).join('')}</div></div></div></div>` : '';
-                    contentStatisticChart = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total KPI</span><span class="fw-bold">${item.total_kpi ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Divisi</span><span class="fw-bold">${item.total_division ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Progress</span><span class="fw-bold text-primary">${item.progress ?? 0}%</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA DIVISI</h6><div class="mb-3"><small class="text-muted d-block">Top Division</small><span class="fw-bold text-success">${item.top_division?.name ?? '-'} (${item.top_division?.value ?? 0}%)</span></div><div><small class="text-muted d-block">Lowest Division</small><span class="fw-bold text-danger">${item.lowest_division?.name ?? '-'} (${item.lowest_division?.value ?? 0}%)</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${trendColor}">Trend: ${trend} (${trendValue})</span></div><div class="mb-2"><span class="badge bg-${consistencyColor}">Konsistensi: ${consistency}</span></div><div><span class="badge bg-${targetColor}">Target: ${targetStatus}</span></div></div></div></div><div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">BREAKDOWN DIVISI</h6><div class="row text-center">${divisionHtml}</div></div></div></div>${riskHtml}<div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
+                    const divisionHtml = Object.entries(item.division_breakdown || {}).map(([div, val]) => `<div class="col mb-3"><div class="p-2 border rounded-3"><small class="text-muted d-block">${div}</small><h5 class="fw-bold mb-0">${fmt1(val)}%</h5></div></div>`).join('');
+                    const riskHtml = (item.risk_divisions && item.risk_divisions.length > 0) ? `<div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-danger mb-3">DIVISI BERISIKO</h6><div class="row">${item.risk_divisions.map(risk => `<div class="col mb-2"><div class="p-2 border rounded-3 text-center"><small class="text-muted d-block">${risk.name || '-'}</small><span class="fw-bold text-danger">${fmt1(risk.value)}%</span></div></div>`).join('')}</div></div></div></div>` : '';
+                    contentStatisticChart = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total KPI</span><span class="fw-bold">${item.total_kpi ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Divisi</span><span class="fw-bold">${item.total_division ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Progress</span><span class="fw-bold text-primary">${fmt1(item.progress)}%</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA DIVISI</h6><div class="mb-3"><small class="text-muted d-block">Top Division</small><span class="fw-bold text-success">${item.top_division?.name ?? '-'} (${fmt1(item.top_division?.value)}%)</span></div><div><small class="text-muted d-block">Lowest Division</small><span class="fw-bold text-danger">${item.lowest_division?.name ?? '-'} (${fmt1(item.lowest_division?.value)}%)</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${trendColor}">Trend: ${trend} (${fmt1(trendValue)})</span></div><div class="mb-2"><span class="badge bg-${consistencyColor}">Konsistensi: ${consistency}</span></div><div><span class="badge bg-${targetColor}">Target: ${targetStatus}</span></div></div></div></div><div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">BREAKDOWN DIVISI</h6><div class="row text-center">${divisionHtml}</div></div></div></div>${riskHtml}<div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
                 } else if (allowedinovationAdaptionRateRoutes.includes(condition)) {
                     const item = dataDetail || {};
                     const dataInovasi = item.dataInovasi || [];
@@ -1127,9 +1196,9 @@ $(document).ready(function() {
                             </div>
                         ` : ''}
 
-                        ${contentStatisticChart ? `
+                        ${contentKontribusiSales ? `
                             <div class="mt-3">
-                                ${contentStatisticChart}
+                                ${contentKontribusiSales}
                             </div>
                         ` : ''}
 
@@ -1193,7 +1262,7 @@ $(document).ready(function() {
                                         if (response?.data) {
                                             const percentageCell = row.querySelector('td:nth-child(5)');
                                             const statusCell = row.querySelector('td:nth-child(6)');
-                                            if (percentageCell && response.data.percentage) percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${response.data.percentage}%</strong>`;
+                                            if (percentageCell && response.data.percentage) percentageCell.innerHTML = `<strong class="${response.data.status === 'achieved' ? 'text-success' : 'text-warning'}">${fmt1(response.data.percentage)}%</strong>`;
                                             if (statusCell && response.data.status) { const statusClass = response.data.status === 'achieved' ? 'badge-success' : 'badge-warning'; statusCell.innerHTML = `<span class="badge ${statusClass}">${response.data.status.toUpperCase()}</span>`; }
                                         }
                                     },
@@ -1310,7 +1379,7 @@ $(document).ready(function() {
             const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
             const badge = skala === null
                 ? '<span class="badge bg-secondary">Belum dinilai</span>'
-                : `<span class="badge bg-info text-dark">${Math.round(skala * 10)}%</span>`;
+                : `<span class="badge bg-info text-dark">${fmt1(skala * 10)}%</span>`;
 
             return `
                 <div class="row mb-2 align-items-center p-2 rounded">
@@ -1744,15 +1813,15 @@ function processRawData(details) {
             const progress = parseFloat(item.progress) || 0;
 
             if (item.tipe_target === 'rupiah') {
-                const percentProgress = actualTarget > 0 ? Math.min(((progress / actualTarget) * 100).toFixed(1), 100) : 0;
+                const percentProgress = fmt1(actualTarget > 0 ? Math.min((progress / actualTarget) * 100, 100) : 0);
                 progressNumeric = parseFloat(percentProgress);
                 progressValueDisplay = `${percentProgress}%`;
             } else if (item.tipe_target === 'angka') {
-                const percentProgress = actualTarget > 0 ? Math.min(((progress / actualTarget) * 100).toFixed(1), 100) : 0;
-                progressNumeric = percentProgress;
+                const percentProgress = fmt1(actualTarget > 0 ? Math.min((progress / actualTarget) * 100, 100) : 0);
+                progressNumeric = parseFloat(percentProgress);
                 progressValueDisplay = `${percentProgress}%`;
             } else {
-                progressValueDisplay = Math.round(progressNumeric) + '%';
+                progressValueDisplay = fmt1(progressNumeric) + '%';
             }
             
             let lengthProgress = actualTarget > 0
@@ -1778,7 +1847,7 @@ function processRawData(details) {
 
                     // Progress bar & teks mengikuti nilai gap (92.3% → bar 92.3%)
                     lengthProgress = Math.max(0, Math.min(100, Math.round(gapValue)));
-                    progressValueDisplay = `Gap ${gapValue}%`;
+                    progressValueDisplay = `Gap ${fmt1(gapValue)}%`;
                 }
             } else {
                 if (item.tipe_target === 'angka') {
