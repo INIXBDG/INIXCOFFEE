@@ -246,8 +246,13 @@ class PengajuanSubsController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'id_rkm'      => 'required|exists:r_k_m_s,id',
             'sumber_subs' => 'required|in:existing,new',
+        ], [
+            'id_rkm.required'      => 'Jadwal kelas (RKM) wajib dipilih.',
+            'id_rkm.exists'        => 'Jadwal kelas (RKM) yang dipilih tidak valid.',
+            'sumber_subs.required' => 'Sumber subscription wajib dipilih.',
+            'sumber_subs.in'       => 'Sumber subscription tidak valid.',
         ]);
 
         $karyawan = \App\Models\karyawan::where('kode_karyawan', $request->kode_karyawan)->firstOrFail();

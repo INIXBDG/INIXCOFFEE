@@ -121,12 +121,20 @@ class KlaimModulController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'category' => 'required|string|max:100',
-            'description' => 'nullable|string',
-            'instructors' => 'required|array|min:1',
+            'title'        => 'required|string|max:255',
+            'category'     => 'required|string|max:100',
+            'description'  => 'nullable|string',
+            'instructors'  => 'required|array|min:1',
             'instructors.*' => 'exists:users,id',
-            'link' => 'required|url|max:2048',
+            'link'         => 'required|url|max:2048',
+        ], [
+            'title.required'        => 'Judul modul wajib diisi.',
+            'title.max'             => 'Judul modul maksimal 255 karakter.',
+            'category.required'     => 'Kategori materi wajib dipilih.',
+            'instructors.required'  => 'Instruktur wajib dipilih minimal 1.',
+            'instructors.min'       => 'Instruktur wajib dipilih minimal 1.',
+            'link.required'         => 'Link modul wajib diisi.',
+            'link.url'              => 'Link modul harus berupa URL yang valid (diawali https://).',
         ]);
 
         DB::beginTransaction();

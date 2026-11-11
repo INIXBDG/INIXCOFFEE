@@ -15,8 +15,7 @@ use Carbon\CarbonPeriod;
 use App\Models\trackingLaporanInsiden;
 use App\Models\karyawan;
 use App\Models\User;
-use App\Models\HariLibur;
-use Illuminate\Support\Facades\Cache;
+use App\Models\SurveyKepuasan;
 use Illuminate\Support\Facades\Log;
 
 class DashboardSLAController extends Controller
@@ -80,32 +79,36 @@ class DashboardSLAController extends Controller
         $defaultEndDate   = $now->copy()->endOfMonth()->endOfDay();
         // ----------------------------------------------
 
-        // Prioritas 1: Jika ada start_date & end_date eksplisit, gunakan itu
-        if ($request->filled('start_date') || $request->filled('end_date')) {
-            $validator = Validator::make($request->all(), [
-                'start_date' => 'nullable|date',
-                'end_date'   => 'nullable|date|after_or_equal:start_date',
-            ]);
+        // Support parameter tahun dan bulan dari Filter Global dashboard
+        if ($request->has('tahun') || $request->has('bulan')) {
+            $year = $request->input('tahun') ? (int) $request->input('tahun') : $now->year;
+            $month = $request->input('bulan');
 
-            if ($validator->fails()) {
-                return [
-                    'startDate' => $defaultStartDate,
-                    'endDate'   => $defaultEndDate,
-                    'filters'   => [
-                        'start' => $defaultStartDate->toDateTimeString(),
-                        'end'   => $defaultEndDate->toDateTimeString(),
-                        'error' => $validator->errors()->first(),
-                    ],
-                ];
+            if ($month && $month !== 'all') {
+                $m = (int) $month;
+                $startDate = Carbon::createFromDate($year, $m, 1, $this->timezone)->startOfMonth()->startOfDay();
+                $endDate = Carbon::createFromDate($year, $m, 1, $this->timezone)->endOfMonth()->endOfDay();
+            } else {
+                $startDate = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfYear()->startOfDay();
+                $endDate = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfYear()->endOfDay();
             }
 
-            $startDate = $request->filled('start_date')
-                ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
-                : $defaultStartDate;
+            return [
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'filters' => [
+                    'start' => $startDate->toDateTimeString(),
+                    'end' => $endDate->toDateTimeString(),
+                    'year' => $year,
+                    'month' => $month
+                ]
+            ];
+        }
 
-            $endDate = $request->filled('end_date')
-                ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
-                : $defaultEndDate;
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
 
             return [
                 'startDate' => $startDate,
@@ -278,6 +281,8 @@ class DashboardSLAController extends Controller
         // 5. Ambil Data Mentah dari database menggunakan array variasi nama
         $rawTickets = DB::table('tickets')
             ->select(
+                'id',
+                'ticket_id',
                 'pic',
                 'created_at',
                 'kategori',
@@ -304,6 +309,8 @@ class DashboardSLAController extends Controller
 
         // 7. Proses SLA untuk setiap user
         $kpiPerUser = [];
+        $allTicketDetails = []; // <-- Kumpulan semua tiket detail dengan jam resolusi
+
         foreach ($ticketsByUser as $nama => $tickets) {
             if ($nama === 'Lainnya')
                 continue;
@@ -316,15 +323,57 @@ class DashboardSLAController extends Controller
                 'sla_resolution_compliance' => ($total > 0) ? ($stats['resolution_met'] / $total) * 100 : 0,
                 'avg_response_time' => ($stats['response_count'] > 0) ? $stats['sum_response_hours'] / $stats['response_count'] : 0,
                 'avg_resolution_time' => ($total > 0) ? $stats['sum_resolution_hours'] / $total : 0,
+                'max_resolution_time' => $stats['max_resolution_hours'],
+                'longest_ticket' => $stats['longest_ticket'],
                 'total_tickets' => $total,
                 'tickets_by_priority' => $stats['priority_count'],
             ];
+
+            // 7b. Hitung jam resolusi semua tiket untuk tabel detail
+            foreach ($tickets as $ticket) {
+                $tingkatKesulitan = strtolower(trim($ticket->tingkat_kesulitan ?? ''));
+                $kategori = strtolower(trim($ticket->kategori ?? ''));
+                $priority = 'Other';
+                if (in_array($tingkatKesulitan, ['major', 'moderate'])) {
+                    $priority = 'High';
+                } elseif ($kategori == 'request') {
+                    $priority = 'Low';
+                } elseif (in_array($tingkatKesulitan, ['minor', 'normal', '']) || $kategori == 'error (aplikasi)') {
+                    $priority = 'Medium';
+                }
+
+                $start = Carbon::parse($ticket->created_at, $this->timezone);
+                $resolution = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, $this->timezone);
+                $actualResolutionHours = $this->calculateBusinessHours($start, $resolution);
+
+                // Cek SLA Resolusi
+                $slaResolutionMet = (
+                    ($priority == 'High' && $actualResolutionHours <= 24) ||
+                    ($priority == 'Medium' && $actualResolutionHours <= 40) ||
+                    ($priority == 'Low')
+                );
+
+                $allTicketDetails[] = [
+                    'ticket_id'        => $ticket->ticket_id ?? ('#' . $ticket->id),
+                    'pic'              => $nama,
+                    'kategori'         => $ticket->kategori ?? '-',
+                    'priority'         => $priority,
+                    'created_at'       => $ticket->created_at,
+                    'tanggal_selesai'  => $ticket->tanggal_selesai,
+                    'resolution_hours' => round($actualResolutionHours, 2),
+                    'sla_met'          => $slaResolutionMet,
+                ];
+            }
         }
 
         ksort($kpiPerUser);
 
+        // Sort semua tiket dari yang paling lama
+        usort($allTicketDetails, fn($a, $b) => $b['resolution_hours'] <=> $a['resolution_hours']);
+
         return response()->json([
             'kpi' => array_values($kpiPerUser),
+            'ticket_details' => $allTicketDetails,
             'filters' => $dateRange['filters']
         ]);
     }
@@ -832,7 +881,9 @@ class DashboardSLAController extends Controller
             'resolution_met' => 0,
             'sum_response_hours' => 0,
             'sum_resolution_hours' => 0,
-            'priority_count' => ['High' => 0, 'High-Extended' => 0, 'Medium' => 0, 'Low' => 0, 'Other' => 0],
+            'max_resolution_hours' => 0,
+            'longest_ticket' => null,
+            'priority_count' => ['High' => 0, 'Medium' => 0, 'Low' => 0, 'Other' => 0],
         ];
 
         foreach ($tickets as $ticket) {
@@ -868,6 +919,17 @@ class DashboardSLAController extends Controller
             $actualResolutionHours = $this->calculateBusinessHours($start, $resolution, $holidays);
             $stats['sum_resolution_hours'] += $actualResolutionHours;
 
+            // Lacak Waktu Resolusi Terlama
+            if ($stats['longest_ticket'] === null || $actualResolutionHours > $stats['max_resolution_hours']) {
+                $stats['max_resolution_hours'] = $actualResolutionHours;
+                $stats['longest_ticket'] = [
+                    'id' => $ticket->id ?? null,
+                    'ticket_id' => $ticket->ticket_id ?? null,
+                    'hours' => $actualResolutionHours,
+                ];
+            }
+
+            // Hitung Jam Kerja Aktual Respon (JIKA ADA)
             if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
                 $stats['response_count']++;
                 $response = Carbon::parse($ticket->tanggal_response . ' ' . $ticket->jam_response, $this->timezone);
@@ -953,6 +1015,70 @@ class DashboardSLAController extends Controller
         }
 
         return $totalBusinessMinutes / 60.0;
+    }
+
+    public function surveyYearly(Request $request)
+    {
+        $year = (int) ($request->input('tahun') ?: date('Y'));
+        $start = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfYear()->startOfDay();
+        $end = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfYear()->endOfDay();
+
+        $surveys = SurveyKepuasan::whereBetween('created_at', [$start, $end])->get();
+
+        if ($surveys->isEmpty()) {
+            return response()->json([
+                'year' => $year,
+                'total_respondents' => 0,
+                'avg_stars' => 0,
+                'satisfaction_percentage' => 0,
+                'q1_avg' => 0,
+                'q4_avg' => 0,
+            ]);
+        }
+
+        $totalResponden = $surveys->count();
+        $sumStars = 0;
+        $respondenPuas = 0;
+        $sumQ1 = 0;
+        $sumQ4 = 0;
+
+        foreach ($surveys as $survey) {
+            $q1 = (float) $survey->q1;
+            $q4 = (float) $survey->q4;
+            $sumQ1 += $q1;
+            $sumQ4 += $q4;
+            $sumStars += (($q1 + $q4) / 2);
+
+            // Perhitungan skor standar ITSM: Q1 (10-40), Q4 (10-40), Q2 (10-20)
+            $nilaiQ1 = match ((int)$survey->q1) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+            $nilaiQ4 = match ((int)$survey->q4) {
+                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+            };
+            $nilaiQ2 = match ($survey->q2) {
+                'Ya' => 20, 'Tidak' => 10, default => 0,
+            };
+
+            $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
+            $skor = 1 + ($totalBaris * 3) / 100;
+
+            if ($skor >= 3.0) {
+                $respondenPuas++;
+            }
+        }
+
+        $avgStars = $sumStars / $totalResponden;
+        $satisfactionPercentage = ($respondenPuas / $totalResponden) * 100;
+
+        return response()->json([
+            'year' => $year,
+            'total_respondents' => $totalResponden,
+            'avg_stars' => round($avgStars, 2),
+            'satisfaction_percentage' => round($satisfactionPercentage, 1),
+            'q1_avg' => round($sumQ1 / $totalResponden, 2),
+            'q4_avg' => round($sumQ4 / $totalResponden, 2),
+        ]);
     }
 
     public function index()

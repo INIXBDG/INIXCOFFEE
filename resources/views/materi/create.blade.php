@@ -11,13 +11,11 @@
                     <form method="POST" action="{{ route('materi.store') }}"  enctype="multipart/form-data">
                         @csrf
                         <div class="row mb-3">
-                            <label for="nama_materi" class="col-md-4 col-form-label text-md-start">{{ __('Nama Materi') }}</label>
+                            <label for="nama_materi" class="col-md-4 col-form-label text-md-start">{{ __('Nama Materi') }} <span class="text-danger">*</span></label>
                             <div class="col-md-6">
                                 <input id="nama_materi" type="text" placeholder="Masukan Nama Materi" class="form-control @error('nama_materi') is-invalid @enderror" name="nama_materi" value="{{ old('nama_materi') }}" autocomplete="nama_materi" autofocus>
                                 @error('nama_materi')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -46,9 +44,7 @@
                                     <option value="Artificial Intelligence">Artificial Intelligence</option>
                                 </select>
                                 @error('kategori_materi')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -56,11 +52,9 @@
                         <div class="row mb-3">
                             <label for="durasi" class="col-md-4 col-form-label text-md-start">{{ __('Durasi') }}</label>
                             <div class="col-md-6">
-                                <input id="durasi" type="text" placeholder="Masukan Durasi Materi" class="form-control @error('durasi') is-invalid @enderror" name="durasi" autocomplete="durasi" autofocus>
-                                @error('kode_materi')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <input id="durasi" type="text" placeholder="Masukan Durasi Materi" class="form-control @error('durasi') is-invalid @enderror" name="durasi" value="{{ old('durasi') }}" autocomplete="durasi" autofocus>
+                                @error('durasi')
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -70,9 +64,7 @@
                             <div class="col-md-6">
                                 <input id="kode_materi" type="text" placeholder="Masukan Kode Materi" class="form-control @error('kode_materi') is-invalid @enderror" name="kode_materi" value="{{ old('kode_materi') }}" autocomplete="kode_materi" autofocus>
                                 @error('kode_materi')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -97,9 +89,7 @@
                                     <option value="Regular">Regular</option>
                                 </select>
                                 @error('vendor')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -107,11 +97,9 @@
                         <div class="row mb-3">
                             <label for="silabus" class="col-md-4 col-form-label text-md-start">{{ __('Silabus (PDF)') }}</label>
                             <div class="col-md-6">
-                                <input type="file" name="silabus" class="form-control-file" accept="application/pdf">
+                                <input type="file" name="silabus" class="form-control @error('silabus') is-invalid @enderror" accept="application/pdf">
                                 @error('silabus')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                    <div class="text-danger">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>

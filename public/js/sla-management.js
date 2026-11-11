@@ -1,6 +1,120 @@
 $(document).ready(function () {
 
     // =======================================================================
+    // 0. PAGINATION STATE — Detail Tiket Programmer
+    // =======================================================================
+    let progTicketAllData = [];
+    let progTicketCurrentPage = 1;
+    const PROG_PAGE_SIZE = 10;
+    let progTicketSearchQuery = '';   // kata kunci pencarian aktif
+
+    // Kembalikan data yang sudah difilter berdasarkan search query
+    function getFilteredTickets() {
+        const q = progTicketSearchQuery.trim().toLowerCase();
+        if (!q) return progTicketAllData;
+        return progTicketAllData.filter(t =>
+            (t.ticket_id  && t.ticket_id.toLowerCase().includes(q)) ||
+            (t.pic        && t.pic.toLowerCase().includes(q))        ||
+            (t.kategori   && t.kategori.toLowerCase().includes(q))   ||
+            (t.priority   && t.priority.toLowerCase().includes(q))
+        );
+    }
+
+    function renderProgTicketPage(page) {
+        const tickets   = getFilteredTickets();   // ← hasil filter / semua data
+        const total     = tickets.length;
+        const totalPages = Math.max(1, Math.ceil(total / PROG_PAGE_SIZE));
+        progTicketCurrentPage = Math.max(1, Math.min(page, totalPages));
+
+        const start = (progTicketCurrentPage - 1) * PROG_PAGE_SIZE;
+        const end   = Math.min(start + PROG_PAGE_SIZE, total);
+        const pageTickets = tickets.slice(start, end);
+
+        const detailBody = document.getElementById('prog-ticket-detail-body');
+        const pageInfo   = document.getElementById('prog-ticket-page-info');
+        const prevBtn    = document.getElementById('prog-ticket-prev');
+        const nextBtn    = document.getElementById('prog-ticket-next');
+        if (!detailBody) return;
+
+        const maxHours       = tickets.length > 0 ? tickets[0].resolution_hours : 0;
+        const priorityBadge  = { High: 'danger', Medium: 'warning', Low: 'success', Other: 'secondary' };
+        const monthNames     = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+        const formatDate     = (str) => {
+            if (!str) return '-';
+            const d = new Date(str);
+            return `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+        };
+
+        detailBody.innerHTML = '';
+        if (total === 0) {
+            detailBody.innerHTML = '<tr><td colspan="9" class="text-center py-3 text-muted">Tidak ada data tiket.</td></tr>';
+        } else {
+            pageTickets.forEach((t, i) => {
+                const globalIdx  = start + i;
+                const isLongest  = t.resolution_hours === maxHours;
+                const slaBadge   = t.sla_met
+                    ? '<span class="badge bg-success">✓ Met</span>'
+                    : '<span class="badge bg-danger">✗ Breached</span>';
+                const rowClass   = isLongest ? 'table-danger fw-bold' : '';
+                const resDisplay = isLongest
+                    ? `<span class="text-danger fw-bold">${t.resolution_hours} jam</span> <i class="bi bi-trophy-fill text-danger" title="Resolusi Terlama"></i>`
+                    : `${t.resolution_hours} jam`;
+
+                detailBody.innerHTML += `<tr class="${rowClass}">
+                    <td class="text-muted small">${globalIdx + 1}</td>
+                    <td><code>${t.ticket_id}</code></td>
+                    <td>${t.pic}</td>
+                    <td><small>${t.kategori}</small></td>
+                    <td><span class="badge bg-${priorityBadge[t.priority] || 'secondary'}">${t.priority}</span></td>
+                    <td><small>${formatDate(t.created_at)}</small></td>
+                    <td><small>${formatDate(t.tanggal_selesai)}</small></td>
+                    <td class="text-center">${resDisplay}</td>
+                    <td class="text-center">${slaBadge}</td>
+                </tr>`;
+            });
+        }
+
+        if (pageInfo) {
+            const allTotal = progTicketAllData.length;
+            if (progTicketSearchQuery.trim()) {
+                pageInfo.textContent = `Halaman ${progTicketCurrentPage} dari ${totalPages} — ditemukan ${total} dari ${allTotal} tiket`;
+            } else {
+                pageInfo.textContent = `Halaman ${progTicketCurrentPage} dari ${totalPages} (${total} tiket)`;
+            }
+        }
+        if (prevBtn)  prevBtn.disabled  = progTicketCurrentPage <= 1;
+        if (nextBtn)  nextBtn.disabled  = progTicketCurrentPage >= totalPages;
+
+        // Sync badge count dengan hasil filter
+        const detailCount = document.getElementById('prog-ticket-detail-count');
+        if (detailCount) {
+            detailCount.textContent = progTicketSearchQuery.trim()
+                ? `${total} / ${progTicketAllData.length} Tiket`
+                : `${progTicketAllData.length} Tiket`;
+        }
+    }
+
+    // Bind tombol Prev / Next — cukup sekali di luar loadSlaUser
+    $(document).on('click', '#prog-ticket-prev', function () {
+        renderProgTicketPage(progTicketCurrentPage - 1);
+    });
+    $(document).on('click', '#prog-ticket-next', function () {
+        renderProgTicketPage(progTicketCurrentPage + 1);
+    });
+
+    // Bind input pencarian live search
+    $(document).on('input', '#prog-ticket-search', function () {
+        progTicketSearchQuery = $(this).val();
+        progTicketCurrentPage = 1;   // reset ke halaman 1 setiap ketik
+        renderProgTicketPage(1);
+    });
+
+    // Bind tombol clear (×)
+    $(document).on('click', '#prog-ticket-search-clear', function () {
+        $('#prog-ticket-search').val('').trigger('input');
+    });
+
+    // =======================================================================
     // 1. HELPER FUNCTIONS
     // =======================================================================
     const formatPercent = (val) => `${parseFloat(val).toFixed(1)}%`;
@@ -121,10 +235,31 @@ $(document).ready(function () {
             const query = buildQueryString();
             const response = await fetch(slaProgUserBaseUrl + query);
             const data = await response.json();
+
+            // --- Tabel Kinerja Per Programmer ---
             const tableBody = document.getElementById('sla-user-table-body');
             tableBody.innerHTML = '';
             if (!data.kpi || data.kpi.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Tidak ada data.</td></tr>';
+            } else {
+                data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
+                    const priority = item.tickets_by_priority || { High: 0, Medium: 0, Low: 0 };
+                    const maxResTime = (item.total_tickets > 0 && item.max_resolution_time !== undefined)
+                        ? formatHours(item.max_resolution_time)
+                        : '-';
+                    const ticketInfo = (item.longest_ticket && item.longest_ticket.ticket_id)
+                        ? `<br><small class="text-muted font-monospace">${item.longest_ticket.ticket_id}</small>`
+                        : '';
+                    tableBody.innerHTML += `<tr>
+                        <td><strong>${item.nama_programmer}</strong></td>
+                        <td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td>
+                        <td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td>
+                        <td>${formatHours(item.avg_resolution_time)}</td>
+                        <td><span class="fw-bold text-danger">${maxResTime}</span>${ticketInfo}</td>
+                        <td><strong>${formatValue(item.total_tickets)}</strong></td>
+                        <td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span> <span class="badge bg-success">L:${priority.Low}</span></td>
+                    </tr>`;
+                });
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
                             const priority = item.tickets_by_priority || {};
@@ -465,7 +600,39 @@ $(document).ready(function () {
     }
 
     // =======================================================================
-    // 6. INITIAL LOAD & EVENT BINDING
+    // 6. SURVEY KEPUASAN (TAHUNAN)
+    // =======================================================================
+    async function loadSlaSurveyKepuasan() {
+        const year = $('#globalTahunFilter').val() || new Date().getFullYear();
+        $('#top-survey-year').text(year);
+        $('#top-survey-sla').text('...');
+        $('#top-survey-subtext').text('Memuat data...');
+
+        try {
+            const response = await fetch(`/dashboard-sla/survey-yearly?tahun=${year}`);
+            if (!response.ok) throw new Error('Network error');
+            const data = await response.json();
+
+            const avgStars = parseFloat(data.avg_stars || 0);
+            const total = parseInt(data.total_respondents || 0);
+            const satisfaction = parseFloat(data.satisfaction_percentage || 0);
+
+            if (total === 0) {
+                $('#top-survey-sla').text('-').removeClass('text-success text-warning text-danger').css('color', '#6c757d');
+                $('#top-survey-subtext').text('0 Responden');
+            } else {
+                $('#top-survey-sla').html(`<i class="fa-solid fa-star text-warning me-1"></i>${avgStars.toFixed(1)} <span class="fs-5 text-muted">/ 4</span>`).css('color', '#6f42c1');
+                $('#top-survey-subtext').html(`<span class="fw-bold text-success">${satisfaction.toFixed(1)}% Puas</span> &bull; ${total} Survey`);
+            }
+        } catch (error) {
+            console.error('Gagal SLA Survey Kepuasan:', error);
+            $('#top-survey-sla').text('-').css('color', '#dc3545');
+            $('#top-survey-subtext').text('Gagal memuat');
+        }
+    }
+
+    // =======================================================================
+    // 7. INITIAL LOAD & EVENT BINDING
     // =======================================================================
 
     // Bind Filter Events
@@ -489,6 +656,9 @@ $(document).ready(function () {
 
         // D. SLA Webinar (Event)
         loadSlaEvent();
+
+        // E. SLA Survey Kepuasan Tahunan
+        loadSlaSurveyKepuasan();
     }
 
     // Initial Execute

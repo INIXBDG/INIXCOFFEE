@@ -193,8 +193,13 @@ class PengajuanLabdanSubsController extends Controller
         // 1. Validasi Input
         // Pastikan nama tabel 'rkm' sesuai dengan database Anda (singular/plural)
         $request->validate([
-            'id_rkm' => 'required|exists:r_k_m_s,id',
+            'id_rkm'     => 'required|exists:r_k_m_s,id',
             'sumber_lab' => 'required|in:existing,new',
+        ], [
+            'id_rkm.required'     => 'Jadwal kelas (RKM) wajib dipilih.',
+            'id_rkm.exists'       => 'Jadwal kelas (RKM) yang dipilih tidak valid.',
+            'sumber_lab.required' => 'Sumber lab wajib dipilih.',
+            'sumber_lab.in'       => 'Sumber lab tidak valid.',
         ]);
 
         $karyawan = karyawan::where('kode_karyawan', $request->kode_karyawan)->firstOrFail();

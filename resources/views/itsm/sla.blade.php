@@ -50,6 +50,23 @@
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08) !important;
     }
 
+    .summary-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 992px) {
+        .summary-kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (max-width: 576px) {
+        .summary-kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     /* Reset card override for nested cards to behave as block/column layout stretching 100% */
     .sla-section-card .card {
         display: flex !important;
@@ -119,35 +136,33 @@
         </div>
     </div>
 
-    <!-- Summary KPI Bar -->
-    <div class="row mb-4">
+    <!-- Summary KPI Bar (Horizontal 5 Cards) -->
+    <div class="summary-kpi-grid">
         <!-- Card 1: Programmer SLA -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-primary kpi-card">
-                <h6 class="text-muted small text-uppercase fw-bold">SLA Programmer (Resolusi)</h6>
-                <div class="fs-2 fw-bold" id="top-prog-sla">...</div>
-            </div>
+        <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-primary kpi-card p-3 justify-content-center">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.78rem;">SLA Programmer (Resolusi)</h6>
+            <div class="fs-2 fw-bold" id="top-prog-sla">...</div>
         </div>
         <!-- Card 2: Technical Support SLA -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-success kpi-card">
-                <h6 class="text-muted small text-uppercase fw-bold">SLA Tech Support (Resolusi)</h6>
-                <div class="fs-2 fw-bold" id="top-ts-sla">...</div>
-            </div>
+        <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-success kpi-card p-3 justify-content-center">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.78rem;">SLA Tech Support (Resolusi)</h6>
+            <div class="fs-2 fw-bold" id="top-ts-sla">...</div>
         </div>
         <!-- Card 3: Webinar SLA -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-warning kpi-card">
-                <h6 class="text-muted small text-uppercase fw-bold">SLA Webinar (Tepat Waktu)</h6>
-                <div class="fs-2 fw-bold" id="top-event-sla">...</div>
-            </div>
+        <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-warning kpi-card p-3 justify-content-center">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.78rem;">SLA Webinar (Tepat Waktu)</h6>
+            <div class="fs-2 fw-bold" id="top-event-sla">...</div>
         </div>
         <!-- Card 4: Digital SLA -->
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-info kpi-card">
-                <h6 class="text-muted small text-uppercase fw-bold">SLA Digital (Konten)</h6>
-                <div class="fs-2 fw-bold" id="top-digital-sla">...</div>
-            </div>
+        <div class="card card-body text-center shadow-sm border-0 border-start border-4 border-info kpi-card p-3 justify-content-center">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.78rem;">SLA Digital (Konten)</h6>
+            <div class="fs-2 fw-bold" id="top-digital-sla">...</div>
+        </div>
+        <!-- Card 5: Survey Kepuasan (Tahunan) -->
+        <div class="card card-body text-center shadow-sm border-0 border-start border-4 kpi-card p-3 justify-content-center" style="border-left-color: #6f42c1 !important;">
+            <h6 class="text-muted small text-uppercase fw-bold mb-1" style="font-size: 0.78rem;">Survey Kepuasan (<span id="top-survey-year">{{ date('Y') }}</span>)</h6>
+            <div class="fs-2 fw-bold" id="top-survey-sla" style="color: #6f42c1;">...</div>
+            <small class="text-muted" id="top-survey-subtext" style="font-size: 0.72rem;">Rata-rata: -</small>
         </div>
     </div>
 
@@ -225,16 +240,79 @@
                                                     <th>SLA Resolusi</th>
                                                     <th>SLA Respon</th>
                                                     <th>Avg. Resolusi (Jam)</th>
+                                                    <th>Resolusi Terlama</th>
                                                     <th>Total Tiket</th>
                                                     <th>Detail (H/M/L/O)</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="sla-user-table-body">
                                                 <tr>
-                                                    <td colspan="6" class="text-center">Memuat data...</td>
+                                                    <td colspan="7" class="text-center">Memuat data...</td>
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- TABEL DETAIL SEMUA TIKET --}}
+                        <div class="col-lg-12 mb-4">
+                            <div class="card border-0 shadow-sm border-start border-4 border-primary">
+                                <div class="card-header bg-white border-bottom-0 fw-bold fs-6 pt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span><i class="bi bi-clock-history me-2 text-primary"></i>Detail Semua Tiket &amp; Resolusi (Diurutkan Terlama)</span>
+                                        <span class="badge bg-primary" id="prog-ticket-detail-count">0 Tiket</span>
+                                    </div>
+                                    {{-- SEARCH BAR --}}
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light border-end-0">
+                                            <i class="bi bi-search text-muted"></i>
+                                        </span>
+                                        <input type="text"
+                                               id="prog-ticket-search"
+                                               class="form-control border-start-0 bg-light"
+                                               placeholder="Cari ID tiket, PIC, kategori, atau prioritas..."
+                                               autocomplete="off">
+                                        <button class="btn btn-outline-secondary" type="button" id="prog-ticket-search-clear" title="Hapus pencarian">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width:40px;">#</th>
+                                                    <th>ID Tiket</th>
+                                                    <th>PIC (Programmer)</th>
+                                                    <th>Kategori</th>
+                                                    <th>Prioritas</th>
+                                                    <th>Tgl Masuk</th>
+                                                    <th>Tgl Selesai</th>
+                                                    <th class="text-center">Waktu Resolusi</th>
+                                                    <th class="text-center">SLA Met?</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="prog-ticket-detail-body">
+                                                <tr>
+                                                    <td colspan="9" class="text-center py-3">Memuat data...</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {{-- PAGINATION FOOTER --}}
+                                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2 px-3" id="prog-ticket-pagination-wrapper">
+                                    <small class="text-muted" id="prog-ticket-page-info">-</small>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary" id="prog-ticket-prev" disabled>
+                                            <i class="bi bi-chevron-left"></i> Sebelumnya
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" id="prog-ticket-next" disabled>
+                                            Berikutnya <i class="bi bi-chevron-right"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

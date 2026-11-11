@@ -56,6 +56,11 @@ class ProjectAdministrationController extends Controller
                 'nama_projek' => 'required|string|max:255',
                 'deskripsi' => 'nullable|string',
                 'perusahaan_key' => 'required|exists:perusahaans,id',
+            ], [
+                'nama_projek.required' => 'Nama projek wajib diisi.',
+                'nama_projek.max' => 'Nama projek maksimal 255 karakter.',
+                'perusahaan_key.required' => 'Klien/perusahaan wajib dipilih.',
+                'perusahaan_key.exists' => 'Klien/perusahaan yang dipilih tidak valid.',
             ]);
 
             DB::beginTransaction();
@@ -137,9 +142,12 @@ class ProjectAdministrationController extends Controller
         $administration = ProjectAdministration::where('project_id', $project->id)->firstOrFail();
 
         // ✅ Penanganan Keputusan Akhir
-        if ($request->filled('final_decision')) {
+        if ($request->filled('final_decision') || $request->has('final_decision')) {
             $request->validate([
-                'final_decision' => 'in:lanjut,gagal'
+                'final_decision' => 'required|in:lanjut,gagal'
+            ], [
+                'final_decision.required' => 'Keputusan proyek wajib dipilih.',
+                'final_decision.in' => 'Keputusan proyek tidak valid.'
             ]);
 
             if ($request->final_decision === 'lanjut') {
@@ -181,6 +189,14 @@ class ProjectAdministrationController extends Controller
             'current_stage' => 'required|in:' . $validStages,
             'file'   => 'required|array',
             'file.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:5120',
+        ], [
+            'current_stage.required' => 'Kategori dokumen wajib dipilih.',
+            'current_stage.in' => 'Kategori dokumen tidak valid.',
+            'file.required' => 'Berkas dokumen wajib diunggah.',
+            'file.array' => 'Format berkas tidak valid.',
+            'file.*.file' => 'Berkas yang diunggah harus berupa file.',
+            'file.*.mimes' => 'Format berkas harus berupa pdf, doc, docx, jpg, atau png.',
+            'file.*.max' => 'Ukuran berkas maksimal 5MB.',
         ]);
 
         try {
@@ -249,6 +265,12 @@ class ProjectAdministrationController extends Controller
             'deskripsi' => 'nullable|string',
             'tanggal_awal' => 'nullable|date',
             'tanggal_akhir' => 'nullable|date|after_or_equal:tanggal_awal', // ✅ DIPERBAIKI: tanggal_akhir
+        ], [
+            'nama_projek.required' => 'Nama projek wajib diisi.',
+            'nama_projek.max' => 'Nama projek maksimal 255 karakter.',
+            'tanggal_awal.date' => 'Format tanggal mulai tidak valid.',
+            'tanggal_akhir.date' => 'Format tanggal selesai tidak valid.',
+            'tanggal_akhir.after_or_equal' => 'Tanggal selesai harus sama atau setelah tanggal mulai.',
         ]);
 
         try {

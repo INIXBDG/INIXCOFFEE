@@ -314,9 +314,14 @@ class ActivityInstrukturController extends Controller
         // 1. Validasi Input Dasar
          $validator = $request->validate([
             'activity_date' => 'required|date',
-            'activity' => 'required|string|max:255',
-            'desc' => 'nullable|string',
+            'activity'      => 'required|string|max:255',
+            'desc'          => 'nullable|string',
             // Tambahkan validasi untuk 'doc' jika Anda mengimplementasikan upload file
+        ], [
+            'activity_date.required' => 'Tanggal aktivitas wajib diisi.',
+            'activity_date.date'     => 'Format tanggal aktivitas tidak valid.',
+            'activity.required'      => 'Aktivitas yang dilakukan wajib diisi.',
+            'activity.max'           => 'Aktivitas maksimal 255 karakter.',
         ]);
 
         $activityDate = Carbon::parse($request->activity_date);

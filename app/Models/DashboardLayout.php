@@ -12,5 +12,10 @@ class DashboardLayout extends Model
     protected $fillable = [
         'section_key',
         'sort_order',
+        'card_order',
+    ];
+
+    protected $casts = [
+        'card_order' => 'array',
     ];
 }

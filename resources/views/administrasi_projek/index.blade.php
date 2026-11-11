@@ -59,8 +59,8 @@
                                 
                                 <div id="uploadSection">
                                     <div class="mb-3">
-                                        <label for="current_stage" class="form-label fw-bold">{{ __('Pilih Kategori Dokumen') }}</label>
-                                        <select class="form-select" id="current_stage" name="current_stage">
+                                        <label for="current_stage" class="form-label fw-bold">{{ __('Pilih Kategori Dokumen') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('current_stage') is-invalid @enderror" id="current_stage" name="current_stage">
                                             <option value="">-- Pilih Dokumen yang Ingin Diunggah --</option>
                                             <optgroup label="Fase Administrasi Awal">
                                                 <option value="kak">Kerangka Acuan Kerja (KAK)</option>
@@ -75,11 +75,19 @@
                                                 <option value="pembayaran">Dokumen Pembayaran / Invoice</option>
                                             </optgroup>
                                         </select>
+                                        @error('current_stage')
+                                            <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                        <div class="text-danger error-current_stage" style="display: none;"></div>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="file" class="form-label fw-bold">{{ __('Unggah Dokumen') }} <small class="text-muted">(Dapat memilih lebih dari 1 berkas sekaligus)</small></label>
-                                        <input class="form-control" type="file" id="file" name="file[]" multiple required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                        <label for="file" class="form-label fw-bold">{{ __('Unggah Dokumen') }} <span class="text-danger">*</span> <small class="text-muted">(Dapat memilih lebih dari 1 berkas sekaligus)</small></label>
+                                        <input class="form-control @error('file') is-invalid @enderror" type="file" id="file" name="file[]" multiple required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                                         <div class="form-text mt-1 text-black"><i class="fas fa-info-circle me-1"></i> Jika dokumen sudah ada, berkas baru akan ditambahkan (tidak menimpa yang lama).</div>
+                                        @error('file')
+                                            <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                        <div class="text-danger error-file" style="display: none;"></div>
                                     </div>
                                 </div>
 
@@ -88,12 +96,16 @@
                                         <i class="fas fa-check-circle me-2"></i>Seluruh prasyarat dokumen telah lengkap. Tentukan arah proyek ini selanjutnya.
                                     </div>
                                     <div class="mb-3">
-                                        <label for="final_decision" class="form-label fw-bold">{{ __('Keputusan Proyek') }}</label>
-                                        <select class="form-select" id="final_decision" name="final_decision">
+                                        <label for="final_decision" class="form-label fw-bold">{{ __('Keputusan Proyek') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select @error('final_decision') is-invalid @enderror" id="final_decision" name="final_decision">
                                             <option value="">-- Pilih Keputusan --</option>
                                             <option value="lanjut">Lanjut ke Eksekusi (Masuk ke Kanban Board)</option>
                                             <option value="gagal">Gagal (Proyek/Negosiasi Batal)</option>
                                         </select>
+                                        @error('final_decision')
+                                            <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                        <div class="text-danger error-final_decision" style="display: none;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -120,17 +132,29 @@
                             @csrf
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label for="nama_projek" class="form-label">{{ __('Nama Projek') }}</label>
-                                    <input type="text" class="form-control" id="nama_projek" name="nama_projek" required>
+                                    <label for="nama_projek" class="form-label">{{ __('Nama Projek') }} <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('nama_projek') is-invalid @enderror" id="nama_projek" name="nama_projek" required>
+                                    @error('nama_projek')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                    <div class="text-danger error-nama_projek" style="display: none;"></div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="deskripsi" class="form-label">{{ __('Deskripsi Projek') }}</label>
-                                    <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3"></textarea>
+                                    <textarea class="form-control @error('deskripsi') is-invalid @enderror" id="deskripsi" name="deskripsi" rows="3"></textarea>
+                                    @error('deskripsi')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                    <div class="text-danger error-deskripsi" style="display: none;"></div>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="perusahaan_key" class="form-label">{{ __('Klien Dari :') }}</label>
+                                    <label for="perusahaan_key" class="form-label">{{ __('Klien Dari :') }} <span class="text-danger">*</span></label>
                                     <select style="height: 30px; width: 100%;" class="form-control @error('perusahaan_key') is-invalid @enderror" name="perusahaan_key" id="perusahaan_key">
                                     </select>
+                                    @error('perusahaan_key')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                    <div class="text-danger error-perusahaan_key" style="display: none;"></div>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -155,22 +179,38 @@
                             <input type="hidden" id="edit_project_id" name="project_id">
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label class="form-label">{{ __('Nama Projek') }}</label>
-                                    <input type="text" class="form-control" id="edit_nama_projek" name="nama_projek" required>
+                                    <label class="form-label">{{ __('Nama Projek') }} <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('nama_projek') is-invalid @enderror" id="edit_nama_projek" name="nama_projek" required>
+                                    @error('nama_projek')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                    <div class="text-danger error-nama_projek" style="display: none;"></div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">{{ __('Deskripsi Projek') }}</label>
-                                    <textarea class="form-control" id="edit_deskripsi" name="deskripsi" rows="2"></textarea>
+                                    <textarea class="form-control @error('deskripsi') is-invalid @enderror" id="edit_deskripsi" name="deskripsi" rows="2"></textarea>
+                                    @error('deskripsi')
+                                        <div class="text-danger">{{ $message }}</div>
+                                    @enderror
+                                    <div class="text-danger error-deskripsi" style="display: none;"></div>
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">{{ __('Tanggal Mulai') }}</label>
-                                        <input type="date" class="form-control" id="edit_tanggal_awal" name="tanggal_awal">
+                                        <input type="date" class="form-control @error('tanggal_awal') is-invalid @enderror" id="edit_tanggal_awal" name="tanggal_awal">
+                                        @error('tanggal_awal')
+                                            <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                        <div class="text-danger error-tanggal_awal" style="display: none;"></div>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">{{ __('Tanggal Selesai') }}</label>
                                         {{-- ✅ DIPERBAIKI: name dan id diubah menjadi tanggal_akhir agar sinkron dengan Controller --}}
-                                        <input type="date" class="form-control" id="edit_tanggal_akhir" name="tanggal_akhir">
+                                        <input type="date" class="form-control @error('tanggal_akhir') is-invalid @enderror" id="edit_tanggal_akhir" name="tanggal_akhir">
+                                        @error('tanggal_akhir')
+                                            <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                        <div class="text-danger error-tanggal_akhir" style="display: none;"></div>
                                     </div>
                                 </div>
                             </div>
@@ -394,8 +434,42 @@
             }
         });
 
+        function clearFormErrors(form) {
+            form.find('.is-invalid').removeClass('is-invalid');
+            form.find('[class*="error-"]').hide().text('');
+        }
+
+        function showFormErrors(form, errors) {
+            $.each(errors, function(key, messages) {
+                let fieldName = key.replace(/\..+$/, '');
+                let inputElem = form.find(`[name="${fieldName}"], [name="${fieldName}[]"]`);
+                inputElem.addClass('is-invalid');
+                
+                let errorDiv = form.find(`.error-${fieldName}`);
+                if (errorDiv.length) {
+                    errorDiv.text(messages[0]).show();
+                } else {
+                    inputElem.closest('.mb-3').append(`<div class="text-danger error-${fieldName}">${messages[0]}</div>`);
+                }
+            });
+        }
+
+        // Realtime error clearing saat field diisi/diubah
+        $('#formCreateAdministrasi, #formEditProject, #formUpdateStage').on('input change', 'input, select, textarea', function() {
+            $(this).removeClass('is-invalid');
+            let name = $(this).attr('name')?.replace('[]', '');
+            if (name) {
+                $(this).closest('form').find(`.error-${name}`).hide().text('');
+            }
+        });
+
+        $('#createModal, #editProjectModal, #updateStageModal').on('hidden.bs.modal', function() {
+            clearFormErrors($(this).find('form'));
+        });
+
         $('#formCreateAdministrasi').on('submit', function(e) {
             e.preventDefault();
+            clearFormErrors($(this));
             let formData = $(this).serialize();
 
             $.ajax({
@@ -409,11 +483,16 @@
                     $('#createModal').modal('hide');
                     $('#formCreateAdministrasi')[0].reset();
                     $('#perusahaan_key').val(null).trigger('change');
+                    clearFormErrors($('#formCreateAdministrasi'));
                     table.ajax.reload(null, false); // Gunakan instance 'table'
                 },
                 error: function(xhr) {
-                    let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
-                    alert(errorMessage);
+                    if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                        showFormErrors($('#formCreateAdministrasi'), xhr.responseJSON.errors);
+                    } else {
+                        let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
+                        alert(errorMessage);
+                    }
                 },
                 complete: function() {
                     $('#btnSave').prop('disabled', false).text('Simpan');
@@ -425,6 +504,7 @@
             var data = table.row($(this).parents('tr')).data(); // Gunakan instance 'table'
             
             $('#formUpdateStage')[0].reset();
+            clearFormErrors($('#formUpdateStage'));
             $('#update_project_id').val(data.dataproject.id);
             $('#update_project_name').text(data.dataproject.name);
 
@@ -449,6 +529,7 @@
 
         $('#formUpdateStage').on('submit', function(e) {
             e.preventDefault();
+            clearFormErrors($(this));
             var projectId = $('#update_project_id').val();
             var formData = new FormData(this);
             var actionUrl = "{{ url('/projects/administrasi') }}/" + projectId + "/update-stage";
@@ -466,11 +547,16 @@
                 success: function(response) {
                     $('#updateStageModal').modal('hide');
                     $('#formUpdateStage')[0].reset();
+                    clearFormErrors($('#formUpdateStage'));
                     table.ajax.reload(null, false); // Gunakan instance 'table'
                 },
                 error: function(xhr) {
-                    let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
-                    alert(errorMessage);
+                    if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                        showFormErrors($('#formUpdateStage'), xhr.responseJSON.errors);
+                    } else {
+                        let errorMessage = xhr.responseJSON?.message || 'Terjadi kesalahan sistem.';
+                        alert(errorMessage);
+                    }
                 },
                 complete: function() {
                     $('#btnUpdateSave').prop('disabled', false).html('<i class="fas fa-save me-1"></i> Simpan');
@@ -512,6 +598,7 @@
             var data = table.row($(this).parents('tr')).data(); // Gunakan instance 'table'
             
             $('#formEditProject')[0].reset();
+            clearFormErrors($('#formEditProject'));
             $('#edit_project_id').val(data.dataproject.id);
             $('#edit_nama_projek').val(data.dataproject.name);
             $('#edit_deskripsi').val(data.dataproject.description);
@@ -529,6 +616,7 @@
 
         $('#formEditProject').on('submit', function(e) {
             e.preventDefault();
+            clearFormErrors($(this));
             var projectId = $('#edit_project_id').val();
             var formData = $(this).serialize();
             
@@ -542,13 +630,18 @@
                 success: function(response) {
                     if(response.success) {
                         $('#editProjectModal').modal('hide');
+                        clearFormErrors($('#formEditProject'));
                         table.ajax.reload(null, false); // Gunakan instance 'table'
                     } else {
                         alert(response.message);
                     }
                 },
                 error: function(xhr) {
-                    alert(xhr.responseJSON?.message || 'Terjadi kesalahan sistem.');
+                    if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                        showFormErrors($('#formEditProject'), xhr.responseJSON.errors);
+                    } else {
+                        alert(xhr.responseJSON?.message || 'Terjadi kesalahan sistem.');
+                    }
                 },
                 complete: function() {
                     $('#btnUpdateProject').prop('disabled', false).html('<i class="fas fa-edit me-1"></i> Simpan Perubahan');
