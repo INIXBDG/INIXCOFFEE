@@ -14,11 +14,8 @@ use Illuminate\Support\Facades\DB;
 class RekapSJPController extends Controller
 {
     private const STATUS_ORDER = [
-        'Menunggu Manager Divisi',
-        'Menunggu HRD',
-        'Menunggu GM & Direksi',
+        'Menunggu Persetujuan',
         'Menunggu Isi Rate SPJ',
-        'Menunggu Upload Bukti dari Karyawan',
         'Selesai',
         'Ditolak',
     ];
@@ -70,32 +67,19 @@ class RekapSJPController extends Controller
             return 'Ditolak';
         }
 
-        // 2. Menunggu Manager
-        if ($item->approval_manager == '0') {
-            return 'Menunggu Manager Divisi';
+        // 2. Menunggu persetujuan (Manager, HRD, atau GM & Direksi untuk Internasional)
+        if ($item->approval_manager == '0'
+            || $item->approval_hrd == '0'
+            || ($item->tipe == 'Internasional' && $item->approval_gm == '0')) {
+            return 'Menunggu Persetujuan';
         }
 
-        // 3. Menunggu HRD
-        if ($item->approval_hrd == '0') {
-            return 'Menunggu HRD';
-        }
-
-        // 4. Menunggu GM & Direksi (hanya Internasional)
-        if ($item->tipe == 'Internasional' && $item->approval_gm == '0') {
-            return 'Menunggu GM & Direksi';
-        }
-
-        // 5. Menunggu isi Rate SPJ
+        // 3. Menunggu isi Rate SPJ
         if (!$item->ratespj || (float) $item->ratespj == 0) {
             return 'Menunggu Isi Rate SPJ';
         }
 
-        // 6. Menunggu upload bukti transfer
-        if (empty($item->bukti_transfer)) {
-            return 'Menunggu Upload Bukti dari Karyawan';
-        }
-
-        // 7. Selesai
+        // 4. Selesai
         return 'Selesai';
     }
 

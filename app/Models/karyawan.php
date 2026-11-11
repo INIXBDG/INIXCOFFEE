@@ -86,10 +86,10 @@ class karyawan extends Model
         return $this->hasOne(Pph21Karyawan::class, 'karyawan_id');
     }
 
-    public function bonusTahunan()
-    {
-        return $this->hasMany(BonusTahunan::class, 'karyawan_id');
-    }
+    // public function bonusTahunan()
+    // {
+    //     return $this->hasMany(BonusTahunan::class, 'karyawan_id');
+    // }
 
     public function divisi()
     {
@@ -167,7 +167,10 @@ class karyawan extends Model
         return $this->hasMany(ThrItem::class, 'karyawan_id');
     }
 
-   
+    public function bonusTahunan()
+    {
+        return $this->hasMany(BonusTahunan::class, 'karyawan_id');
+    }
 
     public function specializations()
     {

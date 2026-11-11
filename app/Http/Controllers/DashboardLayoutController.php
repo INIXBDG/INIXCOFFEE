@@ -152,7 +152,7 @@ class DashboardLayoutController extends Controller
             'itsm'        => !empty(array_intersect(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature', 'View ITSM Only'], $rolePerms)),
             'rkm'         => in_array('Fitur Menu RKM', $rolePerms),
             'finance'     => in_array('Fitur Menu Finance', $rolePerms),
-            'performance' => in_array('View KPI Penilaian', $rolePerms) || in_array($roleName, ['Koordinator ITSM', 'HRD', 'Education Manager', 'GM', 'SPV Sales', 'Direktur', 'Direktur Utama', 'Komisaris']),
+            'performance' => true,
             'education'   => in_array('Fitur Menu Education', $rolePerms),
             'office'      => in_array('Fitur Menu Office', $rolePerms),
             'crm'         => in_array('Fitur CRM', $rolePerms),

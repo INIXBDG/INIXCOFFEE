@@ -45,9 +45,9 @@ class ReportSalesProjectController extends Controller
             'administration.projectManager',
             'lead',
         ])
-            ->whereHas('lead', function ($query) use ($year) {
-                $query->where('tahun_periode', $year);
-            })
+            // ->whereHas('lead', function ($query) use ($year) {
+            //     $query->where('tahun_periode', $year);
+            // })
             ->whereNotNull('nilai_proyek')
             ->where('phase', '!=', 'gagal');
 
