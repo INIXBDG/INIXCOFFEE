@@ -110,6 +110,12 @@
             gap: 15px;
         }
 
+        @media (max-width: 768px) {
+            .photo-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .photo-comparison .photo-box {
             text-align: center;
         }
@@ -155,6 +161,31 @@
             min-height: 0;
             width: 100%;
         }
+
+        .cache-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .cache-item img {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        #cacheList {
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
     </style>
     <div class="container-fluid py-4">
         @if (session('success'))
@@ -174,6 +205,11 @@
                     data-bs-target="#createModal">
                     <i class="bx bx-plus"></i>Buat Kategori Baru
                 </button>
+                <label class="btn btn-outline-warning px-3 shadow-sm d-flex align-items-center gap-2 mb-0" style="cursor:pointer">
+                    <i class="bx bx-camera"></i> Foto Cepat (Cache)
+                    <span class="badge bg-warning text-dark" id="cacheBadge">0</span>
+                    <input type="file" id="inputCachePage" accept="image/*" capture="environment" class="d-none">
+                </label>
                 <div class="btn-group">
                     <button class="btn btn-outline-primary px-3 shadow-sm d-flex align-items-center gap-2" type="button"
                         data-bs-toggle="dropdown">
@@ -503,7 +539,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- PANEL BULK ACTION -->
                     <div class="bulk-action-bar card border-0 shadow-sm rounded-4 mb-3 p-3 d-none" id="pfBulkPanel">
                         <div class="row g-2 align-items-end">
                             <div class="col-md-2">
@@ -562,8 +597,6 @@
                         </div>
                     </div>
 
-
-
                     <div class="card border-0 shadow-sm rounded-4">
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -588,10 +621,10 @@
                                                 <p class="mt-2 mb-0">Silakan isi filter lalu klik tombol 🔍 untuk memuat data</p>
                                             </td>
                                         </tr>
-                                    </tr>
+                                    </tbody>
                                 </table>
                             </div>
-                            
+
                             <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div class="small text-muted">
                                     <span id="pfLoadInfo">Belum ada data dimuat</span>
@@ -830,7 +863,7 @@
     </div>
 
     <div class="modal fade" id="modalUploadBukti" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <form id="formUploadBukti" enctype="multipart/form-data">
                     @csrf
@@ -845,40 +878,65 @@
                             <input type="text" id="uploadTugasNama" class="form-control-plaintext fw-bold" readonly>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto Before <small class="text-muted">(Wajib untuk
-                                    mulai)</small></label>
-                            <input type="file" class="form-control" name="bukti_before" id="inputBuktiBefore"
-                                accept="image/*" capture="environment">
-                            <div class="form-text">Klik untuk buka kamera • JPG/PNG • Max 5MB</div>
-                            <div id="previewBeforeContainer" class="d-none text-center mt-2 position-relative">
-                                <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm"
-                                    style="max-height:200px">
-                                <button type="button"
-                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
-                                    onclick="clearPreview('before')" style="width:28px;height:28px;padding:0">✕</button>
+                        <div class="btn-group w-100 mb-3" role="group">
+                            <input type="radio" class="btn-check" name="uploadMode" id="modeLangsung" value="langsung" checked>
+                            <label class="btn btn-outline-primary" for="modeLangsung"><i class="bx bx-camera me-1"></i>Mode 1 - Foto Langsung</label>
+                            <input type="radio" class="btn-check" name="uploadMode" id="modeCache" value="cache">
+                            <label class="btn btn-outline-warning" for="modeCache"><i class="bx bx-hdd me-1"></i>Mode 2 - Foto dari Cache</label>
+                        </div>
+
+                        <div id="sectionModeLangsung" class="p-3 border rounded-3 mb-3 bg-light bg-opacity-50">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Foto Before</label>
+                                <input type="file" class="form-control" id="inputBuktiBefore" accept="image/*" capture="environment">
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label fw-semibold">Foto After</label>
+                                <input type="file" class="form-control" id="inputBuktiAfter" accept="image/*" capture="environment" disabled>
+                                <div class="form-text" id="hintAfterLangsung">Upload Foto Before terlebih dahulu</div>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Foto After <small class="text-muted">(auto
-                                    selesai)</small></label>
-                            <input type="file" class="form-control" name="bukti_after" id="inputBuktiAfter"
-                                accept="image/*" capture="environment">
-                            <div class="form-text">Upload Foto Before terlebih dahulu sebelum mengambil foto selesai</div>
-                            <div id="previewAfterContainer" class="d-none text-center mt-2 position-relative">
-                                <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm"
-                                    style="max-height:200px">
-                                <button type="button"
-                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
-                                    onclick="clearPreview('after')" style="width:28px;height:28px;padding:0">✕</button>
+                        <div id="sectionModeCache" class="p-3 border rounded-3 mb-3 bg-light bg-opacity-50 d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-semibold mb-0">Foto di Cache Sementara</label>
+                                <label class="btn btn-sm btn-warning mb-0" style="cursor:pointer">
+                                    <i class="bx bx-camera me-1"></i>Ambil Foto
+                                    <input type="file" id="inputCacheModal" accept="image/*" capture="environment" class="d-none">
+                                </label>
+                            </div>
+                            <div class="form-text mb-2">Waktu otomatis mengikuti jam foto diambil. Foto terhapus dari cache setelah berhasil diupload.</div>
+                            <div id="cacheList"></div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 h-100">
+                                    <div class="fw-semibold text-primary mb-1">Foto Before</div>
+                                    <div class="small text-muted mb-2" id="timeBefore">Waktu Mulai: -</div>
+                                    <div id="previewBeforeContainer" class="d-none text-center position-relative">
+                                        <img id="imagePreviewBefore" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
+                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle btn-clear-up d-none" data-type="before" id="btnClearBefore" style="width:28px;height:28px;padding:0">✕</button>
+                                    </div>
+                                    <div id="emptyBefore" class="alert alert-secondary small mb-0">Belum ada foto</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 h-100">
+                                    <div class="fw-semibold text-success mb-1">Foto After</div>
+                                    <div class="small text-muted mb-2" id="timeAfter">Waktu Selesai: -</div>
+                                    <div id="previewAfterContainer" class="d-none text-center position-relative">
+                                        <img id="imagePreviewAfter" src="" class="img-fluid rounded shadow-sm" style="max-height:200px">
+                                        <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle btn-clear-up d-none" data-type="after" id="btnClearAfter" style="width:28px;height:28px;padding:0">✕</button>
+                                    </div>
+                                    <div id="emptyAfter" class="alert alert-secondary small mb-0">Belum ada foto</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="alert alert-info small mb-0">
+                        <div class="alert alert-info small mt-3 mb-0">
                             <i class="bx bx-info-circle me-1"></i>
-                            <strong>Tips:</strong> Foto akan langsung diambil dari kamera dan diupload. Jika After diupload,
-                            tugas otomatis ditandai <strong>Selesai</strong>.
+                            Waktu mulai dan selesai terisi otomatis. Jika Foto After diupload, tugas otomatis ditandai <strong>Selesai</strong>.
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -998,8 +1056,6 @@
         </div>
     </div>
 
-    
-    
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
@@ -1034,24 +1090,40 @@
             }
 
             function parseBukti(bukti) {
-                if (!bukti) return {
+                const defaultData = {
                     before: null,
-                    after: null
+                    after: null,
+                    waktu_mulai: null,
+                    waktu_selesai: null
                 };
+                if (!bukti) return defaultData;
                 try {
                     if (typeof bukti === 'string' && bukti.trim().startsWith('{')) {
-                        return JSON.parse(bukti);
+                        return Object.assign({}, defaultData, JSON.parse(bukti));
                     }
-                    return {
-                        before: bukti,
-                        after: null
-                    };
+                    if (typeof bukti === 'object') {
+                        return Object.assign({}, defaultData, bukti);
+                    }
+                    return Object.assign({}, defaultData, { before: bukti });
                 } catch (e) {
-                    return {
-                        before: bukti,
-                        after: null
-                    };
+                    return Object.assign({}, defaultData, { before: bukti });
                 }
+            }
+
+            function formatWaktu(waktuStr) {
+                if (!waktuStr) return 'Belum tercatat';
+                if (/^\d{2}:\d{2}(:\d{2})?$/.test(String(waktuStr).trim())) {
+                    return String(waktuStr).trim() + ' WIB';
+                }
+                const dt = new Date(String(waktuStr).replace(' ', 'T'));
+                if (isNaN(dt.getTime())) return waktuStr;
+                return dt.toLocaleString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) + ' WIB';
             }
 
             function getBuktiStatus(bukti) {
@@ -1131,6 +1203,13 @@
                             const buktiDataStr = JSON.stringify(buktiData).replace(/"/g,
                                 '&quot;');
 
+                            let infoWaktuHtml = '';
+                            if (buktiData.waktu_mulai || buktiData.waktu_selesai) {
+                                const mulai = buktiData.waktu_mulai || '-';
+                                const selesai = buktiData.waktu_selesai || '-';
+                                infoWaktuHtml = `<div class="text-muted mt-1" style="font-size:11px"><i class="bx bx-time-five"></i> ${mulai} - ${selesai}</div>`;
+                            }
+
                             const buktiBtn = buktiStatus.canUpload ?
                                 `<button class="btn btn-sm btn-primary btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}" data-bukti="${buktiDataStr}"><i class="bx bx-upload"></i> ${buktiStatus.hasBefore || buktiStatus.hasAfter ? 'Lengkapi' : 'Upload'}</button>` :
                                 `<button class="btn btn-sm btn-outline-primary btn-viewBukti" data-bukti="${buktiDataStr}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i> Lihat</button>`;
@@ -1143,7 +1222,7 @@
                                 <td class="task-text ${done}"><span class="badge bg-info text-dark">${turunan}</span></td>
                                 <td class="task-text ${done} small fw-semibold">${karyawan}</td>
                                 <td class="task-text ${done} small">${dl}</td>
-                                <td class="text-center"><span class="bukti-badge ${buktiStatus.class}">${buktiStatus.text}</span></td>
+                                <td class="text-center"><span class="bukti-badge ${buktiStatus.class}">${buktiStatus.text}</span>${infoWaktuHtml}</td>
                                 <td class="text-center"><div class="btn-group">${buktiBtn}<button class="btn btn-outline-danger btn-sm btn-hapus" data-id="${it.id}"><i class="bx bx-trash"></i></button></div></td>
                                 <td><input class="form-check-input bulkCheck me-2" type="checkbox" value="${it.id}"></td>
                             </tr>`);
@@ -1695,145 +1774,334 @@
                 reopenCreateModalIfNeeded();
             });
 
-            $(document).on('click', '.btn-uploadBukti', function() {
-                const taskId = $(this).data('id');
-                const judul = $(this).data('judul');
-                const existingBukti = $(this).data('bukti') || {
-                    before: null,
-                    after: null
-                };
+            const CACHE_DB = 'bukti_cache_db';
+            const CACHE_STORE = 'photos';
+            const CACHE_TTL = 3 * 24 * 60 * 60 * 1000;
 
-                $('#uploadTugasId').val(taskId);
-                $('#uploadTugasNama').val(judul);
-                $('#inputBuktiBefore').val('').prop('disabled', false);
-                $('#inputBuktiAfter').val('').prop('disabled', false);
-                $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
-                $('#imagePreviewBefore, #imagePreviewAfter').attr('src', '');
+            function cacheOpen() {
+                return new Promise((resolve, reject) => {
+                    if (!window.indexedDB) {
+                        reject(new Error('Browser tidak mendukung penyimpanan cache'));
+                        return;
+                    }
+                    const req = indexedDB.open(CACHE_DB, 1);
+                    req.onupgradeneeded = () => {
+                        req.result.createObjectStore(CACHE_STORE, { keyPath: 'id', autoIncrement: true });
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            }
 
-                if (existingBukti.before) {
-                    $('#imagePreviewBefore').attr('src', `/storage/${existingBukti.before}`);
+            async function cacheTx(mode, fn) {
+                const db = await cacheOpen();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(CACHE_STORE, mode);
+                    const store = tx.objectStore(CACHE_STORE);
+                    const rq = fn(store);
+                    tx.oncomplete = () => {
+                        db.close();
+                        resolve(rq ? rq.result : null);
+                    };
+                    tx.onerror = () => {
+                        db.close();
+                        reject(tx.error);
+                    };
+                    tx.onabort = () => {
+                        db.close();
+                        reject(tx.error);
+                    };
+                });
+            }
+
+            function cacheAdd(blob, takenAt) {
+                return cacheTx('readwrite', st => st.add({ blob: blob, takenAt: takenAt }));
+            }
+
+            function cacheAll() {
+                return cacheTx('readonly', st => st.getAll());
+            }
+
+            function cacheDelete(id) {
+                return cacheTx('readwrite', st => st.delete(id));
+            }
+
+            async function cachePurgeOld() {
+                try {
+                    const all = await cacheAll();
+                    const limit = Date.now() - CACHE_TTL;
+                    for (const it of all || []) {
+                        if (it.takenAt < limit) await cacheDelete(it.id);
+                    }
+                } catch (e) {}
+            }
+
+            function formatHM(ts) {
+                const d = new Date(ts);
+                return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            }
+
+            const upState = {
+                existing: { before: null, after: null, waktu_mulai: null, waktu_selesai: null },
+                before: null,
+                after: null
+            };
+            let upObjectUrls = [];
+            let cacheListUrls = [];
+
+            function revokeUpUrls() {
+                upObjectUrls.forEach(u => URL.revokeObjectURL(u));
+                upObjectUrls = [];
+            }
+
+            function resetUpState(existing) {
+                revokeUpUrls();
+                upState.existing = existing;
+                upState.before = null;
+                upState.after = null;
+            }
+
+            function hasBeforeAvailable() {
+                return !!(upState.before || upState.existing.before);
+            }
+
+            function renderUpload() {
+                revokeUpUrls();
+
+                let beforeSrc = null;
+                let afterSrc = null;
+
+                if (upState.before) {
+                    beforeSrc = URL.createObjectURL(upState.before.blob);
+                    upObjectUrls.push(beforeSrc);
+                } else if (upState.existing.before) {
+                    beforeSrc = `/storage/${upState.existing.before}`;
+                }
+
+                if (upState.after) {
+                    afterSrc = URL.createObjectURL(upState.after.blob);
+                    upObjectUrls.push(afterSrc);
+                } else if (upState.existing.after) {
+                    afterSrc = `/storage/${upState.existing.after}`;
+                }
+
+                if (beforeSrc) {
+                    $('#imagePreviewBefore').attr('src', beforeSrc);
                     $('#previewBeforeContainer').removeClass('d-none');
-                    $('#inputBuktiBefore').prop('disabled', true);
-                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text').html(
-                        '✅ Foto Before sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'before\')">Ganti</button>'
-                    );
+                    $('#emptyBefore').addClass('d-none');
                 } else {
-                    $('#inputBuktiBefore').prop('disabled', false);
-                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text').text(
-                        'Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                    $('#imagePreviewBefore').attr('src', '');
+                    $('#previewBeforeContainer').addClass('d-none');
+                    $('#emptyBefore').removeClass('d-none');
                 }
 
-                if (existingBukti.after) {
-                    $('#imagePreviewAfter').attr('src', `/storage/${existingBukti.after}`);
+                if (afterSrc) {
+                    $('#imagePreviewAfter').attr('src', afterSrc);
                     $('#previewAfterContainer').removeClass('d-none');
-                    $('#inputBuktiAfter').prop('disabled', true);
-                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text').html(
-                        '✅ Foto After sudah terupload <button type="button" class="btn btn-link btn-sm p-0 ms-1" onclick="removeExistingBukti(\'after\')">Ganti</button>'
-                    );
+                    $('#emptyAfter').addClass('d-none');
                 } else {
-                    const canEnableAfter = existingBukti.before || ($('#inputBuktiBefore')[0].files
-                        ?.length > 0);
-                    $('#inputBuktiAfter').prop('disabled', !canEnableAfter);
-                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text').text(canEnableAfter ?
-                        'Klik untuk buka kamera • JPG/PNG • Max 5MB' :
-                        'Upload Foto Before terlebih dahulu untuk mengaktifkan');
+                    $('#imagePreviewAfter').attr('src', '');
+                    $('#previewAfterContainer').addClass('d-none');
+                    $('#emptyAfter').removeClass('d-none');
                 }
 
-                getModal('modalUploadBukti').show();
+                $('#btnClearBefore').toggleClass('d-none', !upState.before);
+                $('#btnClearAfter').toggleClass('d-none', !upState.after);
+
+                let waktuMulai = '-';
+                if (upState.before) waktuMulai = formatHM(upState.before.takenAt) + ' WIB (otomatis)';
+                else if (upState.existing.waktu_mulai) waktuMulai = upState.existing.waktu_mulai + ' WIB';
+
+                let waktuSelesai = '-';
+                if (upState.after) waktuSelesai = formatHM(upState.after.takenAt) + ' WIB (otomatis)';
+                else if (upState.existing.waktu_selesai) waktuSelesai = upState.existing.waktu_selesai + ' WIB';
+
+                $('#timeBefore').text('Waktu Mulai: ' + waktuMulai);
+                $('#timeAfter').text('Waktu Selesai: ' + waktuSelesai);
+
+                const canAfter = hasBeforeAvailable();
+                $('#inputBuktiAfter').prop('disabled', !canAfter);
+                $('#hintAfterLangsung').text(canAfter ? 'Klik untuk buka kamera • JPG/PNG • Max 5MB' : 'Upload Foto Before terlebih dahulu');
+            }
+
+            async function renderCacheList() {
+                cacheListUrls.forEach(u => URL.revokeObjectURL(u));
+                cacheListUrls = [];
+
+                let items = [];
+                try {
+                    items = (await cacheAll()) || [];
+                } catch (e) {
+                    items = [];
+                }
+
+                $('#cacheBadge').text(items.length);
+
+                const list = $('#cacheList');
+                if (!items.length) {
+                    list.html('<div class="text-center text-muted small py-3">Belum ada foto di cache</div>');
+                    return;
+                }
+
+                items.sort((a, b) => b.takenAt - a.takenAt);
+                list.empty();
+
+                items.forEach(it => {
+                    const url = URL.createObjectURL(it.blob);
+                    cacheListUrls.push(url);
+                    const d = new Date(it.takenAt);
+                    const tgl = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                    list.append(`
+                        <div class="cache-item" data-id="${it.id}">
+                            <img src="${url}" alt="cache">
+                            <div class="flex-grow-1 small">
+                                <div class="fw-semibold">${formatHM(it.takenAt)} WIB</div>
+                                <div class="text-muted">${tgl}</div>
+                            </div>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary btn-cache-pick" data-type="before" data-id="${it.id}">Before</button>
+                                <button type="button" class="btn btn-outline-success btn-cache-pick" data-type="after" data-id="${it.id}">After</button>
+                                <button type="button" class="btn btn-outline-danger btn-cache-del" data-id="${it.id}"><i class="bx bx-trash"></i></button>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            async function handleCacheCapture(input) {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                try {
+                    const takenAt = file.lastModified && Math.abs(Date.now() - file.lastModified) < 24 * 60 * 60 * 1000 ? file.lastModified : Date.now();
+                    const compressed = await compressImage(file, 1280, 0.85);
+                    await cacheAdd(compressed, takenAt);
+                    await renderCacheList();
+                    showNotification('Berhasil', 'Foto disimpan ke cache sementara', 'success');
+                } catch (e) {
+                    showNotification('Gagal', e.message || 'Gagal menyimpan foto ke cache', 'danger');
+                } finally {
+                    input.value = '';
+                }
+            }
+
+            $('#inputCachePage, #inputCacheModal').on('change', function() {
+                handleCacheCapture(this);
             });
 
-            window.removeExistingBukti = function(type) {
-                if (type === 'before') {
-                    $('#inputBuktiBefore').prop('disabled', false).val('');
-                    $('#previewBeforeContainer').addClass('d-none');
-                    $('#imagePreviewBefore').attr('src', '');
-                    $('#inputBuktiBefore').closest('.mb-3').find('.form-text').text(
-                        'Klik untuk buka kamera • JPG/PNG • Max 5MB');
-                    if ($('#inputBuktiAfter')[0].disabled && !$('#imagePreviewAfter').attr('src')) {
-                        $('#inputBuktiAfter').prop('disabled', true);
+            $(document).on('click', '.btn-cache-pick', async function() {
+                const id = Number($(this).data('id'));
+                const type = $(this).data('type');
+                try {
+                    const all = (await cacheAll()) || [];
+                    const item = all.find(x => x.id === id);
+                    if (!item) {
+                        showNotification('Gagal', 'Foto cache tidak ditemukan', 'danger');
+                        renderCacheList();
+                        return;
                     }
-                } else {
-                    $('#inputBuktiAfter').prop('disabled', false).val('');
-                    $('#previewAfterContainer').addClass('d-none');
-                    $('#imagePreviewAfter').attr('src', '');
-                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text').text(
-                        'Klik untuk buka kamera • JPG/PNG • Max 5MB');
+                    if (type === 'after' && !hasBeforeAvailable()) {
+                        showNotification('Peringatan', 'Pilih Foto Before terlebih dahulu', 'warning');
+                        return;
+                    }
+                    const payload = { blob: item.blob, takenAt: item.takenAt, cacheId: item.id };
+                    if (type === 'before') {
+                        if (upState.after && upState.after.cacheId === item.id) upState.after = null;
+                        upState.before = payload;
+                    } else {
+                        if (upState.before && upState.before.cacheId === item.id) {
+                            showNotification('Peringatan', 'Foto yang sama tidak boleh dipakai untuk Before dan After', 'warning');
+                            return;
+                        }
+                        upState.after = payload;
+                    }
+                    renderUpload();
+                } catch (e) {
+                    showNotification('Gagal', 'Gagal membaca cache', 'danger');
                 }
-            };
+            });
 
-            function previewImage(input, previewContainer, previewImg) {
-                const file = input.files[0];
-                if (file && file.type && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewImg.attr('src', e.target.result);
-                        previewContainer.removeClass('d-none');
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    previewContainer.addClass('d-none');
+            $(document).on('click', '.btn-cache-del', async function() {
+                const id = Number($(this).data('id'));
+                try {
+                    await cacheDelete(id);
+                    if (upState.before && upState.before.cacheId === id) upState.before = null;
+                    if (upState.after && upState.after.cacheId === id) upState.after = null;
+                    if (!hasBeforeAvailable()) upState.after = null;
+                    renderUpload();
+                    renderCacheList();
+                } catch (e) {
+                    showNotification('Gagal', 'Gagal menghapus foto cache', 'danger');
                 }
-            }
+            });
 
-            function clearPreview(type) {
-                if (type === 'before') {
-                    $('#inputBuktiBefore').val('');
-                    $('#previewBeforeContainer').addClass('d-none');
-                    $('#imagePreviewBefore').attr('src', '');
-                    $('#inputBuktiAfter').prop('disabled', true).val('');
-                    $('#previewAfterContainer').addClass('d-none');
-                    $('#imagePreviewAfter').attr('src', '');
-                } else {
-                    $('#inputBuktiAfter').val('');
-                    $('#previewAfterContainer').addClass('d-none');
-                    $('#imagePreviewAfter').attr('src', '');
-                }
-            }
-            window.clearPreview = clearPreview;
+            $('input[name="uploadMode"]').on('change', function() {
+                const mode = $('input[name="uploadMode"]:checked').val();
+                $('#sectionModeLangsung').toggleClass('d-none', mode !== 'langsung');
+                $('#sectionModeCache').toggleClass('d-none', mode !== 'cache');
+                if (mode === 'cache') renderCacheList();
+            });
 
             $('#inputBuktiBefore').on('change', function() {
                 const file = this.files[0];
                 if (file) {
-                    previewImage(this, $('#previewBeforeContainer'), $('#imagePreviewBefore'));
-                    $('#inputBuktiAfter').prop('disabled', false);
-                    $('#inputBuktiAfter').closest('.mb-3').find('.form-text').text(
-                        'Klik untuk buka kamera • JPG/PNG • Max 5MB');
-                } else {
-                    $('#previewBeforeContainer').addClass('d-none');
-                    $('#inputBuktiAfter').prop('disabled', true).val('');
-                    $('#previewAfterContainer').addClass('d-none');
+                    upState.before = { blob: file, takenAt: Date.now(), cacheId: null };
                 }
+                this.value = '';
+                renderUpload();
             });
 
             $('#inputBuktiAfter').on('change', function() {
                 const file = this.files[0];
                 if (file) {
-                    previewImage(this, $('#previewAfterContainer'), $('#imagePreviewAfter'));
-                } else {
-                    $('#previewAfterContainer').addClass('d-none');
-                }
-            });
-
-            $('#formUploadBukti').off('submit');
-
-            $('#formUploadBukti').on('submit', async function(e) {
-                e.preventDefault();
-
-                const beforeInput = $('#inputBuktiBefore')[0];
-                const afterInput = $('#inputBuktiAfter')[0];
-                const rawBeforeFile = beforeInput?.files?.[0] || null;
-                const rawAfterFile = afterInput?.files?.[0] || null;
-
-                const hasExistingBefore = $('#imagePreviewBefore').attr('src')?.includes('/storage/');
-                const hasExistingAfter = $('#imagePreviewAfter').attr('src')?.includes('/storage/');
-
-                if (!rawBeforeFile && !rawAfterFile) {
-                    if (!hasExistingBefore || !hasExistingAfter) {
-                        const missing = !hasExistingBefore ? 'Before' : 'After';
-                        showNotification('Peringatan',
-                            `Foto ${missing} wajib diupload untuk melengkapi bukti!`, 'warning');
+                    if (!hasBeforeAvailable()) {
+                        showNotification('Peringatan', 'Upload Foto Before terlebih dahulu', 'warning');
+                        this.value = '';
                         return;
                     }
+                    upState.after = { blob: file, takenAt: Date.now(), cacheId: null };
+                }
+                this.value = '';
+                renderUpload();
+            });
+
+            $(document).on('click', '.btn-clear-up', function() {
+                const type = $(this).data('type');
+                if (type === 'before') {
+                    upState.before = null;
+                    if (!upState.existing.before) upState.after = null;
+                } else {
+                    upState.after = null;
+                }
+                renderUpload();
+            });
+
+            $(document).on('click', '.btn-uploadBukti', function() {
+                const taskId = $(this).data('id');
+                const judul = $(this).data('judul');
+                const existingBukti = parseBukti($(this).data('bukti'));
+
+                $('#uploadTugasId').val(taskId);
+                $('#uploadTugasNama').val(judul);
+                $('#modeLangsung').prop('checked', true).trigger('change');
+
+                resetUpState(existingBukti);
+                renderUpload();
+                renderCacheList();
+
+                getModal('modalUploadBukti').show();
+            });
+
+            $('#formUploadBukti').off('submit').on('submit', async function(e) {
+                e.preventDefault();
+
+                if (!upState.before && !upState.after) {
+                    showNotification('Peringatan', 'Ambil atau pilih minimal satu foto untuk diupload', 'warning');
+                    return;
+                }
+
+                if (upState.after && !hasBeforeAvailable()) {
+                    showNotification('Peringatan', 'Foto Before wajib ada sebelum Foto After', 'warning');
+                    return;
                 }
 
                 const btn = $('#btnSubmitUpload');
@@ -1845,33 +2113,36 @@
                 txt.text('Memproses...');
 
                 try {
-                    let processedBefore = null;
-                    let processedAfter = null;
-
-                    if (rawBeforeFile) {
-                        txt.text('Mengompres Foto Before...');
-                        processedBefore = await compressImage(rawBeforeFile, 1280, 0.85);
-                    }
-
-                    if (rawAfterFile) {
-                        if (!processedBefore && !hasExistingBefore) {
-                            throw new Error(
-                                'Foto Before wajib diupload terlebih dahulu sebelum mengupload Foto After'
-                            );
-                        }
-                        txt.text('Mengompres Foto After...');
-                        processedAfter = await compressImage(rawAfterFile, 1280, 0.85);
-                    }
-
                     const fd = new FormData();
                     fd.append('_token', $('meta[name="csrf-token"]').attr('content'));
                     fd.append('tugas_id', $('#uploadTugasId').val());
 
-                    if (processedBefore) {
-                        fd.append('bukti_before', processedBefore);
+                    const usedCacheIds = [];
+
+                    if (upState.before) {
+                        txt.text('Memproses Foto Before...');
+                        let f = upState.before.blob;
+                        if (upState.before.cacheId === null) {
+                            f = await compressImage(f, 1280, 0.85);
+                        } else {
+                            usedCacheIds.push(upState.before.cacheId);
+                        }
+                        const fileBefore = new File([f], 'before_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                        fd.append('bukti_before', fileBefore);
+                        fd.append('waktu_mulai', formatHM(upState.before.takenAt));
                     }
-                    if (processedAfter) {
-                        fd.append('bukti_after', processedAfter);
+
+                    if (upState.after) {
+                        txt.text('Memproses Foto After...');
+                        let f = upState.after.blob;
+                        if (upState.after.cacheId === null) {
+                            f = await compressImage(f, 1280, 0.85);
+                        } else {
+                            usedCacheIds.push(upState.after.cacheId);
+                        }
+                        const fileAfter = new File([f], 'after_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                        fd.append('bukti_after', fileAfter);
+                        fd.append('waktu_selesai', formatHM(upState.after.takenAt));
                     }
 
                     txt.text('Mengupload ke Server...');
@@ -1887,24 +2158,26 @@
                         },
                     });
 
+                    for (const id of usedCacheIds) {
+                        try {
+                            await cacheDelete(id);
+                        } catch (err) {}
+                    }
+
                     hideModal('modalUploadBukti');
                     loadData();
+                    renderCacheList();
 
                     let msg = 'Bukti berhasil diupdate.';
                     if (response && response.status == 1) {
-                        msg += ' Tugas otomatis ditandai <strong>Selesai</strong>.';
+                        msg += ' Tugas otomatis ditandai Selesai.';
                     }
-                    if ((rawBeforeFile && processedBefore && processedBefore.size < rawBeforeFile
-                            .size) ||
-                        (rawAfterFile && processedAfter && processedAfter.size < rawAfterFile.size)) {
-                        msg += ' Gambar telah dikompresi.';
+                    if (usedCacheIds.length) {
+                        msg += ' Foto cache sudah dihapus.';
                     }
-
                     showNotification('Berhasil!', msg, 'success');
-
                 } catch (error) {
-                    const msg = error.responseJSON?.message || error.message ||
-                        'Gagal mengupdate bukti';
+                    const msg = error.responseJSON?.message || error.message || 'Gagal mengupdate bukti';
                     showNotification('Gagal', msg, 'danger');
                 } finally {
                     btn.prop('disabled', false);
@@ -1912,6 +2185,14 @@
                     txt.text('Upload Bukti');
                 }
             });
+
+            $('#modalUploadBukti').on('hidden.bs.modal', function() {
+                resetUpState({ before: null, after: null, waktu_mulai: null, waktu_selesai: null });
+                renderUpload();
+                $('#modeLangsung').prop('checked', true).trigger('change');
+            });
+
+            cachePurgeOld().then(renderCacheList);
 
             function compressImage(file, maxWidth = 1280, quality = 0.8) {
                 return new Promise((resolve, reject) => {
@@ -1964,7 +2245,7 @@
                         }
                     };
 
-                    img.onerror = function(e) {
+                    img.onerror = function() {
                         URL.revokeObjectURL(objectURL);
                         reject(new Error('Gagal memuat gambar untuk kompresi'));
                     };
@@ -1972,17 +2253,6 @@
                     img.src = objectURL;
                 });
             }
-
-            $('#modalUploadBukti').on('hidden.bs.modal', function() {
-                $('#inputBuktiBefore').val('').prop('disabled', false);
-                $('#inputBuktiAfter').val('').prop('disabled', true);
-                $('#previewBeforeContainer, #previewAfterContainer').addClass('d-none');
-                $('#imagePreviewBefore, #imagePreviewAfter').attr('src', '');
-                $('#inputBuktiBefore').closest('.mb-3').find('.form-text').text(
-                    'Klik untuk buka kamera • JPG/PNG • Max 5MB');
-                $('#inputBuktiAfter').closest('.mb-3').find('.form-text').text(
-                    'Upload Foto Before terlebih dahulu untuk mengaktifkan');
-            });
 
             $(document).on('change', '.checkStatus', function() {
                 const checkbox = $(this);
@@ -2124,11 +2394,21 @@
                 const modal = getModal('modalPreviewBukti');
                 modal.show();
                 try {
-                    const data = typeof bukti === 'string' ? JSON.parse(bukti) : bukti;
+                    const data = parseBukti(bukti);
                     const beforeUrl = data.before ? `/storage/${data.before}` : null;
                     const afterUrl = data.after ? `/storage/${data.after}` : null;
+                    const waktuMulai = formatWaktu(data.waktu_mulai);
+                    const waktuSelesai = formatWaktu(data.waktu_selesai);
+
                     let html = '<div class="photo-comparison">';
-                    html += `<div class="photo-box"><div class="label text-primary">Before</div>`;
+
+                    html += `<div class="photo-box p-3 bg-light rounded-3 border">
+                                <div class="label text-primary mb-1">Before (Sebelum)</div>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark border shadow-xs fw-normal px-2 py-1">
+                                        <i class="bx bx-time-five text-primary me-1"></i>Waktu Mulai: <strong>${waktuMulai}</strong>
+                                    </span>
+                                </div>`;
                     if (beforeUrl) {
                         const ext = beforeUrl.split('.').pop().toLowerCase();
                         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
@@ -2136,12 +2416,19 @@
                                 `<img src="${beforeUrl}" class="img-fluid rounded shadow bukti-preview" alt="Before">`;
                         } else {
                             html +=
-                                `<div class="alert alert-secondary small">File: ${beforeUrl.split('/').pop()}</div>`;
+                                `<div class="alert alert-secondary small mb-0">File: ${beforeUrl.split('/').pop()}</div>`;
                         }
                     } else {
-                        html += `<div class="alert alert-warning small">Foto Before tidak tersedia</div>`;
+                        html += `<div class="alert alert-warning small mb-0">Foto Before tidak tersedia</div>`;
                     }
-                    html += `</div><div class="photo-box"><div class="label text-success">After</div>`;
+
+                    html += `</div><div class="photo-box p-3 bg-light rounded-3 border">
+                                <div class="label text-success mb-1">After (Sesudah)</div>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark border shadow-xs fw-normal px-2 py-1">
+                                        <i class="bx bx-check-double text-success me-1"></i>Waktu Selesai: <strong>${waktuSelesai}</strong>
+                                    </span>
+                                </div>`;
                     if (afterUrl) {
                         const ext = afterUrl.split('.').pop().toLowerCase();
                         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
@@ -2149,10 +2436,10 @@
                                 `<img src="${afterUrl}" class="img-fluid rounded shadow bukti-preview" alt="After">`;
                         } else {
                             html +=
-                                `<div class="alert alert-secondary small">File: ${afterUrl.split('/').pop()}</div>`;
+                                `<div class="alert alert-secondary small mb-0">File: ${afterUrl.split('/').pop()}</div>`;
                         }
                     } else {
-                        html += `<div class="alert alert-warning small">Foto After tidak tersedia</div>`;
+                        html += `<div class="alert alert-warning small mb-0">Foto After tidak tersedia</div>`;
                     }
                     html += `</div></div>`;
                     body.html(html);
@@ -2421,7 +2708,6 @@
             loadAvailableCategories();
 
             let pfLoadedOnce = false;
-
             let pfCurrentPage = 1;
             let pfHasMore = false;
             let pfTotalData = 0;
@@ -2432,7 +2718,7 @@
                     pfCurrentPage = 1;
                     $('#pfTbody').html('<tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>');
                 }
-                
+
                 $('#btnPfLoadMore').addClass('d-none').prop('disabled', true);
 
                 $.ajax({
@@ -2449,8 +2735,7 @@
                     success: function(r) {
                         const tb = $('#pfTbody');
                         $('#pfEmptyRow').remove();
-                        
-                        // Jika butuh filter
+
                         if (r.requires_filter) {
                             if (!append) {
                                 tb.html(`
@@ -2472,7 +2757,6 @@
                             return;
                         }
 
-                        // Siapkan option dropdown
                         let tipeOptions = `<option value="">-- Tidak diubah --</option>
                             <option value="Harian">Harian</option><option value="Mingguan">Mingguan</option>
                             <option value="Bulanan">Bulanan</option><option value="Quartal">Quartal</option>
@@ -2480,6 +2764,8 @@
                         let turunanOptions = `<option value="">-- Tanpa Shift/Turunan --</option>
                             <option value="Shift 1">Shift 1</option><option value="Shift 2">Shift 2</option>
                             <option value="Sabtu">Sabtu</option><option value="Minggu">Minggu</option>`;
+
+                        if (!append) tb.empty();
 
                         r.data.forEach(it => {
                             const kat = it.kategori_daftar_tugas?.judul_kategori || '-';
@@ -2490,7 +2776,7 @@
                             const currentObId = it.id_karyawan || '';
                             const currentTipe = it.kategori_daftar_tugas?.Tipe || '';
                             const currentTurunan = it.kategori_daftar_tugas?.tipe_turunan || '';
-                            
+
                             const row = $(`
                                 <tr data-id="${it.id}">
                                     <td><input type="checkbox" class="pfRowCheck" value="${it.id}"></td>
@@ -2504,8 +2790,7 @@
                                     <td><button class="btn btn-sm btn-primary pfBtnSaveRow"><i class="bx bx-save"></i></button></td>
                                 </tr>
                             `);
-                            
-                            // Set nilai current untuk dropdown
+
                             row.find('.pfNewKaryawan').each(function() {
                                 const c = $(this).data('current'); if (c) $(this).val(c);
                             });
@@ -2513,30 +2798,25 @@
                                 const c = $(this).data('current'); if (c) $(this).val(c);
                             });
                             row.find('.pfNewTipeTurunan').each(function() {
-                                const c = $(this).data('current'); 
+                                const c = $(this).data('current');
                                 if (c && c !== '-') $(this).val(c); else $(this).val('');
                             });
 
-                            if (append) {
-                                tb.append(row);
-                            } else {
-                                tb.empty().append(row);
-                            }
+                            tb.append(row);
                         });
 
-                        // Update info pagination
                         pfTotalData = r.pagination.total;
                         pfLoadedCount = r.pagination.current_page * r.pagination.per_page;
                         if (pfLoadedCount > pfTotalData) pfLoadedCount = pfTotalData;
                         pfHasMore = r.pagination.has_more;
-                        
+
                         $('#pfLoadInfo').html(`
-                            Menampilkan <strong>${pfLoadedCount}</strong> dari <strong>${pfTotalData}</strong> data 
+                            Menampilkan <strong>${pfLoadedCount}</strong> dari <strong>${pfTotalData}</strong> data
                             (Halaman ${r.pagination.current_page}/${r.pagination.last_page})
                         `);
 
                         if (pfHasMore) {
-                            $('#btnPfLoadMore').removeClass('d-none').prop('disabled', false);
+                            $('#btnPfLoadMore').removeClass('d-none').prop('disabled', false).html('<i class="bx bx-download me-1"></i> Muat Lebih Banyak');
                         } else {
                             $('#btnPfLoadMore').addClass('d-none');
                         }
@@ -2550,7 +2830,6 @@
                 });
             }
 
-            // Event handler
             $('#btnPfFilter').on('click', function() { loadPerbaikanList(false); });
 
             $('#btnPfLoadMore').on('click', function() {
@@ -2565,8 +2844,6 @@
                     loadPerbaikanList();
                 }
             });
-
-            $('#btnPfFilter').on('click', loadPerbaikanList);
 
             $(document).on('change', '.pfRowCheck, #pfCheckAll', function() {
                 if (this.id === 'pfCheckAll') $('.pfRowCheck').prop('checked', this.checked);
@@ -2613,48 +2890,7 @@
                     return $(this).val();
                 }).get();
                 if (!ids.length) return;
-                const date = $('#pfBulkDate').val();
-                const karyawan = $('#pfBulkKaryawan').val();
-                if (!date && !karyawan) {
-                    showNotification('Peringatan', 'Isi tanggal baru dan/atau pilih OB baru dulu',
-                        'warning');
-                    return;
-                }
-                if (!confirm(`Terapkan perubahan ke ${ids.length} tugas terpilih?`)) return;
 
-                const btn = $(this);
-                const origText = btn.html();
-                btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Memproses...');
-
-                $.ajax({
-                    url: "{{ route('office.DaftarTugas.bulkUpdatePerbaikan') }}",
-                    type: 'POST',
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        ids: ids,
-                        deadline_date: date,
-                        id_karyawan: karyawan
-                    },
-                    success: function(r) {
-                        showNotification('Berhasil', r.message, 'success');
-                        loadPerbaikanList();
-                    },
-                    error: function(x) {
-                        showNotification('Gagal', x.responseJSON?.message ||
-                            'Gagal menerapkan perubahan', 'danger');
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false).html(origText);
-                    }
-                });
-            });
-
-            $('#btnPfApplyBulk').on('click', function() {
-                const ids = $('.pfRowCheck:checked').map(function() {
-                    return $(this).val();
-                }).get();
-                if (!ids.length) return;
-                
                 const date = $('#pfBulkDate').val();
                 const karyawan = $('#pfBulkKaryawan').val();
                 const tipe = $('#pfBulkTipe').val();
@@ -2665,11 +2901,11 @@
                     return;
                 }
                 if (!confirm(`Terapkan perubahan ke ${ids.length} tugas terpilih?`)) return;
-                
+
                 const btn = $(this);
                 const origText = btn.html();
                 btn.prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin"></i> Memproses...');
-                
+
                 $.ajax({
                     url: "{{ route('office.DaftarTugas.bulkUpdatePerbaikan') }}",
                     type: 'POST',

@@ -27,7 +27,8 @@
                 <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnUnlockApproval"
                     onclick="attemptUnlock('approval')">
                     <span class="btn-label"><i class="bi bi-unlock me-1"></i> Buka Kunci</span>
-                    <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
+                    <span class="btn-spinner d-none"><span
+                            class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
                 </button>
                 <div class="text-center mt-3">
                     <button class="btn btn-link text-muted small text-decoration-none" onclick="showFallbackLogin()">
@@ -43,10 +44,10 @@
                         placeholder="••••••">
                     <div id="fallbackError" class="text-danger small mt-1 d-none"></div>
                 </div>
-                <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnUnlockLogin"
-                    onclick="attemptUnlock('login')">
+                <button class="btn btn-primary w-100 py-2 fw-semibold" id="btnUnlockLogin" onclick="attemptUnlock('login')">
                     <span class="btn-label"><i class="bi bi-unlock me-1"></i> Buka dengan Password Login</span>
-                    <span class="btn-spinner d-none"><span class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
+                    <span class="btn-spinner d-none"><span
+                            class="spinner-border spinner-border-sm me-2"></span>Memeriksa...</span>
                 </button>
                 <div class="text-center mt-3">
                     <button class="btn btn-link text-muted small text-decoration-none" onclick="showApprovalLogin()">
@@ -195,6 +196,37 @@
         </div>
     </div>
 
+    <div class="modal fade" id="rowDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header px-4 py-3" style="background:var(--vlk-primary);color:#fff;border:none;">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="rdCompany">—</h5>
+                        <div class="small opacity-75" id="rdMateri">—</div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="rdFields" class="rd-list"></div>
+
+                    <div class="rd-nett mt-3">
+                        <span class="rd-nett-label">NETT SALES (otomatis)</span>
+                        <span class="rd-nett-value" id="rdNett">Rp 0</span>
+                    </div>
+                </div>
+                <div class="modal-footer px-4 pb-4 border-0">
+                    <button class="btn btn-outline-danger me-auto d-none" id="rdDeleteBtn" onclick="deleteRowModal()">
+                        <i class="bi bi-trash me-1"></i> Hapus
+                    </button>
+                    <button class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-primary fw-semibold" id="rdSaveBtn" onclick="saveRowModal()">
+                        <i class="bi bi-save me-1"></i> Simpan Perubahan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="vlk-theme">
         <div class="container-fluid mt-4">
 
@@ -207,7 +239,8 @@
                     </div>
                 </div>
                 <div class="d-flex gap-2 align-items-center flex-wrap vlk-toolbar">
-                    <span class="badge bg-primary-subtle text-primary-emphasis vlk-period-badge" id="current-period"></span>
+                    <span class="badge bg-primary-subtle text-primary-emphasis vlk-period-badge"
+                        id="current-period"></span>
 
                     <div class="ks-seg ks-seg-icon" id="editModeSeg">
                         <button type="button" class="active" data-mode="view" title="Mode Baca Saja">
@@ -218,8 +251,8 @@
                         </button>
                     </div>
 
-                    <button type="button" class="btn btn-outline-primary btn-sm ks-icon-btn" onclick="toggleFilterSidebar()"
-                        title="Filter & Urutkan">
+                    <button type="button" class="btn btn-outline-primary btn-sm ks-icon-btn"
+                        onclick="toggleFilterSidebar()" title="Filter & Urutkan">
                         <i class="bi bi-funnel-fill"></i>
                         <span class="ks-filter-badge" id="filterCountBadge" style="display:none;">0</span>
                     </button>
@@ -506,7 +539,8 @@
                         <label class="form-check-label" for="colOlehOleh">Oleh-oleh</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="entertainment" id="colEntertainment" checked>
+                        <input class="form-check-input" type="checkbox" value="entertainment" id="colEntertainment"
+                            checked>
                         <label class="form-check-label" for="colEntertainment">Entertainment</label>
                     </div>
                     <div class="form-check">
@@ -761,28 +795,28 @@
             background: linear-gradient(135deg, var(--vlk-primary-soft) 0%, var(--vlk-mint-soft) 100%);
             border: 1px solid var(--vlk-primary-light);
             border-radius: 12px;
-            padding: 12px 16px;   
+            padding: 12px 16px;
             height: 100%;
-            min-height: auto;                 
-            gap: 12px;                     
+            min-height: auto;
+            gap: 12px;
             box-shadow: 0 2px 6px rgba(122, 164, 212, 0.1);
-            flex-wrap: nowrap;               
+            flex-wrap: nowrap;
         }
 
         .ks-target-stat {
-            flex: 1 1 auto;                   
-            min-width: auto;                  
-            overflow: hidden;               
+            flex: 1 1 auto;
+            min-width: auto;
+            overflow: hidden;
         }
 
         .ks-target-label {
-            font-size: 0.65rem;               
+            font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--vlk-primary-dark);
             margin-bottom: 2px;
-            white-space: nowrap;              
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -790,10 +824,10 @@
         .ks-target-value {
             font-family: 'Plus Jakarta Sans', sans-serif;
             font-weight: 800;
-            font-size: 0.95rem;            
-            line-height: 1.1;                
+            font-size: 0.95rem;
+            line-height: 1.1;
             color: var(--vlk-ink);
-            white-space: nowrap;              
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -802,7 +836,7 @@
             width: 1px;
             align-self: stretch;
             background: var(--vlk-primary-light);
-            flex-shrink: 0;                   
+            flex-shrink: 0;
         }
 
         @media (max-width: 1200px) {
@@ -810,11 +844,11 @@
                 padding: 10px 14px;
                 gap: 10px;
             }
-            
+
             .ks-target-value {
-                font-size: 0.85rem;         
+                font-size: 0.85rem;
             }
-            
+
             .ks-target-label {
                 font-size: 0.6rem;
             }
@@ -822,10 +856,10 @@
 
         @media (max-width: 991px) {
             .ks-target-box {
-                flex-direction: row;         
+                flex-direction: row;
                 flex-wrap: nowrap;
             }
-            
+
             .ks-target-stat {
                 flex: 1 1 0;
                 min-width: 0;
@@ -1549,16 +1583,16 @@
                 gap: 10px;
                 padding: 12px;
             }
-            
+
             .ks-target-divider {
                 width: 100%;
                 height: 1px;
                 align-self: auto;
             }
-            
+
             .ks-target-value {
                 font-size: 0.9rem;
-                word-break: break-all;           
+                word-break: break-all;
             }
         }
 
@@ -1568,32 +1602,248 @@
                 row-gap: 2rem;
             }
         }
+
+        .ks-company-link {
+            color: var(--vlk-primary-dark);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 1px dashed var(--vlk-primary);
+            cursor: pointer !important;
+        }
+
+        .ks-company-link:hover {
+            color: var(--vlk-ink);
+            border-bottom-style: solid;
+        }
+
+        .rd-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .rd-group-title {
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: var(--vlk-primary-dark);
+            margin: 12px 0 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .rd-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: var(--vlk-bg);
+            border: 1px solid var(--vlk-border);
+        }
+
+        .rd-row label {
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--vlk-ink);
+            margin: 0;
+            flex: 1 1 45%;
+        }
+
+        .rd-row .input-group {
+            flex: 1 1 55%;
+            max-width: 220px;
+        }
+
+        .rd-row .form-control,
+        .rd-row .input-group-text {
+            font-size: .85rem;
+            border-color: var(--vlk-border);
+        }
+
+        .rd-row .form-control {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .rd-row .form-control:focus {
+            border-color: var(--vlk-primary);
+            box-shadow: 0 0 0 3px var(--vlk-primary-soft);
+        }
+
+        .rd-nett {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--vlk-amber);
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+
+        .rd-nett-label {
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .rd-nett-value {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
+        }
     </style>
 
-    
+
     <script>
         let komisiData = {};
         let activeSales = null;
         let failAttempts = 0;
         const MAX_FAILS = 3;
 
-        const COLUMN_DEFS = [
-            { key: 'materi', label: 'Materi', type: 'text', dataProp: 'materi', headClass: 'col-materi', cellClass: 'td-materi' },
-            { key: 'pax', label: 'Jumlah Peserta', type: 'number', dataProp: 'pax', backendField: 'pax', headClass: 'text-center col-pax', cellClass: 'text-center' },
-            { key: 'penjualan', label: 'Penjualan', type: 'currency', dataProp: 'penjualan', backendField: 'total_penjualan_kotor', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'discount', label: 'Discount', type: 'currency', dataProp: 'discount', backendField: 'total_diskon', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'pa', label: 'PA', type: 'currency', dataProp: 'pa', backendField: 'total_pa', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'cashback', label: 'Total<br>Cashback', type: 'currency', dataProp: 'cashback', backendField: 'total_cashback', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'uang_saku', label: 'Total<br>Uang Saku', type: 'currency', dataProp: 'uang_saku', backendField: 'total_uang_saku', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'akomodasi', label: 'Total Akomodasi Hotel (Meeting Room)', type: 'currency', dataProp: 'akomodasi', backendField: 'total_akomodasi', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'transport', label: 'Transport (Mobil/Pesawat/Kereta Api/Whoosh)', type: 'currency', dataProp: 'transport', backendField: 'biaya_transport', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'oleh_oleh', label: 'Oleh-oleh', type: 'currency', dataProp: 'oleh_oleh', backendField: 'oleh_oleh', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'entertainment', label: 'Entertainment', type: 'currency', dataProp: 'entertainment', backendField: 'entertainment', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'biaya_lainnya', label: 'Biaya Lainnya', type: 'currency', dataProp: 'biaya_lainnya', backendField: 'biaya_lain_lain', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'pengurangan_PPH', label: 'Pengurangan PPH', type: 'currency', dataProp: 'pengurangan_PPH', backendField: 'pengurangan_pph', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'exam', label: 'Exam', type: 'currency', dataProp: 'exam', backendField: 'exam', headClass: 'text-end', cellClass: 'text-end' },
-            { key: 'nett', label: 'NETT SALES', type: 'currency', dataProp: 'nett', backendField: 'total_penjualan_bersih', headClass: 'text-end', cellClass: 'text-end ks-nett' },
-            { key: 'perusahaan', label: 'Perusahaan', type: 'text', dataProp: 'perusahaan', headClass: 'col-perusahaan', cellClass: 'td-perusahaan' }
+        const COLUMN_DEFS = [{
+                key: 'materi',
+                label: 'Materi',
+                type: 'text',
+                dataProp: 'materi',
+                headClass: 'col-materi',
+                cellClass: 'td-materi'
+            },
+            {
+                key: 'pax',
+                label: 'Jumlah Peserta',
+                type: 'number',
+                dataProp: 'pax',
+                backendField: 'pax',
+                headClass: 'text-center col-pax',
+                cellClass: 'text-center'
+            },
+            {
+                key: 'penjualan',
+                label: 'Penjualan',
+                type: 'currency',
+                dataProp: 'penjualan',
+                backendField: 'total_penjualan_kotor',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'discount',
+                label: 'Discount',
+                type: 'currency',
+                dataProp: 'discount',
+                backendField: 'total_diskon',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'pa',
+                label: 'PA',
+                type: 'currency',
+                dataProp: 'pa',
+                backendField: 'total_pa',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'cashback',
+                label: 'Total<br>Cashback',
+                type: 'currency',
+                dataProp: 'cashback',
+                backendField: 'total_cashback',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'uang_saku',
+                label: 'Total<br>Uang Saku',
+                type: 'currency',
+                dataProp: 'uang_saku',
+                backendField: 'total_uang_saku',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'akomodasi',
+                label: 'Total Akomodasi Hotel (Meeting Room)',
+                type: 'currency',
+                dataProp: 'akomodasi',
+                backendField: 'total_akomodasi',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'transport',
+                label: 'Transport (Mobil/Pesawat/Kereta Api/Whoosh)',
+                type: 'currency',
+                dataProp: 'transport',
+                backendField: 'biaya_transport',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'oleh_oleh',
+                label: 'Oleh-oleh',
+                type: 'currency',
+                dataProp: 'oleh_oleh',
+                backendField: 'oleh_oleh',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'entertainment',
+                label: 'Entertainment',
+                type: 'currency',
+                dataProp: 'entertainment',
+                backendField: 'entertainment',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'biaya_lainnya',
+                label: 'Biaya Lainnya',
+                type: 'currency',
+                dataProp: 'biaya_lainnya',
+                backendField: 'biaya_lain_lain',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'pengurangan_PPH',
+                label: 'Pengurangan PPH',
+                type: 'currency',
+                dataProp: 'pengurangan_PPH',
+                backendField: 'pengurangan_pph',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'exam',
+                label: 'Exam',
+                type: 'currency',
+                dataProp: 'exam',
+                backendField: 'exam',
+                headClass: 'text-end',
+                cellClass: 'text-end'
+            },
+            {
+                key: 'nett',
+                label: 'NETT SALES',
+                type: 'currency',
+                dataProp: 'nett',
+                backendField: 'total_penjualan_bersih',
+                headClass: 'text-end',
+                cellClass: 'text-end ks-nett'
+            },
+            {
+                key: 'perusahaan',
+                label: 'Perusahaan',
+                type: 'text',
+                dataProp: 'perusahaan',
+                headClass: 'col-perusahaan',
+                cellClass: 'td-perusahaan'
+            }
         ];
 
         function fmtNumber(v) {
@@ -2040,11 +2290,23 @@
             sortPerusahaan: '',
             sortNumericColumn: '',
             sortNumericOrder: 'asc',
-            visibleColumns: ['materi', 'pax', 'penjualan', 'discount', 'pa', 'cashback', 'uang_saku', 'akomodasi', 'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam', 'nett', 'perusahaan'],
+            visibleColumns: ['materi', 'pax', 'penjualan', 'discount', 'pa', 'cashback', 'uang_saku', 'akomodasi',
+                'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam', 'nett',
+                'perusahaan'
+            ],
             rangeFilters: {
-                penjualan: { min: null, max: null },
-                nett: { min: null, max: null },
-                pax: { min: null, max: null }
+                penjualan: {
+                    min: null,
+                    max: null
+                },
+                nett: {
+                    min: null,
+                    max: null
+                },
+                pax: {
+                    min: null,
+                    max: null
+                }
             },
             searchText: {
                 materi: '',
@@ -2376,11 +2638,23 @@
                 sortPerusahaan: '',
                 sortNumericColumn: '',
                 sortNumericOrder: 'asc',
-                visibleColumns: ['materi', 'pax', 'penjualan', 'discount', 'pa', 'cashback', 'uang_saku', 'akomodasi', 'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam', 'nett', 'perusahaan'],
+                visibleColumns: ['materi', 'pax', 'penjualan', 'discount', 'pa', 'cashback', 'uang_saku', 'akomodasi',
+                    'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam', 'nett',
+                    'perusahaan'
+                ],
                 rangeFilters: {
-                    penjualan: { min: null, max: null },
-                    nett: { min: null, max: null },
-                    pax: { min: null, max: null }
+                    penjualan: {
+                        min: null,
+                        max: null
+                    },
+                    nett: {
+                        min: null,
+                        max: null
+                    },
+                    pax: {
+                        min: null,
+                        max: null
+                    }
                 },
                 searchText: {
                     materi: '',
@@ -2422,10 +2696,13 @@
                 debounceTimer = setTimeout(applyFiltersLive, DEBOUNCE_MS);
             }
 
-            $(document).on('change', '#sortMateri, #sortPerusahaan, #sortNumericColumn, #sortNumericOrder', applyFiltersLive);
+            $(document).on('change', '#sortMateri, #sortPerusahaan, #sortNumericColumn, #sortNumericOrder',
+                applyFiltersLive);
             $(document).on('change', '.column-toggles input[type="checkbox"]', applyFiltersLive);
 
-            $(document).on('input', '#rangePenjualanMin, #rangePenjualanMax, #rangeNettMin, #rangeNettMax, #rangePaxMin, #rangePaxMax', debouncedApply);
+            $(document).on('input',
+                '#rangePenjualanMin, #rangePenjualanMax, #rangeNettMin, #rangeNettMax, #rangePaxMin, #rangePaxMax',
+                debouncedApply);
             $(document).on('input', '#searchMateri, #searchPerusahaan', debouncedApply);
         })();
 
@@ -2446,7 +2723,8 @@
             renderTableHeader();
 
             if (rows.length === 0) {
-                rowsHtml = `<tr><td colspan="${colCount}" class="text-center py-4 text-muted">Tidak ada data pada periode ini</td></tr>`;
+                rowsHtml =
+                    `<tr><td colspan="${colCount}" class="text-center py-4 text-muted">Tidak ada data pada periode ini</td></tr>`;
             } else {
                 rows.forEach(function(r) {
                     let cellsHtml = '';
@@ -2454,22 +2732,29 @@
                     visibleColDefs.forEach(col => {
                         if (col.type === 'text') {
                             let val = r[col.dataProp];
-                            cellsHtml += `<td class="${col.cellClass || ''}">${escapeHtml(val || '-')}</td>`;
+                            if (col.key === 'perusahaan') {
+                                cellsHtml += `<td class="${col.cellClass || ''}">
+                                    <a href="#" class="ks-company-link" data-id="${escapeHtml(r.id_rkm)}">${escapeHtml(val || '-')}</a>
+                                </td>`;
+                            } else {
+                                cellsHtml += `<td class="${col.cellClass || ''}">${escapeHtml(val || '-')}</td>`;
+                            }
                             return;
                         }
-
                         let raw = r[col.dataProp];
 
                         if (!isEditable) {
                             let display = col.type === 'number' ? fmtNumber(raw) : rp(raw);
-                            cellsHtml += `<td class="${col.cellClass || ''}">${escapeHtml(String(display))}</td>`;
+                            cellsHtml +=
+                                `<td class="${col.cellClass || ''}">${escapeHtml(String(display))}</td>`;
                             return;
                         }
 
                         let numVal = parseFloat(raw) || 0;
                         let displayVal = '';
                         if (numVal > 0) {
-                            displayVal = col.type === 'currency' ? 'Rp ' + numVal.toLocaleString('id-ID') : numVal
+                            displayVal = col.type === 'currency' ? 'Rp ' + numVal.toLocaleString('id-ID') :
+                                numVal
                                 .toLocaleString('id-ID');
                         }
 
@@ -2760,6 +3045,171 @@
                         confirmButtonColor: '#E5C17A'
                     });
                 }
+            });
+        }
+
+        let rowModalId = null;
+
+        const EXTRA_COLS = {
+            harga_pax: {
+                key: 'harga_pax',
+                label: 'Harga per Pax',
+                type: 'currency',
+                dataProp: 'harga_pax',
+                backendField: 'harga_net'
+            }
+        };
+
+        const ROW_MODAL_GROUPS = [
+            { title: 'Penjualan', keys: ['pax', 'harga_pax', 'penjualan'] },
+            { title: 'Potongan & Biaya', keys: ['discount', 'pa', 'cashback', 'uang_saku', 'akomodasi', 'transport', 'oleh_oleh', 'entertainment', 'biaya_lainnya', 'pengurangan_PPH', 'exam'] }
+        ];
+        const ROW_MODAL_NON_DEDUCTION = ['pax', 'harga_pax', 'penjualan'];
+
+        $(document).on('click', '.ks-company-link', function(e) {
+            e.preventDefault();
+            openRowModal(String($(this).data('id')));
+        });
+
+        function openRowModal(idRkm) {
+            const d = komisiData[activeSales];
+            if (!d) return;
+
+            const row = (d.rows || []).find(r => String(r.id_rkm) === String(idRkm));
+            if (!row) return;
+
+            rowModalId = idRkm;
+            $('#rdCompany').text(row.perusahaan || '-');
+            $('#rdMateri').text(row.materi || '-');
+
+            let html = '';
+            ROW_MODAL_GROUPS.forEach(group => {
+                html += `<div class="rd-group-title">${group.title}</div>`;
+                group.keys.forEach(key => {
+                    const col = COLUMN_DEFS.find(c => c.key === key) || EXTRA_COLS[key];
+                    if (!col) return;
+
+                    const label = col.label.replace(/<br\s*\/?>/gi, ' ');
+                    const num = parseFloat(row[col.dataProp]) || 0;
+                    const val = num > 0 ? num.toLocaleString('id-ID') : '';
+                    const prefix = col.type === 'currency' ? '<span class="input-group-text">Rp</span>' : '';
+
+                    html += `<div class="rd-row">
+                        <label for="rd_${key}">${label}</label>
+                        <div class="input-group input-group-sm">
+                            ${prefix}
+                            <input type="text" inputmode="numeric" id="rd_${key}" class="form-control rd-input"
+                                data-key="${key}" data-field="${col.backendField}" value="${val}" placeholder="0">
+                        </div>
+                    </div>`;
+                });
+            });
+
+            $('#rdFields').html(html);
+            recalcRowModalNett();
+            $('#rdDeleteBtn').toggleClass('d-none', editMode !== 'edit');
+            new bootstrap.Modal(document.getElementById('rowDetailModal')).show();
+        }
+
+        function rdNumber(key) {
+            return parseFloat(String($('#rd_' + key).val() || '').replace(/[^0-9]/g, '')) || 0;
+        }
+
+        function recalcRowModalNett() {
+            const kotor = rdNumber('penjualan');
+            let deductions = 0;
+            ROW_MODAL_GROUPS.forEach(g => g.keys.forEach(k => {
+                if (!ROW_MODAL_NON_DEDUCTION.includes(k)) deductions += rdNumber(k);
+            }));
+            const nett = Math.max(0, kotor - deductions);
+            $('#rdNett').text('Rp ' + nett.toLocaleString('id-ID'));
+        }
+
+        $(document).on('input', '.rd-input', function() {
+            const digits = this.value.replace(/[^0-9]/g, '');
+            this.value = digits ? parseInt(digits, 10).toLocaleString('id-ID') : '';
+
+            if (this.id === 'rd_pax' || this.id === 'rd_harga_pax') {
+                const total = rdNumber('pax') * rdNumber('harga_pax');
+                $('#rd_penjualan').val(total ? total.toLocaleString('id-ID') : '');
+            }
+
+            recalcRowModalNett();
+        });
+
+        function saveRowModal() {
+            if (!rowModalId) return;
+
+            const fields = {};
+            $('#rdFields .rd-input').each(function() {
+                fields[$(this).data('field')] = String($(this).val() || '').replace(/[^0-9]/g, '') || '0';
+            });
+
+            const $btn = $('#rdSaveBtn').prop('disabled', true);
+
+            $.ajax({
+                url: `/office/komisi-sales/update-row/${rowModalId}`,
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', fields: fields },
+                success: function(res) {
+                    $btn.prop('disabled', false);
+                    if (res.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('rowDetailModal')).hide();
+                        originalRowsData = [];   // reset cache filter agar tidak memakai data lama
+                        loadKomisi();
+                        Swal.fire({
+                            icon: 'success', title: 'Berhasil!', text: res.message,
+                            background: '#E5F3EB', color: '#2A3A4D',
+                            confirmButtonColor: '#7AA4D4', timer: 1500, showConfirmButton: false
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    $btn.prop('disabled', false);
+                    Swal.fire({
+                        icon: 'warning', title: 'Gagal Menyimpan',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan.',
+                        background: '#FAF1DE', color: '#2A3A4D', confirmButtonColor: '#E5C17A'
+                    });
+                }
+            });
+        }
+
+        function deleteRowModal() {
+            if (!rowModalId) return;
+
+            Swal.fire({
+                title: 'Hapus data ini?',
+                text: 'Data penjualan ini akan dihapus dari rekap komisi.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6B7C93',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: `/office/komisi-sales/delete-row/${rowModalId}`,
+                    type: 'POST',
+                    data: { _token: '{{ csrf_token() }}', _method: 'DELETE' },
+                    success: function(res) {
+                        bootstrap.Modal.getInstance(document.getElementById('rowDetailModal')).hide();
+                        originalRowsData = [];
+                        loadKomisi();
+                        Swal.fire({
+                            icon: 'success', title: 'Terhapus!', text: res.message,
+                            timer: 1500, showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'warning', title: 'Gagal Menghapus',
+                            text: xhr.responseJSON?.message || 'Terjadi kesalahan.'
+                        });
+                    }
+                });
             });
         }
 

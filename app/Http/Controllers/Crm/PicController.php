@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Exports\ContactClientExport;
 use App\Http\Controllers\Controller;
 use App\Models\Aktivitas;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function Symfony\Component\VarDumper\Dumper\esc;
 
@@ -67,6 +69,7 @@ class PicController extends Controller
 
             $pesertaQuery = DB::table('pesertas as p')
                 ->selectRaw('
+                2 AS source_type,
                 p.id AS peserta_id,
                 NULL AS contact_id,
                 p.nama,
@@ -86,8 +89,10 @@ class PicController extends Controller
                 $pesertaQuery->where('pr.sales_key', $salesFilter);
             }
 
+            // 2. Tambahkan "1 AS source_type" untuk Contact
             $contactQuery = DB::table('contacts as c')
                 ->selectRaw('
+                1 AS source_type,
                 NULL AS peserta_id,
                 c.id AS contact_id,
                 c.nama,
@@ -111,51 +116,28 @@ class PicController extends Controller
                 $contactQuery->where('pr.sales_key', $salesFilter);
             }
 
-            $pesertaSql = $pesertaQuery->toSql();
-            $pesertaBindings = $pesertaQuery->getBindings();
+            // =================================================================
+            // PERBAIKAN: Hapus toSql() dan getBindings()
+            // =================================================================
 
-            $contactSql = $contactQuery->toSql();
-            $contactBindings = $contactQuery->getBindings();
+            // 3. (PENTING) CONTACT DULU BARU PESERTA DI UNION
+            $unionQuery = clone $contactQuery;
+            $unionQuery->unionAll($pesertaQuery);
 
-            $unionSql = "({$pesertaSql}) UNION ALL ({$contactSql})";
-            $unionBindings = array_merge($pesertaBindings, $contactBindings);
+            // Gunakan fromSub() untuk menggantikan DB::table(DB::raw(...))
+            $masterQuery = DB::query()->fromSub($unionQuery, 'master');
 
-            Log::debug('Manual Union SQL', [
-                'sql' => $unionSql,
-                'bindings' => $unionBindings,
-            ]);
-
-            $masterQuery = DB::table(DB::raw("({$unionSql}) as master"))
-                ->setBindings($unionBindings);
+            // =================================================================
 
             $draw = $request->get('draw', 1);
             $start = $request->get('start', 0);
             $length = $request->get('length', 10);
             $searchValue = $request->get('search')['value'] ?? '';
             $salesFilterDropdown = $request->input('sales_filter');
-            $orderColumnIndex = $request->get('order')[0]['column'] ?? 0;
-            $orderDirection = $request->get('order')[0]['dir'] ?? 'desc';
-
-            $orderColumns = [
-                'nama',
-                'email',
-                'cp',
-                'perusahaan_key',
-                'divisi',
-                'contact_status',
-                'nama_perusahaan',
-                'sales_key',
-                'created_at',
-                'peserta_id',
-                'contact_id'
-            ];
-            $orderColumn = $orderColumns[$orderColumnIndex] ?? 'created_at';
 
             if (!empty($searchValue)) {
                 $masterQuery->where(function ($q) use ($searchValue) {
                     $searchValueLower = strtolower($searchValue);
-
-                    // Cek pencarian berdasarkan nama, email, cp, dan perusahaan
                     $q->whereRaw('LOWER(nama) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(email) LIKE ?', ["%{$searchValueLower}%"])
                         ->orWhereRaw('LOWER(cp) LIKE ?', ["%{$searchValueLower}%"])
@@ -170,17 +152,49 @@ class PicController extends Controller
             }
 
             $totalFiltered = $masterQuery->count();
-            Log::debug('TotalFiltered: ' . $totalFiltered);
+
+            // 4. MAPPING KOLOM (Kolom 0 diabaikan karena hanya nomor urut)
+            $orderColumns = [
+                1 => 'nama',
+                2 => 'nama_perusahaan',
+                3 => 'sales_key',
+                4 => 'status_text',
+                5 => 'email',
+                6 => 'cp',
+                7 => 'divisi',
+            ];
+
+            $orderReq = $request->input('order');
+            $isSortingApplied = false;
+
+            // 5. PENGECEKAN PENGURUTAN (SORTING) YANG KETAT
+            if (!empty($orderReq) && isset($orderReq[0]['column'])) {
+                $orderColumnIndex = (int) $orderReq[0]['column'];
+
+                // JIKA INDEXNYA > 0 (Artinya bukan kolom nomor urut), maka terapkan pengurutan
+                if ($orderColumnIndex > 0 && array_key_exists($orderColumnIndex, $orderColumns)) {
+                    $orderDirection = $orderReq[0]['dir'] ?? 'desc';
+                    $orderColumn = $orderColumns[$orderColumnIndex];
+                    $masterQuery->orderBy($orderColumn, $orderDirection);
+
+                    $isSortingApplied = true; // Tandai bahwa user nge-klik kolom khusus
+                }
+            }
+
+            if (!$isSortingApplied) {
+                $masterQuery->orderBy('source_type', 'asc')->orderBy('created_at', 'desc');
+            }
 
             $rawData = $masterQuery
-                ->orderBy($orderColumn, $orderDirection)
                 ->offset($start)
                 ->limit($length)
                 ->get();
 
-            $totalRecords = DB::table(DB::raw("({$unionSql}) as master"))
-                ->setBindings($unionBindings)
-                ->count();
+            // =================================================================
+            // PERBAIKAN TOTAL RECORDS: Gunakan kembali $unionQuery dengan fromSub()
+            // =================================================================
+            $totalRecords = DB::query()->fromSub($unionQuery, 'master')->count();
+            // =================================================================
 
             $data = $rawData->map(function ($item) {
                 if ($item->contact_status === '1' || $item->contact_status === 1) {
@@ -226,7 +240,6 @@ class PicController extends Controller
             ], 500);
         }
     }
-
 
     public function store(Request $request)
     {
@@ -299,4 +312,29 @@ class PicController extends Controller
         $contact->delete();
     }
 
+    public function exportData(Request $request)
+    {
+        $user = Auth::user();
+        $allowedJabatan = ['Adm Sales', 'SPV Sales', 'GM'];
+
+        if ($user->jabatan === 'Sales') {
+            $salesKey = $user->id_sales;
+        } elseif (in_array($user->jabatan, $allowedJabatan)) {
+            $salesKey = $request->input('sales_key');
+        } else {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $status = $request->input('status', []);
+        $idPerusahaan = $request->input('id_perusahaan', []);
+
+        $filename = 'contact_client_export_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new ContactClientExport($startDate, $endDate, $status, $salesKey, $idPerusahaan),
+            $filename
+        );
+    }
 }

@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use App\Models\EducationalBackground;
 use App\Models\LogGaji;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
 
 class KaryawanController extends Controller
@@ -38,7 +39,7 @@ class KaryawanController extends Controller
             abort(404);
 
         $realId = $decoded[0];
-        $users = Karyawan::with('educations')->findOrFail($realId);
+        $users = karyawan::with('educations')->findOrFail($realId);
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
         // Batasi akses ke user sendiri atau admin
@@ -46,7 +47,7 @@ class KaryawanController extends Controller
             abort(403);
         }
 
-        $jabatan = Jabatan::all();
+        $jabatan = jabatan::all();
         return view('user.edit', compact('users', 'jabatan'));
     }   
 
@@ -58,7 +59,7 @@ class KaryawanController extends Controller
 
         $realId = $decoded[0];
 
-        $karyawan = Karyawan::findOrFail($realId);
+        $karyawan = karyawan::findOrFail($realId);
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
         // Cek Otorisasi
@@ -209,7 +210,7 @@ class KaryawanController extends Controller
             'ttd' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
 
-        $post = Karyawan::findOrFail($id);
+        $post = karyawan::findOrFail($id);
 
         // Proses foto
         if ($request->hasFile('foto')) {
@@ -266,34 +267,48 @@ class KaryawanController extends Controller
 
         $bulanInput = (int) $request->bulan;
         $tahunInput = (int) $request->tahun;
-        $bulanNow   = (int) Carbon::now()->month;
-        $tahunNow   = (int) Carbon::now()->year;
+        $tunjangan  = $request->tunjangan_jabatan ?? 0;
 
-        $isBulanIni = $bulanInput === $bulanNow && $tahunInput === $tahunNow;
+        $now        = Carbon::now()->startOfMonth();
+        $bulanLalu  = $now->copy()->subMonthNoOverflow();
+        $inputDate  = Carbon::create($tahunInput, $bulanInput, 1)->startOfMonth();
 
-        if ($isBulanIni) {
-            $karyawan = karyawan::findOrFail($id);
-            $karyawan->update([
-                'gaji'              => $request->jumlah_gaji,
-                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
-            ]);
-        }
+        $isBulanIni = $inputDate->equalTo($now);
+        $isBulanLalu = $inputDate->equalTo($bulanLalu);
 
-        LogGaji::updateOrCreate(
-            [
-                'id_karyawan' => $id,
-                'bulan'       => $bulanInput,
-                'tahun'       => $tahunInput,
-            ],
-            [
-                'gaji'              => $request->jumlah_gaji,
-                'tunjangan_jabatan' => $request->tunjangan_jabatan ?? 0,
-            ]
-        );
+        $sudahAdaLogBulanIni = LogGaji::where('id_karyawan', $id)
+            ->where('bulan', $now->month)
+            ->where('tahun', $now->year)
+            ->exists();
+
+        // Update data karyawan jika:
+        // - input bulan ini, ATAU
+        // - input bulan lalu DAN belum ada log bulan ini
+        $updateKaryawan = $isBulanIni || ($isBulanLalu && !$sudahAdaLogBulanIni);
+
+        DB::transaction(function () use ($id, $updateKaryawan, $request, $tunjangan, $bulanInput, $tahunInput) {
+            if ($updateKaryawan) {
+                karyawan::findOrFail($id)->update([
+                    'gaji'              => $request->jumlah_gaji,
+                    'tunjangan_jabatan' => $tunjangan,
+                ]);
+            }
+
+            LogGaji::updateOrCreate(
+                [
+                    'id_karyawan' => $id,
+                    'bulan'       => $bulanInput,
+                    'tahun'       => $tahunInput,
+                ],
+                [
+                    'gaji'              => $request->jumlah_gaji,
+                    'tunjangan_jabatan' => $tunjangan,
+                ]
+            );
+        });
 
         return redirect()->route('gaji.index')->with('success', 'Gaji berhasil diperbarui.');
     }
-
 
     public function slip(Request $request)
     {
@@ -330,7 +345,7 @@ class KaryawanController extends Controller
 
         if ($isPeriodeBerjalan) {
             $gajiPokok        = (float) $user->karyawan->gaji;
-            $tunjanganJabatan = (float) ($user->karyawan->tunjangan_jabatan ?? 0);
+            $tunjanganj = (float) ($user->karyawan->tunjangan_jabatan ?? 0);
         } else {
             $logGaji = LogGaji::where('id_karyawan', Auth::id())
                 ->where('bulan', $bulan)
@@ -339,14 +354,14 @@ class KaryawanController extends Controller
                 ->first();
 
             $gajiPokok        = $logGaji ? (float) $logGaji->gaji : 0;
-            $tunjanganJabatan = $logGaji ? (float) $logGaji->tunjangan_jabatan : 0;
+            $tunjanganj = $logGaji ? (float) $logGaji->tunjangan_jabatan : 0;
         }
 
-        $tunjanganJabatanFormatted = $tunjanganJabatan > 0
-            ? $this->formatRupiah($tunjanganJabatan)
+        $tunjanganjFormatted = $tunjanganj > 0
+            ? $this->formatRupiah($tunjanganj)
             : '-';
 
-        $totalPendapatan = $gajiPokok + $tunjanganJabatan + $tunjanganItems->sum('total');
+        $totalPendapatan = $gajiPokok + $tunjanganj + $tunjanganItems->sum('total');
         $totalPotongan   = $potonganItems->sum(fn($i) => abs($i->total));
         $totalBersih     = $totalPendapatan - $totalPotongan;
 
@@ -354,8 +369,8 @@ class KaryawanController extends Controller
         $pendapatanRows = [];
         $pendapatanRows[] = ['nama' => 'Gaji Pokok', 'jumlah' => $this->formatRupiah($gajiPokok)];
 
-        if ($tunjanganJabatan > 0) {
-            $pendapatanRows[] = ['nama' => 'Tunjangan Jabatan', 'jumlah' => $this->formatRupiah($tunjanganJabatan)];
+        if ($tunjanganj > 0) {
+            $pendapatanRows[] = ['nama' => 'Tunjangan j', 'jumlah' => $this->formatRupiah($tunjanganj)];
         }
 
         foreach ($tunjanganItems as $item) {
@@ -405,7 +420,7 @@ class KaryawanController extends Controller
             'bulan' => $bulan,
             'tahun' => $tahun,
             'namaBulanText' => $namaBulan[$bulan] ?? '-',
-            'tunjanganJabatanFormatted' => $tunjanganJabatanFormatted,
+            'tunjanganjFormatted' => $tunjanganjFormatted,
             'rows' => $rows,
             'totalBersih' => $totalBersih,
             'totalBersihFormatted' => $this->formatRupiah($totalBersih),

@@ -15,11 +15,12 @@ class Certificate extends Model
         'id_peserta',
         'nama_peserta',
         'nama_materi',
-        'tanggal_awal',
-        'tanggal_akhir',
+        'kategori_exam',
+        // 'tanggal_awal',
+        // 'tanggal_akhir',
         'tanggal_pelatihan',
         'tanggal_pelatihan2',
-        'ttd_id',
+        // 'ttd_id',
         'pdf_path'
     ];
 
@@ -45,7 +46,7 @@ class Certificate extends Model
     // Relasi ke TTD (Karyawan ID 4)
     public function penandatangan()
     {
-        return $this->belongsTo(Karyawan::class, 'ttd_id');
+        return $this->belongsTo(karyawan::class, 'ttd_id');
     }
 
     // // Generate nomor sertifikat otomatis

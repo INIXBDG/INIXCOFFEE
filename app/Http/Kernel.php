@@ -72,11 +72,12 @@ class Kernel extends HttpKernel
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        'api.basic' => \App\Http\Middleware\ApiBasicAuth::class,
     ];
 
     protected $routeMiddleware = [
         // Middleware lainnya...
-        
+
         'logviewer.access' => \App\Http\Middleware\LogViewerAccessMiddleware::class,
     ];
 }

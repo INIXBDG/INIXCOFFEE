@@ -662,211 +662,227 @@
     </div>
 
     <div class="modal fade" id="updateModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius:16px;">
                 <div class="modal-header px-4 py-3">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="modal-icon-wrap d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-20"
-                            style="width:40px;height:40px;"><i class="bi bi-pencil-square fs-5"></i></div>
+                        <div class="modal-icon-wrap d-flex align-items-center justify-content-center rounded-circle"
+                            style="width:40px;height:40px;background:rgba(255,255,255,.2);">
+                            <i class="bi bi-pencil-square fs-5"></i>
+                        </div>
                         <div>
                             <h5 class="modal-title fw-bold mb-0">Update Penjualan Kotor</h5>
-                            <small class="text-white text-opacity-75" id="modal-subtitle">—</small>
+                            <small style="opacity:.85;" id="modal-subtitle">—</small>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
-                <div class="px-4 py-2 border-bottom d-flex align-items-center gap-0 vlk-steps-bar">
-                    <div class="step-pill active" data-step="1"><span class="step-num">1</span><span
-                            class="step-label">Informasi</span></div>
-                    <div class="step-line"></div>
-                    <div class="step-pill" data-step="2"><span class="step-num">2</span><span
-                            class="step-label">Perhitungan</span></div>
-                    <div class="step-line"></div>
-                    <div class="step-pill" data-step="3"><span class="step-num">3</span><span
-                            class="step-label">Tracking</span></div>
-                </div>
+
                 <form id="formUpdate">
                     @csrf
                     <input type="hidden" id="update_id">
-                    <div class="modal-body p-0 vlk-modal-body" style="max-height:70vh;overflow-y:auto;">
-                        <div class="step-content p-4" id="step-1">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="section-label-bar section-blue"><i
-                                            class="bi bi-file-text me-2"></i><span>Informasi Training & Invoice</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">No Faktur</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-receipt text-muted"></i></span><input type="text"
-                                            class="form-control" id="no_faktur" name="no_faktur"
-                                            placeholder="Nomor faktur"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">No Invoice</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-card-list text-muted"></i></span><input type="text"
-                                            class="form-control" id="no_invoice" name="no_invoice"
-                                            placeholder="Nomor invoice"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Materi</label>
-                                    <select class="form-select" id="materi" name="materi">
-                                        <option value="">Pilih Materi</option>
-                                        @foreach ($dataMateri as $m)
-                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Perusahaan</label>
-                                    <select class="form-select" id="perusahaan" name="perusahaan">
-                                        <option value="">Pilih Perusahaan</option>
-                                        @foreach ($dataPerusahaan as $p)
-                                            <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Tanggal Mulai</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-calendar-event text-muted"></i></span><input type="date"
-                                            class="form-control" id="tanggal_mulai" name="tanggal_mulai"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Tanggal Selesai</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-calendar-check text-muted"></i></span><input type="date"
-                                            class="form-control" id="tanggal_selesai" name="tanggal_selesai"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Sales</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-person text-muted"></i></span><input type="text"
-                                            class="form-control bg-light" id="nama_sales" readonly placeholder="—"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Instruktur</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-person-badge text-muted"></i></span><input type="text"
-                                            class="form-control bg-light" id="instruktur" readonly placeholder="—"></div>
+
+                    <div class="modal-body vlk-modal-body vf-body">
+
+                        {{-- ============ INFORMASI ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-blue"><i
+                                    class="bi bi-file-text me-2"></i><span>Informasi Training &amp; Invoice</span></div>
+
+                            <div class="vf-row">
+                                <label class="vf-label" for="no_faktur">No Faktur</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-receipt text-muted"></i></span>
+                                    <input type="text" class="form-control" id="no_faktur" name="no_faktur"
+                                        placeholder="Nomor faktur">
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-end mt-4"><button type="button"
-                                    class="btn btn-primary px-4" onclick="goStep(2)">Selanjutnya <i
-                                        class="bi bi-arrow-right ms-1"></i></button></div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="no_invoice">No Invoice</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i
+                                            class="bi bi-card-list text-muted"></i></span>
+                                    <input type="text" class="form-control" id="no_invoice" name="no_invoice"
+                                        placeholder="Nomor invoice">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="materi">Materi</label>
+                                <select class="form-select" id="materi" name="materi">
+                                    <option value="">Pilih Materi</option>
+                                    @foreach ($dataMateri as $m)
+                                        <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="perusahaan">Perusahaan</label>
+                                <select class="form-select" id="perusahaan" name="perusahaan">
+                                    <option value="">Pilih Perusahaan</option>
+                                    @foreach ($dataPerusahaan as $p)
+                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="tanggal_mulai">Tanggal Mulai</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i
+                                            class="bi bi-calendar-event text-muted"></i></span>
+                                    <input type="date" class="form-control" id="tanggal_mulai" name="tanggal_mulai">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="tanggal_selesai">Tanggal Selesai</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i
+                                            class="bi bi-calendar-check text-muted"></i></span>
+                                    <input type="date" class="form-control" id="tanggal_selesai" name="tanggal_selesai">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="nama_sales">Sales</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="bi bi-person text-muted"></i></span>
+                                    <input type="text" class="form-control bg-light" id="nama_sales" readonly
+                                        placeholder="—">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="instruktur">Instruktur</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i
+                                            class="bi bi-person-badge text-muted"></i></span>
+                                    <input type="text" class="form-control bg-light" id="instruktur" readonly
+                                        placeholder="—">
+                                </div>
+                            </div>
                         </div>
-                        <div class="step-content p-4 d-none" id="step-2">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="section-label-bar section-mint"><i
-                                            class="bi bi-calculator me-2"></i><span>Perhitungan Penjualan</span></div>
+
+                        {{-- ============ PERHITUNGAN ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-mint"><i
+                                    class="bi bi-calculator me-2"></i><span>Perhitungan Penjualan</span></div>
+
+                            <div class="vf-row">
+                                <label class="vf-label" for="harga">Harga Net</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="harga" name="harga">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Harga Net</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="harga" name="harga">
-                                    </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="pax">Pax</label>
+                                <input type="number" class="form-control input-calc" id="pax" name="pax"
+                                    min="0">
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total">Total Penjualan Kotor
+                                    <small>Harga × Pax, bisa diubah manual</small></label>
+                                <div class="input-group">
+                                    <span class="input-group-text vlk-input-prefix-mint">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control vlk-input-tint-mint fw-bold currency-input" id="total"
+                                        name="total">
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold small">Pax</label>
-                                    <input type="number" class="form-control input-calc" id="pax" name="pax"
-                                        min="0">
+                            </div>
+                        </div>
+
+                        {{-- ============ PENGURANG ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-coral"><i
+                                    class="bi bi-dash-circle me-2"></i><span>Pengurang</span></div>
+
+                            <div class="vf-row">
+                                <label class="vf-label" for="diskon">Diskon / PA</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="diskon" name="diskon">
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Total Penjualan Kotor</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text vlk-input-prefix-mint">Rp</span><input type="text"
-                                            inputmode="numeric"
-                                            class="form-control vlk-input-tint-mint fw-bold currency-input" id="total"
-                                            name="total"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_diskon">Total Diskon</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="total_diskon"
+                                        name="total_diskon">
                                 </div>
-                                <div class="col-12 mt-2">
-                                    <div class="section-label-bar section-coral"><i
-                                            class="bi bi-dash-circle me-2"></i><span>Pengurang</span></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_pa">Total PA</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="total_pa" name="total_pa">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Diskon / PA</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="diskon" name="diskon">
-                                    </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_cashback">Cashback</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="total_cashback"
+                                        name="total_cashback">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Total Diskon</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="total_diskon"
-                                            name="total_diskon"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_uang_saku">Uang Saku</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="total_uang_saku"
+                                        name="total_uang_saku">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Total PA</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="total_pa"
-                                            name="total_pa"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_akomodasi">Akomodasi</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="total_akomodasi"
+                                        name="total_akomodasi">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Cashback</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="total_cashback"
-                                            name="total_cashback"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="oleh_oleh">Oleh-Oleh Peserta</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="oleh_oleh" name="oleh_oleh">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Uang Saku</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="total_uang_saku"
-                                            name="total_uang_saku"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="biaya_lain_lain">Biaya Lain-Lain</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="biaya_lain_lain"
+                                        name="biaya_lain_lain">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Akomodasi</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="total_akomodasi"
-                                            name="total_akomodasi"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="entertainment">Entertainment</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="entertainment"
+                                        name="entertainment">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Oleh-Oleh Peserta</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="oleh_oleh"
-                                            name="oleh_oleh"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Biaya Lain-Lain</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="biaya_lain_lain"
-                                            name="biaya_lain_lain"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Entertainment</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="entertainment"
-                                            name="entertainment"></div>
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <div class="section-label-bar section-amber"><i
-                                            class="bi bi-truck me-2"></i><span>Transport & Pajak</span></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Jenis Transportasi</label>
+                            </div>
+                        </div>
+
+                        {{-- ============ TRANSPORT & PAJAK ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-amber"><i
+                                    class="bi bi-truck me-2"></i><span>Transport &amp; Pajak</span></div>
+
+                            <div class="vf-row">
+                                <label class="vf-label" for="transportasi_select">Jenis Transportasi</label>
+                                <div>
                                     <select class="form-select" id="transportasi_select">
                                         <option value="">Pilih Transportasi</option>
                                         <option>Pesawat</option>
@@ -879,188 +895,196 @@
                                     <input type="text" class="form-control mt-2 d-none" id="transportasi_manual"
                                         placeholder="Transportasi lainnya">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Biaya Transport</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="biaya_transport"
-                                            name="biaya_transport"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Pengurangan PPH</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="pengurangan_pph"
-                                            name="pengurangan_pph"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Exam</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric"
-                                            class="form-control input-calc currency-input" id="exam_value"
-                                            name="exam"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">PPN</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric" class="form-control currency-input"
-                                            id="PPN" name="PPN"></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">PPH</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric" class="form-control currency-input"
-                                            id="PPH" name="PPH"></div>
-                                </div>
-                                <div class="col-12 mt-2">
-                                    <div class="section-label-bar section-lavender"><i
-                                            class="bi bi-wallet2 me-2"></i><span>Pembayaran</span></div>
-                                </div>
-                                <div class="col-md-4"><label class="form-label fw-semibold small">PIC</label><input
-                                        type="text" class="form-control" id="pic" name="pic"></div>
-                                <div class="col-md-4"><label class="form-label fw-semibold small">No.
-                                        Regist</label><input type="text" class="form-control" id="regist"
-                                        name="regist"></div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Jumlah Pembayaran</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric" class="form-control currency-input"
-                                            id="jumlah_pembayaran" name="jumlah_pembayaran"></div>
-                                </div>
-                                <div class="col-md-4"><label class="form-label fw-semibold small">Tanggal
-                                        Pembayaran</label><input type="date" class="form-control"
-                                        id="tanggal_pembayaran" name="tanggal_pembayaran"></div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-semibold small">Biaya Admin</label>
-                                    <div class="input-group"><span
-                                            class="input-group-text bg-white text-muted small">Rp</span><input
-                                            type="text" inputmode="numeric" class="form-control currency-input"
-                                            id="biaya_admin" name="biaya_admin"></div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="biaya_transport">Biaya Transport</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="biaya_transport"
+                                        name="biaya_transport">
                                 </div>
                             </div>
-                            <div
-                                class="mt-4 p-3 rounded-3 d-flex align-items-center justify-content-between vlk-summary-panel">
-                                <div>
-                                    <div class="small opacity-75 mb-1">Total Penjualan Sales (Bersih)</div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="pengurangan_pph">Pengurangan PPH</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
                                     <input type="text" inputmode="numeric"
-                                        class="form-control fw-bold text-dark currency-input" id="total_penjualan_sales"
+                                        class="form-control input-calc currency-input" id="pengurangan_pph"
+                                        name="pengurangan_pph">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="exam_value">Exam</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control input-calc currency-input" id="exam_value" name="exam">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="PPN">PPN</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control currency-input"
+                                        id="PPN" name="PPN">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="PPH">PPH</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control currency-input"
+                                        id="PPH" name="PPH">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ============ PEMBAYARAN ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-lavender"><i
+                                    class="bi bi-wallet2 me-2"></i><span>Pembayaran</span></div>
+
+                            <div class="vf-row">
+                                <label class="vf-label" for="pic">PIC</label>
+                                <input type="text" class="form-control" id="pic" name="pic">
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="regist">No. Regist</label>
+                                <input type="text" class="form-control" id="regist" name="regist">
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="jumlah_pembayaran">Jumlah Pembayaran</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control currency-input"
+                                        id="jumlah_pembayaran" name="jumlah_pembayaran">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="tanggal_pembayaran">Tanggal Pembayaran</label>
+                                <input type="date" class="form-control" id="tanggal_pembayaran"
+                                    name="tanggal_pembayaran">
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="biaya_admin">Biaya Admin</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted small">Rp</span>
+                                    <input type="text" inputmode="numeric" class="form-control currency-input"
+                                        id="biaya_admin" name="biaya_admin">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ============ TOTAL BERSIH ============ --}}
+                        <div class="vf-section vf-summary">
+                            <div class="vf-row">
+                                <label class="vf-label" for="total_penjualan_sales">Total Penjualan Sales (Bersih)
+                                    <small>Kotor − pengurang, bisa diubah manual</small></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" inputmode="numeric"
+                                        class="form-control fw-bold currency-input" id="total_penjualan_sales"
                                         name="total_penjualan_sales">
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-light px-4" onclick="goStep(1)"><i
-                                        class="bi bi-arrow-left me-1"></i> Kembali</button>
-                                <button type="button" class="btn btn-primary px-4" onclick="goStep(3)">Selanjutnya <i
-                                        class="bi bi-arrow-right ms-1"></i></button>
+                        </div>
+
+                        {{-- ============ TRACKING ============ --}}
+                        <div class="vf-section">
+                            <div class="section-label-bar section-lavender"><i
+                                    class="bi bi-clipboard2-check me-2"></i><span>Tracking Outstanding</span></div>
+
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="tracking_select_all">Pilih Semua
+                                    <small>Centang semua item tracking</small></label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="tracking_select_all">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_invoice">Invoice
+                                    <small>Otomatis terisi</small></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="trk_invoice"
+                                            disabled checked>
+                                    </div>
+                                    <span class="badge vlk-badge-auto">Auto</span>
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_faktur_pajak">Faktur Pajak</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_faktur_pajak" name="faktur_pajak" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_dokumen_tambahan">Dokumen Tambahan</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_dokumen_tambahan" name="dokumen_tambahan" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_konfir_cs">Konfirmasi Pengiriman RPX</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_konfir_cs" name="konfir_cs" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_tracking_dokumen">Tracking Dokumen</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_tracking_dokumen" name="tracking_dokumen" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_no_resi">Status Resi</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_no_resi" name="no_resi" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_konfir_pic">Konfirmasi PIC</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_konfir_pic" name="konfir_pic" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row vf-row-check">
+                                <label class="vf-label" for="trk_pembayaran">Pembayaran</label>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input tracking-check" type="checkbox" role="switch"
+                                        id="trk_pembayaran" name="pembayaran" value="1">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="trk_status_resi">Nomor Resi</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i
+                                            class="bi bi-box-seam text-muted"></i></span>
+                                    <input type="text" class="form-control" id="trk_status_resi"
+                                        placeholder="Masukkan nomor resi">
+                                </div>
+                            </div>
+                            <div class="vf-row">
+                                <label class="vf-label" for="trk_status_pic">Status PIC</label>
+                                <input type="text" class="form-control tracking-check" id="trk_status_pic"
+                                    name="status_pic" placeholder="Status PIC">
                             </div>
                         </div>
-                        <div class="step-content p-4 d-none" id="step-3">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="section-label-bar section-lavender"><i
-                                            class="bi bi-clipboard2-check me-2"></i><span>Tracking Outstanding</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        <label class="form-label fw-semibold mb-0">Tracking Outstanding</label>
-                                        <div class="text-muted small">Pilih item tracking yang sudah selesai</div>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="tracking_select_all">
-                                        <label class="form-check-label fw-semibold" for="tracking_select_all">
-                                            Pilih Semua
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="tracking-grid">
-                                        <div class="tracking-item disabled">
-                                            <div class="tracking-check-wrap"><input class="form-check-input"
-                                                    type="checkbox" id="trk_invoice" disabled checked></div>
-                                            <div class="tracking-info"><span class="tracking-title">Invoice</span><span
-                                                    class="tracking-desc text-muted small">Otomatis terisi</span></div>
-                                            <span class="badge vlk-badge-auto">Auto</span>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_faktur_pajak" name="faktur_pajak" value="1"></div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_faktur_pajak">Faktur Pajak</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_dokumen_tambahan" name="dokumen_tambahan" value="1">
-                                            </div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_dokumen_tambahan">Dokumen Tambahan</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_konfir_cs" name="konfir_cs" value="1"></div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_konfir_cs">Konfirmasi Pengiriman RPX</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_tracking_dokumen" name="tracking_dokumen" value="1">
-                                            </div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_tracking_dokumen">Tracking Dokumen</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_no_resi" name="no_resi" value="1"></div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_no_resi">Status Resi</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_konfir_pic" name="konfir_pic" value="1"></div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_konfir_pic">Konfirmasi PIC</label></div>
-                                        </div>
-                                        <div class="tracking-item">
-                                            <div class="tracking-check-wrap"><input
-                                                    class="form-check-input tracking-check" type="checkbox"
-                                                    id="trk_pembayaran" name="pembayaran" value="1"></div>
-                                            <div class="tracking-info"><label class="tracking-title"
-                                                    for="trk_pembayaran">Pembayaran</label></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Nomor Resi</label>
-                                    <div class="input-group"><span class="input-group-text bg-white"><i
-                                                class="bi bi-box-seam text-muted"></i></span><input type="text"
-                                            class="form-control" id="trk_status_resi"
-                                            placeholder="Masukkan nomor resi"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold small">Status PIC</label>
-                                    <input type="text" class="form-control tracking-check" id="trk_status_pic"
-                                        name="status_pic" placeholder="Status PIC">
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-light px-4" onclick="goStep(2)"><i
-                                        class="bi bi-arrow-left me-1"></i> Kembali</button>
-                                <button type="submit" class="btn btn-mint px-5 fw-semibold" id="btnSimpan"><i
-                                        class="bi bi-save me-2"></i>Simpan</button>
-                            </div>
-                        </div>
+
+                    </div>
+
+                    <div class="modal-footer px-4 py-3 vf-footer">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-mint px-5 fw-semibold" id="btnSimpan"><i
+                                class="bi bi-save me-2"></i>Simpan</button>
                     </div>
                 </form>
             </div>
@@ -2031,6 +2055,161 @@
         }
         .vlk-theme tr.table-warning.row-out-of-period > td:first-child {
             box-shadow: inset 4px 0 0 #E89B7C;
+        }
+
+                #updateModal .modal-header {
+            background: var(--vlk-primary);
+            color: #fff;
+            border-bottom: none;
+        }
+
+        #updateModal .vf-body {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 16px 20px;
+            background: var(--vlk-bg);
+        }
+
+        #updateModal .vf-section {
+            background: var(--vlk-surface);
+            border: 1px solid var(--vlk-border);
+            border-radius: 12px;
+            padding: 14px 18px 6px;
+            margin-bottom: 14px;
+        }
+
+        #updateModal .vf-section:last-child {
+            margin-bottom: 0;
+        }
+
+        #updateModal .vf-row {
+            display: grid;
+            grid-template-columns: 220px minmax(0, 1fr);
+            gap: 6px 20px;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px dashed var(--vlk-border);
+        }
+
+        #updateModal .vf-row:last-child {
+            border-bottom: none;
+        }
+
+        #updateModal .vf-label {
+            margin: 0;
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--vlk-ink);
+        }
+
+        #updateModal .vf-label small {
+            display: block;
+            margin-top: 2px;
+            font-size: .72rem;
+            font-weight: 400;
+            color: var(--vlk-muted);
+        }
+
+        #updateModal .form-control,
+        #updateModal .form-select {
+            border-radius: 10px;
+            border-color: var(--vlk-border);
+        }
+
+        #updateModal .form-control:focus,
+        #updateModal .form-select:focus {
+            border-color: var(--vlk-primary);
+            box-shadow: 0 0 0 .22rem rgba(122, 164, 212, .22);
+        }
+
+        #updateModal .input-group>.input-group-text {
+            border-color: var(--vlk-border);
+        }
+
+        /* Total bersih: panel biru seperti sebelumnya */
+        #updateModal .vf-summary {
+            background: var(--vlk-primary);
+            border-color: var(--vlk-primary-dark);
+        }
+
+        #updateModal .vf-summary .vf-row {
+            border-bottom: none;
+        }
+
+        #updateModal .vf-summary .vf-label,
+        #updateModal .vf-summary .vf-label small {
+            color: #fff;
+        }
+
+        #updateModal .vf-summary .input-group-text {
+            background: rgba(255, 255, 255, .18);
+            color: #fff;
+            border-color: rgba(255, 255, 255, .35);
+        }
+
+        #updateModal .vf-summary .form-control {
+            background: #fff;
+            color: var(--vlk-ink);
+        }
+
+        /* Tracking: switch di kanan, baris yang dicentang diberi tint */
+        #updateModal .vf-row-check .form-check-input {
+            width: 2.4em;
+            height: 1.25em;
+            cursor: pointer;
+        }
+
+        #updateModal .vf-row-check .form-check-input:checked {
+            background-color: var(--vlk-mint);
+            border-color: var(--vlk-mint);
+        }
+
+        #updateModal .vf-row-check .vf-label {
+            cursor: pointer;
+        }
+
+        #updateModal .vf-row-check:has(.form-check-input:checked) .vf-label {
+            color: #4E8E6F;
+        }
+
+        #updateModal .vf-footer {
+            background: var(--vlk-surface);
+            border-top: 1px solid var(--vlk-border);
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        #updateModal .btn-mint {
+            background: var(--vlk-mint);
+            border-color: var(--vlk-mint);
+            border-radius: 10px;
+            color: #fff;
+            box-shadow: 0 4px 12px -4px rgba(140, 197, 167, .55);
+        }
+
+        #updateModal .btn-mint:hover {
+            background: #79B796;
+            border-color: #79B796;
+            color: #fff;
+        }
+
+        #updateModal .btn-light {
+            border-radius: 10px;
+            font-weight: 600;
+            background: #F1F4F9;
+            border-color: var(--vlk-border);
+        }
+
+        /* Layar kecil: label di atas input */
+        @media (max-width: 576px) {
+            #updateModal .vf-row {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+
+            #updateModal .vf-row-check {
+                grid-template-columns: 1fr auto;
+            }
         }
     </style>
 

@@ -178,7 +178,9 @@
                     <td>{{ $pickup->KM_akhir ?? '-' }}</td>
                     <td>{{ $pickup->status_apply }}</td>
                     <td>
-                        {!! $pickup->detailPickupDriver->map(fn($d) => "• {$d->tipe}: {$d->lokasi}")->implode('<br>') !!}
+                       @foreach($pickup->detailPickupDriver as $d)
+                            • {{ $d->tipe }}: {{ $d->lokasi }} <br>
+                        @endforeach
                     </td>
                 </tr>
             @endforeach

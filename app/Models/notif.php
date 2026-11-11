@@ -17,6 +17,6 @@ class notif extends Model
     ];
     public function users()
     {
-        return $this->belongsTo(user::class, 'id_user', 'username');
+        return $this->belongsTo(User::class, 'id_user', 'username');
     }
 }

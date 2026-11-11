@@ -22,7 +22,7 @@ class RencanaPembelianHrController extends Controller
     public function index()
     {
         $kegiatan = Kegiatan::all();
-        $karyawans = Karyawan::all();
+        $karyawans = karyawan::all();
         $drivers = karyawan::where('jabatan', 'Driver')
             ->where(function ($query) {
                 $query->whereDoesntHave('pickupDriver')->orWhereHas('pickupDriver', function ($q) {

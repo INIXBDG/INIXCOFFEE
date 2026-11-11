@@ -66,6 +66,7 @@ class ModulController extends Controller
     {
         $nomor = NomorModul::findOrFail($id);
         $modul = Modul::with('materi')->where('no_modul', $id)->get();
+        // dd($id, $nomor->toArray(), $modul->count(), $modul->toArray() ?? null);
         $materi = Materi::all();
         $perusahaan = Perusahaan::all();
         $peserta = PesertaModul::with('perusahaan')->where('no_modul', $id)->get();
@@ -115,7 +116,7 @@ class ModulController extends Controller
             'no_modul'       => $request->no_modul,
             'id_materi'      => $request->materi_id,
             'kode_materi'    => $materi->kode_materi ?? '-', // Gunakan fallback '-' jika null di master materi
-            'nama_materi'    => $materi->nama_materi ?? '-', 
+            'nama_materi'    => $materi->nama_materi ?? '-',
             'awal_training'  => $request->awal_training,
             'akhir_training' => $request->akhir_training,
             'jumlah'         => $request->jumlah,
@@ -185,7 +186,7 @@ class ModulController extends Controller
             ->get();
 
         if ($penerima->isEmpty()) {
-            dd("Error: Tidak ada user dengan jabatan 'Finance & Accounting' dan status '1'. Notifikasi gagal dikirim.");
+            Log::warning('Tidak ada penerima yang ditemukan untuk jabatan Finance & Accounting');
         }
 
         $senderName = auth()->user()->username ?? 'System';

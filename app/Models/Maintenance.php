@@ -2,23 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Maintenance extends Model
 {
-    use HasFactory;
+    public const KENDARAAN = 'Maintenance Kendaraan';
+    public const KANTOR    = 'Maintenance Kantor';
+    public const SECTIONS  = [self::KENDARAAN, self::KANTOR];
+
+    protected $table = 'maintenances';
 
     protected $fillable = [
-        'kategori',
-        'divisi',
-        'teknisi',
-        'nama_barang',
-        'tanggal_mulai',
-        'tanggal_selesai',
-        'no_voucher',
+        'bulan',
+        'jenis_maintenance',
+        'tanggal',
         'biaya',
         'keterangan',
-        'status',
+        'no_kk',
+        'section',
+    ];
+
+    protected $casts = [
+        'tanggal' => 'date',
+        'biaya'   => 'float',
+        'bulan'   => 'integer',
     ];
 }

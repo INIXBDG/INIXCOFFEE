@@ -73,12 +73,25 @@
                                     <input type="date" name="akhir_training" class="form-control" required>
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label class="form-label fw-medium">Type</label>
                                     <select name="type" class="form-select" required>
                                         <option value="">Pilih Type</option>
                                         <option value="Reg Digital">Reg Digital</option>
                                         <option value="Webinar">Webinar</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Kategori
+                                        <span class="text-muted small">(opsional)</span>
+                                    </label>
+                                    <select name="kategori" class="form-select">
+                                        <option value="">Tanpa kategori</option>
+                                        <option value="BNSP">BNSP</option>
+                                        <option value="Inixcert">Inixcert</option>
+                                        <option value="Authorize">Authorize</option>
+                                        <option value="Bandung">Bandung</option>
                                     </select>
                                 </div>
 
@@ -138,11 +151,9 @@
         <div class="tab-content" id="rekap-tabs-content"></div>
     </div>
 
-    
-    
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
+
     <script>
         const URL_REKAP = "{{ route('office.certificate.certificateSummaryJson') }}";
         const STORE_URL = "{{ route('office.certificate.storeSummary') }}";
@@ -162,24 +173,27 @@
         const PER_PAGE = 20;
 
         // Konfigurasi tiap kategori: key harus sama persis dengan key di response JSON.
-        // 'actions: true' cuma dipasang di kategori yang datanya benar-benar row
-        // CertificateSummary (regDigital, webinar) sehingga punya 'id' yang bisa
-        // dikirim ke route updateSummary/deleteSummary. Kategori lain
-        // (authorized/bnsp/inixcert/workshop) datanya berupa baris peserta hasil
-        // pluck, bukan record yang diedit di sini.
+        // 'actions: true' artinya tab itu punya kolom Aksi. Tombol edit/hapus cuma
+        // dirender untuk row yang berasal dari CertificateSummary (row.source === 'summary'),
+        // karena kategori authorized/bandung/bnsp/inixcert sekarang berisi campuran:
+        // baris peserta/certificate (read-only) + baris CertificateSummary yang
+        // kategori-nya diisi (bisa diedit/dihapus).
         const CATEGORIES = [
             { key: 'regDigital', label: 'Reg Digital', color: '#0d6efd', actions: true },
-            { key: 'authorized', label: 'Authorized', color: '#ffc107' },
-            { key: 'bandung', label: 'Bandung', color: '#20c997' },
-            { key: 'bnsp', label: 'BNSP', color: '#6f42c1' },
-            { key: 'inixcert', label: 'Inixcert', color: '#fd7e14' },
+            { key: 'authorized', label: 'Authorized', color: '#ffc107', actions: true },
+            { key: 'bandung', label: 'Bandung', color: '#20c997', actions: true },
+            { key: 'bnsp', label: 'BNSP', color: '#6f42c1', actions: true },
+            { key: 'inixcert', label: 'Inixcert', color: '#fd7e14', actions: true },
             { key: 'workshop', label: 'Workshop', color: '#0dcaf0' },
             { key: 'webinar', label: 'Webinar', color: '#d63384', actions: true },
         ];
 
-        // State per kategori: baris raw dari API + halaman aktif
+        // State per kategori: baris raw dari API + halaman aktif + kata kunci pencarian
         const tableState = {};
-        CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1 }; });
+        CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1, query: '' }; });
+
+        // Timer debounce per tab untuk search bar
+        const searchTimers = {};
 
         let summaryChart = null;
         let formMode = 'create'; // 'create' | 'edit'
@@ -259,9 +273,12 @@
             $('#selectMateri').val(null).trigger('change');
         }
 
-        // Buka modal dalam mode edit, isi form dari data row yang sudah ada di tableState
+        // Buka modal dalam mode edit, isi form dari data row yang sudah ada di tableState.
+        // Mencari dari rows asli (bukan hasil filter search), jadi aman.
+        // Wajib cek row.source === 'summary' karena di tab kategori (authorized/bnsp/dll)
+        // ada baris peserta/certificate yang id-nya bisa sama dengan id summary.
         function editSertifikat(key, id) {
-            const row = (tableState[key].rows || []).find(r => r.id === id);
+            const row = (tableState[key].rows || []).find(r => r.id === id && r.source === 'summary');
             if (!row) return;
 
             formMode = 'edit';
@@ -276,6 +293,7 @@
             form.querySelector('[name="awal_training"]').value = row.awal_training ? String(row.awal_training).substring(0, 10) : '';
             form.querySelector('[name="akhir_training"]').value = row.akhir_training ? String(row.akhir_training).substring(0, 10) : '';
             form.querySelector('[name="type"]').value = row.type || '';
+            form.querySelector('[name="kategori"]').value = row.kategori || '';
             form.querySelector('[name="keterangan"]').value = row.keterangan || '';
 
             setSelect2Value($('#selectPerusahaan'), row.perusahaan);
@@ -292,11 +310,31 @@
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('#formTambahSertifikat input[name="_token"]').value,
                     'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
                 },
+                redirect: 'manual',
             })
-                .then((res) => {
-                    if (!res.ok) throw new Error('Gagal menghapus data');
+                .then(async (res) => {
+                    if (res.status === 419) {
+                        alert('Sesi sudah habis, halaman akan dimuat ulang.');
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (res.type === 'opaqueredirect' || res.ok) {
+                        loadRekap();
+                        return;
+                    }
+
+                    if (res.status === 404) {
+                        alert('Data sudah tidak ada (mungkin sudah dihapus).');
+                        loadRekap();
+                        return;
+                    }
+
+                    const body = await res.json().catch(() => ({}));
                     loadRekap();
+                    throw new Error(body.message || `Gagal menghapus data (status ${res.status})`);
                 })
                 .catch((err) => alert(err.message));
         }
@@ -328,6 +366,8 @@
         // - regDigital / webinar -> CertificateSummary (punya 'type', id, 'materi' teks)
         // - bandung -> Certificate
         // - authorized / bnsp / inixcert / workshop -> baris peserta (hasil pluck('peserta'))
+        // - authorized / bnsp / inixcert / bandung juga bisa berisi CertificateSummary
+        //   yang kategori-nya diisi (source === 'summary')
         function extractDisplay(row) {
             const nama =
                 row.nama_peserta || row.peserta_nama || row.nama || row.name ||
@@ -479,6 +519,16 @@
                     <div class="tab-pane fade ${active ? 'show active' : ''}" id="tab-${cat.key}" role="tabpanel">
                         <div class="card border-0 shadow-sm rounded-4">
                             <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4 ms-auto">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                            <input type="text" class="form-control" id="search-${cat.key}"
+                                                placeholder="Cari nama, materi, info, periode, kategori..."
+                                                oninput="onSearchInput('${cat.key}', this.value)">
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table table-sm align-middle mb-0">
                                         <thead>
@@ -560,6 +610,30 @@
             el.innerHTML = html;
         }
 
+        function onSearchInput(key, value) {
+            clearTimeout(searchTimers[key]);
+            searchTimers[key] = setTimeout(() => {
+                tableState[key].query = value;
+                tableState[key].page = 1;
+                renderTable(key);
+            }, 250);
+        }
+
+        function getFilteredRows(key) {
+            const state = tableState[key];
+            const q = (state.query || '').trim().toLowerCase();
+            if (!q) return state.rows;
+
+            return state.rows.filter((row) => {
+                const d = extractDisplay(row);
+                const haystack = [d.nama, d.materi, d.info, formatPeriode(row), row.no_sertifikat, row.perusahaan, row.kategori]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return haystack.includes(q);
+            });
+        }
+
         function renderTable(key) {
             const state = tableState[key];
             const tbody = document.getElementById(`tbody-${key}`);
@@ -567,35 +641,53 @@
             const catConfig = CATEGORIES.find(c => c.key === key) || {};
             const totalCols = catConfig.actions ? 6 : 5;
 
-            if (state.rows.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-muted text-center py-4">Tidak ada data</td></tr>`;
+            const rows = getFilteredRows(key);
+
+            if (rows.length === 0) {
+                const msg = state.query ? 'Tidak ada data yang cocok' : 'Tidak ada data';
+                tbody.innerHTML = `<tr><td colspan="${totalCols}" class="text-muted text-center py-4">${msg}</td></tr>`;
                 pager.innerHTML = '';
                 return;
             }
 
-            const totalPages = Math.ceil(state.rows.length / PER_PAGE);
+            const totalPages = Math.ceil(rows.length / PER_PAGE);
             state.page = Math.min(Math.max(state.page, 1), totalPages);
 
             const start = (state.page - 1) * PER_PAGE;
-            const pageRows = state.rows.slice(start, start + PER_PAGE);
+            const pageRows = rows.slice(start, start + PER_PAGE);
 
             tbody.innerHTML = pageRows.map((row, idx) => {
                 const d = extractDisplay(row);
                 const periode = formatPeriode(row);
+                const isSummary = row.source === 'summary';
+
+                // Tombol aksi cuma untuk row CertificateSummary. Row peserta/certificate
+                // di tab yang sama dibiarkan kosong (read-only).
                 const aksiCell = catConfig.actions ? `
                     <td class="text-end">
+                        ${isSummary ? `
                         <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick='editSertifikat("${key}", ${row.id})'>
                             <i class="bx bx-edit"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick='deleteSertifikat("${key}", ${row.id})'>
                             <i class="bx bx-trash"></i>
-                        </button>
+                        </button>` : ''}
                     </td>` : '';
+
+                // Di tab Reg Digital/Webinar: badge = kategori tujuan (kalau ada).
+                // Di tab kategori lain: badge = asal type (Reg Digital/Webinar).
+                const isTypeTab = key === 'regDigital' || key === 'webinar';
+                let badge = '';
+                if (isSummary && isTypeTab && row.kategori) {
+                    badge = ` <span class="badge bg-light text-dark border ms-1">${row.kategori}</span>`;
+                } else if (isSummary && !isTypeTab && row.type) {
+                    badge = ` <span class="badge bg-secondary-subtle text-secondary ms-1">${row.type}</span>`;
+                }
 
                 return `
                     <tr>
                         <td>${start + idx + 1}</td>
-                        <td>${d.nama}</td>
+                        <td>${d.nama}${badge}</td>
                         <td>${d.materi}</td>
                         <td>${d.info}</td>
                         <td>${periode}</td>
@@ -720,7 +812,9 @@
         }
 
         function resetAll() {
-            CATEGORIES.forEach(c => { tableState[c.key] = { rows: [], page: 1 }; });
+            CATEGORIES.forEach(c => {
+                tableState[c.key] = { rows: [], page: 1, query: tableState[c.key].query || '' };
+            });
             const counts = {};
             CATEGORIES.forEach(c => { counts[c.key] = 0; });
             buildSummaryCards(counts);
@@ -750,7 +844,11 @@
                     CATEGORIES.forEach((cat) => {
                         const section = data[cat.key] || { count: 0, data: [] };
                         counts[cat.key] = section.count || 0;
-                        tableState[cat.key] = { rows: section.data || [], page: 1 };
+                        tableState[cat.key] = {
+                            rows: section.data || [],
+                            page: 1,
+                            query: tableState[cat.key].query || '',
+                        };
                         document.getElementById(`badge-${cat.key}`).textContent = section.count || 0;
                         renderTable(cat.key);
                     });

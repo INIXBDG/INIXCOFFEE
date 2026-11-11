@@ -489,7 +489,6 @@
 
 <body>
     <h2>Input Data Registrasi</h2>
-    <pre style="display: none;">{{ print_r($ketentuan->toArray(), true) }}</pre>
     <form id="regis-form">
         <h3>Data Perusahaan</h3>
         <label>Nama Perusahaan:</label>

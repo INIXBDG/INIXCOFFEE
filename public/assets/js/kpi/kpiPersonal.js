@@ -141,15 +141,65 @@
             dataType: 'json',
             success: function(response) {
                 if (response.success) {
-                    // 2. Sembunyikan skeleton setelah data diterima
                     toggleSkeletons(false);
                     $('#targetCardContainer').css('opacity', '1');
 
+                    const jabatanUser = (
+                        window.KPI_CONFIG?.userJabatan ||
+                        window.authUser?.jabatan ||
+                        window.authUser?.jabatan_user_table ||
+                        ''
+                    ).toLowerCase().trim();
+
+                    const isKoordinator =
+                        jabatanUser.includes('koordinator itsm') ||
+                        jabatanUser === 'koordinator itsm' ||
+                        jabatanUser.includes('koordinator');
+
+                    let daftarTarget = response.daftar_target_pribadi || [];
+                    let statistik = response.statistik_per_target || [];
+
+                    if (!isKoordinator) {
+                        const isGapItem = (t) => {
+                            const route = (
+                                t.asistant_route ||
+                                t.assistant_route ||
+                                t.condition ||
+                                ''
+                            ).toLowerCase();
+                            const judul = (t.judul || '').toLowerCase();
+                            return (
+                                route.includes('gap kompetensi') ||
+                                route.includes('persentase gap') ||
+                                judul.includes('gap performa') ||
+                                judul.includes('gap kompetensi')
+                            );
+                        };
+
+                        daftarTarget = daftarTarget.filter(t => !isGapItem(t));
+                        statistik = statistik.filter(t => !isGapItem(t));
+
+                        response.total_target = daftarTarget.length;
+                        response.kpi_aktif = daftarTarget.filter(t =>
+                            ['Aktif', 'Sedang Berjalan'].includes(t.status)
+                        ).length;
+                        response.kpi_selesai = daftarTarget.filter(t =>
+                            ['Selesai', 'Mencapai Target'].includes(t.status)
+                        ).length;
+                        response.rata_rata_progress = daftarTarget.length
+                            ? daftarTarget.reduce((a, t) => a + (parseFloat(t.progress) || 0), 0) / daftarTarget.length
+                            : 0;
+                    }
+
+                    // Debug sementara — hapus setelah berhasil
+                    console.log('jabatanUser:', jabatanUser, 'isKoordinator:', isKoordinator);
+                    console.log('targets after filter:', daftarTarget.map(t => t.judul));
+
                     updateHeader(response);
                     updateStats(response);
-                    updateCharts(response.statistik_per_target, response.distribusi_status);
-                    updateTargetCards(response.daftar_target_pribadi);
-                    allTargetsData = response.daftar_target_pribadi;
+                    updateCharts(statistik, response.distribusi_status);
+                    updateTargetCards(daftarTarget);
+                    allTargetsData = daftarTarget;
                 } else {
                     toggleSkeletons(false);
                     showError(response.message || 'Terjadi kesalahan saat memuat data');
@@ -459,12 +509,22 @@
                         function isDateBefore(date1, date2) { return new Date(date1) < new Date(date2); }
                         function isDateAfter(date1, date2) { return new Date(date1) > new Date(date2); }
 
+                        const dataDetail = data.data_detail || {};
+                        const progressVal = dataDetail.progress ?? 0;
+                        const targetVal   = data.nilai_target ?? 0;
+
+                        const isInverse = dataDetail.is_inverse === true;
+                        const capai = isInverse
+                            ? progressVal <= targetVal
+                            : progressVal >= targetVal;
+
                         let Tercapai;
-                        if (isDateBefore(dateNow, startOfYear)) Tercapai = "Belum Dimulai";
-                        else if (isDateAfter(dateNow, tenggatWaktu) || dateNow === tenggatWaktu) {
-                            Tercapai = data.data_detail.progress >= data.nilai_target ? "Mencapai Target" : "Target Gagal";
+                        if (isDateBefore(dateNow, startOfYear)) {
+                            Tercapai = "Belum Dimulai";
+                        } else if (isDateAfter(dateNow, tenggatWaktu) || dateNow === tenggatWaktu) {
+                            Tercapai = capai ? "Mencapai Target" : "Target Gagal";
                         } else {
-                            Tercapai = data.data_detail.progress >= data.nilai_target ? "Mencapai Target" : "Sedang Berjalan";
+                            Tercapai = capai ? "Mencapai Target" : "Sedang Berjalan";
                         }
 
                         let targetValue, progressValue, gapValue;
@@ -550,6 +610,7 @@
                         const allowedAssistantRoutesForPeningkatanKontribusiPelatihan = ['peningkatan kontribusi pelatihan'];
                         const allowedAssistantRoutesForPemasukanBersih = ['pemasukan bersih'];
                         const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
+                        const allowedinovationAdaptionRateRoutes = ['inovation adaption rate'];
 
                         let ContentTrafikSales = '';
                         if (allowedAssistantRoutesForTargetPenjualanTahunan.includes(data.condition)) {
@@ -718,6 +779,44 @@
                         let contentStatisticChart = '';
                         if (allowedDetailAssistantRoutes.includes(data.condition)) {
                             contentStatisticChart = '';
+                        } else if (allowedinovationAdaptionRateRoutes.includes(data.condition)) {
+                            const item = data.data_detail || {};
+                            const dataInovasi = item.dataInovasi || [];
+
+                            contentStatisticChart = `
+                                <div class="table-responsive mt-3">
+                                    <table class="table table-bordered table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 30%;">Judul</th>
+                                                <th>Deskripsi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${
+                                                dataInovasi.length
+                                                    ? dataInovasi.map(inovasi => `
+                                                        <tr>
+                                                            <td class="fw-semibold">
+                                                                ${inovasi.judul ?? '-'}
+                                                            </td>
+                                                            <td>
+                                                                ${inovasi.deskripsi ?? '-'}
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')
+                                                    : `
+                                                        <tr>
+                                                            <td colspan="2" class="text-center text-muted">
+                                                                Tidak ada data inovasi
+                                                            </td>
+                                                        </tr>
+                                                    `
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
                         } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(data.condition)) {
                             const bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                             contentStatisticChart = `<div class="row g-4">${(data.data_detail.analisa_data || []).map(item => `<div class="col-md-4 mt-5"><div class="card border-0 shadow-sm h-100"><div class="mb-2 p-3"><h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month] || '-'}</h5><small class="text-muted">Laporan Analisis Bulanan</small></div><div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;"><div class="mb-3"><p class="mb-0" style="text-align: justify;">${item.description || ''}</p></div></div><div class="mt-auto p-3"><a href="/storage/${item.file_paths || ''}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}><i class="fa-solid fa-file-alt"></i></a></div></div></div>`).join('')}</div>`;
@@ -764,50 +863,14 @@
                                 });
                             }, 0);
                         } else if (allowedDetailAssistantRoutesForPresentaseGapKompetensi.includes(data.condition)) {
-                            const isKoordinatorItsm = window.authUser?.jabatan === 'Koordinator ITSM';
-                            const disabledAttr = isKoordinatorItsm ? '' : 'disabled';
-                            const submitBtnHtml = isKoordinatorItsm ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : '';
-                            contentStatisticChart = `
-                                <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6>
-                                    <form id="formGapKompetensi">
-                                        <div class="row mb-2 fw-semibold text-muted border-bottom pb-2"><div class="col-md-4">Nama Karyawan</div><div class="col-md-4">Kemampuan (%)</div><div class="col-md-4">Standar (%)</div></div>
-                                        ${(data.karyawan || []).map((item, index) => {
-                                            const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
-                                            const standar = parseFloat(item.presentase_standar ?? 100);
-                                            let badge = '';
-                                            if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
-                                            else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
-                                            else badge = `<span class="badge bg-success">Achieved</span>`;
-                                            return `<div class="row mb-2 align-items-center p-2 rounded"><div class="col-md-4 d-flex justify-content-between align-items-center"><span>${item.nama_lengkap ?? '-'}</span>${badge}</div><div class="col-md-4"><input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}></div><div class="col-md-4"><input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}></div><input type="hidden" name="data[${index}][id]" value="${item.id || ''}"></div>`;
-                                        }).join('')}
-                                        ${submitBtnHtml}
-                                    </form>
-                                </div></div></div>
-                            `;
-                            $(document).off('submit', '#formGapKompetensi').on('submit', '#formGapKompetensi', function(e) {
-                                e.preventDefault();
-                                let formData = $(this).serialize();
-                                $.ajax({
-                                    url: window.KPI_CONFIG.updateGapKompetensiRoute,
-                                    method: 'POST',
-                                    data: formData,
-                                    success: function() {
-                                        if (typeof Swal !== 'undefined') {
-                                            Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Berhasil diupdate.', timer: 2000, showConfirmButton: false }).then(() => {
-                                                const modalEl = document.getElementById('detailTargetModal');
-                                                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-                                                modal.hide();
-                                            });
-                                        }
-                                        loadDataPersonal();
-                                    },
-                                    error: function(err) {
-                                        if (typeof Swal !== 'undefined') {
-                                            Swal.fire({ icon: 'error', title: 'Gagal!', html: err.responseJSON?.message || 'Terjadi kesalahan' });
-                                        }
-                                    }
-                                });
-                            });
+                            const canEdit = data.can_edit ?? (
+                                (window.KPI_CONFIG?.userJabatan || '').toLowerCase().trim() === 'koordinator itsm'
+                            );
+                            contentStatisticChart = buildGapKompetensiForm(
+                                data, 
+                                canEdit, 
+                                window.KPI_CONFIG.csrfToken
+                            );
                         } else {
                             contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><div class="d-flex justify-content-between mb-3"><h6 class="fw-semibold mb-0">Statistik ${data.condition}</h6><div class="d-flex gap-2"><select class="form-select form-select-sm" id="filterType"><option value="year">Per Tahun</option><option value="month">Per Bulan</option></select><select class="form-select form-select-sm d-none" id="filterMonth"><option value="">Pilih Bulan</option></select></div></div><div style="height:300px"><canvas id="StatisticChart"></canvas></div></div></div></div>`;
                         }
@@ -1034,7 +1097,7 @@
                                                     <div class="row text-center mb-3">
                                                         <div class="col"><small class="text-muted d-block">Target</small><h4 class="fw-bold mb-0" style="font-size: 25px">${targetValue}</h4></div>
                                                         <div class="col"><small class="text-muted d-block">Progress</small><h1 class="fw-bold text-${bgCard} mb-0" style="font-size: 55px;">${progressValue}</h1></div>
-                                                        <div class="col"><small class="text-muted d-block">Gap</small><h4 class="fw-bold text-danger mb-0" style="font-size: 25px">-${gapValue}</h4></div>
+                                                        <div class="col"><small class="text-muted d-block">Gap</small><h4 class="fw-bold text-danger mb-0" style="font-size: 25px">${isInverse ? gapValue : `-${gapValue}`}</h4></div>
                                                     </div>
                                                     <div class="position-relative mb-3">
                                                         <div class="progress" style="height:18px;"><div class="progress-bar bg-${bgCard} progress-bar-striped progress-bar-animated" style="width: ${FormatedProgress}%"></div></div>
@@ -1162,5 +1225,45 @@
                 }
             });
         });
+
+        function buildGapKompetensiForm(data, canEdit, csrfToken) {
+            const list = Array.isArray(data.karyawan) ? data.karyawan : [];
+            const disabledAttr = canEdit ? '' : 'disabled';
+
+            const rows = list.map((item, i) => {
+                const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
+                const badge = skala === null
+                    ? '<span class="badge bg-secondary">Belum dinilai</span>'
+                    : `<span class="badge bg-info text-dark">${Math.round(skala * 10)}%</span>`;
+
+                return `
+                    <div class="row mb-2 align-items-center p-2 rounded">
+                        <div class="col-md-6 d-flex justify-content-between align-items-center">
+                            <span>${item.nama_lengkap ?? '-'}</span>${badge}
+                        </div>
+                        <div class="col-md-6">
+                            <input type="number" min="1" max="10" step="0.5" class="form-control"
+                                name="data[${i}][kemampuan]" value="${skala ?? ''}"
+                                placeholder="1 - 10" ${disabledAttr}>
+                        </div>
+                        <input type="hidden" name="data[${i}][id_karyawan]" value="${item.id_karyawan}">
+                        <input type="hidden" name="data[${i}][detailTargetKey]" value="${item.detailTargetKey}">
+                    </div>`;
+            }).join('');
+
+            return `
+                <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body">
+                    <h6 class="fw-semibold mb-1">Penilaian Kemampuan Tim</h6>
+                    <small class="text-muted d-block mb-3">Isi skala 1-10 (8 = 80%). Gap dihitung dari rata-rata seluruh anggota tim.</small>
+                    <form id="formGapKompetensi">
+                        <input type="hidden" name="_token" value="${csrfToken}">
+                        <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                            <div class="col-md-6">Nama Karyawan</div><div class="col-md-6">Nilai (1-10)</div>
+                        </div>
+                        ${rows || '<div class="text-muted small">Tidak ada anggota tim.</div>'}
+                        ${canEdit ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : ''}
+                    </form>
+                </div></div></div>`;
+        }
     });
 })();

@@ -2,12 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\ActivityLog;
+use App\Models\activityLog;
 use App\Models\karyawan;
-use App\Models\UptimeCheck;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Jenssegers\Agent\Agent;
 
 class CheckUptime extends Command
 {
@@ -16,15 +14,54 @@ class CheckUptime extends Command
 
     public function handle()
     {
-        $rawUrls = config('uptime.urls');
-        if (empty($rawUrls)) {
-            $this->error('No URLs configured in UPTIME_URLS');
-            return;
+        $koorITSM = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+        $services = config('uptime.services');
+
+        if (!is_array($services) || empty($services)) {
+            $rawUrls = config('uptime.urls');
+            if (empty($rawUrls)) {
+                $this->error('No URLs configured in UPTIME_URLS');
+                return;
+            }
+
+            $urls = is_array($rawUrls)
+                ? $rawUrls
+                : array_filter(array_map('trim', explode(',', $rawUrls)));
+            $services = ['service' => array_values($urls)];
         }
 
-        $urls = array_filter(array_map('trim', explode(',', $rawUrls)));
+        foreach ($services as $serviceName => $urls) {
+            $urls = is_array($urls) ? $urls : [$urls];
+            $urls = array_values(array_filter(array_map(
+                fn($url) => rtrim(trim((string) $url), '/') . '/',
+                $urls
+            )));
 
-        $koorITSM = karyawan::where('jabatan', 'Koordinator ITSM')->first();
+            $result = $this->checkFallbackUrls((string) $serviceName, $urls);
+
+            activityLog::create([
+                'user_id' => $koorITSM ? (string) $koorITSM->id : null,
+                'status' => (string) $result['status'],
+                'url' => $result['url'],
+                'ip' => gethostbyname(gethostname()),
+                'user_agent' => 'Laravel Scheduler',
+                'platform' => PHP_OS,
+                'browser' => 'SYSTEM',
+                'device' => 'SERVER',
+                'method' => 'GET',
+                'detail' => $result['detail'],
+                'is_up' => $result['is_up'],
+                'response_time_ms' => (int) $result['response_time_ms'],
+                'checked_at' => now(),
+            ]);
+        }
+    }
+
+    protected function checkFallbackUrls(string $serviceName, array $urls): array
+    {
+        $failedUrl = null;
+        $failedStatus = 0;
+        $failedResponseTime = 0;
 
         foreach ($urls as $url) {
             if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -38,9 +75,7 @@ class CheckUptime extends Command
             $httpStatus = null;
 
             try {
-                $response = Http::withOptions(['verify' => false])
-                    ->timeout(10)
-                    ->get($url);
+                $response = Http::timeout(10)->get($url);
 
                 $isUp = $response->successful();
                 $httpStatus = $response->status();
@@ -50,24 +85,30 @@ class CheckUptime extends Command
                 $httpStatus = 0;
             }
 
-            ActivityLog::create([
-                'user_id' => (string) $koorITSM->id,
-                'status' => (string) $httpStatus,
-                'url' => $url,
-                'ip' => gethostbyname(gethostname()),
-                'user_agent' => 'Laravel Scheduler',
-                'platform' => PHP_OS,
-                'browser' => 'SYSTEM',
-                'device' => 'SERVER',
-                'method' => 'GET',
-                'detail' => $isUp ? 'Uptime OK' : 'Uptime DOWN',
-                'is_up' => $isUp,
-                'response_time_ms' => (int) $responseTime,
-                'checked_at' => now(),
-            ]);
-
             $statusText = $isUp ? 'UP' : 'DOWN';
             $this->info("Checked {$url}: {$statusText} ({$responseTime} ms)");
+
+            if ($isUp) {
+                return [
+                    'url' => $url,
+                    'status' => $httpStatus,
+                    'is_up' => true,
+                    'response_time_ms' => (int) $responseTime,
+                    'detail' => "Uptime OK ({$serviceName}) via {$url}",
+                ];
+            }
+
+            $failedUrl ??= $url;
+            $failedStatus = $httpStatus;
+            $failedResponseTime = max($failedResponseTime, (int) $responseTime);
         }
+
+        return [
+            'url' => $failedUrl ?? ($urls[0] ?? ''),
+            'status' => $failedStatus,
+            'is_up' => false,
+            'response_time_ms' => $failedResponseTime,
+            'detail' => "Uptime DOWN ({$serviceName}) after checking all fallback URLs",
+        ];
     }
 }

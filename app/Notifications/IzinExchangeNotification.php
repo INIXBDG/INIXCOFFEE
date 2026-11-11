@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -38,7 +38,7 @@ class IzinExchangeNotification extends Notification implements ShouldBroadcast
     public function toBroadcast($notifiable): BroadcastMessage
     {
         $data_koordinator = ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office', 'Koordinator ITSM'];
-        $koordinator = Karyawan::where('divisi', auth()->user()->divisi)
+        $koordinator = karyawan::where('divisi', auth()->user()->divisi)
             ->whereIn('jabatan', $data_koordinator)
             ->first();
 
@@ -70,7 +70,7 @@ class IzinExchangeNotification extends Notification implements ShouldBroadcast
     public function toArray($notifiable): array
     {
         $data_koordinator = ['Office Manager', 'Education Manager', 'SPV Sales', 'Koordinator Office', 'Koordinator ITSM'];
-        $koordinator = Karyawan::where('divisi', auth()->user()->divisi)
+        $koordinator = karyawan::where('divisi', auth()->user()->divisi)
             ->whereIn('jabatan', $data_koordinator)
             ->first();
 

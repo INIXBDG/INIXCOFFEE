@@ -91,30 +91,62 @@
     </ul>
 
     <div class="tab-content border border-top-0 p-3" id="rekapTabContent">
-    {{-- TAB CHART --}}
-    <div class="tab-pane fade show active" id="chart-pane" role="tabpanel">
-        <div class="card mb-3">
-            <div class="card-body">
-                <canvas id="rkmChart" height="100"></canvas>
+        {{-- TAB CHART --}}
+        <div class="tab-pane fade show active" id="chart-pane" role="tabpanel">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="rkmChart" height="100"></canvas>
+                </div>
             </div>
-        </div>
 
-        <div class="card mb-3">
-            <div class="card-body">
-                <canvas id="materiChart" height="120"></canvas>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <canvas id="materiChart" height="120"></canvas>
+                </div>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="card-body">
-                <canvas id="mingguChart" height="100"></canvas>
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="mingguChart" height="100"></canvas>
+                </div>
             </div>
         </div>
-    </div>
 
         {{-- TAB DATA --}}
         <div class="tab-pane fade" id="data-pane" role="tabpanel">
             <div class="card">
+                <div class="card-header">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Cari</label>
+                            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Materi / Perusahaan...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Status Hide</label>
+                            <select id="filterHide" class="form-select form-select-sm">
+                                <option value="all">Semua</option>
+                                <option value="hide">Hide</option>
+                                <option value="show">Show</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Status Hide Materi</label>
+                            <select id="filterHideMateri" class="form-select form-select-sm">
+                                <option value="all">Semua</option>
+                                <option value="hide">Hide</option>
+                                <option value="show">Show</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label mb-1">Status Hide Perusahaan</label>
+                            <select id="filterHidePerusahaan" class="form-select form-select-sm">
+                                <option value="all">Semua</option>
+                                <option value="hide">Hide</option>
+                                <option value="show">Show</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered table-striped table-sm" id="rkmTable">
                         <thead>
@@ -125,6 +157,8 @@
                                 <th>Nama Materi</th>
                                 <th>Nama Perusahaan</th>
                                 <th>Hide</th>
+                                <th>Hide Materi</th>
+                                <th>Hide Perusahaan</th>
                             </tr>
                         </thead>
                         <tbody id="rkmTableBody">
@@ -157,10 +191,12 @@
         const currentMonth = now.getMonth() + 1;
 
         const PER_PAGE = 20;
-        let currentData = [];
+        let currentData = [];   // data mentah dari server (semua row hasil filter periode)
+        let filteredData = [];  // hasil filter status, dipakai buat tabel
         let currentPage = 1;
         let chartInstance = null;
         let materiChartInstance = null;
+        let mingguChartInstance = null;
 
         // Isi dropdown tahun
         const tahunSelect = document.getElementById('tahun');
@@ -192,6 +228,49 @@
             }
         });
 
+        // Filter status untuk tabel (Hide, Hide Materi, Hide Perusahaan) + Search
+        const filterHide = document.getElementById('filterHide');
+        const filterHideMateri = document.getElementById('filterHideMateri');
+        const filterHidePerusahaan = document.getElementById('filterHidePerusahaan');
+        const searchInput = document.getElementById('searchInput');
+
+        function matchStatus(value, filterValue) {
+            if (filterValue === 'all') return true;
+            const isHide = Number(value) === 1;
+            return filterValue === 'hide' ? isHide : !isHide;
+        }
+
+        function matchSearch(item, keyword) {
+            if (!keyword) return true;
+            const target = keyword.toLowerCase();
+            const materi = (item.nama_materi ?? '').toLowerCase();
+            const perusahaan = (item.nama_perusahaan ?? '').toLowerCase();
+            return materi.includes(target) || perusahaan.includes(target);
+        }
+
+        function applyTableFilter() {
+            const keyword = searchInput.value.trim();
+
+            filteredData = currentData.filter(item =>
+                matchStatus(item.hide, filterHide.value) &&
+                matchStatus(item.hide_materi, filterHideMateri.value) &&
+                matchStatus(item.hide_perusahaan, filterHidePerusahaan.value) &&
+                matchSearch(item, keyword)
+            );
+            currentPage = 1;
+            renderTable();
+        }
+
+        [filterHide, filterHideMateri, filterHidePerusahaan].forEach(el => {
+            el.addEventListener('change', applyTableFilter);
+        });
+
+        let searchDebounce;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(applyTableFilter, 250);
+        });
+
         function loadData() {
             const params = new URLSearchParams({
                 filter_type: filterType.value,
@@ -207,12 +286,11 @@
             fetch(apiUrl + '?' + params.toString())
                 .then(res => res.json())
                 .then(data => {
-                    // response sekarang: { peluang: [...], materi_terbanyak: [...], top_materi: {...} }
                     currentData = data.peluang ?? [];
-                    currentPage = 1;
-                    renderTable();
+                    applyTableFilter();
                     renderChart(currentData);
                     renderMateriChart(data.materi_terbanyak ?? []);
+                    renderMingguChart(data.rkm_per_minggu ?? []);
                 })
                 .catch(err => {
                     console.error('Gagal mengambil data rekap RKM:', err);
@@ -223,19 +301,25 @@
             const tbody = document.getElementById('rkmTableBody');
             tbody.innerHTML = '';
 
-            if (!currentData.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data</td></tr>';
+            if (!filteredData.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Tidak ada data</td></tr>';
                 document.getElementById('paginationInfo').textContent = '';
                 document.getElementById('paginationControls').innerHTML = '';
                 return;
             }
 
-            const totalPages = Math.ceil(currentData.length / PER_PAGE);
+            const totalPages = Math.ceil(filteredData.length / PER_PAGE);
             if (currentPage > totalPages) currentPage = totalPages;
 
             const start = (currentPage - 1) * PER_PAGE;
             const end = start + PER_PAGE;
-            const pageData = currentData.slice(start, end);
+            const pageData = filteredData.slice(start, end);
+
+            function badge(value) {
+                return Number(value) === 1
+                    ? '<span class="badge bg-secondary">Hide</span>'
+                    : '<span class="badge bg-success">Show</span>';
+            }
 
             pageData.forEach((item, index) => {
                 const tr = document.createElement('tr');
@@ -245,13 +329,15 @@
                     <td>${item.periode_selesai ?? '-'}</td>
                     <td>${item.nama_materi ?? '-'}</td>
                     <td>${item.nama_perusahaan ?? '-'}</td>
-                    <td>${item.hide == 1 ? '<span class="badge bg-secondary">Hide</span>' : '<span class="badge bg-success">Show</span>'}</td>
+                    <td>${badge(item.hide)}</td>
+                    <td>${badge(item.hide_materi)}</td>
+                    <td>${badge(item.hide_perusahaan)}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('paginationInfo').textContent =
-                `Menampilkan ${start + 1}-${Math.min(end, currentData.length)} dari ${currentData.length} data`;
+                `Menampilkan ${start + 1}-${Math.min(end, filteredData.length)} dari ${filteredData.length} data`;
 
             renderPagination(totalPages);
         }
@@ -299,9 +385,7 @@
 
             const ctx = document.getElementById('rkmChart').getContext('2d');
 
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+            if (chartInstance) chartInstance.destroy();
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -320,17 +404,13 @@
                         title: { display: true, text: 'Perbandingan Data Hide vs Show' }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
                     }
                 }
             });
         }
 
         function renderMateriChart(materiData) {
-            // Batasi maksimal 10 materi teratas biar chart tidak terlalu panjang
             const topMateri = materiData.slice(0, 10);
 
             const labels = topMateri.map(m => m.nama_materi ?? '-');
@@ -338,12 +418,9 @@
 
             const ctx = document.getElementById('materiChart').getContext('2d');
 
-            if (materiChartInstance) {
-                materiChartInstance.destroy();
-            }
+            if (materiChartInstance) materiChartInstance.destroy();
 
             if (!topMateri.length) {
-                // kosongkan chart kalau tidak ada data
                 materiChartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: { labels: [], datasets: [] },
@@ -367,49 +444,17 @@
                     }]
                 },
                 options: {
-                    indexAxis: 'y', // horizontal bar, biar nama materi yang panjang tetap kebaca
+                    indexAxis: 'y',
                     responsive: true,
                     plugins: {
                         legend: { display: false },
                         title: { display: true, text: 'Top 10 Materi Terbanyak' }
                     },
                     scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } }
                     }
                 }
             });
-        }
-
-        let mingguChartInstance = null;
-
-        function loadData() {
-            const params = new URLSearchParams({
-                filter_type: filterType.value,
-                tahun: tahunSelect.value,
-            });
-
-            if (filterType.value === 'bulan') {
-                params.append('bulan', document.getElementById('bulan').value);
-            } else if (filterType.value === 'triwulan') {
-                params.append('triwulan', document.getElementById('triwulan').value);
-            }
-
-            fetch(apiUrl + '?' + params.toString())
-                .then(res => res.json())
-                .then(data => {
-                    currentData = data.peluang ?? [];
-                    currentPage = 1;
-                    renderTable();
-                    renderChart(currentData);
-                    renderMateriChart(data.materi_terbanyak ?? []);
-                    renderMingguChart(data.rkm_per_minggu ?? []);
-                })
-                .catch(err => {
-                    console.error('Gagal mengambil data rekap RKM:', err);
-                });
         }
 
         function renderMingguChart(mingguData) {
@@ -418,9 +463,7 @@
 
             const ctx = document.getElementById('mingguChart').getContext('2d');
 
-            if (mingguChartInstance) {
-                mingguChartInstance.destroy();
-            }
+            if (mingguChartInstance) mingguChartInstance.destroy();
 
             if (!mingguData.length) {
                 mingguChartInstance = new Chart(ctx, {
@@ -435,7 +478,6 @@
                 return;
             }
 
-            // Cari index minggu dengan jumlah tertinggi, buat warnanya beda
             const maxValue = Math.max(...values);
             const pointColors = values.map(v => v === maxValue ? '#dc3545' : '#0d6efd');
 
@@ -461,13 +503,8 @@
                         title: { display: true, text: 'RKM Berjalan per Minggu (titik merah = minggu terbanyak)' }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        },
-                        x: {
-                            ticks: { maxRotation: 45, minRotation: 45 }
-                        }
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { ticks: { maxRotation: 45, minRotation: 45 } }
                     }
                 }
             });
@@ -475,7 +512,6 @@
 
         document.getElementById('btnFilter').addEventListener('click', loadData);
 
-        // Load pertama kali dengan default filter (bulan ini, tahun ini)
         filterType.value = 'bulan';
         loadData();
     });

@@ -45,4 +45,14 @@ return [
         'bot_token' => env('TELEGRAM_PICKUP_BOT_TOKEN'),
         'chat_id'   => env('TELEGRAM_PICKUP_CHAT_ID'),
     ],
+
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'group_id' => env('TELEGRAM_GROUP_ID'),
+    ],
+
+    'moodle' => [
+        'url' => env('MOODLE_URL'),
+        'token' => env('MOODLE_TOKEN'),
+    ],
 ];

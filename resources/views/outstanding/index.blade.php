@@ -1,24 +1,28 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $tabKeys = ['hutang', 'pa', 'lunas'];
+        $activeTab = in_array(request('tab'), $tabKeys) ? request('tab') : 'hutang';
+
+        $reqYear = (int) request('tahun', date('Y'));
+        $reqMonth = preg_match('/^\d{4}-\d{2}$/', (string) request('bulan')) ? request('bulan') : date('Y-m');
+
+        $yearHutang = $activeTab === 'hutang' ? $reqYear : (int) date('Y');
+        $yearLunas = $activeTab === 'lunas' ? $reqYear : (int) date('Y');
+        $monthPA = $activeTab === 'pa' ? $reqMonth : date('Y-m');
+    @endphp
+
     <div class="container-fluid">
-        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="cube">
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_y"></div>
-                    <div class="cube_item cube_x"></div>
-                    <div class="cube_item cube_z"></div>
-                </div>
-            </div>
-        </div>
-        <div class="modal fade" id="modalPicPenagihan" tabindex="-1" aria-labelledby="modalPicPenagihanLabel" aria-hidden="true">
+        {{-- ================= MODAL PIC PENAGIHAN ================= --}}
+        <div class="modal fade" id="modalPicPenagihan" tabindex="-1" aria-labelledby="modalPicPenagihanLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <form id="formPicPenagihan" method="POST" action="{{ url('/office/pic/penagihan/store') }}">
                         @csrf
                         <div class="modal-header">
-                            <h5 class="modal-title text-dark">Input PIC Penagihan</h5>
+                            <h5 class="modal-title text-dark" id="modalPicPenagihanLabel">Input PIC Penagihan</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -29,22 +33,18 @@
                                 <label class="form-label fw-bold">Nama Perusahaan</label>
                                 <input type="text" id="display_perusahaan" class="form-control bg-light" readonly>
                             </div>
-
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Nama Materi</label>
                                 <input type="text" id="display_materi" class="form-control bg-light" readonly>
                             </div>
-
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Periode Pelatihan</label>
                                 <input type="text" id="display_periode" class="form-control bg-light" readonly>
                             </div>
-
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Alamat Penagihan</label>
                                 <textarea name="alamat" id="input_alamat" class="form-control" rows="2"></textarea>
                             </div>
-
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Kategori</label>
                                 <input type="text" name="category" id="input_category" class="form-control">
@@ -52,11 +52,13 @@
                             <hr class="my-3">
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Nama PIC</label>
-                                <input type="text" name="pic" id="input_pic" class="form-control" placeholder="Input manual" required>
+                                <input type="text" name="pic" id="input_pic" class="form-control"
+                                    placeholder="Input manual" required>
                             </div>
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">Telepon PIC</label>
-                                <input type="text" name="telepon" id="input_telepon" class="form-control" placeholder="Input manual" required>
+                                <input type="text" name="telepon" id="input_telepon" class="form-control"
+                                    placeholder="Input manual" required>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -67,13 +69,15 @@
                 </div>
             </div>
         </div>
+
         <div class="row justify-content-center">
             <div class="col-md-12">
+                {{-- ================= TOOLBAR ATAS ================= --}}
                 <div class="d-flex justify-content-end">
                     @can('Create Outstanding')
-                        <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-2" data-toggle="tooltip"
-                            data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class=""
-                                width="30px"> List Outstanding</a>
+                        <a href="{{ route('outstanding.create') }}" class="btn btn-md click-primary mx-2"
+                            data-toggle="tooltip" data-placement="top" title="Tambah Outstanding"><img
+                                src="{{ asset('icon/plus.svg') }}" class="" width="30px"> List Outstanding</a>
                         <button type="button" class="btn click-primary dropdown-toggle dropdown-toggle-split mx-4"
                             data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="sr-only">Singkron Data</span>
@@ -114,6 +118,7 @@
                     @endcan
                 </div>
 
+                {{-- ================= MODAL EXPORT ================= --}}
                 <div class="modal fade" id="modalExport" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
@@ -200,6 +205,7 @@
                     </div>
                 </div>
 
+                {{-- ================= MODAL SINKRON ================= --}}
                 <div class="modal fade" id="modalSinkron" tabindex="-1" role="dialog"
                     aria-labelledby="modalSinkronLabel" aria-hidden="true">
                     <div class="modal-dialog" role="document">
@@ -216,30 +222,13 @@
                                 <div class="modal-body">
                                     <div class="form-group mb-3">
                                         <label for="tanggal_awal">Tanggal Awal Minggu</label>
-                                        <input type="date" class="form-control" id="tanggal_awal"
-                                            name="tanggal_awal">
+                                        <input type="date" class="form-control" id="tanggal_awal" name="tanggal_awal">
                                     </div>
                                     <div class="form-group mb-3">
                                         <label for="tanggal_akhir">Tanggal Akhir Minggu</label>
-                                        <input type="date" class="form-control" id="tanggal_akhir"
-                                            name="tanggal_akhir" readonly>
+                                        <input type="date" class="form-control" id="tanggal_akhir" name="tanggal_akhir"
+                                            readonly>
                                     </div>
-
-                                    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-                                    <script>
-                                        const tanggalAwal = document.getElementById('tanggal_awal');
-                                        const tanggalAkhir = document.getElementById('tanggal_akhir');
-
-                                        tanggalAwal.addEventListener('change', function() {
-                                            if (this.value) {
-                                                let startDate = moment(this.value, 'YYYY-MM-DD');
-                                                let endDate = startDate.clone().endOf('week');
-                                                tanggalAkhir.value = endDate.format('YYYY-MM-DD');
-                                            } else {
-                                                tanggalAkhir.value = '';
-                                            }
-                                        });
-                                    </script>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary"
@@ -251,197 +240,440 @@
                     </div>
                 </div>
 
-                <div class="card m-4">
-                    <div class="card-body table-responsive">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                {{-- ================= CARD UTAMA BERTAB ================= --}}
+                <div class="card m-4 os-card">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                             <h3 class="card-title my-1">{{ __('Outstanding') }}</h3>
-                            <div class="d-flex align-items-center">
-                                <label for="filterTahunHutang" class="me-2 mb-0 text-nowrap fw-bold">Filter Tahun:</label>
-                                <select id="filterTahunHutang" class="form-control form-control-sm w-auto">
-                                    @for ($i = date('Y'); $i >= 2020; $i--)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
-                            </div>
-                        </div>
-                        <table class="table table-striped" id="outstandinghutangTable">
-                            <thead>
-                                <tr>
-                                    <th scope="col" rowspan="2">Perusahaan</th>
-                                    <th scope="col" rowspan="2">Materi</th>
-                                    <th scope="col" rowspan="2">Periode Pelatihan</th>
-                                    <th scope="col" rowspan="2">Net Sales</th>
-                                    <th scope="col" rowspan="2">PIC</th>
-                                    <th scope="col" rowspan="2">Sales</th>
-                                    <th scope="col" rowspan="2">Tenggat Waktu</th>
-                                    <th scope="col" rowspan="2">Status Pembayaran</th>
-                                    <th scope="col" colspan="8" class="text-center">Tracking</th>
-                                    <th scope="col" rowspan="2" style="width: 10%">No Resi</th>
-                                    <th scope="col" rowspan="2" style="width: 10%">Keterangan PIC</th>
-                                    <th scope="col" rowspan="2">Aksi</th>
-                                </tr>
-                                <tr>
-                                    <th scope="col" style="width: 10%">Invoice</th>
-                                    <th scope="col" style="width: 10%">Faktur Pajak</th>
-                                    <th scope="col" style="width: 10%">Dokumen Tambahan</th>
-                                    <th scope="col" style="width: 10%">Konfirmasi Pengiriman RPX</th>
-                                    <th scope="col" style="width: 10%">Konfirmasi No Resi</th>
-                                    <th scope="col" style="width: 10%">Status Pengiriman</th>
-                                    <th scope="col" style="width: 10%">Konfirmasi PIC</th>
-                                    <th scope="col" style="width: 10%">Pembayaran</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="3" style="text-align:right">Total:</th>
-                                    <th colspan="2" id="totalNetSalesHutang"></th>
-                                    <th colspan="14"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
 
-                <div class="card m-4">
-                    <div class="card-body table-responsive">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="card-title my-1">{{ __('Outstanding PA') }}</h3>
-                            <div class="d-flex align-items-center">
-                                <label for="filterBulanPA" class="me-2 mb-0 text-nowrap fw-bold">Filter Bulan:</label>
-                                <input type="month" id="filterBulanPA" class="form-control form-control-sm w-auto"
-                                    value="{{ date('Y-m') }}">
-                            </div>
+                            <ul class="nav nav-pills os-tabs" id="outstandingTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 'hutang' ? 'active' : '' }}"
+                                        id="tab-hutang" data-bs-toggle="tab" data-bs-target="#pane-hutang"
+                                        data-tab="hutang" type="button" role="tab" aria-controls="pane-hutang"
+                                        aria-selected="{{ $activeTab === 'hutang' ? 'true' : 'false' }}">
+                                        Belum Lunas <span class="badge" id="count-hutang">–</span>
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 'pa' ? 'active' : '' }}" id="tab-pa"
+                                        data-bs-toggle="tab" data-bs-target="#pane-pa" data-tab="pa" type="button"
+                                        role="tab" aria-controls="pane-pa"
+                                        aria-selected="{{ $activeTab === 'pa' ? 'true' : 'false' }}">
+                                        Outstanding PA <span class="badge" id="count-pa">–</span>
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 'lunas' ? 'active' : '' }}"
+                                        id="tab-lunas" data-bs-toggle="tab" data-bs-target="#pane-lunas"
+                                        data-tab="lunas" type="button" role="tab" aria-controls="pane-lunas"
+                                        aria-selected="{{ $activeTab === 'lunas' ? 'true' : 'false' }}">
+                                        Lunas <span class="badge" id="count-lunas">–</span>
+                                    </button>
+                                </li>
+                            </ul>
                         </div>
-                        <table class="table table-striped" id="outstandingPaTable">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Perusahaan</th>
-                                    <th scope="col">Materi</th>
-                                    <th scope="col">Periode Pelatihan</th>
-                                    <th scope="col">Net Sales</th>
-                                    <th scope="col">PIC</th>
-                                    <th scope="col">Sales</th>
-                                    <th scope="col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="3" style="text-align:right">Total:</th>
-                                    <th colspan="4" id="totalNetSalesPA"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
 
-                <div class="card m-4">
-                    <div class="card-body table-responsive">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="card-title my-1">{{ __('Lunas') }}</h3>
-                            <div class="d-flex align-items-center">
-                                <label for="filterTahunLunas" class="me-2 mb-0 text-nowrap fw-bold">Filter Tahun:</label>
-                                <select id="filterTahunLunas" class="form-control form-control-sm w-auto">
-                                    @for ($i = date('Y'); $i >= 2020; $i--)
-                                        <option value="{{ $i }}">{{ $i }}</option>
-                                    @endfor
-                                </select>
+                        <div class="tab-content" id="outstandingTabsContent">
+
+                            {{-- ---------- TAB: BELUM LUNAS ---------- --}}
+                            <div class="tab-pane fade {{ $activeTab === 'hutang' ? 'show active' : '' }}"
+                                id="pane-hutang" role="tabpanel" aria-labelledby="tab-hutang" tabindex="0">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                    <div class="os-legend">
+                                        <span><i style="background:#872819"></i>Lewat tempo &gt; 180 hari</span>
+                                        <span><i style="background:#07b0ff"></i>Lewat tempo &gt; 30 hari</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <label for="filterTahunHutang" class="me-2 mb-0 text-nowrap fw-bold">Filter
+                                            Tahun:</label>
+                                        <select id="filterTahunHutang" class="form-control form-control-sm w-auto">
+                                            @for ($i = date('Y'); $i >= 2020; $i--)
+                                                <option value="{{ $i }}"
+                                                    {{ $i == $yearHutang ? 'selected' : '' }}>{{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped w-100" id="table-hutang">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2">Perusahaan</th>
+                                                <th rowspan="2">Materi</th>
+                                                <th rowspan="2">Periode Pelatihan</th>
+                                                <th rowspan="2">Net Sales</th>
+                                                <th rowspan="2">PIC</th>
+                                                <th rowspan="2">Sales</th>
+                                                <th rowspan="2">Tenggat Waktu</th>
+                                                <th rowspan="2">Status Pembayaran</th>
+                                                <th colspan="8" class="text-center">Tracking</th>
+                                                <th rowspan="2" style="width: 10%">No Resi</th>
+                                                <th rowspan="2" style="width: 10%">Keterangan PIC</th>
+                                                <th rowspan="2">Aksi</th>
+                                            </tr>
+                                            <tr>
+                                                <th style="width: 10%">Invoice</th>
+                                                <th style="width: 10%">Faktur Pajak</th>
+                                                <th style="width: 10%">Dokumen Tambahan</th>
+                                                <th style="width: 10%">Konfirmasi Pengiriman RPX</th>
+                                                <th style="width: 10%">Konfirmasi No Resi</th>
+                                                <th style="width: 10%">Status Pengiriman</th>
+                                                <th style="width: 10%">Konfirmasi PIC</th>
+                                                <th style="width: 10%">Pembayaran</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">Total:</th>
+                                                <th colspan="2" id="totalNetSalesHutang"></th>
+                                                <th colspan="14"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
+
+                            {{-- ---------- TAB: OUTSTANDING PA ---------- --}}
+                            <div class="tab-pane fade {{ $activeTab === 'pa' ? 'show active' : '' }}" id="pane-pa"
+                                role="tabpanel" aria-labelledby="tab-pa" tabindex="0">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                    <div class="os-legend">
+                                        <span><i style="background:#FAB12F"></i>Sudah lunas, menunggu perhitungan PA</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <label for="filterBulanPA" class="me-2 mb-0 text-nowrap fw-bold">Filter
+                                            Bulan:</label>
+                                        <input type="month" id="filterBulanPA"
+                                            class="form-control form-control-sm w-auto" value="{{ $monthPA }}">
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped w-100" id="table-pa">
+                                        <thead>
+                                            <tr>
+                                                <th>Perusahaan</th>
+                                                <th>Materi</th>
+                                                <th>Periode Pelatihan</th>
+                                                <th>Net Sales</th>
+                                                <th>PIC</th>
+                                                <th>Sales</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">Total:</th>
+                                                <th colspan="4" id="totalNetSalesPA"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {{-- ---------- TAB: LUNAS ---------- --}}
+                            <div class="tab-pane fade {{ $activeTab === 'lunas' ? 'show active' : '' }}"
+                                id="pane-lunas" role="tabpanel" aria-labelledby="tab-lunas" tabindex="0">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                    <div class="os-legend">
+                                        <span><i style="background:#FAB12F"></i>Dibayar 7 hari terakhir</span>
+                                        <span><i style="background:#000B58"></i>Dibayar lebih lama</span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <label for="filterTahunLunas" class="me-2 mb-0 text-nowrap fw-bold">Filter
+                                            Tahun:</label>
+                                        <select id="filterTahunLunas" class="form-control form-control-sm w-auto">
+                                            @for ($i = date('Y'); $i >= 2020; $i--)
+                                                <option value="{{ $i }}"
+                                                    {{ $i == $yearLunas ? 'selected' : '' }}>{{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-striped w-100" id="table-lunas">
+                                        <thead>
+                                            <tr>
+                                                <th>Perusahaan</th>
+                                                <th>Materi</th>
+                                                <th>Periode Pelatihan</th>
+                                                <th>Net Sales</th>
+                                                <th>PIC</th>
+                                                <th>Sales</th>
+                                                <th>Tenggat Waktu</th>
+                                                <th>Status Pembayaran</th>
+                                                <th>Jumlah Pembayaran</th>
+                                                <th>Tanggal Bayar</th>
+                                                <th>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th colspan="3" class="text-end">Total:</th>
+                                                <th colspan="2" id="totalNetSalesLunas"></th>
+                                                <th colspan="3" class="text-end">Total minggu ini:</th>
+                                                <th colspan="3" id="totalNetSalesThisWeek"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
                         </div>
-                        <table class="table table-striped" id="outstandinglunasTable">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Perusahaan</th>
-                                    <th scope="col">Materi</th>
-                                    <th scope="col">Periode Pelatihan</th>
-                                    <th scope="col">Net Sales</th>
-                                    <th scope="col">PIC</th>
-                                    <th scope="col">Sales</th>
-                                    <th scope="col">Tenggat Waktu</th>
-                                    <th scope="col">Status Pembayaran</th>
-                                    <th scope="col">Jumlah Pembayaran</th>
-                                    <th scope="col">Tanggal Bayar</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Tracking</th>
-                                    <th scope="col">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="3" style="text-align:right">Total:</th>
-                                    <th colspan="2" id="totalNetSalesLunas"></th>
-                                    <th colspan="3" style="text-align:right">Total Minggu ini:</th>
-                                    <th colspan="4" id="totalNetSalesThisWeek"></th>
-                                </tr>
-                            </tfoot>
-                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
     <style>
-        .container {
-            --input-focus: #2d8cf0;
-            --input-out-of-focus: #ccc;
-            --bg-color: #fff;
-            --bg-color-alt: #666;
-            --main-color: #323232;
-            position: relative;
-            cursor: context-menu;
+        /* ---------- Kartu & tab ---------- */
+        .os-card {
+            --os-accent: #000B58;
+            border-radius: 16px;
         }
 
-        .container input {
+        /* ---------- Cegah konten melebihi card ---------- */
+        .container-fluid>.row>.col-md-12,
+        .os-card,
+        .os-card .card-body,
+        #outstandingTabsContent,
+        #outstandingTabsContent .tab-pane {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .os-card {
+            overflow: hidden;
+        }
+
+        /* scroll horizontal ditangani DataTables (scrollX), bukan .table-responsive */
+        .os-card .table-responsive {
+            overflow: visible;
+        }
+
+        .os-card .dataTables_wrapper {
+            width: 100%;
+        }
+
+        .os-card .dataTables_scrollBody {
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .os-card table.dataTable thead th,
+        .os-card table.dataTable tbody td {
+            font-size: .875rem;
+        }
+
+        /* Perusahaan & Materi tidak menyempit, Periode cukup lebar */
+        .os-card table.dataTable tbody td:nth-child(-n+2) {
+            min-width: 180px;
+        }
+
+        .os-card table.dataTable tbody td:nth-child(3) {
+            min-width: 170px;
+        }
+
+        @media (max-width: 768px) {
+            .os-card {
+                margin: .75rem !important;
+            }
+
+            .os-tabs {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            .os-tabs .nav-link {
+                white-space: nowrap;
+            }
+
+            .dataTables_wrapper .dataTables_filter,
+            .dataTables_wrapper .dataTables_length {
+                text-align: left;
+                float: none;
+            }
+        }
+
+        .os-tabs {
+            background: rgba(0, 11, 88, .06);
+            padding: 4px;
+            border-radius: 999px;
+            gap: 2px;
+        }
+
+        .os-tabs .nav-link {
+            border-radius: 999px;
+            color: #3b4252;
+            font-weight: 600;
+            padding: .45rem 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            transition: background-color .15s, color .15s;
+        }
+
+        .os-tabs .nav-link:hover:not(.active) {
+            background: rgba(0, 11, 88, .08);
+        }
+
+        .os-tabs .nav-link.active {
+            background: var(--os-accent);
+            color: #fff;
+        }
+
+        .os-tabs .badge {
+            background: rgba(0, 0, 0, .12);
+            color: inherit;
+            font-weight: 600;
+            min-width: 1.6rem;
+        }
+
+        .os-tabs .nav-link.active .badge {
+            background: rgba(255, 255, 255, .22);
+        }
+
+        /* ---------- Legenda ---------- */
+        .os-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem 1.1rem;
+            font-size: .82rem;
+            color: #5b6270;
+        }
+
+        .os-legend i {
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            border-radius: 3px;
+            margin-right: .4rem;
+            vertical-align: -1px;
+        }
+
+        /* ---------- Warna baris ---------- */
+        #outstandingTabsContent table.dataTable tbody tr.row-overdue-180>* {
+            background-color: #872819 !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
+
+        #outstandingTabsContent table.dataTable tbody tr.row-overdue-30>* {
+            background-color: #07b0ff !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
+
+        #outstandingTabsContent table.dataTable tbody tr.row-paid-recent>*,
+        #outstandingTabsContent table.dataTable tbody tr.row-pa>* {
+            background-color: #FAB12F !important;
+            box-shadow: none !important;
+        }
+
+        #outstandingTabsContent table.dataTable tbody tr.row-pa>* {
+            color: #fff !important;
+        }
+
+        #outstandingTabsContent table.dataTable tbody tr.row-paid-old>* {
+            background-color: #000B58 !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
+
+        #outstandingTabsContent table.dataTable tbody td {
+            vertical-align: middle;
+        }
+
+        /* ---------- Checkbox tracking (dulu .container, bentrok dgn Bootstrap) ---------- */
+        .trk {
+            --trk-main: #323232;
+            position: relative;
+            display: inline-block;
+            margin: 0;
+            cursor: default;
+        }
+
+        .trk input {
             position: absolute;
             opacity: 0;
         }
 
-        .checkmark {
-            width: 30px;
-            height: 30px;
+        .trk .checkmark {
+            width: 24px;
+            height: 24px;
             position: relative;
-            top: 0;
-            left: 0;
-            border: 2px solid var(--main-color);
+            border: 2px solid var(--trk-main);
             border-radius: 5px;
-            box-shadow: 4px 4px var(--main-color);
-            background-color: var(--input-out-of-focus);
-            transition: all 0.3s;
+            box-shadow: 3px 3px var(--trk-main);
+            background-color: #ccc;
+            transition: background-color .2s;
         }
 
-        .container input:checked~.checkmark {
-            background-color: var(--input-focus);
+        .trk input:checked~.checkmark {
+            background-color: #2d8cf0;
         }
 
-        .checkmark:after {
+        .trk .checkmark::after {
             content: "";
-            width: 7px;
-            height: 15px;
+            width: 6px;
+            height: 12px;
             position: absolute;
             top: 2px;
-            left: 8px;
+            left: 7px;
             display: none;
-            border: solid var(--bg-color);
+            border: solid #fff;
             border-width: 0 2.5px 2.5px 0;
             transform: rotate(45deg);
         }
 
-        .container input:checked~.checkmark:after {
+        .trk input:checked~.checkmark::after {
             display: block;
         }
+
+        /* ---------- DataTables ---------- */
+        .dataTables_wrapper .dataTables_processing {
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 11, 88, .18);
+            background: #fff;
+            color: #000B58;
+            font-weight: 600;
+            padding: .9rem 0;
+            z-index: 5;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: #000B58 !important;
+            color: #fff !important;
+            border: 1px solid #000B58 !important;
+            border-radius: 8px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 8px !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input,
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 8px;
+        }
     </style>
+
     @push('js')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
         <script>
+            // =====================================================
+            // Helper umum
+            // =====================================================
             function formatRupiah(angka, prefix) {
+                if (angka === null || angka === undefined || angka === '') return '';
                 var number_string = angka.toString().replace(/[^0-9.,]/g, ''),
                     split = number_string.split('.'),
                     sisa = split[0].length % 3,
@@ -457,588 +689,508 @@
                 return prefix === undefined ? rupiah : (rupiah ? prefix + rupiah : '');
             }
 
-            $(document).ready(function() {
-                var userRole = '{{ auth()->user()->jabatan }}';
-                console.log(userRole);
+            $(function() {
+                moment.locale('id');
+                $.fn.dataTable.ext.errMode = 'console';
 
-                var tableLunas = $('#outstandinglunasTable').DataTable({
-                    "ajax": {
-                        "url": "{{ route('getOutstandingLunas') }}",
-                        "type": "GET",
-                        "data": function(d) {
-                            d.tahun = $('#filterTahunLunas').val();
-                        },
-                        "beforeSend": function() {
-                            $('#loadingModal').modal('show');
-                            $('#loadingModal').on('show.bs.modal', function() {
-                                $('#loadingModal').removeAttr('inert');
-                            });
-                        },
-                        "complete": function() {
-                            setTimeout(() => {
-                                $('#loadingModal').modal('hide');
-                                $('#loadingModal').on('hidden.bs.modal', function() {
-                                    $('#loadingModal').attr('inert', true);
-                                });
-                            }, 1000);
-                        }
-                    },
-                    "columns": [{
-                            "data": "rkm.perusahaan.nama_perusahaan",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": "rkm.materi.nama_materi",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                moment.locale('id');
-                                if (data && data.rkm && data.rkm.tanggal_awal && data.rkm
-                                    .tanggal_akhir) {
-                                    var tanggalAwal = moment(data.rkm.tanggal_awal).format('LL');
-                                    var tanggalAkhir = moment(data.rkm.tanggal_akhir).format('LL');
-                                    return tanggalAwal + " s/d " + tanggalAkhir;
-                                } else {
-                                    return "-";
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                return formatRupiah(data.net_sales, 'Rp. ');
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data.pic) {
-                                    return data.pic;
-                                } else {
-                                    return "-";
-                                }
-                            }
-                        },
-                        {
-                            "data": "sales_key"
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                moment.locale('id');
-                                return moment(data.due_date).format('LL');
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                if (data.status_pembayaran == '1') {
-                                    return "Sudah";
-                                } else {
-                                    return "Belum";
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                if (data.jumlah_pembayaran) {
-                                    return formatRupiah(data.jumlah_pembayaran, 'Rp. ');
-                                } else {
-                                    return "-";
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                moment.locale('id');
-                                return moment(data.tanggal_bayar).format('LL');
-                            }
-                        },
-                        {
-                            "data": null,
-                            "visible": false
-                        },
-                        {
-                            "data": null,
-                            "visible": false
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                var actions = "";
-                                actions += '@if (auth()->user()->can("Edit Outstanding") || auth()->user()->can("Delete Outstanding "))';
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                // -------------------------------------------------
+                // Konfigurasi dari server
+                // -------------------------------------------------
+                const CAN_EDIT = @json(auth()->user()->can('Edit Outstanding'));
+                const CAN_DELETE = @json(auth()->user()->can('Delete Outstanding'));
+                const CSRF = @json(csrf_token());
+                const BASE = @json(url('/outstanding'));
+                const ICON_EDIT = @json(asset('icon/edit-warning.svg'));
+                const ICON_TRASH = @json(asset('icon/trash-danger.svg'));
 
-                                actions += `<a class="dropdown-item" href="/download/dokumen/${row.id}" target="_blank">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
-                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                                <polyline points="7 10 12 15 17 10"></polyline>
-                                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                                            </svg> Download Dokumen </a>`;
-                                            
-                                if (!row.has_pic_penagihan) {
-                                    actions += '<div class="dropdown-divider"></div>';
-                                    actions += '<a class="dropdown-item btn-pic-penagihan" style="cursor: pointer;" data-row=\'' + JSON.stringify(row).replace(/'/g, "&#39;") + '\'>';
-                                    actions += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Input PIC Penagihan';
-                                    actions += '</a>';
-                                }
+                const AJAX_URL = {
+                    hutang: @json(route('getOutstandingHutang')),
+                    pa: @json(route('getOutstandingPA')),
+                    lunas: @json(route('getOutstandingLunas')),
+                };
 
-                                actions += '<div class="dropdown-divider"></div>';
+                const TAB_KEYS = ['hutang', 'pa', 'lunas'];
+                const LENGTHS = [10, 25, 50, 100];
+                const FILTER_EL = {
+                    hutang: '#filterTahunHutang',
+                    pa: '#filterBulanPA',
+                    lunas: '#filterTahunLunas'
+                };
+                const FILTER_PARAM = {
+                    hutang: 'tahun',
+                    pa: 'bulan',
+                    lunas: 'tahun'
+                };
 
-                                actions += '@can("Edit Outstanding")';
-                                actions += '<a class="dropdown-item" href="{{ url("/outstanding") }}/' + row.id + '/edit"><img src="{{ asset("icon/edit-warning.svg") }}" class=""> Edit</a>';
-                                actions += '@endcan';
+                // -------------------------------------------------
+                // State per tab, dibaca dari URL: ?tab=lunas&page=3&tahun=2026&q=abc&len=25
+                // -------------------------------------------------
+                const params = new URLSearchParams(location.search);
+                let activeTab = TAB_KEYS.includes(params.get('tab')) ? params.get('tab') : 'hutang';
+                let fromPopState = false;
 
-                                actions += '@can("Delete Outstanding")';
-                                actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url("/outstanding") }}/' + row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method("DELETE")';
-                                actions += '<button type="submit" class="dropdown-item"><img src="{{ asset("icon/trash-danger.svg") }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '@endcan';
+                const state = {};
+                TAB_KEYS.forEach(function(k) {
+                    state[k] = {
+                        page: 1,
+                        len: 10,
+                        q: '',
+                        filter: $(FILTER_EL[k]).val()
+                    };
+                });
 
-                                actions += '</div>';
-                                actions += '</div>';
-                                actions += '@else';
-                                actions += '<div class="dropdown">';
-                                actions += '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '</div>';
-                                actions += '@endif';
+                (function applyUrlToState() {
+                    const s = state[activeTab];
+                    const p = parseInt(params.get('page'), 10);
+                    const l = parseInt(params.get('len'), 10);
+                    s.page = p > 0 ? p : 1;
+                    s.len = LENGTHS.includes(l) ? l : 10;
+                    s.q = params.get('q') || '';
+                })();
 
-                                return actions;
-                            }
-                        }
-                    ],
-                    "order": [
-                        [8, 'desc']
-                    ],
-                    "columnDefs": [{
-                        "targets": [8],
-                        "type": "date"
-                    }],
-                    "footerCallback": function(row, data, start, end, display) {
-                        var api = this.api();
-                        var total = 0;
-                        var totalThisWeek = 0;
+                function syncUrl(push) {
+                    const s = state[activeTab];
+                    const p = new URLSearchParams();
+                    p.set('tab', activeTab);
+                    if (s.page > 1) p.set('page', s.page);
+                    if (s.filter) p.set(FILTER_PARAM[activeTab], s.filter);
+                    if (s.q) p.set('q', s.q);
+                    if (s.len !== 10) p.set('len', s.len);
+                    const url = location.pathname + '?' + p.toString();
+                    if (url === location.pathname + location.search) return;
+                    history[push ? 'pushState' : 'replaceState'](null, '', url);
+                }
 
-                        api.column(3, {
-                            page: 'current'
-                        }).data().each(function(value, index) {
-                            var numericValue = parseFloat(value.net_sales) || 0;
-                            total += numericValue;
+                // -------------------------------------------------
+                // Render helpers
+                // -------------------------------------------------
+                const esc = (s) => $('<div>').text(s === null || s === undefined ? '' : s).html();
+                const fmtDate = (d) => d ? moment(d).format('LL') : '-';
 
-                            if (value.status_pembayaran == '1' && value.tanggal_bayar) {
-                                var bayarDate = moment(value.tanggal_bayar);
-                                var oneWeekAgo = moment().subtract(7, 'days');
-                                if (bayarDate.isAfter(oneWeekAgo)) {
-                                    totalThisWeek += numericValue;
-                                }
-                            }
-                        });
+                const periodeText = (rkm) => (rkm && rkm.tanggal_awal && rkm.tanggal_akhir) ?
+                    fmtDate(rkm.tanggal_awal) + ' s/d ' + fmtDate(rkm.tanggal_akhir) : '-';
 
-                        $('#totalNetSalesLunas').html(formatRupiah(total, 'Rp. '));
-                        $('#totalNetSalesThisWeek').html(formatRupiah(totalThisWeek, 'Rp. '));
-                    },
-                    "createdRow": function(row, data, dataIndex) {
-                        var status_pembayaran = data.status_pembayaran;
-                        var tanggal_bayar = data.tanggal_bayar;
+                const colText = (path) => ({
+                    data: path,
+                    defaultContent: '-',
+                    render: (d) => d ? esc(d) : '-'
+                });
 
-                        if (status_pembayaran == '1') {
-                            if (tanggal_bayar) {
-                                var oneWeekAgo = moment().subtract(7, 'days');
-                                var bayarDate = moment(tanggal_bayar);
+                const colMoney = (path) => ({
+                    data: path,
+                    defaultContent: '-',
+                    render: (d, type) => type === 'display' ?
+                        (d ? formatRupiah(d, 'Rp. ') : '-') : (parseFloat(d) || 0)
+                });
 
-                                if (bayarDate.isAfter(oneWeekAgo)) {
-                                    $(row).css('background-color', '#FAB12F');
-                                } else {
-                                    $(row).css('background-color', '#000B58');
-                                    $(row).css('color', 'white');
-                                }
-                            } else {
-                                $(row).css('background-color', '#000B58');
-                                $(row).css('color', 'white');
-                            }
-                        }
+                const colDate = (path) => ({
+                    data: path,
+                    defaultContent: '-',
+                    render: (d, type) => (type === 'display' || type === 'filter') ? fmtDate(d) : (d || '')
+                });
+
+                const colPeriode = () => ({
+                    data: 'rkm.tanggal_awal',
+                    defaultContent: '-',
+                    render: (d, type, row) => type === 'sort' || type === 'type' ?
+                        (d || '') : periodeText(row.rkm)
+                });
+
+                const colStatus = () => ({
+                    data: 'status_pembayaran',
+                    defaultContent: '-',
+                    render: (d, type) => {
+                        if (type !== 'display') return d;
+                        return String(d) === '1' ?
+                            '<span class="badge bg-success">Sudah</span>' :
+                            '<span class="badge bg-warning text-dark">Belum</span>';
                     }
                 });
 
-                var tableHutang = $('#outstandinghutangTable').DataTable({
-                    "ajax": {
-                        "url": "{{ route('getOutstandingHutang') }}",
-                        "type": "GET",
-                        "data": function(d) {
-                            d.tahun = $('#filterTahunHutang').val();
-                        },
-                        "beforeSend": function() {
-                            $('#loadingModal').modal('show');
-                            $('#loadingModal').removeAttr('inert');
-                        },
-                        "complete": function() {
-                            setTimeout(() => {
-                                $('#loadingModal').modal('hide');
-                                $('#loadingModal').attr('inert', true);
-                            }, 1000);
-                        }
-                    },
-                    "columns": [{
-                            "data": "rkm.perusahaan.nama_perusahaan",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": "rkm.materi.nama_materi",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                moment.locale('id');
-                                if (data && data.rkm && data.rkm.tanggal_awal && data.rkm
-                                    .tanggal_akhir) {
-                                    return moment(data.rkm.tanggal_awal).format('LL') + " s/d " +
-                                        moment(data.rkm.tanggal_akhir).format('LL');
-                                }
-                                return "-";
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data.net_sales) {
-                                    return formatRupiah(data.net_sales, 'Rp. ');
-                                } else {
-                                    return "-";
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data.pic) {
-                                    return data.pic;
-                                } else {
-                                    return "-";
-                                }
-                            }
-                        },
-                        {
-                            "data": "sales_key"
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                return moment(data.due_date).format('LL');
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                return data.status_pembayaran == '0' ? "Belum" : "Sudah";
-                            }
-                        },
-                        ...Array.from({
-                            length: 8
-                        }, (_, i) => ({
-                            "data": `tracking_outstanding.${['invoice', 'faktur_pajak', 'dokumen_tambahan', 'konfir_cs', 'tracking_dokumen', 'no_resi', 'konfir_pic', 'pembayaran'][i]}`,
-                            "render": function(data) {
-                                if (data === '1') {
-                                    return '<label class="container"><input disabled checked="checked" type="checkbox"><div class="checkmark"></div></label>';
-                                } else if (data === null || data === '-') {
-                                    return '<label class="container"><input disabled type="checkbox"><div class="checkmark"></div></label>';
-                                } else {
-                                    return '<label class="container"><input disabled type="checkbox"><div class="checkmark"></div></label>';
-                                }
-                            }
-                        })),
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data == null || data.tracking_outstanding == null || data
-                                    .tracking_outstanding.status_resi == null) {
-                                    return "-";
-                                } else {
-                                    return data.tracking_outstanding.status_resi;
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data == null || data.tracking_outstanding == null || data
-                                    .tracking_outstanding.status_pic == null) {
-                                    return "-";
-                                } else {
-                                    return data.tracking_outstanding.status_pic;
-                                }
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data, type, row) {
-                                var actions = "";
-                                actions += '@if (auth()->user()->can('Edit Outstanding') || auth()->user()->can('Delete Outstanding '))';
-                                actions += '<div class="dropdown">';
-                                actions +=
-                                    '<button class="btn dropdown-toggle text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions +=
-                                    '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
-                                actions += '@can('Edit Outstanding')';
-                                actions +=
-                                    '<a class="dropdown-item" href="{{ url('/outstanding') }}/' + row
-                                    .id +
-                                    '/edit"><img src="{{ asset('icon/edit-warning.svg') }}" class=""> Edit</a>';
-                                actions += '@endcan';
-                                actions += '@can('Delete Outstanding')';
-                                actions +=
-                                    '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/outstanding') }}/' +
-                                    row.id + '" method="POST">';
-                                actions += '@csrf';
-                                actions += '@method('DELETE')';
-                                actions +=
-                                    '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
-                                actions += '</form>';
-                                actions += '@endcan';
-                                actions += '</div>';
-                                actions += '</div>';
-                                actions +=
-                                    '@else';
-                                actions += '<div class="dropdown">';
-                                actions +=
-                                    '<button class="btn dropdown-toggle disabled text-white" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
-                                actions += '</div>';
-                                actions += '@endif';
-                                return actions;
-                            }
-                        }
-                    ],
-                    "order": [
-                        [6, 'desc']
-                    ],
-                    "columnDefs": [{
-                        "targets": [6],
-                        "type": "date"
-                    }],
-                    "footerCallback": function(row, data, start, end, display) {
-                        let total = 0;
-
-                        data.forEach(item => {
-                            total += parseFloat(item.net_sales) || 0;
-                        });
-
-                        $('#totalNetSalesHutang').html(formatRupiah(total, 'Rp. '));
-                    },
-                    "createdRow": function(row, data) {
-                        if (!data.due_date) return;
-
-                        let today = moment().startOf('day');
-                        let dueDate = moment(data.due_date).startOf('day');
-
-                        let overDueDate = today.diff(dueDate, 'days');
-
-                        $(row).removeClass('row-white row-red row-ligth-blue');
-
-                        if (overDueDate > 180) {
-                            $(row).css('background-color', '#872819');
-                            $(row).css('color', 'white');
-                        } else if (overDueDate > 30) {
-                            $(row).css('background-color', '#07b0ff');
-                            $(row).css('color', 'white');
-                        } else {
-                            $(row).css('color', 'black');
-                        }
+                const colTrack = (field) => ({
+                    data: 'tracking_outstanding.' + field,
+                    defaultContent: '',
+                    orderable: false,
+                    className: 'text-center',
+                    render: (d, type) => {
+                        const on = Number(d) === 1;
+                        if (type !== 'display') return on ? 1 : 0;
+                        return '<label class="trk"><input disabled type="checkbox" ' + (on ? 'checked' : '') +
+                            '><div class="checkmark"></div></label>';
                     }
                 });
 
-                var tablePA = $('#outstandingPaTable').DataTable({
-                    "ajax": {
-                        "url": "{{ route('getOutstandingPA') }}",
-                        "type": "GET",
-                        "data": function(d) {
-                            d.bulan = $('#filterBulanPA').val();
-                        },
-                        "beforeSend": function() {
-                            $('#loadingModal').modal('show');
-                            $('#loadingModal').removeAttr('inert');
-                        },
-                        "complete": function() {
-                            setTimeout(() => {
-                                $('#loadingModal').modal('hide');
-                                $('#loadingModal').attr('inert', true);
-                            }, 1000);
-                        }
-                    },
-                    "columns": [{
-                            "data": "perusahaan.nama_perusahaan",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": "materi.nama_materi",
-                            "render": function(data) {
-                                return data ? data : '-';
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                moment.locale('id');
-                                if (data.tanggal_awal && data.tanggal_akhir) {
-                                    var tglAwal = moment(data.tanggal_awal).format('LL');
-                                    var tglAkhir = moment(data.tanggal_akhir).format('LL');
-                                    return tglAwal + " s/d " + tglAkhir;
-                                }
-                                return "-";
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data.outstanding && data.outstanding.net_sales) {
-                                    return formatRupiah(data.outstanding.net_sales, 'Rp. ');
-                                }
-                                return "-";
-                            }
-                        },
-                        {
-                            "data": null,
-                            "render": function(data) {
-                                if (data.outstanding && data.outstanding.pic) {
-                                    return data.outstanding.pic;
-                                }
-                                return "-";
-                            }
-                        },
-                        {
-                            "data": "sales_key"
-                        },
-                        {
-                            "data": "id",
-                            "render": function(data, type, row) {
-                                return '<a href="/outstanding/' + data +
-                                    '/detail" class="btn btn-sm btn-info text-white" onclick="console.log(' +
-                                    data + ')">Detail</a>';
-                            }
-                        }
-                    ],
-                    "createdRow": function(row) {
-                        $(row).css('background-color', '#FAB12F');
-                        $(row).css('color', 'white');
-                    },
-                    "footerCallback": function(row, data, start, end, display) {
-                        var total = 0;
-                        data.forEach(function(item) {
-                            if (item.outstanding && item.outstanding.net_sales) {
-                                var numericValue = parseFloat(item.outstanding.net_sales) || 0;
-                                total += numericValue;
-                            }
-                        });
-                        $('#totalNetSalesPA').html(formatRupiah(total, 'Rp. '));
+                // Menu aksi. `extra` = item tambahan (hanya tab Lunas)
+                function actionMenu(row, extra) {
+                    if (!CAN_EDIT && !CAN_DELETE) {
+                        return '<button class="btn btn-sm dropdown-toggle disabled text-white" type="button" disabled>Actions</button>';
                     }
-                });
+                    let h = '<div class="dropdown">' +
+                        '<button class="btn btn-sm dropdown-toggle text-white" type="button" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>' +
+                        '<div class="dropdown-menu">';
 
-                $('#filterTahunHutang').change(function() {
-                    tableHutang.ajax.reload();
-                });
+                    if (extra) h += extra;
 
-                $('#filterTahunLunas').change(function() {
-                    tableLunas.ajax.reload();
-                });
+                    if (CAN_EDIT) {
+                        h += '<a class="dropdown-item js-edit" href="' + BASE + '/' + row.id + '/edit">' +
+                            '<img src="' + ICON_EDIT + '"> Edit</a>';
+                    }
+                    if (CAN_DELETE) {
+                        h += '<form method="POST" action="' + BASE + '/' + row.id + '" ' +
+                            'onsubmit="this.return_url.value = location.href; return confirm(\'Apakah Anda yakin?\');">' +
+                            '<input type="hidden" name="_token" value="' + CSRF + '">' +
+                            '<input type="hidden" name="_method" value="DELETE">' +
+                            '<input type="hidden" name="return_url" value="">' +
+                            '<button type="submit" class="dropdown-item"><img src="' + ICON_TRASH + '"> Hapus</button>' +
+                            '</form>';
+                    }
+                    return h + '</div></div>';
+                }
 
-                $('#filterBulanPA').change(function() {
-                    tablePA.ajax.reload();
-                });
-
-                $('#outstandinglunasTable tbody').on('click', '.btn-pic-penagihan', function (e) {
+                // Edit: bawa URL saat ini supaya setelah simpan kembali ke tab & halaman yang sama
+                $(document).on('click', 'a.js-edit', function(e) {
                     e.preventDefault();
+                    location.href = this.href + '?return=' + encodeURIComponent(location.href);
+                });
 
-                    var rowData = $(this).data('row');
+                const LANG = {
+                    processing: '<span class="spinner-border spinner-border-sm me-2"></span>Memuat data...',
+                    search: 'Cari:',
+                    lengthMenu: 'Tampilkan _MENU_ data',
+                    info: 'Menampilkan _START_–_END_ dari _TOTAL_ data',
+                    infoEmpty: 'Tidak ada data',
+                    infoFiltered: '(disaring dari _MAX_ data)',
+                    zeroRecords: 'Data tidak ditemukan',
+                    emptyTable: 'Belum ada data untuk filter ini',
+                    paginate: {
+                        first: 'Awal',
+                        last: 'Akhir',
+                        next: 'Berikutnya',
+                        previous: 'Sebelumnya'
+                    }
+                };
 
-                    $('#input_id_rkm').val(rowData.id_rkm || '');
+                // -------------------------------------------------
+                // Konfigurasi kolom tiap tab
+                // -------------------------------------------------
+                const configs = {
+                    hutang: function() {
+                        return {
+                            columns: [
+                                colText('rkm.perusahaan.nama_perusahaan'),
+                                colText('rkm.materi.nama_materi'),
+                                colPeriode(),
+                                colMoney('net_sales'),
+                                colText('pic'),
+                                colText('sales_key'),
+                                colDate('due_date'),
+                                colStatus(),
+                                colTrack('invoice'),
+                                colTrack('faktur_pajak'),
+                                colTrack('dokumen_tambahan'),
+                                colTrack('konfir_cs'),
+                                colTrack('tracking_dokumen'),
+                                colTrack('no_resi'),
+                                colTrack('konfir_pic'),
+                                colTrack('pembayaran'),
+                                colText('tracking_outstanding.status_resi'),
+                                colText('tracking_outstanding.status_pic'),
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    render: (d, t, row) => actionMenu(row)
+                                }
+                            ],
+                            order: [
+                                [6, 'desc']
+                            ],
+                            footerCallback: function() {
+                                let total = 0;
+                                this.api().rows({
+                                    search: 'applied'
+                                }).data().each(function(r) {
+                                    total += parseFloat(r.net_sales) || 0;
+                                });
+                                $('#totalNetSalesHutang').html(formatRupiah(total, 'Rp. '));
+                            },
+                            createdRow: function(row, data) {
+                                if (!data.due_date) return;
+                                const over = moment().startOf('day').diff(moment(data.due_date).startOf('day'),
+                                    'days');
+                                if (over > 180) $(row).addClass('row-overdue-180');
+                                else if (over > 30) $(row).addClass('row-overdue-30');
+                            }
+                        };
+                    },
 
-                    if (rowData.rkm) {
-                        var namaMateri = rowData.rkm.materi ? rowData.rkm.materi.nama_materi : '-';
-                        $('#display_materi').val(namaMateri);
+                    pa: function() {
+                        return {
+                            columns: [
+                                colText('perusahaan.nama_perusahaan'),
+                                colText('materi.nama_materi'),
+                                {
+                                    data: 'tanggal_awal',
+                                    defaultContent: '-',
+                                    render: (d, type, row) => type === 'sort' || type === 'type' ?
+                                        (d || '') : periodeText(row)
+                                },
+                                colMoney('outstanding.net_sales'),
+                                colText('outstanding.pic'),
+                                colText('sales_key'),
+                                {
+                                    data: 'id',
+                                    orderable: false,
+                                    render: (id) => '<a href="' + BASE + '/' + id +
+                                        '/detail" class="btn btn-sm btn-info text-white">Detail</a>'
+                                }
+                            ],
+                            order: [],
+                            footerCallback: function() {
+                                let total = 0;
+                                this.api().rows({
+                                    search: 'applied'
+                                }).data().each(function(r) {
+                                    if (r.outstanding) total += parseFloat(r.outstanding.net_sales) || 0;
+                                });
+                                $('#totalNetSalesPA').html(formatRupiah(total, 'Rp. '));
+                            },
+                            createdRow: (row) => $(row).addClass('row-pa')
+                        };
+                    },
 
-                        if (rowData.rkm.tanggal_awal && rowData.rkm.tanggal_akhir) {
-                            moment.locale('id');
-                            var tgl = moment(rowData.rkm.tanggal_awal).format('LL') + ' s/d ' + moment(rowData.rkm.tanggal_akhir).format('LL');
-                            $('#display_periode').val(tgl);
-                        } else {
-                            $('#display_periode').val('-');
+                    lunas: function() {
+                        return {
+                            columns: [
+                                colText('rkm.perusahaan.nama_perusahaan'),
+                                colText('rkm.materi.nama_materi'),
+                                colPeriode(),
+                                colMoney('net_sales'),
+                                colText('pic'),
+                                colText('sales_key'),
+                                colDate('due_date'),
+                                colStatus(),
+                                colMoney('jumlah_pembayaran'),
+                                colDate('tanggal_bayar'),
+                                {
+                                    data: null,
+                                    orderable: false,
+                                    render: function(d, t, row) {
+                                        let extra = '';
+                                        if (CAN_EDIT || CAN_DELETE) {
+                                            extra += '<a class="dropdown-item" href="/download/dokumen/' + row.id +
+                                                '" target="_blank">' +
+                                                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download Dokumen</a>';
+                                            if (!row.has_pic_penagihan) {
+                                                extra += '<div class="dropdown-divider"></div>' +
+                                                    '<a class="dropdown-item btn-pic-penagihan" href="#">' +
+                                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Input PIC Penagihan</a>';
+                                            }
+                                            extra += '<div class="dropdown-divider"></div>';
+                                        }
+                                        return actionMenu(row, extra);
+                                    }
+                                }
+                            ],
+                            order: [
+                                [9, 'desc']
+                            ],
+                            footerCallback: function() {
+                                let total = 0,
+                                    week = 0;
+                                const oneWeekAgo = moment().subtract(7, 'days');
+                                this.api().rows({
+                                    search: 'applied'
+                                }).data().each(function(r) {
+                                    const n = parseFloat(r.net_sales) || 0;
+                                    total += n;
+                                    if (String(r.status_pembayaran) === '1' && r.tanggal_bayar &&
+                                        moment(r.tanggal_bayar).isAfter(oneWeekAgo)) {
+                                        week += n;
+                                    }
+                                });
+                                $('#totalNetSalesLunas').html(formatRupiah(total, 'Rp. '));
+                                $('#totalNetSalesThisWeek').html(formatRupiah(week, 'Rp. '));
+                            },
+                            createdRow: function(row, data) {
+                                if (String(data.status_pembayaran) !== '1') return;
+                                if (data.tanggal_bayar && moment(data.tanggal_bayar).isAfter(moment().subtract(
+                                        7, 'days'))) {
+                                    $(row).addClass('row-paid-recent');
+                                } else {
+                                    $(row).addClass('row-paid-old');
+                                }
+                            }
+                        };
+                    }
+                };
+
+                // -------------------------------------------------
+                // Buat tabel (lazy: hanya saat tab dibuka pertama kali)
+                // -------------------------------------------------
+                const tables = {};
+
+                function createTable(key) {
+                    if (tables[key]) return tables[key];
+
+                    const s = state[key];
+                    let ready = false;
+
+                    const options = Object.assign({
+                        processing: true,
+                        autoWidth: false,
+                        scrollX: true,
+                        lengthMenu: LENGTHS,
+                        pageLength: s.len,
+                        displayStart: (s.page - 1) * s.len,
+                        search: {
+                            search: s.q
+                        },
+                        language: LANG,
+                        ajax: {
+                            url: AJAX_URL[key],
+                            type: 'GET',
+                            data: function(d) {
+                                d[FILTER_PARAM[key]] = $(FILTER_EL[key]).val();
+                            }
+                        },
+                        initComplete: function() {
+                            // Jaga-jaga kalau displayStart tidak terbawa saat data ajax tiba
+                            const api = this.api();
+                            const info = api.page.info();
+                            const want = s.page - 1;
+                            if (want > 0 && want < info.pages && info.page !== want) {
+                                api.page(want).draw('page');
+                            }
+                            ready = true;
                         }
+                    }, configs[key]());
 
-                        if (rowData.rkm.perusahaan) {
-                            $('#input_perusahaan_id').val(rowData.rkm.perusahaan.id || '');
-                            $('#display_perusahaan').val(rowData.rkm.perusahaan.nama_perusahaan || '-');
-                            $('#input_alamat').val(rowData.rkm.perusahaan.alamat || '');
-                            $('#input_category').val(rowData.rkm.perusahaan.kategori_perusahaan || '');
-                        } else {
-                            $('#input_perusahaan_id').val('');
-                            $('#display_perusahaan').val('-');
-                            $('#input_alamat').val('');
-                            $('#input_category').val('');
+                    const dt = $('#table-' + key).DataTable(options);
+                    tables[key] = dt;
+
+                    dt.on('xhr.dt', function(e, settings, json) {
+                        $('#count-' + key).text(json && json.data ? json.data.length : 0);
+                    });
+
+                    // Setiap redraw (ganti halaman, cari, ubah jumlah baris, reload filter) → update URL
+                    dt.on('draw.dt', function() {
+                        if (!ready) return;
+                        const info = dt.page.info();
+                        s.page = info.page + 1;
+                        s.len = info.length;
+                        s.q = dt.search();
+                        s.filter = $(FILTER_EL[key]).val();
+                        if (key === activeTab) syncUrl(false);
+                    });
+
+                    return dt;
+                }
+
+                // Filter tahun / bulan → reload data (balik ke halaman 1)
+                TAB_KEYS.forEach(function(key) {
+                    $(FILTER_EL[key]).on('change', function() {
+                        state[key].filter = this.value;
+                        if (tables[key]) tables[key].ajax.reload(null, true);
+                    });
+                });
+
+                // -------------------------------------------------
+                // Pergantian tab
+                // -------------------------------------------------
+                document.querySelectorAll('#outstandingTabs button[data-bs-toggle="tab"]').forEach(function(btn) {
+                    btn.addEventListener('shown.bs.tab', function() {
+                        activeTab = this.dataset.tab;
+                        const existed = !!tables[activeTab];
+                        createTable(activeTab);
+                        if (existed) {
+                            tables[activeTab].columns.adjust();
+                            syncUrl(!fromPopState);
                         }
+                        fromPopState = false;
+                    });
+                });
+
+                // Tombol back/forward browser
+                window.addEventListener('popstate', function() {
+                    const p = new URLSearchParams(location.search);
+                    const key = TAB_KEYS.includes(p.get('tab')) ? p.get('tab') : 'hutang';
+                    if (key === activeTab) return;
+                    fromPopState = true;
+                    bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-tab="' + key + '"]')).show();
+                });
+
+                // Tab pertama
+                createTable(activeTab);
+
+                // -------------------------------------------------
+                // Modal PIC Penagihan (tab Lunas)
+                // -------------------------------------------------
+                $('#table-lunas tbody').on('click', '.btn-pic-penagihan', function(e) {
+                    e.preventDefault();
+                    const row = tables.lunas.row($(this).closest('tr')).data();
+                    if (!row) return;
+
+                    $('#input_id_rkm').val(row.id_rkm || '');
+                    const rkm = row.rkm || {};
+                    $('#display_materi').val(rkm.materi ? rkm.materi.nama_materi : '-');
+                    $('#display_periode').val(periodeText(rkm));
+
+                    if (rkm.perusahaan) {
+                        $('#input_perusahaan_id').val(rkm.perusahaan.id || '');
+                        $('#display_perusahaan').val(rkm.perusahaan.nama_perusahaan || '-');
+                        $('#input_alamat').val(rkm.perusahaan.alamat || '');
+                        $('#input_category').val(rkm.perusahaan.kategori_perusahaan || '');
+                    } else {
+                        $('#input_perusahaan_id').val('');
+                        $('#display_perusahaan').val('-');
+                        $('#input_alamat').val('');
+                        $('#input_category').val('');
                     }
 
-                    $('#input_pic').val(rowData.pic ? rowData.pic : '');
-
+                    $('#input_pic').val(row.pic || '');
                     $('#input_telepon').val('');
-
                     $('#modalPicPenagihan').modal('show');
                 });
 
-            });
+                // -------------------------------------------------
+                // Modal Sinkron: tanggal akhir = akhir minggu (Minggu)
+                // -------------------------------------------------
+                $('#tanggal_awal').on('change', function() {
+                    $('#tanggal_akhir').val(this.value ?
+                        moment(this.value, 'YYYY-MM-DD').endOf('isoWeek').format('YYYY-MM-DD') : '');
+                });
 
-            document.addEventListener('DOMContentLoaded', function() {
+                // -------------------------------------------------
+                // Modal Export: preset vs tanggal manual
+                // -------------------------------------------------
                 const preset = document.getElementById('filterPreset');
-                const inputs = document.querySelectorAll('.preset-input');
+                const presetInputs = document.querySelectorAll('.preset-input');
                 const startDate = document.getElementById('startDate');
                 const endDate = document.getElementById('endDate');
+                const presetMap = {
+                    tahun: 'inputTahun',
+                    bulan: 'inputBulan',
+                    triwulan: 'inputTriwulan'
+                };
 
-                preset.addEventListener('change', function() {
-                    inputs.forEach(el => el.style.display = 'none');
-
-                    if (this.value === 'tahun') {
-                        document.getElementById('inputTahun').style.display = 'block';
-                        startDate.value = '';
-                        endDate.value = '';
-                    } else if (this.value === 'bulan') {
-                        document.getElementById('inputBulan').style.display = 'block';
-                        startDate.value = '';
-                        endDate.value = '';
-                    } else if (this.value === 'triwulan') {
-                        document.getElementById('inputTriwulan').style.display = 'block';
-                        startDate.value = '';
-                        endDate.value = '';
-                    }
-                });
-
-                startDate.addEventListener('change', function() {
-                    if (this.value) {
-                        preset.value = '';
-                        inputs.forEach(el => el.style.display = 'none');
-                    }
-                });
-                endDate.addEventListener('change', function() {
-                    if (this.value) {
-                        preset.value = '';
-                        inputs.forEach(el => el.style.display = 'none');
-                    }
-                });
+                if (preset) {
+                    preset.addEventListener('change', function() {
+                        presetInputs.forEach(el => el.style.display = 'none');
+                        if (presetMap[this.value]) {
+                            document.getElementById(presetMap[this.value]).style.display = 'block';
+                            startDate.value = '';
+                            endDate.value = '';
+                        }
+                    });
+                    [startDate, endDate].forEach(function(el) {
+                        el.addEventListener('change', function() {
+                            if (this.value) {
+                                preset.value = '';
+                                presetInputs.forEach(x => x.style.display = 'none');
+                            }
+                        });
+                    });
+                }
             });
         </script>
     @endpush

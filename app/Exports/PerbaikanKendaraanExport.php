@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -49,7 +49,7 @@ class PerbaikanKendaraanExport implements
 
     public function collection(): Collection
     {
-        $query = PerbaikanKendaraan::with(['user.karyawan', 'vendor']);
+        $query = perbaikanKendaraan::with(['user.karyawan', 'vendor']);
 
         if ($this->from) {
             $query->whereBetween('tanggal_kejadian', [$this->from, $this->to]);

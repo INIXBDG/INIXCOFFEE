@@ -6,1496 +6,1174 @@
     <style>
         :root {
             --pri: #4f46e5;
-            --pri-light: #eef2ff;
-            --pri-dark: #3730a3;
-            --success: #059669;
-            --success-light: #d1fae5;
-            --warning: #d97706;
-            --warning-light: #fef3c7;
-            --info: #0284c7;
-            --info-light: #e0f2fe;
-            --danger: #dc2626;
-            --danger-light: #fee2e2;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-400: #9ca3af;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-900: #111827;
-            --radius: 10px;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
-            --shadow: 0 4px 6px rgba(0, 0, 0, .07), 0 2px 4px rgba(0, 0, 0, .05);
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, .1), 0 4px 10px rgba(0, 0, 0, .07);
+            --pri-l: #eef2ff;
+            --pri-d: #3730a3;
+            --g1: #f9fafb;
+            --g2: #e5e7eb;
+            --g4: #9ca3af;
+            --g6: #4b5563;
+            --g9: #111827;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: var(--gray-900);
+            color: var(--g9);
             background: #fafbfc;
         }
 
-        .page-header { margin-bottom: 1.5rem; }
         .page-title {
             font-size: 1.6rem;
             font-weight: 700;
-            color: var(--gray-900);
             margin-bottom: .15rem;
         }
-        .page-sub { color: var(--gray-400); font-size: .875rem; }
 
-        .nav-tabs-custom { border-bottom: 2px solid var(--gray-200); }
-        .nav-tabs-custom .nav-link {
+        .page-sub {
+            color: var(--g4);
+            font-size: .875rem;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid var(--g2);
+        }
+
+        .nav-tabs .nav-link {
             border: none;
-            color: var(--gray-400);
+            border-bottom: 3px solid transparent;
+            color: var(--g4);
             font-weight: 600;
             padding: .85rem 1.25rem;
             font-size: .875rem;
-            transition: color .2s;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
         }
-        .nav-tabs-custom .nav-link:hover { color: var(--pri); }
-        .nav-tabs-custom .nav-link.active {
+
+        .nav-tabs .nav-link:hover {
             color: var(--pri);
-            border-bottom: 3px solid var(--pri);
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--pri);
+            border-bottom-color: var(--pri);
             background: transparent;
         }
-        .nav-tabs-custom .nav-link .tab-count {
-            background: var(--gray-100);
-            color: var(--gray-600);
+
+        .tcount {
+            background: #f3f4f6;
+            color: var(--g6);
             font-size: .7rem;
             padding: 2px 8px;
             border-radius: 10px;
             font-weight: 700;
+            margin-left: 6px;
         }
-        .nav-tabs-custom .nav-link.active .tab-count {
-            background: var(--pri-light);
+
+        .nav-link.active .tcount {
+            background: var(--pri-l);
             color: var(--pri);
         }
 
-        .card-shell {
-            border: none;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            background: #fff;
+        .bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
         }
-        .card-shell .card-body { padding: 1.5rem; }
+
+        .bar h6 {
+            margin: 0;
+            font-weight: 700;
+            font-size: .9rem;
+        }
+
+        .bar .search {
+            width: 260px;
+        }
 
         .btn-pri {
             background: var(--pri);
             border: none;
             color: #fff;
             font-weight: 600;
-            padding: .5rem 1.25rem;
-            border-radius: 8px;
-            transition: all .25s;
             font-size: .85rem;
+            border-radius: 8px;
+            padding: .45rem 1.1rem;
         }
+
         .btn-pri:hover {
-            background: var(--pri-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, .35);
-            color: #fff;
-        }
-        .btn-outline-sec {
-            background: #fff;
-            border: 1px solid var(--gray-200);
-            color: var(--gray-600);
-            font-weight: 500;
-            padding: .4rem 1rem;
-            border-radius: 8px;
-            transition: all .2s;
-            font-size: .85rem;
-        }
-        .btn-outline-sec:hover {
-            background: var(--gray-50);
-            border-color: var(--gray-400);
-            color: var(--gray-900);
-        }
-        .btn-outline-danger-custom {
-            background: transparent;
-            border: 1px solid var(--danger-light);
-            color: var(--danger);
-            font-weight: 500;
-            padding: .4rem .85rem;
-            border-radius: 8px;
-            transition: all .2s;
-            font-size: .85rem;
-        }
-        .btn-outline-danger-custom:hover {
-            background: var(--danger);
-            border-color: var(--danger);
+            background: var(--pri-d);
             color: #fff;
         }
 
-        .table-modern {
-            border-collapse: separate;
-            border-spacing: 0;
+        .tbl {
             width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid var(--g2);
+            font-size: .86rem;
         }
-        .table-modern thead th {
+
+        .tbl th {
+            background: var(--g1);
+            color: var(--g6);
             font-size: .72rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: .5px;
-            color: var(--gray-600);
-            background: var(--gray-50);
-            border-bottom: 2px solid var(--gray-200) !important;
-            border-top: none !important;
-            padding: 0.85rem 1rem;
+            letter-spacing: .4px;
+            padding: 10px 12px;
+            border-bottom: 2px solid var(--g2);
+            text-align: left;
         }
-        .table-modern tbody tr { transition: background .15s; }
-        .table-modern tbody tr:hover { background: var(--pri-light) !important; }
-        .table-modern tbody td {
-            vertical-align: middle;
-            font-size: .875rem;
-            border-bottom: 1px solid var(--gray-100) !important;
-            border-top: none !important;
-            padding: 0.85rem 1rem;
-            color: var(--gray-700);
-        }
-        .table-modern tbody tr:last-child td { border-bottom: none !important; }
 
-        .badge-karyawan {
-            background: var(--pri-light);
-            color: var(--pri);
-            font-size: .72rem;
-            font-weight: 600;
-            padding: .3rem .65rem;
-            border-radius: 6px;
-            display: inline-block;
-            margin: 2px;
+        .tbl td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f2f4;
+            vertical-align: top;
+            color: #374151;
         }
-        .badge-count {
-            background: var(--gray-100);
-            color: var(--gray-600);
+
+        .tbl tbody tr:hover td {
+            background: #fbfbff;
+        }
+
+        .tbl tr.grp td {
+            background: var(--pri-l);
+            color: var(--pri);
+            font-weight: 700;
+            padding: 8px 12px;
+        }
+
+        .tbl tr.grp:hover td {
+            background: var(--pri-l);
+        }
+
+        .pl {
+            margin: 0;
+            padding-left: 16px;
+        }
+
+        .pl li {
+            line-height: 1.5;
+        }
+
+        .empty {
+            color: var(--g4);
+            font-style: italic;
+            font-size: .82rem;
+        }
+
+        .cnt {
+            background: #f3f4f6;
+            color: var(--g6);
             font-size: .72rem;
             font-weight: 700;
-            padding: .25rem .6rem;
+            padding: 2px 9px;
             border-radius: 10px;
         }
 
-        .accordion { --bs-accordion-border-color: var(--gray-200); }
-        .accordion-item {
-            border: 1px solid var(--gray-200) !important;
-            border-radius: var(--radius) !important;
-            margin-bottom: 8px;
-            overflow: hidden;
-            transition: box-shadow .2s;
-        }
-        .accordion-item:hover { box-shadow: var(--shadow-sm); }
-        .accordion-button {
-            background: #fff;
-            color: var(--gray-700);
-            font-weight: 600;
-            font-size: .9rem;
-            padding: 1rem 1.25rem;
-            box-shadow: none !important;
-        }
-        .accordion-button:not(.collapsed) {
-            background: var(--pri-light);
+        .nm {
+            display: inline-block;
+            background: var(--pri-l);
             color: var(--pri);
-            box-shadow: none !important;
-        }
-        .accordion-button::after { filter: none; }
-        .accordion-button:not(.collapsed)::after {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%234f46e5'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
-        }
-        .accordion-body { padding: 1.25rem; background: #fff; }
-
-        .karyawan-card {
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-bottom: 10px;
-            background: var(--gray-50);
-            transition: all .2s;
-        }
-        .karyawan-card:hover {
-            border-color: var(--pri);
-            background: #fff;
-            box-shadow: var(--shadow-sm);
-        }
-        .karyawan-card:last-child { margin-bottom: 0; }
-        .karyawan-name {
-            font-weight: 700;
-            color: var(--gray-900);
-            font-size: .95rem;
-            margin-bottom: 4px;
-        }
-        .karyawan-meta { color: var(--gray-400); font-size: .8rem; }
-
-        .profile-section { margin-top: 12px; }
-        .profile-section-title {
             font-size: .72rem;
-            font-weight: 700;
-            color: var(--gray-600);
-            text-transform: uppercase;
-            letter-spacing: .6px;
-            margin-bottom: .6rem;
-            padding-bottom: .4rem;
-            border-bottom: 1px solid var(--gray-200);
-            display: flex;
-            align-items: center;
-            gap: .4rem;
-        }
-        .profile-list { list-style: none; padding: 0; margin: 0 0 12px 0; }
-        .profile-list li {
-            padding: .35rem 0 .35rem 18px;
-            position: relative;
-            color: var(--gray-600);
-            font-size: .85rem;
-            line-height: 1.6;
-        }
-        .profile-list li::before {
-            content: "–";
-            position: absolute;
-            left: 0;
-            color: var(--pri);
-            font-weight: 700;
-        }
-        .empty-text { color: var(--gray-400); font-size: .82rem; font-style: italic; }
-
-        .form-control, .form-select {
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: .5rem .85rem;
-            font-size: .875rem;
-            color: var(--gray-700);
-            transition: all .2s;
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--pri);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
-            outline: none;
-        }
-        .form-label {
             font-weight: 600;
-            color: var(--gray-700);
-            font-size: .82rem;
-            margin-bottom: .4rem;
+            padding: 2px 8px;
+            border-radius: 5px;
+            margin: 1px 2px 1px 0;
         }
 
-        .parent-card {
-            background: var(--gray-50);
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 10px;
-        }
-        .parent-header { display: flex; gap: 8px; margin-bottom: 8px; }
-        .parent-header input { flex: 1; font-weight: 600; font-size: .875rem; }
-        .details-container {
-            margin-left: 16px;
-            padding-left: 12px;
-            border-left: 2px solid var(--pri-light);
-        }
-        .detail-row { display: flex; gap: 8px; margin-bottom: 6px; align-items: center; }
-        .detail-row input { flex: 1; }
-
-        .modal-content {
-            border: none;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
-        }
-        .modal-header-custom {
-            background: linear-gradient(135deg, var(--pri) 0%, var(--pri-dark) 100%);
+        .modal-header {
+            background: linear-gradient(135deg, var(--pri), var(--pri-d));
             color: #fff;
-            border-radius: 12px 12px 0 0;
-            padding: 1.1rem 1.5rem;
-        }
-        .modal-header-custom .modal-title { font-weight: 700; font-size: 1rem; }
-        .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
-        .modal-body { padding: 1.5rem; }
-        .modal-footer {
-            border-top: 1px solid var(--gray-100);
             padding: 1rem 1.5rem;
         }
 
-        .modal-dialog-scrollable .modal-content {
-            max-height: calc(100vh - 2rem) !important;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
         }
-        .modal-dialog-scrollable .modal-body {
-            overflow-y: auto !important;
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-        .modal-dialog-scrollable form {
-            display: flex;
-            flex-direction: column;
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow: hidden;
-        }
-        .modal-dialog-scrollable form .modal-body { overflow-y: auto !important; }
 
-        .alert-custom {
-            border: none;
-            border-radius: 8px;
-            padding: .85rem 1.15rem;
-            font-size: .85rem;
-            font-weight: 500;
+        .modal-title {
+            font-weight: 700;
+            font-size: 1rem;
         }
-        .alert-custom.alert-success { background: var(--success-light); color: var(--success); }
-        .alert-custom.alert-danger { background: var(--danger-light); color: var(--danger); }
-        .alert-custom.alert-info { background: var(--info-light); color: var(--info); }
+
+        .modal-dialog-scrollable .modal-content {
+            max-height: calc(100vh - 2rem);
+        }
+
+        .flabel {
+            font-weight: 600;
+            font-size: .82rem;
+            margin: 14px 0 6px;
+            display: block;
+            color: #374151;
+        }
+
+        .irow {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+            align-items: center;
+        }
+
+        .irow input {
+            flex: 1;
+        }
+
+        .pgroup {
+            border-left: 3px solid var(--pri);
+            background: var(--g1);
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .phead {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .phead input {
+            flex: 1;
+        }
+
+        .dwrap {
+            margin-left: 14px;
+            padding-left: 10px;
+            border-left: 1px dashed #cbd5e1;
+        }
+
+        .modal-err .alert {
+            font-size: .85rem;
+            padding: 8px 12px;
+        }
+
+        .sec {
+            font-weight: 700;
+            font-size: .82rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--pri);
+            border-bottom: 1px solid var(--g2);
+            padding-bottom: 4px;
+            margin: 18px 0 8px;
+        }
+
+        .kv {
+            width: 100%;
+            font-size: .86rem;
+        }
+
+        .kv th {
+            width: 150px;
+            color: var(--g6);
+            font-weight: 600;
+            padding: 5px 10px 5px 0;
+            vertical-align: top;
+        }
+
+        .kv td {
+            padding: 5px 0;
+        }
+
+        .hl {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .hl>li {
+            margin-bottom: 8px;
+        }
+
+        .hl ul {
+            margin: 3px 0 0;
+            color: var(--g6);
+        }
+
+        .tag {
+            display: inline-block;
+            background: var(--pri-l);
+            color: var(--pri);
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-size: .76rem;
+            font-weight: 600;
+            margin: 2px 4px 2px 0;
+        }
 
         .dropdown-menu {
             border: none;
-            box-shadow: var(--shadow-lg);
-            border-radius: 8px;
-            padding: .4rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .1);
             font-size: .85rem;
-        }
-        .dropdown-item {
-            padding: .5rem .85rem;
-            border-radius: 6px;
-            transition: all .15s;
-        }
-        .dropdown-item:hover { background: var(--pri-light); color: var(--pri); }
-        .dropdown-item.text-danger:hover { background: var(--danger-light); color: var(--danger); }
-
-        .section-divider {
-            border: none;
-            border-top: 1px solid var(--gray-200);
-            margin: 1.5rem 0;
-        }
-        .section-title {
-            font-size: .85rem;
-            font-weight: 700;
-            color: var(--gray-700);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-        }
-        .section-title i { color: var(--pri); }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--gray-400);
-        }
-        .empty-state i {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            opacity: .5;
-        }
-        .empty-state p { font-size: .9rem; margin: 0; }
-
-        .detail-block {
-            background: var(--gray-50);
-            border-left: 3px solid var(--pri);
-            padding: 1rem 1.25rem;
-            margin-bottom: 10px;
-            border-radius: 0 8px 8px 0;
-        }
-        .detail-block-title {
-            font-weight: 700;
-            color: var(--gray-900);
-            font-size: .875rem;
-            margin-bottom: 8px;
-        }
-        .detail-block ul {
-            margin-left: 18px;
-            padding-left: 12px;
-            border-left: 1px dashed var(--gray-200);
-            margin-bottom: 0;
-        }
-        .detail-block ul li {
-            color: var(--gray-600);
-            padding: 3px 0;
-            line-height: 1.6;
-            font-size: .85rem;
-        }
-
-        .info-card-mini {
-            background: var(--gray-50);
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: .85rem 1rem;
-        }
-        .info-card-mini .label {
-            font-size: .7rem;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            color: var(--gray-400);
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-        .info-card-mini .value {
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-
-        .kompetensi-tag {
-            display: inline-block;
-            background: var(--pri-light);
-            color: var(--pri);
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: .78rem;
-            font-weight: 600;
-            margin: 3px 4px 3px 0;
-        }
-
-        .skeleton {
-            background: linear-gradient(90deg, #f0f2f5 25%, #e6e9ef 50%, #f0f2f5 75%);
-            background-size: 200% 100%;
-            animation: skeleton-shimmer 1.4s ease-in-out infinite;
-            border-radius: 8px;
-        }
-        @keyframes skeleton-shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
         }
     </style>
+
+    @php
+        $jobDeskRows = $jobDesks
+            ->filter(fn($jd) => !empty($jd->fungsi_utama) || !empty($jd->tugas_tanggung_jawab) || !empty($jd->wewenang))
+            ->values();
+        $sopRows = $jobDesks->filter(fn($jd) => !empty($jd->sop) && count($jd->sop) > 0)->values();
+        $profileCount = $orgStructures->sum(fn($o) => $o->karyawans->count());
+        $names = fn($org) => $org && $org->karyawans->count() ? $org->karyawans->pluck('nama_lengkap') : collect();
+    @endphp
+
     <div class="container-fluid px-4 py-4">
-        <div class="d-sm-flex align-items-center justify-content-between page-header">
-            <div>
-                <h1 class="page-title">Job Management</h1>
-                <p class="page-sub mb-0">Kelola Job Desk, SOP, dan Job Profile karyawan</p>
-            </div>
+        <div class="mb-3">
+            <h1 class="page-title">Job Management</h1>
+            <p class="page-sub mb-0">Kelola Job Desk, SOP, dan Job Profile karyawan</p>
         </div>
 
-        <ul class="nav nav-tabs nav-tabs-custom mb-4" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="jobdesk-tab" data-bs-toggle="tab" data-bs-target="#jobdesk-pane" type="button">
-                    Job Desk
-                    <span class="tab-count">{{ $jobDesks->count() }}</span>
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="sop-tab" data-bs-toggle="tab" data-bs-target="#sop-pane" type="button">
-                    SOP
-                    <span class="tab-count">{{ $jobDesks->filter(fn($jd) => !empty($jd->sop) && count($jd->sop) > 0)->count() }}</span>
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-pane" type="button">
-                    Job Profile
-                    <span class="tab-count">{{ $orgStructures->count() }}</span>
-                </button>
-            </li>
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#jobdesk-pane"
+                    type="button">Job Desk<span class="tcount">{{ $jobDeskRows->count() }}</span></button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sop-pane"
+                    type="button">SOP<span class="tcount">{{ $sopRows->count() }}</span></button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-pane"
+                    type="button">Job Profile<span class="tcount">{{ $profileCount }}</span></button></li>
         </ul>
 
-        <div class="tab-content" id="mainTabsContent">
-            <div class="tab-pane fade show active" id="jobdesk-pane" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="section-title mb-0">Daftar Job Desk</h6>
-                    <button class="btn btn-pri" onclick="openModalCreateJobDesk()">
-                        <i class="fa-solid fa-plus me-1"></i>Tambah Job Desk
-                    </button>
-                </div>
-                <div id="alertContainerJobDesk"></div>
-                <div class="card card-shell">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table-modern mb-0">
-                                <thead>
-                                    <tr>
-                                        <th width="40">No</th>
-                                        <th>Jabatan</th>
-                                        <th>Karyawan</th>
-                                        <th>Fungsi Utama</th>
-                                        <th width="80" class="text-center">Tugas</th>
-                                        <th width="80" class="text-center">Wewenang</th>
-                                        <th width="90" class="text-center">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tbodyJobDesk">
-                                    @php $no = 0; @endphp
-                                    @forelse($jobDesks as $jobDesk)
-                                        @if (!empty($jobDesk->fungsi_utama) || !empty($jobDesk->tugas_tanggung_jawab) || !empty($jobDesk->wewenang))
-                                            @php $no++; @endphp
-                                            <tr>
-                                                <td class="text-muted">{{ $no }}</td>
-                                                <td>
-                                                    <strong style="color:var(--gray-900)">{{ $jobDesk->orgStructure->jabatan ?? '-' }}</strong>
-                                                    @if ($jobDesk->orgStructure->divisi ?? false)
-                                                        <br><small class="text-muted">{{ $jobDesk->orgStructure->divisi }}</small>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if ($jobDesk->orgStructure && $jobDesk->orgStructure->karyawans->count() > 0)
-                                                        @foreach ($jobDesk->orgStructure->karyawans as $k)
-                                                            <span class="badge-karyawan">{{ $k->nama_lengkap }}</span>
-                                                        @endforeach
-                                                    @else
-                                                        <span class="empty-text">—</span>
-                                                    @endif
-                                                </td>
-                                                <td style="max-width:250px">{{ Str::limit($jobDesk->fungsi_utama, 60) ?: '—' }}</td>
-                                                <td class="text-center"><span class="badge-count">{{ count($jobDesk->tugas_tanggung_jawab ?? []) }}</span></td>
-                                                <td class="text-center"><span class="badge-count">{{ count($jobDesk->wewenang ?? []) }}</span></td>
-                                                <td class="text-center">
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-sec dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                            <i class="fa-solid fa-ellipsis-vertical"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li><a class="dropdown-item" href="#" onclick="openModalDetailJobDesk({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-eye me-2" style="color:var(--pri)"></i>Detail</a></li>
-                                                            <li><a class="dropdown-item" href="#" onclick="openModalEditJobDesk({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-pen me-2" style="color:var(--warning)"></i>Edit</a></li>
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li><a class="dropdown-item text-danger" href="#" onclick="confirmDeleteJobDesk({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-trash me-2"></i>Hapus</a></li>
-                                                        </ul>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endif
-                                    @empty
-                                    @endforelse
-                                    @if ($no === 0)
-                                        <tr>
-                                            <td colspan="7">
-                                                <div class="empty-state">
-                                                    <i class="fa-solid fa-clipboard-list d-block"></i>
-                                                    <p class="fw-semibold">Belum ada data Job Desk</p>
-                                                    <small>Klik tombol "Tambah Job Desk" untuk memulai</small>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                </tbody>
-                            </table>
-                        </div>
+        <div class="tab-content">
+            {{-- ===================== JOB DESK ===================== --}}
+            <div class="tab-pane fade show active" id="jobdesk-pane">
+                <div class="bar">
+                    <h6>Daftar Job Desk</h6>
+                    <div class="d-flex gap-2">
+                        <input type="search" class="form-control form-control-sm search"
+                            placeholder="Cari jabatan / karyawan / fungsi..."
+                            oninput="filterRows('tblJobDesk', this.value)">
+                        <button class="btn btn-pri" onclick="openCreateJobDesk()"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Job Desk</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="tab-pane fade" id="sop-pane" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="section-title mb-0">Standard Operating Procedure</h6>
-                    <button class="btn btn-pri" onclick="openModalCreateSop()">
-                        <i class="fa-solid fa-plus me-1"></i>Tambah SOP
-                    </button>
-                </div>
-                <div id="alertContainerSop"></div>
-                <div class="card card-shell">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table-modern mb-0">
-                                <thead>
-                                    <tr>
-                                        <th width="40">No</th>
-                                        <th>Jabatan</th>
-                                        <th>Karyawan</th>
-                                        <th width="100" class="text-center">Jumlah SOP</th>
-                                        <th>SOP Utama</th>
-                                        <th width="90" class="text-center">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tbodySop">
-                                    @php
-                                        $sopNo = 0;
-                                        $sopDesks = $jobDesks->filter(fn($jd) => !empty($jd->sop) && count($jd->sop) > 0);
-                                    @endphp
-                                    @forelse($sopDesks as $jobDesk)
-                                        @php $sopNo++; @endphp
-                                        <tr>
-                                            <td class="text-muted">{{ $sopNo }}</td>
-                                            <td>
-                                                <strong style="color:var(--gray-900)">{{ $jobDesk->orgStructure->jabatan ?? '-' }}</strong>
-                                                @if ($jobDesk->orgStructure->divisi ?? false)
-                                                    <br><small class="text-muted">{{ $jobDesk->orgStructure->divisi }}</small>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($jobDesk->orgStructure && $jobDesk->orgStructure->karyawans->count() > 0)
-                                                    @foreach ($jobDesk->orgStructure->karyawans as $k)
-                                                        <span class="badge-karyawan">{{ $k->nama_lengkap }}</span>
-                                                    @endforeach
-                                                @else
-                                                    <span class="empty-text">—</span>
-                                                @endif
-                                            </td>
-                                            <td class="text-center"><span class="badge-count">{{ count($jobDesk->sop ?? []) }}</span></td>
-                                            <td style="max-width:280px">
-                                                @if (!empty($jobDesk->sop) && count($jobDesk->sop) > 0)
-                                                    {{ Str::limit($jobDesk->sop[0]['name'] ?? '-', 50) }}
-                                                @else
-                                                    —
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-outline-sec dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                        <i class="fa-solid fa-ellipsis-vertical"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu dropdown-menu-end">
-                                                        <li><a class="dropdown-item" href="#" onclick="openModalDetailSop({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-eye me-2" style="color:var(--pri)"></i>Detail</a></li>
-                                                        <li><a class="dropdown-item" href="#" onclick="openModalEditSop({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-pen me-2" style="color:var(--warning)"></i>Edit</a></li>
-                                                        <li><hr class="dropdown-divider"></li>
-                                                        <li><a class="dropdown-item text-danger" href="#" onclick="confirmDeleteSop({{ $jobDesk->id }}); return false;"><i class="fa-solid fa-trash me-2"></i>Hapus</a></li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6">
-                                                <div class="empty-state">
-                                                    <i class="fa-solid fa-file-contract d-block"></i>
-                                                    <p class="fw-semibold">Belum ada data SOP</p>
-                                                    <small>Klik tombol "Tambah SOP" untuk memulai</small>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="profile-pane" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="section-title mb-0">Job Profile per Struktur Organisasi</h6>
-                </div>
-                <div id="alertContainerProfile"></div>
-                <div id="profileAccordionArea">
-                    <div class="accordion" id="profileAccordion">
-                        @forelse($orgStructures as $org)
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="heading{{ $org->id }}">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $org->id }}">
-                                        <span class="me-2">{{ $org->jabatan }}</span>
-                                        @if ($org->divisi)
-                                            <small class="text-muted">— {{ $org->divisi }}</small>
+                <div id="alertJobDesk"></div>
+                <div class="table-responsive">
+                    <table class="tbl" id="tblJobDesk">
+                        <thead>
+                            <tr>
+                                <th width="40">No</th>
+                                <th>Jabatan</th>
+                                <th>Karyawan</th>
+                                <th>Fungsi Utama</th>
+                                <th width="80" class="text-center">Tugas</th>
+                                <th width="90" class="text-center">Wewenang</th>
+                                <th width="90" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($jobDeskRows as $jd)
+                                @php $kn = $names($jd->orgStructure); @endphp
+                                <tr
+                                    data-search="{{ strtolower(($jd->orgStructure->jabatan ?? '') . ' ' . ($jd->orgStructure->divisi ?? '') . ' ' . $kn->implode(' ') . ' ' . $jd->fungsi_utama) }}">
+                                    <td class="text-muted">{{ $loop->iteration }}</td>
+                                    <td>
+                                        <strong>{{ $jd->orgStructure->jabatan ?? '-' }}</strong>
+                                        @if ($jd->orgStructure->divisi ?? false)
+                                            <br><small class="text-muted">{{ $jd->orgStructure->divisi }}</small>
                                         @endif
-                                        <span class="badge-count ms-2">{{ $org->karyawans->count() }} karyawan</span>
-                                    </button>
-                                </h2>
-                                <div id="collapse{{ $org->id }}" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
-                                    <div class="accordion-body">
-                                        @forelse($org->karyawans as $karyawan)
-                                            <div class="karyawan-card">
-                                                <div class="d-flex justify-content-between align-items-start">
-                                                    <div>
-                                                        <div class="karyawan-name">{{ $karyawan->nama_lengkap }}</div>
-                                                        <div class="karyawan-meta">{{ $karyawan->jabatan ?? $org->jabatan }} · {{ $org->divisi ?? '-' }}</div>
-                                                    </div>
-                                                    <div class="d-flex gap-2">
-                                                        <button class="btn btn-sm btn-outline-sec" onclick="openModalProfile({{ $karyawan->id }}, '{{ addslashes($karyawan->nama_lengkap) }}')">
-                                                            <i class="fa-solid fa-pen me-1"></i>Profile
-                                                        </button>
-                                                        @if ($karyawan->jobProfile ?? false)
-                                                            <button class="btn btn-sm btn-outline-danger-custom" onclick="confirmDeleteProfile({{ $karyawan->id }})">
-                                                                <i class="fa-solid fa-trash"></i>
-                                                            </button>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                                @if ($karyawan->jobProfile ?? false)
-                                                    <div class="profile-section mt-3">
-                                                        @if (!empty($karyawan->jobProfile->qualifications))
-                                                            <div class="profile-section-title"><i class="fa-solid fa-graduation-cap"></i> Qualifications</div>
-                                                            <ul class="profile-list">
-                                                                @foreach ($karyawan->jobProfile->qualifications as $q)
-                                                                    <li>{{ $q }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        @endif
-                                                        @if (!empty($karyawan->jobProfile->descriptions))
-                                                            <div class="profile-section-title"><i class="fa-solid fa-file-lines"></i> Job Description</div>
-                                                            <ul class="profile-list">
-                                                                @foreach ($karyawan->jobProfile->descriptions as $d)
-                                                                    <li>{{ $d }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        @endif
-                                                        @if (!empty($karyawan->jobProfile->compensation_benefit))
-                                                            <div class="profile-section-title"><i class="fa-solid fa-gift"></i> Compensation & Benefit</div>
-                                                            <ul class="profile-list">
-                                                                @foreach ($karyawan->jobProfile->compensation_benefit as $c)
-                                                                    <li>{{ $c }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        @endif
-                                                    </div>
-                                                @else
-                                                    <p class="empty-text mt-2 mb-0">Belum ada Job Profile</p>
-                                                @endif
-                                            </div>
-                                        @empty
-                                            <p class="empty-text mb-0">Tidak ada karyawan pada jabatan ini</p>
+                                    </td>
+                                    <td>
+                                        @forelse($kn as $n)
+                                        <span class="nm">{{ $n }}</span>@empty<span
+                                                class="empty">—</span>
                                         @endforelse
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state">
-                                <i class="fa-solid fa-sitemap d-block"></i>
-                                <p class="fw-semibold">Belum ada struktur organisasi</p>
-                            </div>
-                        @endforelse
+                                    </td>
+                                    <td style="max-width:260px">{{ Str::limit($jd->fungsi_utama, 70) ?: '—' }}</td>
+                                    <td class="text-center"><span
+                                            class="cnt">{{ count($jd->tugas_tanggung_jawab ?? []) }}</span></td>
+                                    <td class="text-center"><span class="cnt">{{ count($jd->wewenang ?? []) }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown"><i
+                                                    class="fa-solid fa-ellipsis-vertical"></i></button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="openDetailJobDesk({{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-eye me-2 text-primary"></i>Detail</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="openEditJobDesk({{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-pen me-2 text-warning"></i>Edit</a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item text-danger" href="#"
+                                                        onclick="confirmDelete('jobdesk', {{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-trash me-2"></i>Hapus</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center empty py-4">Belum ada data Job Desk. Klik "Tambah
+                                        Job Desk" untuk memulai.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- ===================== SOP ===================== --}}
+            <div class="tab-pane fade" id="sop-pane">
+                <div class="bar">
+                    <h6>Standard Operating Procedure</h6>
+                    <div class="d-flex gap-2">
+                        <input type="search" class="form-control form-control-sm search"
+                            placeholder="Cari jabatan / karyawan / SOP..." oninput="filterRows('tblSop', this.value)">
+                        <button class="btn btn-pri" onclick="openCreateSop()"><i class="fa-solid fa-plus me-1"></i>Tambah
+                            SOP</button>
                     </div>
+                </div>
+                <div id="alertSop"></div>
+                <div class="table-responsive">
+                    <table class="tbl" id="tblSop">
+                        <thead>
+                            <tr>
+                                <th width="40">No</th>
+                                <th>Jabatan</th>
+                                <th>Karyawan</th>
+                                <th width="100" class="text-center">Jumlah SOP</th>
+                                <th>Daftar SOP</th>
+                                <th width="90" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($sopRows as $jd)
+                                @php $kn = $names($jd->orgStructure); @endphp
+                                <tr
+                                    data-search="{{ strtolower(($jd->orgStructure->jabatan ?? '') . ' ' . ($jd->orgStructure->divisi ?? '') . ' ' . $kn->implode(' ') . ' ' . collect($jd->sop)->pluck('name')->implode(' ')) }}">
+                                    <td class="text-muted">{{ $loop->iteration }}</td>
+                                    <td>
+                                        <strong>{{ $jd->orgStructure->jabatan ?? '-' }}</strong>
+                                        @if ($jd->orgStructure->divisi ?? false)
+                                            <br><small class="text-muted">{{ $jd->orgStructure->divisi }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @forelse($kn as $n)
+                                        <span class="nm">{{ $n }}</span>@empty<span
+                                                class="empty">—</span>
+                                        @endforelse
+                                    </td>
+                                    <td class="text-center"><span class="cnt">{{ count($jd->sop) }}</span></td>
+                                    <td>
+                                        <ul class="pl">
+                                            @foreach (array_slice($jd->sop, 0, 3) as $s)
+                                                <li>{{ Str::limit($s['name'] ?? '-', 60) }}</li>
+                                            @endforeach
+                                        </ul>
+                                        @if (count($jd->sop) > 3)
+                                            <small class="text-muted">+{{ count($jd->sop) - 3 }} lainnya</small>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                                type="button" data-bs-toggle="dropdown"><i
+                                                    class="fa-solid fa-ellipsis-vertical"></i></button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="openDetailSop({{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-eye me-2 text-primary"></i>Detail</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="openEditSop({{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-pen me-2 text-warning"></i>Edit</a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item text-danger" href="#"
+                                                        onclick="confirmDelete('sop', {{ $jd->id }}); return false;"><i
+                                                            class="fa-solid fa-trash me-2"></i>Hapus</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center empty py-4">Belum ada data SOP. Klik "Tambah
+                                        SOP" untuk memulai.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- ===================== JOB PROFILE (flat, tanpa accordion) ===================== --}}
+            <div class="tab-pane fade" id="profile-pane">
+                <div class="bar">
+                    <h6>Job Profile per Struktur Organisasi</h6>
+                    <input type="search" class="form-control form-control-sm search"
+                        placeholder="Cari nama / jabatan / divisi..." oninput="filterRows('tblProfile', this.value)">
+                </div>
+                <div id="alertProfile"></div>
+                <div class="table-responsive">
+                    <table class="tbl" id="tblProfile">
+                        <thead>
+                            <tr>
+                                <th width="200">Karyawan</th>
+                                <th>Qualification</th>
+                                <th>Job Description</th>
+                                <th>Compensation &amp; Benefit</th>
+                                <th width="110" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($orgStructures as $org)
+                                <tr class="grp">
+                                    <td colspan="5">
+                                        {{ $org->jabatan }}
+                                        @if ($org->divisi)
+                                            <span class="fw-normal text-muted"> — {{ $org->divisi }}</span>
+                                        @endif
+                                        <span class="cnt ms-1">{{ $org->karyawans->count() }}</span>
+                                    </td>
+                                </tr>
+                                @forelse($org->karyawans as $k)
+                                    @php $p = $k->jobProfile; @endphp
+                                    <tr
+                                        data-search="{{ strtolower($org->jabatan . ' ' . $org->divisi . ' ' . $k->nama_lengkap) }}">
+                                        <td><strong>{{ $k->nama_lengkap }}</strong></td>
+                                        @foreach (['qualifications', 'descriptions', 'compensation_benefit'] as $f)
+                                            <td>
+                                                @if ($p && !empty($p->$f))
+                                                    <ul class="pl">
+                                                        @foreach ($p->$f as $item)
+                                                            <li>{{ $item }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @else
+                                                    <span class="empty">{{ $p ? 'Belum diisi' : '—' }}</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                        <td class="text-center text-nowrap">
+                                            @if ($p)
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                    onclick="openProfile({{ $k->id }}, '{{ addslashes($k->nama_lengkap) }}')"
+                                                    title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="confirmDelete('profile', {{ $k->id }})"
+                                                    title="Hapus"><i class="fa-solid fa-trash"></i></button>
+                                            @else
+                                                <button class="btn btn-sm btn-pri"
+                                                    onclick="openProfile({{ $k->id }}, '{{ addslashes($k->nama_lengkap) }}')"><i
+                                                        class="fa-solid fa-plus"></i> Isi</button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="empty">Tidak ada karyawan pada jabatan ini</td>
+                                    </tr>
+                                @endforelse
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center empty py-4">Belum ada struktur organisasi</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalJobDesk" tabindex="-1" aria-hidden="true">
+    {{-- ===================== MODAL JOB DESK ===================== --}}
+    <div class="modal fade" id="modalJobDesk" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <form id="formJobDesk">
-                    <div class="modal-header modal-header-custom">
-                        <h5 class="modal-title" id="modalJobDeskTitle"><i class="fa-solid fa-clipboard-list me-2"></i>Tambah Job Desk</h5>
+                <form id="formJobDesk" class="d-flex flex-column overflow-hidden">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalJobDeskTitle">Tambah Job Desk</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" id="editJobDeskId" name="id">
-                        <div class="mb-3">
-                            <label class="form-label">Jabatan / Struktur Organisasi</label>
-                            <select class="form-select" id="selectOrgJobDesk" name="id_org" required>
-                                <option value="">— Pilih Jabatan —</option>
-                                @foreach ($orgStructures as $org)
-                                    <option value="{{ $org->id }}">{{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Fungsi Utama</label>
-                            <textarea class="form-control" id="fungsiUtama" name="fungsi_utama" rows="3"></textarea>
-                        </div>
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Tujuan Jabatan</label>
-                                <textarea class="form-control" name="tujuan_jabatan" rows="2"></textarea>
+                        <div class="modal-err"></div>
+                        <input type="hidden" id="jdId">
+                        <label class="flabel mt-0">Jabatan / Struktur Organisasi</label>
+                        <select class="form-select form-select-sm" id="jdOrg" name="id_org" required>
+                            <option value="">— Pilih Jabatan —</option>
+                            @foreach ($orgStructures as $org)
+                                <option value="{{ $org->id }}">
+                                    {{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
+                            @endforeach
+                        </select>
+
+                        <label class="flabel">Fungsi Utama</label>
+                        <textarea class="form-control form-control-sm" name="fungsi_utama" rows="3"></textarea>
+
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="flabel">Tujuan Jabatan</label>
+                                <textarea class="form-control form-control-sm" name="tujuan_jabatan" rows="2"></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Kualifikasi Pendidikan</label>
-                                <textarea class="form-control" name="kualifikasi_pendidikan" rows="2"></textarea>
+                            <div class="col-md-6"><label class="flabel">Kualifikasi Pendidikan</label>
+                                <textarea class="form-control form-control-sm" name="kualifikasi_pendidikan" rows="2"></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Pengalaman Kerja</label>
-                                <textarea class="form-control" name="pengalaman_kerja" rows="2"></textarea>
+                            <div class="col-md-6"><label class="flabel mt-0">Pengalaman Kerja</label>
+                                <textarea class="form-control form-control-sm" name="pengalaman_kerja" rows="2"></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Karakteristik Pribadi</label>
-                                <textarea class="form-control" name="karakteristik_pribadi" rows="2"></textarea>
+                            <div class="col-md-6"><label class="flabel mt-0">Karakteristik Pribadi</label>
+                                <textarea class="form-control form-control-sm" name="karakteristik_pribadi" rows="2"></textarea>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Kompetensi</label>
-                            <div id="kompetensiContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('kompetensiContainer', 'kompetensi[]', 'Kompetensi')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah Kompetensi
-                            </button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Tugas & Tanggung Jawab</label>
-                            <div id="tugasContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('tugasContainer', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah Tugas
-                            </button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Wewenang</label>
-                            <div id="wewenangContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('wewenangContainer', 'wewenang', 'Wewenang Utama', 'Detail Wewenang')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah Wewenang
-                            </button>
-                        </div>
+
+                        <label class="flabel">Kompetensi</label>
+                        <div id="jdKompetensi"></div>
+                        <button type="button" class="btn btn-sm btn-link p-0" onclick="addSimple('jdKompetensi')"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Kompetensi</button>
+
+                        <label class="flabel">Tugas &amp; Tanggung Jawab</label>
+                        <div id="jdTugas"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addParent('jdTugas')"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Tugas</button>
+
+                        <label class="flabel">Wewenang</label>
+                        <div id="jdWewenang"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="addParent('jdWewenang')"><i class="fa-solid fa-plus me-1"></i>Tambah
+                            Wewenang</button>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-pri" id="btnSubmitJobDesk"><i class="fa-solid fa-save me-1"></i>Simpan</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-pri" id="btnJobDesk"><i
+                                class="fa-solid fa-save me-1"></i>Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalSop" tabindex="-1" aria-hidden="true">
+    {{-- ===================== MODAL SOP ===================== --}}
+    <div class="modal fade" id="modalSop" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <form id="formSop">
-                    <div class="modal-header modal-header-custom">
-                        <h5 class="modal-title" id="modalSopTitle"><i class="fa-solid fa-file-contract me-2"></i>Tambah SOP</h5>
+                <form id="formSop" class="d-flex flex-column overflow-hidden">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalSopTitle">Tambah SOP</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" id="editSopId" name="id">
-                        <div class="mb-3">
-                            <label class="form-label">Jabatan / Struktur Organisasi</label>
-                            <select class="form-select" id="selectOrgSop" name="id_org" required>
-                                <option value="">— Pilih Jabatan —</option>
-                                @foreach ($orgStructures as $org)
-                                    <option value="{{ $org->id }}">{{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">SOP</label>
-                            <div id="sopContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addParentField('sopContainer', 'sop', 'SOP Utama', 'Detail SOP')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah SOP
-                            </button>
-                        </div>
+                        <div class="modal-err"></div>
+                        <input type="hidden" id="sopId">
+                        <label class="flabel mt-0">Jabatan / Struktur Organisasi</label>
+                        <select class="form-select form-select-sm" id="sopOrg" name="id_org" required>
+                            <option value="">— Pilih Jabatan —</option>
+                            @foreach ($orgStructures as $org)
+                                <option value="{{ $org->id }}">
+                                    {{ $org->jabatan }}{{ $org->divisi ? ' — ' . $org->divisi : '' }}</option>
+                            @endforeach
+                        </select>
+                        <label class="flabel">SOP</label>
+                        <div id="sopContainer"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="addParent('sopContainer')"><i class="fa-solid fa-plus me-1"></i>Tambah SOP</button>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-pri" id="btnSubmitSop"><i class="fa-solid fa-save me-1"></i>Simpan</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-pri" id="btnSop"><i
+                                class="fa-solid fa-save me-1"></i>Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalProfile" tabindex="-1" aria-hidden="true">
+    {{-- ===================== MODAL PROFILE ===================== --}}
+    <div class="modal fade" id="modalProfile" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <form id="formProfile">
-                    <div class="modal-header modal-header-custom">
-                        <h5 class="modal-title" id="modalProfileTitle"><i class="fa-solid fa-user-tie me-2"></i>Job Profile</h5>
+                <form id="formProfile" class="d-flex flex-column overflow-hidden">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalProfileTitle">Job Profile</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" id="profileKaryawanId" name="karyawan_id">
-                        <div class="mb-3">
-                            <label class="form-label">Qualifications</label>
-                            <div id="profQualificationContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profQualificationContainer', 'qualifications[]', 'Qualification')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah
-                            </button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Job Description</label>
-                            <div id="profDescriptionContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profDescriptionContainer', 'descriptions[]', 'Job Description')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah
-                            </button>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Compensation & Benefit</label>
-                            <div id="profCompensationContainer"></div>
-                            <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addSimpleField('profCompensationContainer', 'compensation_benefit[]', 'Compensation & Benefit')">
-                                <i class="fa-solid fa-plus me-1"></i>Tambah
-                            </button>
-                        </div>
+                        <div class="modal-err"></div>
+                        <input type="hidden" id="profKaryawanId" name="karyawan_id">
+                        <label class="flabel mt-0">Qualifications</label>
+                        <div id="profQual"></div>
+                        <button type="button" class="btn btn-sm btn-link p-0" onclick="addSimple('profQual')"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Qualification</button>
+
+                        <label class="flabel">Job Description</label>
+                        <div id="profDesc"></div>
+                        <button type="button" class="btn btn-sm btn-link p-0" onclick="addSimple('profDesc')"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Job Description</button>
+
+                        <label class="flabel">Compensation &amp; Benefit</label>
+                        <div id="profComp"></div>
+                        <button type="button" class="btn btn-sm btn-link p-0" onclick="addSimple('profComp')"><i
+                                class="fa-solid fa-plus me-1"></i>Tambah Compensation &amp; Benefit</button>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-pri" id="btnProfileSubmit"><i class="fa-solid fa-save me-1"></i>Simpan</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-pri" id="btnProfile"><i
+                                class="fa-solid fa-save me-1"></i>Simpan</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
+    {{-- ===================== MODAL DETAIL ===================== --}}
+    <div class="modal fade" id="modalDetail" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom">
-                    <h5 class="modal-title" id="modalDetailTitle"><i class="fa-solid fa-file-lines me-2"></i>Detail</h5>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalDetailTitle">Detail</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="detailContent">
-                    <div id="detailSkeleton"></div>
-                </div>
+                <div class="modal-body" id="detailContent"></div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalDelete" tabindex="-1" aria-hidden="true">
+    {{-- ===================== MODAL HAPUS ===================== --}}
+    <div class="modal fade" id="modalDelete" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header modal-header-custom">
-                    <h5 class="modal-title"><i class="fa-solid fa-trash me-2"></i>Konfirmasi Hapus</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Hapus</h5><button type="button" class="btn-close"
+                        data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <p id="deleteMessage" class="mb-0">Yakin ingin menghapus data ini?</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-sec" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" class="btn btn-outline-danger-custom" id="btnDeleteConfirm"><i class="fa-solid fa-trash me-1"></i>Hapus</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-sm btn-danger" id="btnDeleteConfirm"><i
+                            class="fa-solid fa-trash me-1"></i>Hapus</button>
                 </div>
             </div>
         </div>
     </div>
+
     @php
-        $orgStructuresData = $orgStructures->map(function ($o) {
-            return [
-                'id' => $o->id,
-                'jabatan' => $o->jabatan,
-                'divisi' => $o->divisi,
-                'karyawans' => $o->karyawans->map(function ($k) {
-                    return [
-                        'id' => $k->id,
-                        'nama_lengkap' => $k->nama_lengkap,
-                    ];
-                })->values(),
-            ];
-        })->values();
+        $orgData = $orgStructures
+            ->map(
+                fn($o) => [
+                    'id' => $o->id,
+                    'jabatan' => $o->jabatan,
+                    'divisi' => $o->divisi,
+                    'karyawans' => $o->karyawans
+                        ->map(fn($k) => ['id' => $k->id, 'nama_lengkap' => $k->nama_lengkap])
+                        ->values(),
+                ],
+            )
+            ->values();
     @endphp
 
     <script>
-        const orgStructures = {{ Illuminate\Support\Js::from($orgStructuresData) }};
-
-        let deleteId = null;
-        let deleteType = null;
+        const orgStructures = {{ \Illuminate\Support\Js::from($orgData) }};
+        const BASE = '/HR-dashboard';
+        let pIdx = 0;
         let isProfileUpdate = false;
+        let deleteId = null,
+            deleteType = null;
 
-        function skeletonDetail() {
-            return `
-            <div class="row g-2 mb-4">
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-12"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-            </div>
-            <div class="skeleton mb-3" style="height:18px;width:140px;"></div>
-            <div class="skeleton mb-4" style="height:60px;width:100%;"></div>
-            <div class="skeleton mb-3" style="height:18px;width:160px;"></div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-md-6"><div class="skeleton" style="height:64px;border-radius:8px;"></div></div>
-                <div class="col-12"><div class="skeleton" style="height:80px;border-radius:8px;"></div></div>
-            </div>
-            <div class="skeleton mb-3" style="height:18px;width:200px;"></div>
-            <div class="skeleton mb-2" style="height:90px;border-radius:8px;"></div>
-            <div class="skeleton mb-2" style="height:90px;border-radius:8px;"></div>
-            <div class="skeleton" style="height:90px;border-radius:8px;"></div>`;
+        const $id = i => document.getElementById(i);
+        const esc = t => t == null ? '' : String(t).replace(/[&<>"']/g, m => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        } [m]));
+        const csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+
+        /* ---------- filter tabel (baris grup ikut disembunyikan bila kosong) ---------- */
+        function filterRows(tableId, q) {
+            q = (q || '').toLowerCase();
+            let grp = null,
+                vis = 0;
+            const flush = () => {
+                if (grp) grp.style.display = vis ? '' : 'none';
+            };
+            document.querySelectorAll(`#${tableId} tbody tr`).forEach(r => {
+                if (r.classList.contains('grp')) {
+                    flush();
+                    grp = r;
+                    vis = 0;
+                    return;
+                }
+                if (!r.dataset.search) return;
+                const ok = r.dataset.search.includes(q);
+                r.style.display = ok ? '' : 'none';
+                if (ok) vis++;
+            });
+            flush();
         }
 
-        function skeletonModalForm() {
-            return `
-            <div class="skeleton mb-3" style="height:16px;width:40%;"></div>
-            <div class="skeleton mb-4" style="height:40px;width:100%;border-radius:8px;"></div>
-            <div class="skeleton mb-3" style="height:16px;width:30%;"></div>
-            <div class="skeleton mb-4" style="height:80px;width:100%;border-radius:8px;"></div>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6"><div class="skeleton" style="height:70px;border-radius:8px;"></div></div>
-                <div class="col-md-6"><div class="skeleton" style="height:70px;border-radius:8px;"></div></div>
-            </div>
-            <div class="skeleton mb-2" style="height:16px;width:35%;"></div>
-            <div class="skeleton mb-2" style="height:40px;width:100%;border-radius:8px;"></div>
-            <div class="skeleton" style="height:40px;width:100%;border-radius:8px;"></div>`;
+        function showAlert(id, type, msg) {
+            const el = $id(id);
+            el.innerHTML = `<div class="alert alert-${type === 'success' ? 'success' : 'danger'} py-2 small">${msg}</div>`;
+            setTimeout(() => el.innerHTML = '', 5000);
         }
 
-        function addSimpleField(containerId, fieldName, placeholder) {
-            const container = document.getElementById(containerId);
-            const idx = container.children.length;
-            const row = document.createElement('div');
-            row.className = 'detail-row mb-2';
-            row.innerHTML = `
-                <input type="text" name="${fieldName}" class="form-control" placeholder="${placeholder} ${idx + 1}">
-                <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>`;
-            container.appendChild(row);
+        /* ---------- input berulang: selalu minimal 1 input ---------- */
+        function simpleRow(name, ph, val, n) {
+            const d = document.createElement('div');
+            d.className = 'irow';
+            d.innerHTML =
+                `<input type="text" name="${name}" class="form-control form-control-sm" value="${esc(val)}" placeholder="${ph} ${n}">
+                <button type="button" class="btn btn-sm btn-light text-danger" title="Hapus" onclick="removeSimple(this)"><i class="fa-solid fa-xmark"></i></button>`;
+            return d;
         }
 
-        function populateSimpleField(containerId, fieldName, dataArray, placeholder) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            if (dataArray && dataArray.length > 0) {
-                dataArray.forEach((item, i) => {
-                    const row = document.createElement('div');
-                    row.className = 'detail-row mb-2';
-                    row.innerHTML = `
-                        <input type="text" name="${fieldName}" class="form-control" value="${escapeHtml(item)}" placeholder="${placeholder} ${i + 1}">
-                        <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>`;
-                    container.appendChild(row);
-                });
-            }
+        function fillSimple(id, name, ph, arr) {
+            const c = $id(id);
+            c.dataset.name = name;
+            c.dataset.ph = ph;
+            c.innerHTML = '';
+            (arr && arr.length ? arr : ['']).forEach(v => c.appendChild(simpleRow(name, ph, v, c.children.length + 1)));
         }
 
-        function addParentField(containerId, fieldName, parentPlaceholder, detailPlaceholder) {
-            const container = document.getElementById(containerId);
-            const parentIndex = container.children.length;
-            const card = document.createElement('div');
-            card.className = 'parent-card';
-            card.innerHTML = `
-                <div class="parent-header">
-                    <input type="text" name="${fieldName}[${parentIndex}][name]" class="form-control" placeholder="${parentPlaceholder}">
-                    <button type="button" class="btn btn-outline-danger-custom" onclick="this.closest('.parent-card').remove()">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+        function addSimple(id) {
+            const c = $id(id);
+            c.appendChild(simpleRow(c.dataset.name, c.dataset.ph, '', c.children.length + 1));
+        }
+
+        function removeSimple(b) {
+            const r = b.closest('.irow'),
+                c = r.parentElement;
+            r.remove();
+            if (!c.children.length) c.appendChild(simpleRow(c.dataset.name, c.dataset.ph, '', 1));
+        }
+
+        function detailRow(card, val, n) {
+            const d = document.createElement('div');
+            d.className = 'irow';
+            d.innerHTML =
+                `<span class="text-muted small" style="min-width:20px">${n}.</span>
+                <input type="text" name="${card.dataset.field}[${card.dataset.i}][details][]" class="form-control form-control-sm" value="${esc(val)}" placeholder="${card.dataset.dph} ${n}">
+                <button type="button" class="btn btn-sm btn-light text-danger" title="Hapus" onclick="removeDetail(this)"><i class="fa-solid fa-xmark"></i></button>`;
+            return d;
+        }
+
+        function parentCard(field, pph, dph, item) {
+            const i = pIdx++;
+            const d = document.createElement('div');
+            d.className = 'pgroup';
+            Object.assign(d.dataset, {
+                i,
+                field,
+                dph
+            });
+            d.innerHTML =
+                `<div class="phead">
+                    <input type="text" name="${field}[${i}][name]" class="form-control form-control-sm fw-semibold" value="${esc(item && item.name)}" placeholder="${pph}">
+                    <button type="button" class="btn btn-sm btn-light text-danger" title="Hapus" onclick="removeParent(this)"><i class="fa-solid fa-trash"></i></button>
                 </div>
-                <div class="details-container" data-field-name="${fieldName}" data-parent-index="${parentIndex}" data-detail-placeholder="${detailPlaceholder}"></div>
-                <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addDetailField(this)">
-                    <i class="fa-solid fa-plus me-1"></i>Tambah ${detailPlaceholder}
-                </button>`;
-            container.appendChild(card);
+                <div class="dwrap"></div>
+                <button type="button" class="btn btn-sm btn-link p-0 mt-1" onclick="addDetail(this)"><i class="fa-solid fa-plus me-1"></i>Tambah ${dph}</button>`;
+            const w = d.querySelector('.dwrap');
+            (item && item.details && item.details.length ? item.details : ['']).forEach(v => w.appendChild(detailRow(d, v, w
+                .children.length + 1)));
+            return d;
         }
 
-        function addDetailField(btn) {
-            const detailsContainer = btn.previousElementSibling;
-            const fieldName = detailsContainer.dataset.fieldName;
-            const parentIndex = detailsContainer.dataset.parentIndex;
-            const detailPlaceholder = detailsContainer.dataset.detailPlaceholder;
-            const detailIndex = detailsContainer.children.length;
-            const row = document.createElement('div');
-            row.className = 'detail-row';
-            row.innerHTML = `
-                <span class="text-muted small" style="min-width:20px">${detailIndex + 1}.</span>
-                <input type="text" name="${fieldName}[${parentIndex}][details][]" class="form-control" placeholder="${detailPlaceholder} ${detailIndex + 1}">
-                <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>`;
-            detailsContainer.appendChild(row);
+        function fillParent(id, field, pph, dph, arr) {
+            const c = $id(id);
+            Object.assign(c.dataset, {
+                field,
+                pph,
+                dph
+            });
+            c.innerHTML = '';
+            (arr && arr.length ? arr : [null]).forEach(it => c.appendChild(parentCard(field, pph, dph, it)));
         }
 
-        function populateParentField(containerId, fieldName, dataArray, parentPlaceholder, detailPlaceholder) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            if (dataArray && dataArray.length > 0) {
-                dataArray.forEach((item, parentIndex) => {
-                    const card = document.createElement('div');
-                    card.className = 'parent-card';
-                    card.innerHTML = `
-                        <div class="parent-header">
-                            <input type="text" name="${fieldName}[${parentIndex}][name]" class="form-control" value="${escapeHtml(item.name || '')}" placeholder="${parentPlaceholder}">
-                            <button type="button" class="btn btn-outline-danger-custom" onclick="this.closest('.parent-card').remove()">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                        <div class="details-container" data-field-name="${fieldName}" data-parent-index="${parentIndex}" data-detail-placeholder="${detailPlaceholder}"></div>
-                        <button type="button" class="btn btn-outline-sec btn-sm mt-2" onclick="addDetailField(this)">
-                            <i class="fa-solid fa-plus me-1"></i>Tambah ${detailPlaceholder}
-                        </button>`;
-                    container.appendChild(card);
-                    const detailsContainer = card.querySelector('.details-container');
-                    if (item.details && item.details.length > 0) {
-                        item.details.forEach((detail, detailIndex) => {
-                            const row = document.createElement('div');
-                            row.className = 'detail-row';
-                            row.innerHTML = `
-                                <span class="text-muted small" style="min-width:20px">${detailIndex + 1}.</span>
-                                <input type="text" name="${fieldName}[${parentIndex}][details][]" class="form-control" value="${escapeHtml(detail)}" placeholder="${detailPlaceholder} ${detailIndex + 1}">
-                                <button type="button" class="btn btn-outline-danger-custom btn-sm" onclick="this.parentElement.remove()">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>`;
-                            detailsContainer.appendChild(row);
-                        });
-                    }
-                });
-            }
+        function addParent(id) {
+            const c = $id(id);
+            c.appendChild(parentCard(c.dataset.field, c.dataset.pph, c.dataset.dph, null));
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return String(text).replace(/[&<>"']/g, m => map[m]);
+        function removeParent(b) {
+            const g = b.closest('.pgroup'),
+                c = g.parentElement;
+            g.remove();
+            if (!c.children.length) c.appendChild(parentCard(c.dataset.field, c.dataset.pph, c.dataset.dph, null));
         }
 
-        function showAlert(containerId, type, message) {
-            const alertContainer = document.getElementById(containerId);
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation';
-            alertContainer.innerHTML = `<div class="alert alert-custom ${alertClass} alert-dismissible fade show"><i class="fa-solid ${icon} me-2"></i>${message}<button type="button" class="btn-close" data-bs-dismiss="alert" style="font-size:.65rem"></button></div>`;
-            setTimeout(() => { alertContainer.innerHTML = ''; }, 5000);
+        function addDetail(b) {
+            const g = b.closest('.pgroup'),
+                w = g.querySelector('.dwrap');
+            w.appendChild(detailRow(g, '', w.children.length + 1));
         }
 
-        function renderHierarchicalList(title, dataArray, icon = 'fa-list-check') {
-            let html = `<h6 class="section-title mt-4"><i class="fa-solid ${icon}"></i>${title}</h6>`;
-            if (dataArray && dataArray.length > 0) {
-                dataArray.forEach((item, index) => {
-                    html += `<div class="detail-block">`;
-                    html += `<div class="detail-block-title">${index + 1}. ${escapeHtml(item.name || '-')}</div>`;
-                    if (item.details && item.details.length > 0) {
-                        html += `<ul>`;
-                        item.details.forEach(d => html += `<li>${escapeHtml(d)}</li>`);
-                        html += `</ul>`;
-                    } else {
-                        html += `<div class="empty-text" style="margin-left:18px">Tidak ada detail</div>`;
-                    }
-                    html += `</div>`;
-                });
-            } else {
-                html += '<p class="empty-text">-</p>';
-            }
-            return html;
+        function removeDetail(b) {
+            const r = b.closest('.irow'),
+                w = r.parentElement,
+                g = w.closest('.pgroup');
+            r.remove();
+            if (!w.children.length) w.appendChild(detailRow(g, '', 1));
         }
 
-        function openModalCreateJobDesk() {
-            document.getElementById('modalJobDeskTitle').innerHTML = '<i class="fa-solid fa-clipboard-list me-2"></i>Tambah Job Desk';
-            document.getElementById('formJobDesk').reset();
-            document.getElementById('editJobDeskId').value = '';
-            document.getElementById('kompetensiContainer').innerHTML = '';
-            document.getElementById('tugasContainer').innerHTML = '';
-            document.getElementById('wewenangContainer').innerHTML = '';
-            document.getElementById('btnSubmitJobDesk').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
-            new bootstrap.Modal(document.getElementById('modalJobDesk')).show();
+        /* ---------- fetch & submit ---------- */
+        function post(url, fd, put) {
+            if (put) fd.append('_method', 'PUT');
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrf(),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: fd
+            }).then(async r => {
+                const d = await r.json().catch(() => ({}));
+                if (!r.ok && !d.message && !d.errors) d.message = 'Error ' + r.status;
+                return d;
+            });
         }
 
-        function openModalEditJobDesk(id) {
-            const modal = new bootstrap.Modal(document.getElementById('modalJobDesk'));
-            document.getElementById('modalJobDeskTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit Job Desk';
-            document.getElementById('formJobDesk').reset();
-            document.getElementById('editJobDeskId').value = id;
-            document.getElementById('kompetensiContainer').innerHTML = skeletonModalForm();
-            document.getElementById('tugasContainer').innerHTML = '';
-            document.getElementById('wewenangContainer').innerHTML = '';
-            document.getElementById('btnSubmitJobDesk').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-            modal.show();
-
-            fetch(`/HR-dashboard/job-desk/api/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        document.getElementById('selectOrgJobDesk').value = data.id_org;
-                        document.getElementById('fungsiUtama').value = data.fungsi_utama || '';
-                        document.querySelector('#formJobDesk [name="tujuan_jabatan"]').value = data.tujuan_jabatan || '';
-                        document.querySelector('#formJobDesk [name="kualifikasi_pendidikan"]').value = data.kualifikasi_pendidikan || '';
-                        document.querySelector('#formJobDesk [name="pengalaman_kerja"]').value = data.pengalaman_kerja || '';
-                        document.querySelector('#formJobDesk [name="karakteristik_pribadi"]').value = data.karakteristik_pribadi || '';
-                        populateSimpleField('kompetensiContainer', 'kompetensi[]', data.kompetensi, 'Kompetensi');
-                        populateParentField('tugasContainer', 'tugas_tanggung_jawab', data.tugas_tanggung_jawab, 'Tugas Utama', 'Detail Tugas');
-                        populateParentField('wewenangContainer', 'wewenang', data.wewenang, 'Wewenang Utama', 'Detail Wewenang');
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('kompetensiContainer').innerHTML = '';
-                    showAlert('alertContainerJobDesk', 'error', 'Gagal memuat data Job Desk');
-                });
-        }
-
-        function openModalDetailJobDesk(id) {
-            document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail Job Desk';
-            document.getElementById('detailContent').innerHTML = skeletonDetail();
-            new bootstrap.Modal(document.getElementById('modalDetail')).show();
-
-            fetch(`/HR-dashboard/job-desk/api/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        const org = orgStructures.find(o => o.id == data.id_org);
-                        const karyawanList = org && org.karyawans ? org.karyawans.map(k => k.nama_lengkap).join(', ') : '—';
-                        let kompetensiHtml = '';
-                        if (data.kompetensi && data.kompetensi.length > 0) {
-                            data.kompetensi.forEach(k => kompetensiHtml += `<span class="kompetensi-tag">${escapeHtml(k)}</span>`);
+        function bindForm(formId, btnId, modalId, alertId, target) {
+            const form = $id(formId);
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const btn = $id(btnId),
+                    old = btn.innerHTML,
+                    err = form.querySelector('.modal-err');
+                const [url, put] = target();
+                err.innerHTML = '';
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
+                post(url, new FormData(this), put).then(d => {
+                        if (d.success) {
+                            bootstrap.Modal.getInstance($id(modalId)).hide();
+                            showAlert(alertId, 'success', d.message);
+                            setTimeout(() => location.reload(), 900);
                         } else {
-                            kompetensiHtml = '<span class="empty-text">-</span>';
+                            let m = esc(d.message || 'Terjadi kesalahan');
+                            if (d.errors) m += '<br>' + Object.values(d.errors).flat().map(esc).join('<br>');
+                            err.innerHTML = `<div class="alert alert-danger">${m}</div>`;
                         }
-                        const html = `
-                            <div class="row g-2 mb-4">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? escapeHtml(org.jabatan) : '—'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? escapeHtml(org.divisi || '—') : '—'}</div></div></div>
-                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${escapeHtml(karyawanList)}</div></div></div>
-                            </div>
-                            <h6 class="section-title"><i class="fa-solid fa-bullseye"></i>Fungsi Utama</h6>
-                            <p style="color:var(--gray-700);line-height:1.7;font-size:.9rem">${data.fungsi_utama ? escapeHtml(data.fungsi_utama) : '<span class="empty-text">Belum diisi</span>'}</p>
-                            <h6 class="section-title"><i class="fa-solid fa-user-tie"></i>Spesifikasi Jabatan</h6>
-                            <div class="row g-3 mb-3">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Tujuan</div><div class="value" style="font-size:.85rem">${escapeHtml(data.tujuan_jabatan || '-')}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pendidikan</div><div class="value" style="font-size:.85rem">${escapeHtml(data.kualifikasi_pendidikan || '-')}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Pengalaman</div><div class="value" style="font-size:.85rem">${escapeHtml(data.pengalaman_kerja || '-')}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Karakteristik</div><div class="value" style="font-size:.85rem">${escapeHtml(data.karakteristik_pribadi || '-')}</div></div></div>
-                                <div class="col-12"><div class="info-card-mini"><div class="label">Kompetensi</div><div class="value mt-1">${kompetensiHtml}</div></div></div>
-                            </div>
-                            ${renderHierarchicalList('Tugas dan Tanggung Jawab', data.tugas_tanggung_jawab, 'fa-list-check')}
-                            ${renderHierarchicalList('Wewenang', data.wewenang, 'fa-gavel')}
-                        `;
-                        document.getElementById('detailContent').innerHTML = html;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('detailContent').innerHTML = '<div class="empty-state"><p>Gagal memuat data</p></div>';
-                });
-        }
-
-        function confirmDeleteJobDesk(id) {
-            deleteId = id;
-            deleteType = 'jobdesk';
-            document.getElementById('deleteMessage').textContent = 'Yakin ingin menghapus Job Desk ini? Tindakan tidak bisa dibatalkan.';
-            new bootstrap.Modal(document.getElementById('modalDelete')).show();
-        }
-
-        document.getElementById('formJobDesk').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const editId = document.getElementById('editJobDeskId').value;
-            const url = editId ? `/HR-dashboard/job-desk/${editId}` : '/HR-dashboard/job-desk/store';
-            if (editId) formData.append('_method', 'PUT');
-            const btn = document.getElementById('btnSubmitJobDesk');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalJobDesk')).hide();
-                    showAlert('alertContainerJobDesk', 'success', data.message);
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    let errorMsg = data.message || 'Terjadi kesalahan';
-                    if (data.errors) errorMsg += '<br>' + Object.values(data.errors).flat().join('<br>');
-                    showAlert('alertContainerJobDesk', 'error', errorMsg);
-                }
-            })
-            .catch(error => showAlert('alertContainerJobDesk', 'error', 'Gagal menyimpan data: ' + error.message))
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = editId ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
-            });
-        });
-
-        function openModalCreateSop() {
-            document.getElementById('modalSopTitle').innerHTML = '<i class="fa-solid fa-file-contract me-2"></i>Tambah SOP';
-            document.getElementById('formSop').reset();
-            document.getElementById('editSopId').value = '';
-            document.getElementById('sopContainer').innerHTML = '';
-            document.getElementById('btnSubmitSop').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
-            new bootstrap.Modal(document.getElementById('modalSop')).show();
-        }
-
-        function openModalEditSop(id) {
-            const modal = new bootstrap.Modal(document.getElementById('modalSop'));
-            document.getElementById('modalSopTitle').innerHTML = '<i class="fa-solid fa-pen me-2"></i>Edit SOP';
-            document.getElementById('formSop').reset();
-            document.getElementById('editSopId').value = id;
-            document.getElementById('sopContainer').innerHTML = skeletonModalForm();
-            document.getElementById('btnSubmitSop').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-            modal.show();
-
-            fetch(`/HR-dashboard/sop/api/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        document.getElementById('selectOrgSop').value = data.id_org;
-                        populateParentField('sopContainer', 'sop', data.sop, 'SOP Utama', 'Detail SOP');
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('sopContainer').innerHTML = '';
-                    showAlert('alertContainerSop', 'error', 'Gagal memuat data SOP');
-                });
-        }
-
-        function openModalDetailSop(id) {
-            document.getElementById('modalDetailTitle').innerHTML = '<i class="fa-solid fa-file-lines me-2"></i>Detail SOP';
-            document.getElementById('detailContent').innerHTML = skeletonDetail();
-            new bootstrap.Modal(document.getElementById('modalDetail')).show();
-
-            fetch(`/HR-dashboard/sop/api/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data) {
-                        const org = orgStructures.find(o => o.id == data.id_org);
-                        const karyawanList = org && org.karyawans ? org.karyawans.map(k => k.nama_lengkap).join(', ') : '—';
-                        const html = `
-                            <div class="row g-2 mb-4">
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Jabatan</div><div class="value">${org ? escapeHtml(org.jabatan) : '—'}</div></div></div>
-                                <div class="col-md-6"><div class="info-card-mini"><div class="label">Divisi</div><div class="value">${org ? escapeHtml(org.divisi || '—') : '—'}</div></div></div>
-                                <div class="col-12"><div class="info-card-mini"><div class="label">Karyawan</div><div class="value">${escapeHtml(karyawanList)}</div></div></div>
-                            </div>
-                            ${renderHierarchicalList('Standard Operating Procedure (SOP)', data.sop, 'fa-file-contract')}
-                        `;
-                        document.getElementById('detailContent').innerHTML = html;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('detailContent').innerHTML = '<div class="empty-state"><p>Gagal memuat data</p></div>';
-                });
-        }
-
-        function confirmDeleteSop(id) {
-            deleteId = id;
-            deleteType = 'sop';
-            document.getElementById('deleteMessage').textContent = 'Yakin ingin menghapus SOP ini? Tindakan tidak bisa dibatalkan.';
-            new bootstrap.Modal(document.getElementById('modalDelete')).show();
-        }
-
-        document.getElementById('formSop').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const editId = document.getElementById('editSopId').value;
-            const url = editId ? `/HR-dashboard/sop/${editId}` : '/HR-dashboard/sop/store';
-            if (editId) formData.append('_method', 'PUT');
-            const btn = document.getElementById('btnSubmitSop');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalSop')).hide();
-                    showAlert('alertContainerSop', 'success', data.message);
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    let errorMsg = data.message || 'Terjadi kesalahan';
-                    if (data.errors) errorMsg += '<br>' + Object.values(data.errors).flat().join('<br>');
-                    showAlert('alertContainerSop', 'error', errorMsg);
-                }
-            })
-            .catch(error => showAlert('alertContainerSop', 'error', 'Gagal menyimpan data: ' + error.message))
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = editId ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
-            });
-        });
-
-        function openModalProfile(karyawanId, namaKaryawan) {
-            document.getElementById('formProfile').reset();
-            document.getElementById('profileKaryawanId').value = karyawanId;
-            document.getElementById('profQualificationContainer').innerHTML = skeletonModalForm();
-            document.getElementById('profDescriptionContainer').innerHTML = '';
-            document.getElementById('profCompensationContainer').innerHTML = '';
-            document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-user-tie me-2"></i>Job Profile — ${escapeHtml(namaKaryawan)}`;
-            document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Memuat...';
-            document.getElementById('btnProfileSubmit').disabled = true;
-            new bootstrap.Modal(document.getElementById('modalProfile')).show();
-
-            fetch(`/HR-dashboard/karyawan-profile/${karyawanId}`)
-                .then(r => {
-                    if (r.status === 204 || r.status === 404) return null;
-                    return r.json();
-                })
-                .then(data => {
-                    document.getElementById('profQualificationContainer').innerHTML = '';
-                    document.getElementById('profDescriptionContainer').innerHTML = '';
-                    document.getElementById('profCompensationContainer').innerHTML = '';
-                    document.getElementById('btnProfileSubmit').disabled = false;
-
-                    if (data && data.id) {
-                        isProfileUpdate = true;
-                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-pen me-2"></i>Edit Job Profile — ${escapeHtml(namaKaryawan)}`;
-                        document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Update';
-                        populateSimpleField('profQualificationContainer', 'qualifications[]', data.qualifications || [], 'Qualification');
-                        populateSimpleField('profDescriptionContainer', 'descriptions[]', data.descriptions || [], 'Job Description');
-                        populateSimpleField('profCompensationContainer', 'compensation_benefit[]', data.compensation_benefit || [], 'Compensation & Benefit');
-                    } else {
-                        isProfileUpdate = false;
-                        document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${escapeHtml(namaKaryawan)}`;
-                        document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
-                    }
-                })
-                .catch(err => {
-                    console.error('Error fetching profile:', err);
-                    isProfileUpdate = false;
-                    document.getElementById('profQualificationContainer').innerHTML = '';
-                    document.getElementById('btnProfileSubmit').disabled = false;
-                    document.getElementById('modalProfileTitle').innerHTML = `<i class="fa-solid fa-plus me-2"></i>Tambah Job Profile — ${escapeHtml(namaKaryawan)}`;
-                    document.getElementById('btnProfileSubmit').innerHTML = '<i class="fa-solid fa-save me-1"></i>Simpan';
-                });
-        }
-
-        document.getElementById('formProfile').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const karyawanId = document.getElementById('profileKaryawanId').value;
-            if (!formData.has('karyawan_id')) formData.append('karyawan_id', karyawanId);
-            const url = isProfileUpdate ? `/HR-dashboard/karyawan-profile/${karyawanId}` : '/HR-dashboard/karyawan-profile';
-            if (isProfileUpdate) formData.append('_method', 'PUT');
-            const btn = document.getElementById('btnProfileSubmit');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menyimpan...';
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalProfile')).hide();
-                    showAlert('alertContainerProfile', 'success', data.message);
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    let errorMsg = data.message || 'Terjadi kesalahan';
-                    if (data.errors) errorMsg += '<br>' + Object.values(data.errors).flat().join('<br>');
-                    showAlert('alertContainerProfile', 'error', errorMsg);
-                }
-            })
-            .catch(err => showAlert('alertContainerProfile', 'error', 'Error: ' + err.message))
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = isProfileUpdate ? '<i class="fa-solid fa-save me-1"></i>Update' : '<i class="fa-solid fa-save me-1"></i>Simpan';
-            });
-        });
-
-        function confirmDeleteProfile(karyawanId) {
-            if (!confirm('Yakin ingin menghapus Job Profile karyawan ini?')) return;
-            fetch(`/HR-dashboard/karyawan-profile/${karyawanId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('alertContainerProfile', 'success', data.message);
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showAlert('alertContainerProfile', 'error', data.message);
-                }
+                    }).catch(e => err.innerHTML =
+                        `<div class="alert alert-danger">Gagal menyimpan: ${esc(e.message)}</div>`)
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerHTML = old;
+                    });
             });
         }
-
-        document.getElementById('btnDeleteConfirm').addEventListener('click', function() {
-            if (!deleteId) return;
-            let url = '', containerAlert = '';
-            if (deleteType === 'jobdesk') {
-                url = `/HR-dashboard/job-desk/${deleteId}`;
-                containerAlert = 'alertContainerJobDesk';
-            } else if (deleteType === 'sop') {
-                url = `/HR-dashboard/sop/${deleteId}`;
-                containerAlert = 'alertContainerSop';
+        const showModal = id => bootstrap.Modal.getOrCreateInstance($id(id)).show();
+        const getJson = url => fetch(url, {
+            headers: {
+                'Accept': 'application/json'
             }
-            const btn = this;
+        }).then(r => r.json());
+
+        /* ---------- detail ---------- */
+        function hier(title, arr) {
+            let h = `<div class="sec">${title}</div>`;
+            if (arr && arr.length) {
+                h += '<ol class="hl">';
+                arr.forEach(i => {
+                    h += `<li><strong>${esc(i.name || '-')}</strong>`;
+                    if (i.details && i.details.length) h += '<ul>' + i.details.map(d => `<li>${esc(d)}</li>`).join(
+                        '') + '</ul>';
+                    h += '</li>';
+                });
+                h += '</ol>';
+            } else h += '<div class="empty">-</div>';
+            return h;
+        }
+
+        function headInfo(data) {
+            const org = orgStructures.find(o => o.id == data.id_org);
+            const names = org ? org.karyawans.map(k => k.nama_lengkap).join(', ') : '';
+            return `<table class="kv">
+                <tr><th>Jabatan</th><td><strong>${esc(org ? org.jabatan : '—')}</strong></td></tr>
+                <tr><th>Divisi</th><td>${esc(org ? org.divisi || '—' : '—')}</td></tr>
+                <tr><th>Karyawan</th><td>${esc(names || '—')}</td></tr>
+            </table>`;
+        }
+        const loading =
+            '<div class="text-center text-muted py-4"><i class="fa-solid fa-spinner fa-spin"></i> Memuat...</div>';
+
+        function openDetailJobDesk(id) {
+            $id('modalDetailTitle').textContent = 'Detail Job Desk';
+            $id('detailContent').innerHTML = loading;
+            showModal('modalDetail');
+            getJson(`${BASE}/job-desk/api/${id}`).then(d => {
+                const komp = (d.kompetensi || []).map(k => `<span class="tag">${esc(k)}</span>`).join('') ||
+                    '<span class="empty">-</span>';
+                $id('detailContent').innerHTML = headInfo(d) +
+                    `<div class="sec">Fungsi Utama</div><p class="mb-0">${d.fungsi_utama ? esc(d.fungsi_utama) : '<span class="empty">Belum diisi</span>'}</p>
+                    <div class="sec">Spesifikasi Jabatan</div>
+                    <table class="kv">
+                        <tr><th>Tujuan</th><td>${esc(d.tujuan_jabatan || '-')}</td></tr>
+                        <tr><th>Pendidikan</th><td>${esc(d.kualifikasi_pendidikan || '-')}</td></tr>
+                        <tr><th>Pengalaman</th><td>${esc(d.pengalaman_kerja || '-')}</td></tr>
+                        <tr><th>Karakteristik</th><td>${esc(d.karakteristik_pribadi || '-')}</td></tr>
+                        <tr><th>Kompetensi</th><td>${komp}</td></tr>
+                    </table>` +
+                    hier('Tugas dan Tanggung Jawab', d.tugas_tanggung_jawab) + hier('Wewenang', d.wewenang);
+            }).catch(() => $id('detailContent').innerHTML = '<div class="empty">Gagal memuat data</div>');
+        }
+
+        function openDetailSop(id) {
+            $id('modalDetailTitle').textContent = 'Detail SOP';
+            $id('detailContent').innerHTML = loading;
+            showModal('modalDetail');
+            getJson(`${BASE}/sop/api/${id}`).then(d => {
+                $id('detailContent').innerHTML = headInfo(d) + hier('Standard Operating Procedure (SOP)', d.sop);
+            }).catch(() => $id('detailContent').innerHTML = '<div class="empty">Gagal memuat data</div>');
+        }
+
+        /* ---------- Job Desk ---------- */
+        function openCreateJobDesk() {
+            const f = $id('formJobDesk');
+            f.reset();
+            f.querySelector('.modal-err').innerHTML = '';
+            $id('jdId').value = '';
+            $id('jdOrg').disabled = false;
+            $id('modalJobDeskTitle').textContent = 'Tambah Job Desk';
+            fillSimple('jdKompetensi', 'kompetensi[]', 'Kompetensi', []);
+            fillParent('jdTugas', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas', []);
+            fillParent('jdWewenang', 'wewenang', 'Wewenang Utama', 'Detail Wewenang', []);
+            showModal('modalJobDesk');
+        }
+
+        function openEditJobDesk(id) {
+            const f = $id('formJobDesk');
+            f.reset();
+            f.querySelector('.modal-err').innerHTML = '';
+            $id('jdId').value = id;
+            $id('jdOrg').disabled = false;
+            $id('modalJobDeskTitle').textContent = 'Edit Job Desk';
+            fillSimple('jdKompetensi', 'kompetensi[]', 'Kompetensi', []);
+            fillParent('jdTugas', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas', []);
+            fillParent('jdWewenang', 'wewenang', 'Wewenang Utama', 'Detail Wewenang', []);
+            showModal('modalJobDesk');
+            getJson(`${BASE}/job-desk/api/${id}`).then(d => {
+                if (!d) return;
+                $id('jdOrg').value = d.id_org;
+                ['fungsi_utama', 'tujuan_jabatan', 'kualifikasi_pendidikan', 'pengalaman_kerja',
+                    'karakteristik_pribadi'
+                ]
+                .forEach(n => f.querySelector(`[name="${n}"]`).value = d[n] || '');
+                fillSimple('jdKompetensi', 'kompetensi[]', 'Kompetensi', d.kompetensi);
+                fillParent('jdTugas', 'tugas_tanggung_jawab', 'Tugas Utama', 'Detail Tugas', d
+                .tugas_tanggung_jawab);
+                fillParent('jdWewenang', 'wewenang', 'Wewenang Utama', 'Detail Wewenang', d.wewenang);
+            }).catch(() => f.querySelector('.modal-err').innerHTML =
+                '<div class="alert alert-danger">Gagal memuat data Job Desk</div>');
+        }
+
+        /* ---------- SOP ---------- */
+        function openCreateSop() {
+            const f = $id('formSop');
+            f.reset();
+            f.querySelector('.modal-err').innerHTML = '';
+            $id('sopId').value = '';
+            $id('modalSopTitle').textContent = 'Tambah SOP';
+            fillParent('sopContainer', 'sop', 'SOP Utama', 'Detail SOP', []);
+            showModal('modalSop');
+        }
+
+        function openEditSop(id) {
+            const f = $id('formSop');
+            f.reset();
+            f.querySelector('.modal-err').innerHTML = '';
+            $id('sopId').value = id;
+            $id('modalSopTitle').textContent = 'Edit SOP';
+            fillParent('sopContainer', 'sop', 'SOP Utama', 'Detail SOP', []);
+            showModal('modalSop');
+            getJson(`${BASE}/sop/api/${id}`).then(d => {
+                if (!d) return;
+                $id('sopOrg').value = d.id_org;
+                fillParent('sopContainer', 'sop', 'SOP Utama', 'Detail SOP', d.sop);
+            }).catch(() => f.querySelector('.modal-err').innerHTML =
+                '<div class="alert alert-danger">Gagal memuat data SOP</div>');
+        }
+
+        /* ---------- Job Profile ---------- */
+        function openProfile(karyawanId, nama) {
+            const f = $id('formProfile');
+            f.reset();
+            f.querySelector('.modal-err').innerHTML = '';
+            $id('profKaryawanId').value = karyawanId;
+            $id('modalProfileTitle').textContent = 'Job Profile — ' + nama;
+            fillSimple('profQual', 'qualifications[]', 'Qualification', []);
+            fillSimple('profDesc', 'descriptions[]', 'Job Description', []);
+            fillSimple('profComp', 'compensation_benefit[]', 'Compensation & Benefit', []);
+            showModal('modalProfile');
+            getJson(`${BASE}/karyawan-profile/${karyawanId}`).then(d => {
+                isProfileUpdate = !!(d && d.id);
+                $id('modalProfileTitle').textContent = (isProfileUpdate ? 'Edit' : 'Tambah') + ' Job Profile — ' +
+                    nama;
+                if (isProfileUpdate) {
+                    fillSimple('profQual', 'qualifications[]', 'Qualification', d.qualifications);
+                    fillSimple('profDesc', 'descriptions[]', 'Job Description', d.descriptions);
+                    fillSimple('profComp', 'compensation_benefit[]', 'Compensation & Benefit', d
+                        .compensation_benefit);
+                }
+            }).catch(() => isProfileUpdate = false);
+        }
+
+        /* ---------- Hapus ---------- */
+        function confirmDelete(type, id) {
+            deleteType = type;
+            deleteId = id;
+            $id('deleteMessage').textContent = {
+                jobdesk: 'Yakin ingin menghapus Job Desk ini? Tindakan tidak bisa dibatalkan.',
+                sop: 'Yakin ingin menghapus SOP ini? Tindakan tidak bisa dibatalkan.',
+                profile: 'Yakin ingin menghapus Job Profile karyawan ini?'
+            } [type];
+            showModal('modalDelete');
+        }
+        $id('btnDeleteConfirm').addEventListener('click', function() {
+            if (!deleteId) return;
+            const map = {
+                jobdesk: [`${BASE}/job-desk/${deleteId}`, 'alertJobDesk'],
+                sop: [`${BASE}/sop/${deleteId}`, 'alertSop'],
+                profile: [`${BASE}/karyawan-profile/${deleteId}`, 'alertProfile']
+            };
+            const [url, alertId] = map[deleteType];
+            const btn = this,
+                old = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Menghapus...';
-
             fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalDelete')).hide();
-                    showAlert(containerAlert, 'success', data.message);
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showAlert(containerAlert, 'error', data.message);
-                }
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-trash me-1"></i>Hapus';
-            });
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf(),
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(d => {
+                    bootstrap.Modal.getInstance($id('modalDelete')).hide();
+                    showAlert(alertId, d.success ? 'success' : 'error', esc(d.message || 'Selesai'));
+                    if (d.success) setTimeout(() => location.reload(), 900);
+                })
+                .catch(e => showAlert(alertId, 'error', esc(e.message)))
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = old;
+                });
+        });
+
+        bindForm('formJobDesk', 'btnJobDesk', 'modalJobDesk', 'alertJobDesk', () => {
+            const id = $id('jdId').value;
+            return [id ? `${BASE}/job-desk/${id}` : `${BASE}/job-desk/store`, !!id];
+        });
+        bindForm('formSop', 'btnSop', 'modalSop', 'alertSop', () => {
+            const id = $id('sopId').value;
+            return [id ? `${BASE}/sop/${id}` : `${BASE}/sop/store`, !!id];
+        });
+        bindForm('formProfile', 'btnProfile', 'modalProfile', 'alertProfile', () => {
+            const id = $id('profKaryawanId').value;
+            return [isProfileUpdate ? `${BASE}/karyawan-profile/${id}` : `${BASE}/karyawan-profile`,
+                isProfileUpdate];
         });
     </script>
 @endsection

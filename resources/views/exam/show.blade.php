@@ -363,8 +363,35 @@
                                                             @else
                                                                 <td>{{ $approvalexam->technical_support ? 'Dikonfirmasi' : 'Belum' }}</td>
                                                             @endif
+                                                            <td>
+                                                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                                                    <span>{{ $approvalexam->status }}</span>
 
-                                                            <td>{{ $approvalexam->status }}</td>
+                                                                    @if (auth()->user()->jabatan == 'Technical Support' || auth()->user()->jabatan == 'Finance & Accounting')
+                                                                        @if ($approvalexam->status === 'Sudah Dikonfirmasi oleh Technical Support')
+                                                                            <form action="{{ route('exam.updateStatus') }}" method="POST" class="m-0"
+                                                                                onsubmit="return confirm('Ubah status menjadi Proses Checkout?')">
+                                                                                @csrf
+                                                                                @method('PUT')
+                                                                                <input type="hidden" name="id" value="{{ $approvalexam->id_exam }}">
+                                                                                <button type="submit" class="btn btn-sm btn-warning">
+                                                                                    Proses Checkout
+                                                                                </button>
+                                                                            </form>
+                                                                        @elseif ($approvalexam->status === 'Proses Checkout')
+                                                                            <form action="{{ route('exam.updateStatus') }}" method="POST" class="m-0"
+                                                                                onsubmit="return confirm('Tandai exam ini Selesai?')">
+                                                                                @csrf
+                                                                                @method('PUT')
+                                                                                <input type="hidden" name="id" value="{{ $approvalexam->id_exam }}">
+                                                                                <button type="submit" class="btn btn-sm btn-success">
+                                                                                    Selesai
+                                                                                </button>
+                                                                            </form>
+                                                                        @endif
+                                                                    @endif
+                                                                </div>
+                                                            </td>
                                                         @else
                                                             <td colspan="4">Data tidak tersedia</td>
                                                         @endif

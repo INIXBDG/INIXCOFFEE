@@ -9,17 +9,17 @@ use App\Models\detailPengajuanBarang;
 use App\Models\eksam;
 use App\Models\karyawan;
 use App\Models\listexam;
-use App\Models\PoExamSertifa;
 use App\Models\Materi;
 use App\Models\PengajuanBarang;
 use App\Models\Perusahaan;
+use App\Models\PoExamSertifa;
 use App\Models\RKM;
 use App\Models\Tickets;
 use App\Models\tracking_pengajuan_barang;
 use App\Models\User;
 use App\Notifications\ApprovalExamNotification;
 use App\Notifications\BayarExamNotification;
-use App\Notifications\pengajuanbarangNotification;
+use App\Notifications\PengajuanbarangNotification;
 use App\Notifications\PengajuanexamNotification;
 use App\Notifications\TicketNotification;
 use App\Notifications\updateExamNotification;
@@ -31,7 +31,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Maatwebsite\Excel\Facades\Excel;
-use Mockery\Expectation;
 
 class examController extends Controller
 {
@@ -48,9 +47,9 @@ class examController extends Controller
     public function createOnly()
     {
         $kode_exam = listexam::all();
-        $materi = Materi::all();
+        $materi = Materi::select('id', 'nama_materi')->get();
         $perusahaan = Perusahaan::select('id', 'nama_perusahaan')->get();
-        $rkm = RKM::with('perusahaan', 'materi')->get();
+        $rkm = RKM::with(['perusahaan:id,nama_perusahaan', 'materi:id,nama_materi'])->get();
 
         $currentUser = auth()->user();
         $currentKaryawan = $currentUser->karyawan;
@@ -58,7 +57,8 @@ class examController extends Controller
 
         $salesEmployees = collect();
         if ($isSPVSales) {
-            $salesEmployees = karyawan::where('jabatan', 'like', '%Sales%')
+            $salesEmployees = karyawan::select('id', 'kode_karyawan', 'nama_lengkap', 'jabatan', 'divisi')
+                ->where('jabatan', 'like', '%Sales%')
                 ->where('divisi', 'like', '%Sales%')
                 ->get();
         }
@@ -104,16 +104,14 @@ class examController extends Controller
         $request->validate($validationRules);
 
         try {
-            $dataMateri = Materi::findOrFail($request->materi);
-            $dataPerusahaan = Perusahaan::findOrFail($request->perusahaan);
+            $dataMateri = Materi::select('id', 'nama_materi')->findOrFail($request->materi);
+            $dataPerusahaan = Perusahaan::select('id', 'nama_perusahaan')->findOrFail($request->perusahaan);
 
             $harga = (float) str_replace('.', '', $request->harga);
             $kurs = (float) str_replace('.', '', $request->kurs ?? 0);
             $kursDollar = (float) str_replace('.', '', $request->kurs_dollar);
             $biayaAdmin = (float) str_replace('.', '', $request->biaya_admin);
-            $hargaRupiah = (float) str_replace('.', '', $request->harga_rupiah);
             $pa = (float) str_replace('.', '', $request->pa ?? 0);
-            $diskonPersen = (float) ($request->diskon ?? 0);
             $pax = (int) $request->pax;
             $totalFinal = (float) str_replace('.', '', $request->total_final);
             $hargaTotalRupiah = (float) str_replace('.', '', $request->harga_total_rupiah);
@@ -150,7 +148,7 @@ class examController extends Controller
 
                 $salesKey = $salesEmployee->kode_karyawan;
             } else {
-                $salesKey = $currentUser->karyawan->kode_karyawan ?? null;
+                $salesKey = $currentKaryawan->kode_karyawan ?? null;
                 if (!$salesKey) {
                     return redirect()->back()
                         ->withErrors(['sales_key' => 'Akun Anda belum memiliki Sales Key. Hubungi admin.'])
@@ -158,21 +156,9 @@ class examController extends Controller
                 }
             }
 
-            $instrukturKey = $currentUser->id_instruktur ?? null;
-
-            Log::info('Exam Only Debug', [
-                'isSPVSales' => $isSPVSales,
-                'selected_sales' => $request->selected_sales ?? 'N/A',
-                'salesEmployee' => $salesEmployee ?? null,
-                'salesKey' => $salesKey,
-                'currentUser' => $currentUser->username,
-            ]);
-
             DB::transaction(function () use ($request, $harga, $pa, $biayaAdmin, $kurs, $kursDollar, $totalFinal, $hargaTotalRupiah, $salesKey, $dataMateri, $dataPerusahaan) {
                 $year = date('Y');
-                $namaBulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-                $kuartal = ['Q1', 'Q2', 'Q3', 'Q4'];
-                $bulanData = array_merge($namaBulan, $kuartal);
+                $bulanData = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember', 'Q1', 'Q2', 'Q3', 'Q4'];
                 $index = RKM::count() % count($bulanData);
                 $bulanValue = $bulanData[$index].' '.$year;
 
@@ -195,12 +181,6 @@ class examController extends Controller
                 if (!$rkm || !$rkm->id) {
                     throw new \Exception('Gagal membuat RKM untuk Exam Only');
                 }
-
-                Log::info('RKM Created', [
-                    'rkm_id' => $rkm->id,
-                    'sales_key' => $rkm->sales_key,
-                    'metode_kelas' => $rkm->metode_kelas,
-                ]);
 
                 $invoice = 'INV-'.$this->generateInvoiceNumber();
 
@@ -244,43 +224,35 @@ class examController extends Controller
         }
     }
 
+    /**
+     * OPTIMASI 1: Data Pengajuan Exam (#examtable)
+     * - Menghapus pluck('id_rkm')->toArray() dan menggantinya dengan subquery langsung di DB.
+     * - Hanya melakukan eager loading pada relasi yang digunakan oleh DataTables (materi & perusahaan).
+     */
     public function getExam()
     {
-        $existingRKMs = eksam::pluck('id_rkm')->toArray();
-
-        // $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-        //     ->where('exam', '1')
-        //     ->orderBy('tanggal_awal', 'desc')
-        //     ->get();
-        $rkm = RKM::with(['materi', 'peluang', 'rekomendasilanjutan', 'sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-                ->where('status', '0')
-                ->whereNull('deleted_at')
-                ->whereHas('peluang', function ($query) {
-                    $query->where('tentatif', 0)->where('tahap', '!=', 'lost');
-                })
-                ->whereNotIn('id', $existingRKMs)
-                ->orderBy('status', 'asc')
-                ->orderBy('tanggal_awal', 'desc')
-                ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'List Registrasi',
-            'data' => $rkm,
-        ]);
-    }
-
-    public function getExamKondisi()
-    {
-        $existingRKMs = eksam::pluck('id_rkm')->toArray();
-
-        $rkm = RKM::with(['sales', 'materi', 'instruktur', 'perusahaan', 'instruktur2', 'asisten'])
-            ->where('exam', '0')
-            ->whereHas('materi', function ($query) {
-                $query->whereIn('vendor', ['EC-Council', 'Regular'])
-                    ->orWhere('nama_materi', 'like', '%BNSP%');
+        $rkm = RKM::select([
+                'id',
+                'materi_key',
+                'perusahaan_key',
+                'tanggal_awal',
+                'tanggal_akhir',
+                'pax',
+                'sales_key',
+                'instruktur_key',
+                'status',
+                'created_at',
+            ])
+            ->with([
+                'materi:id,nama_materi',
+                'perusahaan:id,nama_perusahaan',
+            ])
+            ->where('status', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0)->where('tahap', '!=', 'lost');
             })
-            ->whereNotIn('id', $existingRKMs)
+            ->whereNotIn('id', eksam::select('id_rkm')->whereNotNull('id_rkm'))
             ->orderBy('tanggal_awal', 'desc')
             ->get();
 
@@ -291,15 +263,65 @@ class examController extends Controller
         ]);
     }
 
+    /**
+     * OPTIMASI 2: Data Pengajuan Exam Kondisional (#examconditionaltable)
+     * - Membungkus kondisi whereIn & orWhere di dalam closure agar logika SQL tidak bocor.
+     * - Menggunakan subquery untuk whereNotIn('id', ...).
+     * - Memangkas relasi tidak terpakai (sales, instruktur, instruktur2, asisten).
+     */
+    public function getExamKondisi()
+    {
+        $rkm = RKM::select([
+                'id',
+                'materi_key',
+                'perusahaan_key',
+                'tanggal_awal',
+                'tanggal_akhir',
+                'pax',
+                'sales_key',
+                'instruktur_key',
+                'created_at',
+            ])
+            ->with([
+                'materi:id,nama_materi,vendor',
+                'perusahaan:id,nama_perusahaan',
+            ])
+            ->where('exam', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('materi', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereIn('vendor', ['EC-Council', 'Regular'])
+                      ->orWhere('nama_materi', 'like', '%BNSP%');
+                });
+            })
+            ->whereNotIn('id', eksam::select('id_rkm')->whereNotNull('id_rkm'))
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'List Registrasi',
+            'data' => $rkm,
+        ]);
+    }
+
+    /**
+     * OPTIMASI 3: Data Histori Exam (#examhistoritable)
+     * - Memilih kolom spesifik pada relasi rkm, materi, perusahaan, dan approvalexam
+     *   agar response JSON jauh lebih ringan dan tidak membuat browser/DataTables hang.
+     */
     public function getHistoriExam()
     {
         $rkm = eksam::with([
-            'materi',
-            'perusahaan',
-            'rkm.materi',
-            'rkm.perusahaan',
-            'approvalexam',
-        ])->orderBy('created_at', 'desc')->get();
+            'materi:id,nama_materi',
+            'perusahaan:id,nama_perusahaan',
+            'rkm:id,materi_key,perusahaan_key,ruang,sales_key,instruktur_key',
+            'rkm.materi:id,nama_materi',
+            'rkm.perusahaan:id,nama_perusahaan',
+            'approvalexam:id,id_exam,status,spv_sales,office_manager,technical_support',
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
 
         $rkm->each(function ($item) {
             $item->has_pengajuan_barang = !is_null($item->id_pengajuan_barang);
@@ -312,11 +334,37 @@ class examController extends Controller
         ]);
     }
 
+    /**
+     * OPTIMASI 4: Data Exam Sertifa (#poExamTableIndex)
+     * - Membatasi kolom pada relasi materi dan perusahaan.
+     */
     public function getPoExamSertifa()
     {
-        $data = PoExamSertifa::with(['materi', 'perusahaan'])->latest()->get();
+        $data = PoExamSertifa::with([
+            'materi:id,nama_materi',
+            'perusahaan:id,nama_perusahaan',
+        ])->latest()->get();
 
         return response()->json(['data' => $data]);
+    }
+
+    public function updateStatus(Request $request)
+    {
+        $approval = approvalexam::where('id_exam', $request->input('id'))->first();
+
+        if (!$approval) {
+            return back()->with('error', 'Data approval tidak ditemukan');
+        }
+
+        if ($approval->status === 'Sudah Dikonfirmasi oleh Technical Support') {
+            $approval->update(['status' => 'Proses Checkout']);
+        } elseif ($approval->status === 'Proses Checkout') {
+            $approval->update(['status' => 'Selesai']);
+        } else {
+            return back()->with('error', 'Status tidak bisa diubah');
+        }
+
+        return back()->with('success', 'Status berhasil diupdate');
     }
 
     public function updateTanggal(Request $request, $id)
@@ -369,14 +417,13 @@ class examController extends Controller
             $exam = eksam::findOrFail($id);
             $existingFiles = $exam->file_invoice ?? [];
 
-            $newFiles = array_filter($existingFiles, function ($file) use ($filename) {
+            $newFiles = array_values(array_filter($existingFiles, function ($file) use ($filename) {
                 return $file !== $filename;
-            });
+            }));
 
-            $newFiles = array_values($newFiles);
-
-            if (file_exists(public_path('uploads/invoices/'.$filename))) {
-                unlink(public_path('uploads/invoices/'.$filename));
+            $filePath = public_path('uploads/invoices/'.$filename);
+            if (file_exists($filePath)) {
+                unlink($filePath);
             }
 
             $exam->update([
@@ -400,12 +447,12 @@ class examController extends Controller
 
     private function generateInvoiceNumber(): string
     {
-        $latestExam = eksam::orderBy('created_at', 'desc')->first();
+        $latestExam = eksam::select('invoice')->latest('created_at')->first();
         $currentDate = date('Ymd');
         $invoiceNumber = $currentDate.'-001';
 
-        if ($latestExam) {
-            $latestInvoiceNumber = $latestExam->invoice;
+        if ($latestExam && $latestExam->invoice) {
+            $latestInvoiceNumber = str_replace('INV-', '', $latestExam->invoice);
             $latestDate = substr($latestInvoiceNumber, 0, 8);
 
             if ($latestDate == $currentDate) {
@@ -422,7 +469,6 @@ class examController extends Controller
     {
         $harga_rupiah = preg_replace('/[^\d]/', '', $request->harga_rupiah);
         $total = preg_replace('/[^\d]/', '', $request->total);
-        $user = auth()->user()->id_sales;
         $harga = str_replace(',', '.', $request->harga);
         $harga = preg_replace('/[^\d.]/', '', $harga);
 
@@ -433,11 +479,12 @@ class examController extends Controller
         ]);
 
         try {
-            $rkmSource = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->first();
+            $rkmSource = RKM::with('materi', 'perusahaan')->where('id', $request->id_rkm)->firstOrFail();
             if ($request->pax > $rkmSource->pax) {
                 return redirect()->back()->with('error', 'Pax tidak boleh lebih dari '.$rkmSource->pax);
             }
-            $data = $request->validate([
+
+            $request->validate([
                 'tanggal_pengajuan' => 'required|date',
                 'materi' => 'required|string|max:255',
                 'id_rkm' => 'required|string|max:255',
@@ -454,9 +501,10 @@ class examController extends Controller
 
             $invoice = 'INV-'.$this->generateInvoiceNumber();
             $status = 'Belum Approval SPV Sales';
+            $createdExam = null;
 
-            DB::transaction(function () use ($request, $rkmSource, $invoice, $status) {
-                $exam = eksam::create([
+            DB::transaction(function () use ($request, $rkmSource, $invoice, $status, &$createdExam) {
+                $createdExam = eksam::create([
                     'tanggal_pengajuan' => $request->tanggal_pengajuan,
                     'materi' => $request->materi,
                     'id_rkm' => $rkmSource->id,
@@ -475,10 +523,9 @@ class examController extends Controller
                     'invoice' => $invoice,
                 ]);
 
-                // untuk exam bnsp dan ec-council, skip approval spv sales dan office manager
                 if ($rkmSource->materi->vendor == 'EC-Council' || str_contains($rkmSource->materi->nama_materi, 'BNSP') || $request->skipApproval) {
                     approvalexam::create([
-                        'id_exam' => $exam->id,
+                        'id_exam' => $createdExam->id,
                         'sales' => $rkmSource->sales_key,
                         'spv_sales' => true,
                         'technical_support' => false,
@@ -487,7 +534,7 @@ class examController extends Controller
                     ]);
                 } else {
                     approvalexam::create([
-                        'id_exam' => $exam->id,
+                        'id_exam' => $createdExam->id,
                         'sales' => $rkmSource->sales_key,
                         'spv_sales' => false,
                         'technical_support' => false,
@@ -497,38 +544,33 @@ class examController extends Controller
                 }
             });
 
-            $data = [
-                'nama_materi' => $rkmSource->materi->nama_materi,
-                'nama_perusahaan' => $rkmSource->perusahaan->nama_perusahaan,
-            ];
-            $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $Eduman = karyawan::where('jabatan', 'Education Manager')->first();
-            $SPVSales = karyawan::where('jabatan', 'SPV Sales')->first();
-            $GM = karyawan::where('jabatan', 'GM')->first();
-            $users = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $rkmSource->sales_key,
-                $Eduman->kode_karyawan,
-                $finance->kode_karyawan,
-                $kooroff->kode_karyawan,
-                $SPVSales->kode_karyawan,
-                $GM->kode_karyawan,
-                'NF',
-            ]);
-
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
-            })->get();
-
-            $path = '/exam/'.eksam::latest()->first()->id;
-
-            // selain rkm dengan exam "ya" maka skip notifikasi
             if ($rkmSource->exam === '1' || $request->skipApproval) {
+                $dataNotif = [
+                    'nama_materi' => $rkmSource->materi->nama_materi,
+                    'nama_perusahaan' => $rkmSource->perusahaan->nama_perusahaan,
+                ];
+
+                // Menggabungkan 5 query karyawan menjadi 1 query
+                $kodeJabatan = karyawan::whereIn('jabatan', [
+                    'Finance & Accounting',
+                    'Koordinator Office',
+                    'Education Manager',
+                    'SPV Sales',
+                    'GM',
+                ])->pluck('kode_karyawan')->toArray();
+
+                $targetKodes = array_filter(array_merge($kodeJabatan, [$rkmSource->sales_key, 'NF']), function ($val) {
+                    return !empty($val) && $val !== '-';
+                });
+
+                $users = User::whereHas('karyawan', function ($query) use ($targetKodes) {
+                    $query->whereIn('kode_karyawan', $targetKodes);
+                })->get();
+
+                $path = '/exam/'.$createdExam->id;
+
                 foreach ($users as $user) {
-                    $receiverId = $user->id;
-                    NotificationFacade::send($user, new PengajuanexamNotification($data, $path, $receiverId));
+                    NotificationFacade::send($user, new PengajuanexamNotification($dataNotif, $path, $user->id));
                 }
             }
 
@@ -549,10 +591,10 @@ class examController extends Controller
         $hasPengajuanBarang = !is_null($rkm->id_pengajuan_barang);
 
         return view('exam.show', compact(
-            'rkm', 
-            'exam', 
-            'approvalexam', 
-            'biaya_admin', 
+            'rkm',
+            'exam',
+            'approvalexam',
+            'biaya_admin',
             'harga',
             'hasPengajuanBarang'
         ));
@@ -569,23 +611,23 @@ class examController extends Controller
     public function update(Request $request, $id)
     {
         $harga_rupiah = preg_replace('/[^\d]/', '', $request->harga_rupiah);
-        $request->merge(['harga_rupiah' => $harga_rupiah]);
         $total = preg_replace('/[^\d]/', '', $request->total);
-        $request->merge(['total' => $total]);
+        $request->merge([
+            'harga_rupiah' => $harga_rupiah,
+            'total' => $total,
+        ]);
+
         $id_karyawan = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($id_karyawan);
         $kode_karyawan = $karyawan->kode_karyawan;
 
         try {
-            $rkm = RKM::where('id', $request->id_rkm)->first();
-            // dd($rkm);
-            if ($rkm->metode_kelas != 'Exam Only') {
-                if ($request->pax > $rkm->pax) {
-                    return redirect()->back()->with('error', 'Pax tidak boleh lebih dari '.$rkm->pax);
-                }
+            $rkm = RKM::where('id', $request->id_rkm)->firstOrFail();
+            if ($rkm->metode_kelas != 'Exam Only' && $request->pax > $rkm->pax) {
+                return redirect()->back()->with('error', 'Pax tidak boleh lebih dari '.$rkm->pax);
             }
 
-            $data = $request->validate([
+            $request->validate([
                 'tanggal_pengajuan' => 'required|date',
                 'id_rkm' => 'required|string|max:255',
                 'materi' => 'required|string|max:255',
@@ -603,7 +645,6 @@ class examController extends Controller
             ]);
 
             $exam = eksam::findOrFail($id);
-
             $current_status = $exam->status ?? 'Pending';
 
             $exam->update([
@@ -634,9 +675,7 @@ class examController extends Controller
 
             return redirect()->route('exam.index')->with(['success' => 'Data Berhasil Diperbarui!']);
         } catch (\Exception $e) {
-            Log::info('Exam Only Debug', [
-                'error' => $e->getMessage(),
-            ]);
+            Log::info('Exam Only Debug', ['error' => $e->getMessage()]);
 
             return redirect()->back()->withErrors(['error' => 'Terjadi kesalahan: '.$e->getMessage()]);
         }
@@ -644,18 +683,19 @@ class examController extends Controller
 
     public function destroy($id): RedirectResponse
     {
-        $exam = eksam::findOrFail($id);
-
+        $exam = eksam::with('rkm')->findOrFail($id);
         $rkm = $exam->rkm;
 
-        approvalexam::where('id_exam', $exam->id)->delete();
-        changeexam::where('id_exam', $exam->id)->delete();
+        DB::transaction(function () use ($exam, $rkm) {
+            approvalexam::where('id_exam', $exam->id)->delete();
+            changeexam::where('id_exam', $exam->id)->delete();
 
-        $exam->delete();
+            $exam->delete();
 
-        if ($rkm) {
-            $rkm->delete();
-        }
+            if ($rkm) {
+                $rkm->delete();
+            }
+        });
 
         return redirect()
             ->route('exam.index')
@@ -672,12 +712,17 @@ class examController extends Controller
 
     public function sendapprovalexam(Request $request, $id)
     {
-        $approval = approvalexam::where('id_exam', $id)->first();
+        $approval = approvalexam::where('id_exam', $id)->firstOrFail();
+        $exam = eksam::with('rkm')->findOrFail($id);
 
         $id_karyawan = auth()->user()->karyawan_id;
         $karyawan = karyawan::findOrFail($id_karyawan);
         $kode_karyawan = $karyawan->kode_karyawan;
         $jabatan = $karyawan->jabatan;
+        $path = '/exam/'.$id;
+        $status = $approval->status;
+        $keterangan = 'Proses';
+
         if ($jabatan == 'SPV Sales') {
             $status = 'Sudah Diapprove oleh SPV Sales';
             $keterangan = 'Proses';
@@ -690,33 +735,23 @@ class examController extends Controller
                 'status' => $status,
                 'ttd_sales' => $kode_karyawan,
             ]);
-            $data = eksam::findOrfail($id);
-            $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
-            $kooroff = karyawan::where('jabatan', 'Koordinator Office')->first();
-            $GM = karyawan::where('jabatan', 'GM')->first();
 
-            $users = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                $finance->kode_karyawan,
-                $kooroff->kode_karyawan,
-                $GM->kode_karyawan,
-                $approval->sales,
-            ]);
+            $kodeJabatan = karyawan::whereIn('jabatan', ['Finance & Accounting', 'Koordinator Office', 'GM'])
+                ->pluck('kode_karyawan')
+                ->toArray();
 
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
+            $targetKodes = array_filter(array_merge($kodeJabatan, [$approval->sales]), fn ($u) => !empty($u) && $u !== '-');
+
+            $users = User::whereHas('karyawan', function ($query) use ($targetKodes) {
+                $query->whereIn('kode_karyawan', $targetKodes);
             })->get();
 
-            $path = '/exam/'.$id;
-
             foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
+                NotificationFacade::send($user, new ApprovalExamNotification($exam, $path, $user->id));
             }
         }
-        if ($jabatan == 'Office Manager' || $jabatan == 'GM' || $jabatan == 'Koordinator Office' || $jabatan == 'Finance & Accounting') {
-            $exam = eksam::findOrFail($id);
+
+        if (in_array($jabatan, ['Office Manager', 'GM', 'Koordinator Office', 'Finance & Accounting'])) {
             if ($exam->kurs != $request->kurs || $exam->kurs_dollar != $request->kurs_dollar) {
                 $status = 'Sudah Dikonfirmasi dan Disesuaikan oleh '.$jabatan;
                 $keterangan = 'Proses';
@@ -735,6 +770,7 @@ class examController extends Controller
                 $status = 'Sudah Diapprove oleh '.$jabatan;
                 $keterangan = 'Proses';
             }
+
             $approval->update([
                 'id_exam' => $id,
                 'spv_sales' => true,
@@ -744,33 +780,22 @@ class examController extends Controller
                 'ttd_off' => $kode_karyawan,
             ]);
 
-            $data = eksam::findOrfail($id);
-            $users = array_map(function ($user) {
-                return $user === '-' ? null : $user;
-            }, [
-                'NF',
-                $approval->sales,
-            ]);
+            $targetKodes = array_filter(['NF', $approval->sales], fn ($u) => !empty($u) && $u !== '-');
 
-            $users = User::whereHas('karyawan', function ($query) use ($users) {
-                $query->whereIn('kode_karyawan', array_filter($users));
+            $users = User::whereHas('karyawan', function ($query) use ($targetKodes) {
+                $query->whereIn('kode_karyawan', $targetKodes);
             })->get();
 
-            $path = '/exam/'.$id;
-
             foreach ($users as $user) {
-                $receiverId = $user->id;
-                NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
+                NotificationFacade::send($user, new ApprovalExamNotification($exam, $path, $user->id));
             }
         }
+
         if ($jabatan == 'Technical Support') {
-            $status = 'Sudah Dikonfirmasi oleh Technical Support';
             $keterangan = 'Selesai';
-            $exam = eksam::findOrFail($id);
 
             if ($exam->harga != $request->harga || $exam->biaya_admin != $request->biaya_admin) {
                 $status = 'Sudah Dikonfirmasi dan disesuaikan oleh Technical Support';
-                $keterangan = 'Selesai';
 
                 $exam->update([
                     'harga' => $request->harga,
@@ -784,7 +809,6 @@ class examController extends Controller
                 ]);
             } else {
                 $status = 'Sudah Dikonfirmasi oleh Technical Support';
-                $keterangan = 'Selesai';
             }
 
             $approval->update([
@@ -796,43 +820,26 @@ class examController extends Controller
                 'ttd_ts' => $kode_karyawan,
             ]);
 
-            // skip kirim notif jika exam != 1
-            if ($exam->rkm->exam === '1') {
-                $data = eksam::findOrfail($id);
-                $users = array_map(function ($user) {
-                    return $user === '-' ? null : $user;
-                }, [
-                    $approval->sales,
-                ]);
+            if ($exam->rkm && $exam->rkm->exam === '1') {
+                if (!empty($approval->sales) && $approval->sales !== '-') {
+                    $salesUsers = User::whereHas('karyawan', function ($query) use ($approval) {
+                        $query->where('kode_karyawan', $approval->sales);
+                    })->get();
 
-                $users = User::whereHas('karyawan', function ($query) use ($users) {
-                    $query->whereIn('kode_karyawan', array_filter($users));
-                })->get();
-
-                $path = '/exam/'.$id;
-
-                foreach ($users as $user) {
-                    $receiverId = $user->id;
-                    NotificationFacade::send($user, new ApprovalExamNotification($data, $path, $receiverId));
+                    foreach ($salesUsers as $user) {
+                        NotificationFacade::send($user, new ApprovalExamNotification($exam, $path, $user->id));
+                    }
                 }
 
                 $finance = karyawan::where('jabatan', 'Finance & Accounting')->first();
-                $users = array_map(function ($user) {
-                    return $user === '-' ? null : $user;
-                }, [
-                    $approval->ttd_ts,
-                    $finance->kode_karyawan,
-                ]);
+                $targetBayar = array_filter([$approval->ttd_ts, $finance?->kode_karyawan], fn ($u) => !empty($u) && $u !== '-');
 
-                $users = User::whereHas('karyawan', function ($query) use ($users) {
-                    $query->whereIn('kode_karyawan', array_filter($users));
+                $bayarUsers = User::whereHas('karyawan', function ($query) use ($targetBayar) {
+                    $query->whereIn('kode_karyawan', $targetBayar);
                 })->get();
 
-                $path = '/exam/'.$id;
-
-                foreach ($users as $user) {
-                    $receiverId = $user->id;
-                    NotificationFacade::send($user, new BayarExamNotification($data, $path, $receiverId));
+                foreach ($bayarUsers as $user) {
+                    NotificationFacade::send($user, new BayarExamNotification($exam, $path, $user->id));
                 }
             }
         }
@@ -917,15 +924,15 @@ class examController extends Controller
             foreach ($financeUsers as $user) {
                 NotificationFacade::send(
                     $user,
-                    new pengajuanbarangNotification($dataNotif, $path, $type, $user->id)
+                    new PengajuanbarangNotification($dataNotif, $path, $type, $user->id)
                 );
             }
 
             return back()->with('success', 'Pengajuan Barang untuk Exam berhasil dibuat dan ditinjau oleh Finance & Accounting.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal membuat Pengajuan Barang dari Exam: ' . $e->getMessage());
+
             return back()->with('error', 'Gagal membuat Pengajuan Barang: ' . $e->getMessage());
         }
     }
@@ -934,27 +941,35 @@ class examController extends Controller
     {
         $data = eksam::with('rkm', 'kodeeksam', 'registexam', 'approvalexam')->findOrFail($id);
         $sales = User::with('karyawan')->where('id_sales', $data->approvalexam->sales)->first();
-        if (!$data->approvalexam->ttd_sales) {
-            $spv_sales = karyawan::where('jabatan', 'SPV Sales')->first();
-        } else {
-            $spv_sales = karyawan::where('kode_karyawan', $data->approvalexam->ttd_sales)->first();
-        }
-        if (!$data->approvalexam->ttd_off) {
-            $office_manager = karyawan::where('jabatan', 'Finance & Accounting')->first();
-        } else {
-            $office_manager = karyawan::where('kode_karyawan', $data->approvalexam->ttd_off)->first();
-        }
-        if (!$data->approvalexam->ttd_ts) {
-            $technical_support = karyawan::where('jabatan', 'Technical Support')->first();
-        } else {
-            $technical_support = karyawan::where('kode_karyawan', $data->approvalexam->ttd_ts)->first();
-        }
+
+        $spv_sales = !$data->approvalexam->ttd_sales
+            ? karyawan::where('jabatan', 'SPV Sales')->first()
+            : karyawan::where('kode_karyawan', $data->approvalexam->ttd_sales)->first();
+
+        $office_manager = !$data->approvalexam->ttd_off
+            ? karyawan::where('jabatan', 'Finance & Accounting')->first()
+            : karyawan::where('kode_karyawan', $data->approvalexam->ttd_off)->first();
+
+        $technical_support = !$data->approvalexam->ttd_ts
+            ? karyawan::where('jabatan', 'Technical Support')->first()
+            : karyawan::where('kode_karyawan', $data->approvalexam->ttd_ts)->first();
+
         $biaya_admin = $data->biaya_admin * $data->kurs_dollar;
         $harga = $data->harga * $data->kurs;
         $totalharga = $harga * $data->pax;
         $totalbiayadmin = $biaya_admin * $data->pax;
 
-        return view('exam.invoice', compact('data', 'spv_sales', 'technical_support', 'office_manager', 'sales', 'harga', 'biaya_admin', 'totalharga', 'totalbiayadmin'));
+        return view('exam.invoice', compact(
+            'data',
+            'spv_sales',
+            'technical_support',
+            'office_manager',
+            'sales',
+            'harga',
+            'biaya_admin',
+            'totalharga',
+            'totalbiayadmin'
+        ));
     }
 
     public function assignRoom($id)
@@ -965,8 +980,8 @@ class examController extends Controller
             return redirect()->back()->with('error', 'Hanya Exam Only yang dapat di-assign ruangan.');
         }
 
-        session(['exam_assign_id' => $id]);
         session([
+            'exam_assign_id' => $id,
             'exam_assign_data' => [
                 'materi' => $exam->materi->nama_materi ?? 'N/A',
                 'perusahaan' => $exam->perusahaan->nama_perusahaan ?? 'N/A',
@@ -1065,7 +1080,12 @@ class examController extends Controller
 
     public function getRekapExam($year, $month)
     {
-        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard', 'registexam.hasilexam'])
+        $rkm = eksam::with([
+                'rkm',
+                'registexam.peserta',
+                'registexam.creditcard',
+                'registexam.hasilexam',
+            ])
             ->whereMonth('tanggal_pengajuan', $month)
             ->whereYear('tanggal_pengajuan', $year)
             ->orderBy('created_at', 'desc')
@@ -1080,11 +1100,17 @@ class examController extends Controller
 
     public function rekapExamExportExcel($year, $month)
     {
-        $rkm = eksam::with(['rkm', 'registexam', 'registexam.peserta', 'registexam.creditcard', 'registexam.hasilexam'])
+        $rkm = eksam::with([
+                'rkm',
+                'registexam.peserta',
+                'registexam.creditcard',
+                'registexam.hasilexam',
+            ])
             ->whereMonth('tanggal_pengajuan', $month)
             ->whereYear('tanggal_pengajuan', $year)
             ->orderBy('created_at', 'desc')
             ->get();
+
         $data = $rkm->flatMap(function ($item) {
             return $item->registexam->map(function ($reg) use ($item) {
                 return [
@@ -1130,20 +1156,21 @@ class examController extends Controller
 
     public function pengajuanUpdateExam(Request $request, $id)
     {
-        // 1. Ambil data exam spesifik
         $exam = listexam::findOrFail($id);
-        $cekTicket = Tickets::where('nama_karyawan', Auth::user()->karyawan->nama_lengkap ?? 'Sistem')
+        $namaKaryawan = Auth::user()->karyawan->nama_lengkap ?? 'Sistem';
+
+        $cekTicket = Tickets::where('nama_karyawan', $namaKaryawan)
             ->where('kategori', 'Exam')
             ->where('detail_kendala', 'Permintaan update harga terbaru dari ' . $exam->nama_exam)
             ->where('created_at', '>=', now()->subSeconds(10))
             ->exists();
 
         if ($cekTicket) {
-      return redirect()->back()->with('error', 'Ticket update harga sudah dibuat.');
-    }
-        // 2. Buat instansi tiket baru
+            return redirect()->back()->with('error', 'Ticket update harga sudah dibuat.');
+        }
+
         $ticket = Tickets::create([
-            'nama_karyawan' => Auth::user()->karyawan->nama_lengkap ?? 'Sistem',
+            'nama_karyawan' => $namaKaryawan,
             'divisi' => Auth::user()->karyawan->divisi ?? '-',
             'kategori' => 'Exam',
             'keperluan' => 'Technical Support',
@@ -1151,49 +1178,36 @@ class examController extends Controller
             'timestamp' => now(),
         ]);
 
-        // 3. Hasilkan ID Tiket terstruktur (Identik dengan metode store)
         $todayCount = Tickets::whereDate('created_at', today())->count();
         $char = chr(96 + $todayCount);
-        $ticketId = 'NIX'.now()->format('ymd').$char;
-        $ticket->ticket_id = $ticketId;
+        $ticket->ticket_id = 'NIX'.now()->format('ymd').$char;
         $ticket->save();
 
-        // 4. Ekstraksi entitas User divisi IT Service Management untuk TicketNotification
-        $itsm = karyawan::where('divisi', 'IT Service Management')->get();
-        $kodeKaryawanList = $itsm->pluck('kode_karyawan')->toArray();
+        $kodeITSM = karyawan::where('divisi', 'IT Service Management')
+            ->whereNotNull('kode_karyawan')
+            ->where('kode_karyawan', '!=', '-')
+            ->pluck('kode_karyawan')
+            ->toArray();
 
-        // Filter nilai '-' menjadi null
-        $usersITSM = array_map(function ($user) {
-            return $user === '-' ? null : $user;
-        }, $kodeKaryawanList);
-
-        // Ambil data User terkait kode_karyawan yang valid
-        $users = User::whereHas('karyawan', function ($query) use ($usersITSM) {
-            $query->whereIn('kode_karyawan', array_filter($usersITSM));
+        $users = User::whereHas('karyawan', function ($query) use ($kodeITSM) {
+            $query->whereIn('kode_karyawan', $kodeITSM);
         })->get();
 
         $pathTicket = '/tickets';
         $statusTicket = 'Ticketing Baru';
 
-        // 5. Transmisi Notifikasi 1: Ticketing (ke IT Service Management)
         foreach ($users as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new TicketNotification($ticket, $pathTicket, $statusTicket, $receiverId));
+            NotificationFacade::send($user, new TicketNotification($ticket, $pathTicket, $statusTicket, $user->id));
         }
 
-        // 6. Transmisi Notifikasi 2: Update Exam (ke Technical Support)
         $technical_support = User::where('jabatan', 'Technical Support')->get();
         $pathExam = "/listexams/{$id}/edit";
-        $dataExam = [
-            'nama_exam' => $exam->nama_exam,
-        ];
+        $dataExam = ['nama_exam' => $exam->nama_exam];
 
         foreach ($technical_support as $user) {
-            $receiverId = $user->id;
-            NotificationFacade::send($user, new updateExamNotification($dataExam, $pathExam, $receiverId));
+            NotificationFacade::send($user, new updateExamNotification($dataExam, $pathExam, $user->id));
         }
 
-        // 7. Transmisi muatan data (payload) ke endpoint Webhook eksternal
         try {
             Http::withHeaders([
                 'Accept' => 'application/json',
@@ -1215,12 +1229,10 @@ class examController extends Controller
 
     public function getKurs($id)
     {
-        $eksam = eksam::findOrFail($id);
+        $eksam = eksam::find($id);
 
         if (!$eksam) {
-            return response()->json([
-                'message' => 'error',
-            ]);
+            return response()->json(['message' => 'error']);
         }
 
         return response()->json([
@@ -1257,11 +1269,11 @@ class examController extends Controller
             $change = changeexam::where('id_exam', $eksam->id)->latest()->first();
             changeexam::create([
                 'id_exam' => $eksam->id,
-                'keterangan' => $change->keterangan,
+                'keterangan' => $change->keterangan ?? 'Update Kurs',
                 'status' => 'Update Kurs',
-                'kode_karyawan' => auth()->user()->karyawan->kode_karyawan,
+                'kode_karyawan' => auth()->user()->karyawan->kode_karyawan ?? '-',
             ]);
-        } catch (Expectation $e) {
+        } catch (\Exception $e) {
             return back()->with('error', 'Kurs gagal diupdate');
         }
 
@@ -1271,13 +1283,11 @@ class examController extends Controller
     public function manualCreate()
     {
         $kode_exam = listexam::all();
-        $materi = Materi::all();
-        $rkm = RKM::with('perusahaan', 'materi')->orderBy('tanggal_awal', 'desc')->get();
+        $materi = Materi::select('id', 'nama_materi')->get();
+        $rkm = RKM::with(['perusahaan:id,nama_perusahaan', 'materi:id,nama_materi'])
+            ->orderBy('tanggal_awal', 'desc')
+            ->get();
 
-        return view('exam.createManual', compact(
-            'kode_exam',
-            'materi',
-            'rkm',
-        ));
+        return view('exam.createManual', compact('kode_exam', 'materi', 'rkm'));
     }
 }

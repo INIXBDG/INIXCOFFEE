@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PostResource;
 use App\Models\AbsensiKaryawan;
 use Illuminate\Http\Request;
 use Carbon\CarbonImmutable;
@@ -193,14 +194,14 @@ class TestController extends Controller
                     if ($row->instruktur_all == null) {
                         $sales_ids = explode(', ', $row->sales_all);
                         $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     } else {
                         $sales_ids = explode(', ', $row->sales_all);
                         $perusahaan_ids = explode(', ', $row->perusahaan_all);
                         $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-                        $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+                        $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
                         $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
                     }
                 }

@@ -19,6 +19,8 @@ class GMKPIService
 {
     use KPIDefaultResponseTrait;
 
+    private const MINIMUM_KEPUASAN = 3.5;
+
     public function calculateProgressKepuasanPelanggan($item, $personId)
     {
         $detail = $item->detailTargetKPI->first();
@@ -44,9 +46,16 @@ class GMKPIService
 
         $groupedFeedbacks = $feedbacks
             ->groupBy(function ($feedback) {
-                return optional($feedback->rkm)->materi?->nama_materi.'/'.optional($feedback->rkm)->tanggal_awal;
+                $materi = optional($feedback->rkm)->materi?->nama_materi;
+                $tanggalAwal = optional($feedback->rkm)->tanggal_awal;
+
+                if (!$materi || !$tanggalAwal) {
+                    return '__invalid_feedback__';
+                }
+
+                return $materi.'/'.$tanggalAwal;
             })
-            ->filter();
+            ->reject(fn ($group, $key) => $key === '__invalid_feedback__');
 
         $averageFeedbacks = [];
 
@@ -78,7 +87,7 @@ class GMKPIService
 
         $total = count($averageFeedbacks);
         if ($total > 0) {
-            $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
+            $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= self::MINIMUM_KEPUASAN));
 
             return round(($above / $total) * 100, 1);
         }
@@ -130,9 +139,13 @@ class GMKPIService
                 $materiNama = optional($feedback->rkm)->materi?->nama_materi ?? 'unknown';
                 $tanggalAwal = optional($feedback->rkm)->tanggal_awal ?? '0000-00-00';
 
+                if ($materiNama === 'unknown' || $tanggalAwal === '0000-00-00') {
+                    return '__invalid_feedback__';
+                }
+
                 return $materiNama.'/'.$tanggalAwal;
             })
-            ->filter();
+            ->reject(fn ($group, $key) => $key === '__invalid_feedback__');
 
         $averageFeedbacks = [];
         $dailyAverages = [];
@@ -177,8 +190,7 @@ class GMKPIService
             $sessionScores[$key] = $finalAvg;
 
             $sampleDate = $group->first()->created_at->format('Y-m-d');
-            $dailyAverages[$sampleDate] = $finalAvg;
-            $dailyProgresses[$sampleDate] = round($finalAvg * 20, 1);
+            $dailyAverages[$sampleDate][] = $finalAvg;
 
             foreach (['M' => $avgM, 'P' => $avgP, 'F' => $avgF, 'I' => $avgI, 'Ib' => $avgIb, 'Ias' => $avgIas] as $k => $v) {
                 if ($v > 0) {
@@ -189,11 +201,19 @@ class GMKPIService
         }
 
         $totalGroups = count($averageFeedbacks);
-        $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= 3.5));
+        foreach ($dailyAverages as $date => $sessionScoresForDate) {
+            $dailyAverages[$date] = round(array_sum($sessionScoresForDate) / count($sessionScoresForDate), 1);
+            $dailyProgresses[$date] = round($dailyAverages[$date] * 25, 1);
+        }
+
+        $above = count(array_filter($averageFeedbacks, fn ($v) => $v >= self::MINIMUM_KEPUASAN));
         $below = $totalGroups - $above;
         $progress = $totalGroups > 0 ? round(($above / $totalGroups) * 100, 1) : 0;
 
-        $nilaiTarget = $itemDetail->detailTargetKPI->pluck('nilai_target')->first() ?? 0;
+        $nilaiTarget = (float) ($itemDetail->detailTargetKPI->pluck('nilai_target')->first() ?? 0);
+        if ($nilaiTarget > 0 && $nilaiTarget <= 4) {
+            $nilaiTarget *= 25;
+        }
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
 
@@ -827,23 +847,17 @@ class GMKPIService
         }
 
         $labaKotor = $this->calculatePemasukanKotor($item, $personId);
-        if ($labaKotor == 0 || is_null($detail->manual_value)) {
+        if ($labaKotor == 0) {
             return 0;
         }
 
-        $incomeTransaksi = IncomeTransaction::where('year', $tahun)
-            ->whereIn('item_code', [
-                'fc_24', 'fc_25', 'fc_26', 'fc_27', 'fc_28', 'fc_29', 'fc_30', 'fc_31',
-                'fc_32', 'fc_33', 'fc_34', 'fc_35', 'fc_36', 'fc_37', 'fc_38', 'fc_39',
-                'fc_40', 'fc_44', 'fc_49', 'fc_50', 'fc_51', 'fc_84', 'fc_87',
-            ])
-            ->sum('amount');
+        $biayaOperasional = $this->getBiayaOperasional($detail, $tahun);
 
         $progress = 0;
-        if ($incomeTransaksi > 0 && $labaKotor > 0) {
-            $rasio = ($incomeTransaksi / $labaKotor) * 100;
+        if ($biayaOperasional > 0 && $labaKotor > 0) {
+            $rasio = ($biayaOperasional / $labaKotor) * 100;
             if ($rasio > 0) {
-                $progress = ($nilaiTarget / $rasio) * 100;
+                $progress = $this->calculateRasioProgress($rasio, $nilaiTarget);
             }
         }
 
@@ -858,7 +872,7 @@ class GMKPIService
         }
 
         $labaKotor = $this->calculatePemasukanKotor($itemDetail, $personId);
-        if ($labaKotor == 0 || is_null($detail->manual_value)) {
+        if ($labaKotor == 0) {
             return $this->getDefaultDetailResponse();
         }
 
@@ -869,33 +883,22 @@ class GMKPIService
             return $this->getDefaultDetailResponse();
         }
 
-        $incomeTransaksi = IncomeTransaction::where('year', $tahun)
-            ->whereIn('item_code', [
-                'fc_24', 'fc_25', 'fc_26', 'fc_27', 'fc_28', 'fc_29', 'fc_30', 'fc_31',
-                'fc_32', 'fc_33', 'fc_34', 'fc_35', 'fc_36', 'fc_37', 'fc_38', 'fc_39',
-                'fc_40', 'fc_44', 'fc_49', 'fc_50', 'fc_51', 'fc_84', 'fc_87',
-            ])
-            ->sum('amount');
+        $biayaOperasional = $this->getBiayaOperasional($detail, $tahun);
+        $monthlyIncomes = $this->getMonthlyBiayaOperasional($tahun);
 
         $progress = 0;
         $rasio = 0;
 
-        if ($incomeTransaksi > 0 && $labaKotor > 0) {
-            $rasio = ($incomeTransaksi / $labaKotor) * 100;
+        if ($biayaOperasional > 0 && $labaKotor > 0) {
+            $rasio = ($biayaOperasional / $labaKotor) * 100;
             if ($rasio > 0) {
-                $progress = ($nilaiTarget / $rasio) * 100;
+                $progress = $this->calculateRasioProgress($rasio, $nilaiTarget);
             }
         }
 
         $progress = max(0, min(100, round($progress, 1)));
         $gapRaw = $progress - $nilaiTarget;
         $gap = rtrim(rtrim(sprintf('%.1f', $gapRaw), '0'), '.');
-
-        $monthlyIncomes = IncomeTransaction::selectRaw('MONTH(month) as bulan, SUM(amount) as total')
-            ->where('year', $tahun)
-            ->groupByRaw('MONTH(month)')
-            ->pluck('total', 'bulan')
-            ->toArray();
 
         $monthlyAverages = [];
         $monthlyProgressAverages = [];
@@ -912,7 +915,7 @@ class GMKPIService
             if ($incomeBulan > 0 && $labaKotor > 0) {
                 $rasioBulan = ($incomeBulan / $labaKotor) * 100;
                 if ($rasioBulan > 0) {
-                    $progressBulan = ($nilaiTarget / $rasioBulan) * 100;
+                    $progressBulan = $this->calculateRasioProgress($rasioBulan, $nilaiTarget);
                 }
             }
 
@@ -924,7 +927,7 @@ class GMKPIService
             $dailyBreakdownPerMonth[$monthKey] = [$dayKey => $progressBulan];
             $dailyProgressPerMonth[$monthKey] = [$dayKey => $progressBulan];
 
-            if ($progressBulan >= $nilaiTarget) {
+            if ($progressBulan >= 100) {
                 ++$aboveCount;
             } else {
                 ++$belowCount;
@@ -946,6 +949,45 @@ class GMKPIService
             'daily_progress_per_month' => $dailyProgressPerMonth,
             'dataManual' => ['manual_document' => $detail->manual_document],
         ];
+    }
+
+    private function getFixedCostItemCodes(): array
+    {
+        return [
+            'fc_24', 'fc_25', 'fc_26', 'fc_27', 'fc_28', 'fc_29', 'fc_30', 'fc_31',
+            'fc_32', 'fc_33', 'fc_34', 'fc_35', 'fc_36', 'fc_37', 'fc_38', 'fc_39',
+            'fc_40', 'fc_44', 'fc_49', 'fc_50', 'fc_51', 'fc_84', 'fc_87',
+        ];
+    }
+
+    private function calculateRasioProgress(float $rasio, float $target): float
+    {
+        if ($rasio < $target) {
+            return 100;
+        }
+
+        return min(99.9, ($target / $rasio) * 100);
+    }
+
+    private function getBiayaOperasional($detail, int $tahun): float
+    {
+        if (!is_null($detail->manual_value) && is_numeric($detail->manual_value)) {
+            return max(0, (float) $detail->manual_value);
+        }
+
+        return (float) IncomeTransaction::where('year', $tahun)
+            ->whereIn('item_code', $this->getFixedCostItemCodes())
+            ->sum('amount');
+    }
+
+    private function getMonthlyBiayaOperasional(int $tahun): array
+    {
+        return IncomeTransaction::where('year', $tahun)
+            ->whereIn('item_code', $this->getFixedCostItemCodes())
+            ->get(['month', 'amount'])
+            ->groupBy(fn ($row) => (int) $row->month)
+            ->map(fn ($rows) => (float) $rows->sum('amount'))
+            ->all();
     }
 
     public function calculatePerformaKPIDepartemen($item, $personId)

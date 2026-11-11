@@ -1,6 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $prevUrl = url()->previous();
+    $fromIndex = parse_url($prevUrl, PHP_URL_PATH) === '/pengajuanbarang';
+    $returnUrl = request('return_url') ?: ($fromIndex ? $prevUrl : route('pengajuanbarang.index'));
+    if (!str_starts_with($returnUrl, url('/pengajuanbarang'))) {
+        $returnUrl = route('pengajuanbarang.index');
+    }
+@endphp
     <div class="container-fluid">
         <!-- Update Barang Modal (Unchanged) -->
         <div class="modal fade" id="updateBarangModal" tabindex="-1" aria-labelledby="updateBarangModalLabel"
@@ -16,6 +24,7 @@
                             action="{{ route('pengajuanbarang.updateBarang', $data->id) }}">
                             @csrf
                             @method('PUT')
+                            <input type="hidden" name="return_url" value="{{ $returnUrl }}">
                             @foreach ($detail as $item)
                                 <div id="item-{{ $item->id }}">
                                     <div class="row mb-3 item">
@@ -92,9 +101,9 @@
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-body">
-                        <a href="{{ route('pengajuanbarang.index') }}" class="btn click-primary my-2">
-                        <img src="/icon/arrow-left.svg" class="img-responsive" width="20px"> Back
-                    </a>
+                        <a href="{{ $returnUrl }}" class="btn click-primary my-2">
+                            <img src="/icon/arrow-left.svg" class="img-responsive" width="20px"> Back
+                        </a>
                         <h5 class="card-title">Detail Pengajuan Barang</h5>
                         <div class="row">
                             <div class="col-md-5">

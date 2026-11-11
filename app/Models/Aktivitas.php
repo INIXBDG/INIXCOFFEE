@@ -14,7 +14,7 @@ class Aktivitas extends Model
         'id_peserta',
         'id_peluang',
         'aktivitas',
-        'subject',
+        // 'subject',
         'deskripsi',
         'waktu_aktivitas',
         'harga',

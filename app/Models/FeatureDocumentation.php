@@ -22,6 +22,26 @@ class FeatureDocumentation extends Model
 
     protected $appends = ['document_version', 'last_updated_at', 'status_badge_class', 'revision_number', 'version_path'];
 
+    public function getPurposeAttribute($value)
+    {
+        return function_exists('clean') ? clean($value) : $value;
+    }
+
+    public function getProblemSolvedAttribute($value)
+    {
+        return function_exists('clean') ? clean($value) : $value;
+    }
+
+    public function getHowItWorksAttribute($value)
+    {
+        return function_exists('clean') ? clean($value) : $value;
+    }
+
+    public function getUserAccessAttribute($value)
+    {
+        return function_exists('clean') ? clean($value) : $value;
+    }
+
     public function getLastUpdatedAtAttribute(): ?string
     {
         if (empty($this->log_time_update)) {

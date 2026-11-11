@@ -38,7 +38,7 @@ use App\Models\Pelatihan;
 use App\Models\Peluang;
 use App\Models\PengajuanBarang;
 use App\Models\PenilaianExam;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\perhitunganNetSales;
 use App\Models\pickupDriver;
 use App\Models\Registrasi;
@@ -1492,7 +1492,7 @@ class TargetKPIControllerr extends Controller
             ->where('tahun_periode', $tahun);
 
         if ($personId !== null) {
-            $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
+            $kodeKaryawan = karyawan::where('id', $personId)->value('kode_karyawan');
             if (!$kodeKaryawan) {
                 return 0;
             }
@@ -1839,7 +1839,7 @@ class TargetKPIControllerr extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = Outstanding::whereBetween('created_at', [$start, $end])->get();
+        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
 
         if ($outstandings->isEmpty()) {
             return 0;
@@ -2351,8 +2351,8 @@ class TargetKPIControllerr extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $totalQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end]);
-        $selesaiQuery = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
+        $totalQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end]);
+        $selesaiQuery = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
             ->where('status', 'Selesai');
 
         if ($personId !== null) {
@@ -2944,7 +2944,7 @@ class TargetKPIControllerr extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = Colaborator::whereBetween('created_at', [$start, $end])->get();
+        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
 
         $totalQuarters = 4;
 
@@ -4152,7 +4152,7 @@ class TargetKPIControllerr extends Controller
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')
             ->where('jabatan', 'Instruktur')
             ->get();
@@ -4238,8 +4238,8 @@ class TargetKPIControllerr extends Controller
             return 0;
         }
 
-        $startDate = carbon::create($tahun, '01', '01');
-        $endDate = carbon::create($tahun, '12', '31');
+        $startDate = Carbon::create($tahun, '01', '01');
+        $endDate = Carbon::create($tahun, '12', '31');
         $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
 
         $apiArtikel = collect($response['data'] ?? []);
@@ -4286,7 +4286,7 @@ class TargetKPIControllerr extends Controller
 
             $personId = detailPersonKPI::where('detailTargetKey', $detail->id)->first()?->id_karyawan;
 
-            $kodeKaryawan = Karyawan::where('id', $personId)->value('kode_karyawan');
+            $kodeKaryawan = karyawan::where('id', $personId)->value('kode_karyawan');
             if (!$kodeKaryawan) {
                 return 0;
             }
@@ -4635,7 +4635,7 @@ class TargetKPIControllerr extends Controller
 
         $nilaiTarget = (float) $detail->nilai_target;
 
-        $Saless = Karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
+        $Saless = karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
             ->where('jabatan', 'Sales')
             ->get();
 
@@ -4701,7 +4701,7 @@ class TargetKPIControllerr extends Controller
         $totalPenilaian = 0;
         $totalMelebihiNilaiUkur = 0;
 
-        $karyawanJabatan = Karyawan::where('divisi', 'Sales & Marketing')
+        $karyawanJabatan = karyawan::where('divisi', 'Sales & Marketing')
             ->where('status_aktif', '1')
             ->where('jabatan', '!=', 'Tim Digital')
             ->where('jabatan', '!=', 'GM')
@@ -5751,7 +5751,7 @@ class TargetKPIControllerr extends Controller
             }
         }
 
-        $allKaryawan = Karyawan::query()
+        $allKaryawan = karyawan::query()
             ->where(function ($q) {
                 $q->where('status_aktif', '1')
                     ->where('jabatan', '!=', 'Outsource')
@@ -5795,7 +5795,7 @@ class TargetKPIControllerr extends Controller
             ? $targetPenjualanTahunan->id
             : $itemDetail->id;
 
-        $detailPersons = DetailPersonKPI::query()
+        $detailPersons = detailPersonKPI::query()
             ->where('id_target', $idTargetToUse)
             ->whereIn('id_karyawan', $allKaryawan->pluck('id'))
             ->get()
@@ -6028,7 +6028,7 @@ class TargetKPIControllerr extends Controller
         $karyawanData = null;
 
         if ($personId !== null) {
-            $karyawanData = Karyawan::find($personId);
+            $karyawanData = karyawan::find($personId);
             $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
         }
 
@@ -6129,7 +6129,7 @@ class TargetKPIControllerr extends Controller
         if ($personId === null) {
             $allSalesData = [];
 
-            $allKaryawan = Karyawan::where(function ($q) {
+            $allKaryawan = karyawan::where(function ($q) {
                 $q->where('status_aktif', '1')
                     ->whereNot('jabatan', 'Outsource')
                     ->where('kode_karyawan', 'NOT LIKE', 'OL%')
@@ -6159,7 +6159,7 @@ class TargetKPIControllerr extends Controller
 
                 $salesRevenue = (float) ($salesRevenue ?? 0);
 
-                $detailPerson = DetailPersonKPI::where('id_target', $itemDetail->id)
+                $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                     ->where('id_karyawan', $karyawan->id)
                     ->first();
 
@@ -6184,7 +6184,7 @@ class TargetKPIControllerr extends Controller
                 'data' => $allSalesData
             ];
         } else {
-            $detailPerson = DetailPersonKPI::where('id_target', $itemDetail->id)
+            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                 ->where('id_karyawan', $personId)
                 ->first();
 
@@ -7009,7 +7009,7 @@ class TargetKPIControllerr extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $outstandings = Outstanding::whereBetween('created_at', [$start, $end])->get();
+        $outstandings = outstanding::whereBetween('created_at', [$start, $end])->get();
 
         if ($outstandings->isEmpty()) {
             return [
@@ -7556,7 +7556,7 @@ class TargetKPIControllerr extends Controller
             ? now()->endOfDay()
             : Carbon::create($tahun, 12, 31)->endOfDay();
 
-        $data = Outstanding::whereBetween('created_at', [$start, $end])->get();
+        $data = outstanding::whereBetween('created_at', [$start, $end])->get();
 
         $total = 0;
         $totalAkurat = 0;
@@ -8319,11 +8319,11 @@ class TargetKPIControllerr extends Controller
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
         if ($personId !== null) {
-            $allRepairs = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])
+            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])
                 ->where('id_user', $personId)
                 ->get();
         } else {
-            $allRepairs = PerbaikanKendaraan::whereBetween('created_at', [$start, $end])->get();
+            $allRepairs = perbaikanKendaraan::whereBetween('created_at', [$start, $end])->get();
         }
 
         $totalData = $allRepairs->count();
@@ -10042,7 +10042,7 @@ class TargetKPIControllerr extends Controller
         $start = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
         $end = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
 
-        $dataColaborator = Colaborator::whereBetween('created_at', [$start, $end])->get();
+        $dataColaborator = colaborator::whereBetween('created_at', [$start, $end])->get();
 
         $totalData = $dataColaborator->count();
 
@@ -10268,7 +10268,7 @@ class TargetKPIControllerr extends Controller
 
         $allSalesData = [];
 
-        $allKaryawan = Karyawan::where(function ($q) {
+        $allKaryawan = karyawan::where(function ($q) {
             $q->where('status_aktif', '1')
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
@@ -10298,7 +10298,7 @@ class TargetKPIControllerr extends Controller
 
             $salesRevenue = (float) ($salesRevenue ?? 0);
 
-            $detailPerson = DetailPersonKPI::where('id_target', $itemDetail->id)
+            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                 ->where('id_karyawan', $karyawan->id)
                 ->first();
 
@@ -12241,9 +12241,9 @@ class TargetKPIControllerr extends Controller
             ->toArray();
 
         if ($personId !== null) {
-            $instrukturList = Karyawan::where('id', $personId)->get();
+            $instrukturList = karyawan::where('id', $personId)->get();
         } else {
-            $instrukturList = Karyawan::where('status_aktif', '1')
+            $instrukturList = karyawan::where('status_aktif', '1')
                 ->whereNot('jabatan', 'Outsource')
                 ->where('kode_karyawan', 'NOT LIKE', 'OL%')
                 ->whereNot('jabatan', 'Pilih Jabatan')
@@ -12840,7 +12840,7 @@ class TargetKPIControllerr extends Controller
             return $emptyResponse;
         }
 
-        $instrukturs = Karyawan::where('Divisi', '!=', 'Direksi')
+        $instrukturs = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)
             ->where('jabatan', 'Instruktur')
             ->get();
@@ -12968,8 +12968,8 @@ class TargetKPIControllerr extends Controller
             return 0;
         }
 
-        $startDate = carbon::create($tahun, '01', '01');
-        $endDate = carbon::create($tahun, '12', '31');
+        $startDate = Carbon::create($tahun, '01', '01');
+        $endDate = Carbon::create($tahun, '12', '31');
         $response = Http::get('http://202.138.248.36:8003/api/filtered-articles')->json();
 
         $apiArtikel = collect($response['data'] ?? []);
@@ -13091,7 +13091,7 @@ class TargetKPIControllerr extends Controller
         $karyawanData = null;
 
         if ($personId !== null) {
-            $karyawanData = Karyawan::find($personId);
+            $karyawanData = karyawan::find($personId);
             $kodeKaryawan = $karyawanData ? $karyawanData->kode_karyawan : null;
         }
 
@@ -13191,7 +13191,7 @@ class TargetKPIControllerr extends Controller
         if ($personId === null) {
             $allSalesData = [];
 
-            $allKaryawan = Karyawan::where(function ($q) {
+            $allKaryawan = karyawan::where(function ($q) {
                 $q->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)->whereNot('divisi', 'Direksi')
                     ->orWhereNull('status_aktif');
             })
@@ -13219,7 +13219,7 @@ class TargetKPIControllerr extends Controller
 
                 $salesRevenue = (float) ($salesRevenue ?? 0);
 
-                $detailPerson = DetailPersonKPI::where('id_target', $itemDetail->id)
+                $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                     ->where('id_karyawan', $karyawan->id)
                     ->first();
 
@@ -13244,7 +13244,7 @@ class TargetKPIControllerr extends Controller
                 'data' => $allSalesData
             ];
         } else {
-            $detailPerson = DetailPersonKPI::where('id_target', $itemDetail->id)
+            $detailPerson = detailPersonKPI::where('id_target', $itemDetail->id)
                 ->where('id_karyawan', $personId)
                 ->first();
 
@@ -13522,7 +13522,7 @@ class TargetKPIControllerr extends Controller
             return $emptyResponse;
         }
 
-        $Saless = Karyawan::where('Divisi', '!=', 'Direksi')
+        $Saless = karyawan::where('Divisi', '!=', 'Direksi')
             ->where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->where('nip', '!=', null)
             ->where('jabatan', 'Sales')
             ->get();
@@ -14266,7 +14266,7 @@ class TargetKPIControllerr extends Controller
             ];
         }
 
-        $karyawanJabatan = Karyawan::where('divisi', 'Sales & Marketing')
+        $karyawanJabatan = karyawan::where('divisi', 'Sales & Marketing')
             ->where('status_aktif', '1')
             ->whereNotIn('jabatan', ['Tim Digital', 'GM'])
             ->pluck('jabatan')
@@ -14424,7 +14424,7 @@ class TargetKPIControllerr extends Controller
             'presentase_kemampuan' => 'required|numeric|min:0',
         ]);
 
-        $detailPerson = DetailPersonKPI::findOrFail($request->id_detailPerson);
+        $detailPerson = detailPersonKPI::findOrFail($request->id_detailPerson);
 
         $detailPerson->presentase_kemampuan = $request->presentase_kemampuan;
         $detailPerson->save();
@@ -14607,7 +14607,7 @@ class TargetKPIControllerr extends Controller
 
         $currentYear = now()->year;
 
-        $karyawanDiDivisi = Karyawan::where('divisi', $divisiFilter)
+        $karyawanDiDivisi = karyawan::where('divisi', $divisiFilter)
             ->where('status_aktif', '1')
             ->where('jabatan', '!=', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
@@ -16153,7 +16153,7 @@ class TargetKPIControllerr extends Controller
         $s1->getRowDimension(1)->setRowHeight(30);
 
         $r = 3;
-        $s1->setCellValue("A$r", "Total Karyawan");
+        $s1->setCellValue("A$r", "Total karyawan");
         $s1->setCellValue("B$r", ": " . $data['total_karyawan']);
         $s1->setCellValue("D$r", "Rata-Rata KPI Divisi");
         $s1->setCellValue("E$r", ": " . $data['rata_rata_kpi_divisi'] . "%");
@@ -16439,7 +16439,7 @@ class TargetKPIControllerr extends Controller
             'period' => $tahun
         ];
 
-        $pdf = PDF::loadView('HR.executive.report-pdf', [
+        $pdf = Pdf::loadView('HR.executive.report-pdf', [
             'filters' => $filters,
             'generated_at' => now(),
             'user' => $user,

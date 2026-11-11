@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 
 class ReportGeneratorService
 {
+    protected bool $previewMode = false;
+
     protected array $allowedModels = [
         'karyawan' => \App\Models\karyawan::class,
         'pelamar' => \App\Models\Pelamar::class,
@@ -21,20 +23,125 @@ class ReportGeneratorService
         'text', 'textarea', 'date', 'select', 'checkbox', 'number', 'currency',
         'auto_date', 'formula', 'auth_field', 'relation_single',
         'loop_manual', 'loop_relation',
-        'manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox'
+        'manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox',
     ];
+
+    public function scanBlankSpaces(string $filePath): array
+    {
+        $unique = [];
+
+        foreach ($this->extractParagraphsFromDocx($filePath) as $paragraph) {
+            $found = preg_match_all(
+                '/(?<![\p{L}\p{N}])([^\r\n_]{2,80}?)\s*([:=]?)\s*(_{3,}|\.{5,}|…{2,})/u',
+                $paragraph,
+                $matches,
+                PREG_SET_ORDER
+            );
+
+            if (!$found) {
+                continue;
+            }
+
+            foreach ($matches as $m) {
+                $original = trim($m[0]);
+                $context = $this->cleanContext($m[1]);
+
+                if ($context === '' || isset($unique[$original])) {
+                    continue;
+                }
+
+                $unique[$original] = [
+                    'original_text' => $original,
+                    'context' => $context,
+                    'punctuation' => $m[2],
+                    'blank_part' => $m[3],
+                ];
+            }
+        }
+
+        return array_values($unique);
+    }
+
+    private function cleanContext(string $raw): string
+    {
+        $context = preg_replace('/\s+/u', ' ', $raw) ?? $raw;
+        $context = preg_replace('/^[\s\d\.\)\(\-–•*]+/u', '', $context) ?? $context;
+        $context = preg_replace('/[\s:=\-–]+$/u', '', $context) ?? $context;
+        $context = trim($context);
+
+        if ($context === '' || !preg_match('/\p{L}/u', $context)) {
+            return '';
+        }
+
+        $words = explode(' ', $context);
+        if (count($words) > 5) {
+            $words = array_slice($words, -5);
+        }
+
+        return trim(implode(' ', $words));
+    }
+
+    public function extractParagraphsFromDocx(string $filePath): array
+    {
+        if (!file_exists($filePath)) {
+            return [];
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) !== true) {
+            return [];
+        }
+
+        $xml = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        if ($xml === false) {
+            return [];
+        }
+
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        if (stripos($xml, '<?xml') === false) {
+            $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $xml;
+        }
+
+        if (!@$dom->loadXML($xml)) {
+            libxml_clear_errors();
+            return [];
+        }
+
+        $xpath = new \DOMXPath($dom);
+        $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
+
+        $paragraphs = [];
+        foreach ($xpath->query('//w:p') as $para) {
+            $text = '';
+            foreach ($xpath->query('.//w:t', $para) as $t) {
+                $text .= $t->nodeValue;
+            }
+            if (trim($text) !== '') {
+                $paragraphs[] = $text;
+            }
+        }
+
+        libxml_clear_errors();
+
+        return $paragraphs;
+    }
 
     public function getSourceData(?string $sourceType, int $sourceId): array
     {
         if (empty($sourceType) || !isset($this->allowedModels[$sourceType])) {
             return [];
         }
+
         $modelClass = $this->allowedModels[$sourceType];
         if (!class_exists($modelClass)) {
             return [];
         }
 
         $data = $modelClass::with($this->getRelations($sourceType))->find($sourceId);
+
         return $data ? $this->formatSourceData($data, $sourceType) : [];
     }
 
@@ -50,12 +157,23 @@ class ReportGeneratorService
     {
         $data = $model->toArray();
         $formatted = [];
+        $dateConfig = ['day_format' => 'number', 'month_format' => 'month_name', 'year_format' => 'number', 'separator' => ' '];
 
         foreach ($data as $key => $value) {
             if ($value instanceof \DateTimeInterface) {
-                $formatted[$key] = $value->format('d F Y');
-            } elseif (is_null($value)) {
+                $formatted[$key] = $this->composeDate($value, $dateConfig);
+            } elseif (is_null($value) || $value === '') {
                 $formatted[$key] = '-';
+            } elseif (
+                is_string($value)
+                && preg_match('/^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2})?)?/', $value)
+                && preg_match('/(tanggal|tgl|awal|akhir|lahir|mulai|masuk|melamar)/i', (string) $key)
+            ) {
+                try {
+                    $formatted[$key] = $this->composeDate(new \DateTime($value), $dateConfig);
+                } catch (\Throwable $e) {
+                    $formatted[$key] = $value;
+                }
             } else {
                 $formatted[$key] = $value;
             }
@@ -64,11 +182,14 @@ class ReportGeneratorService
         return $formatted;
     }
 
-    public function generateDocxReport(ReportTemplate $template, array $sourceData, array $manualInputs): string
+    public function generateDocxReport(ReportTemplate $template, array $sourceData, array $manualInputs, bool $preview = false): string
     {
+        $this->previewMode = $preview;
+
         $templatePath = $this->getTemplateAbsolutePath($template->template_file_path);
 
         if (!file_exists($templatePath)) {
+            $this->previewMode = false;
             throw new \Exception('Template file tidak ditemukan di: ' . $templatePath);
         }
 
@@ -110,17 +231,19 @@ class ReportGeneratorService
                     continue;
                 }
 
-                $value = $this->resolveValue($placeholder, $sourceData, $manualInputs, $dateFormat);
-                $replacements[$key] = (string) $value;
+                $replacements[$key] = (string) $this->resolveValue($placeholder, $sourceData, $manualInputs, $dateFormat);
             }
 
             Log::info('generateDocxReport', [
                 'single_keys' => array_keys($replacements),
                 'loop_keys' => array_keys($loopData),
+                'preview' => $preview,
             ]);
 
             foreach ($xmlParts as $part) {
-                if (!isset($entries[$part])) continue;
+                if (!isset($entries[$part])) {
+                    continue;
+                }
 
                 $xml = $entries[$part];
 
@@ -128,8 +251,7 @@ class ReportGeneratorService
                     $xml = $this->processLoopsInXml($xml, $loopData);
                 }
 
-                $xml = $this->replacePlaceholdersInXml($xml, $replacements);
-                $entries[$part] = $xml;
+                $entries[$part] = $this->replacePlaceholdersInXml($xml, $replacements);
             }
 
             $newZip = new \ZipArchive();
@@ -142,7 +264,7 @@ class ReportGeneratorService
             }
             $newZip->close();
 
-            $filename   = 'report_' . Str::slug($template->name) . '_' . time() . '_' . Str::random(8) . '.docx';
+            $filename = 'report_' . Str::slug($template->name) . '_' . time() . '_' . Str::random(8) . '.docx';
             $outputPath = 'reports/generated/' . date('Y/m') . '/' . $filename;
 
             Storage::disk('public')->makeDirectory(dirname($outputPath));
@@ -150,6 +272,7 @@ class ReportGeneratorService
 
             return $outputPath;
         } finally {
+            $this->previewMode = false;
             @unlink($tempFile);
         }
     }
@@ -170,11 +293,12 @@ class ReportGeneratorService
         if ($type === 'auth_field') {
             $field = $config['field'] ?? 'username';
             $user = auth()->user();
-            
-            if (!$user) return '-';
 
-            $userFields = ['username', 'jabatan']; 
-            
+            if (!$user) {
+                return '-';
+            }
+
+            $userFields = ['username', 'jabatan'];
             $karyawanFields = ['nama_lengkap', 'nip', 'email', 'whatsapp'];
 
             if (in_array($field, $userFields)) {
@@ -182,13 +306,10 @@ class ReportGeneratorService
             }
 
             if (in_array($field, $karyawanFields)) {
-                $karyawan = null;
-                if (method_exists($user, 'karyawan')) {
-                    $karyawan = $user->karyawan;
-                } else {
-                    $karyawan = \App\Models\karyawan::where('user_id', $user->id)->first();
-                }
-                
+                $karyawan = method_exists($user, 'karyawan')
+                    ? $user->karyawan
+                    : \App\Models\karyawan::where('user_id', $user->id)->first();
+
                 return $karyawan ? (string) ($karyawan->$field ?? '-') : '-';
             }
 
@@ -198,11 +319,13 @@ class ReportGeneratorService
         if ($type === 'relation_single') {
             $relation = $config['relation'] ?? '';
             $field = $config['field'] ?? '';
-            if (empty($relation) || empty($field)) return '-';
+            if (empty($relation) || empty($field)) {
+                return '-';
+            }
+
             return (string) data_get($sourceData, "{$relation}.{$field}", '-');
         }
 
-        // Handle manual input fields
         if (in_array($type, ['manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox'])) {
             return $this->resolveManualValue($placeholder, $manualInputs, $dateFormat);
         }
@@ -210,7 +333,7 @@ class ReportGeneratorService
         if ($placeholder->is_manual) {
             $value = $manualInputs[$placeholder->placeholder_key] ?? ($placeholder->default_value ?? '');
         } else {
-            $column = $placeholder->source_column;
+            $column = (string) $placeholder->source_column;
             $value = data_get($sourceData, $column, data_get($sourceData, Str::snake($column), ''));
         }
 
@@ -219,44 +342,31 @@ class ReportGeneratorService
 
     private function formatAutoDate(array $config): string
     {
+        return $this->composeDate(now(), $config);
+    }
+
+    private function composeDate(\DateTimeInterface $date, array $config): string
+    {
         $dayFormat = $config['day_format'] ?? 'number';
         $monthFormat = $config['month_format'] ?? 'number';
         $yearFormat = $config['year_format'] ?? 'number';
         $separator = $config['separator'] ?? ' ';
-        
-        $now = now();
-        $parts = [];
-        
-        // Format Hari/Tanggal
-        if ($dayFormat !== 'none') {
-            $parts[] = $this->formatDayPart($now, $dayFormat);
-        }
-        
-        // Format Bulan
-        if ($monthFormat !== 'none') {
-            $parts[] = $this->formatMonthPart($now, $monthFormat);
-        }
-        
-        // Format Tahun
-        if ($yearFormat !== 'none') {
-            $parts[] = $this->formatYearPart($now, $yearFormat);
-        }
-        
-        return implode($separator, $parts);
-    }
 
-    private function formatMonth(\DateTimeInterface $date, string $format): string
-    {
-        switch ($format) {
-            case 'number':
-                return $date->format('m');
-            case 'word_short':
-                return $date->format('M');
-            case 'word_full':
-                return $date->format('F');
-            default:
-                return $date->format('m');
+        $parts = [];
+
+        if ($dayFormat !== 'none') {
+            $parts[] = $this->formatDayPart($date, $dayFormat);
         }
+
+        if ($monthFormat !== 'none') {
+            $parts[] = $this->formatMonthPart($date, $monthFormat);
+        }
+
+        if ($yearFormat !== 'none') {
+            $parts[] = $this->formatYearPart($date, $yearFormat);
+        }
+
+        return implode($separator, $parts);
     }
 
     private function resolveManualValue(TemplatePlaceholder $placeholder, array $manualInputs, string $dateFormat): string
@@ -264,30 +374,20 @@ class ReportGeneratorService
         $type = $placeholder->field_type;
         $config = $placeholder->config ?? [];
         $key = $placeholder->placeholder_key;
-        
+
         $value = $manualInputs[$key] ?? ($placeholder->default_value ?? '');
-        
+
         if (empty($value) && $value !== '0') {
             return '-';
         }
-        
+
         switch ($type) {
-            case 'manual_text':
-            case 'manual_textarea':
-                return (string) $value;
-                
             case 'manual_date':
                 return $this->formatManualDate($value, $config);
-                
             case 'manual_number':
                 return $this->formatManualNumber($value, $config);
-                
-            case 'manual_select':
-                return (string) $value;
-                
             case 'manual_checkbox':
                 return $value ? 'Ya' : 'Tidak';
-                
             default:
                 return (string) $value;
         }
@@ -295,37 +395,17 @@ class ReportGeneratorService
 
     private function formatManualDate($value, array $config): string
     {
-        if (empty($value)) return '-';
-        
+        if (empty($value)) {
+            return '-';
+        }
+
         try {
             $date = is_string($value) ? new \DateTime($value) : $value;
             if (!$date instanceof \DateTimeInterface) {
                 return (string) $value;
             }
-            
-            $dayFormat = $config['day_format'] ?? 'number';
-            $monthFormat = $config['month_format'] ?? 'number';
-            $yearFormat = $config['year_format'] ?? 'number';
-            $separator = $config['separator'] ?? ' ';
-            
-            $parts = [];
-            
-            // Format Hari/Tanggal
-            if ($dayFormat !== 'none') {
-                $parts[] = $this->formatDayPart($date, $dayFormat);
-            }
-            
-            // Format Bulan
-            if ($monthFormat !== 'none') {
-                $parts[] = $this->formatMonthPart($date, $monthFormat);
-            }
-            
-            // Format Tahun
-            if ($yearFormat !== 'none') {
-                $parts[] = $this->formatYearPart($date, $yearFormat);
-            }
-            
-            return implode($separator, $parts);
+
+            return $this->composeDate($date, $config);
         } catch (\Exception $e) {
             return (string) $value;
         }
@@ -334,8 +414,8 @@ class ReportGeneratorService
     private function formatDayPart(\DateTimeInterface $date, string $format): string
     {
         $dayNumber = (int) $date->format('d');
-        $dayOfWeek = (int) $date->format('w'); 
-        
+        $dayOfWeek = (int) $date->format('w');
+
         $dayNames = [
             0 => 'Minggu',
             1 => 'Senin',
@@ -345,10 +425,8 @@ class ReportGeneratorService
             5 => 'Jumat',
             6 => 'Sabtu',
         ];
-        
+
         switch ($format) {
-            case 'number':
-                return $date->format('d');
             case 'word':
                 return $this->numberToWords($dayNumber);
             case 'word_upper':
@@ -365,7 +443,7 @@ class ReportGeneratorService
     private function formatMonthPart(\DateTimeInterface $date, string $format): string
     {
         $monthNumber = (int) $date->format('n');
-        
+
         $monthNames = [
             1 => 'Januari',
             2 => 'Februari',
@@ -380,10 +458,8 @@ class ReportGeneratorService
             11 => 'November',
             12 => 'Desember',
         ];
-        
+
         switch ($format) {
-            case 'number':
-                return $date->format('m');
             case 'month_name':
                 return $monthNames[$monthNumber];
             case 'month_name_upper':
@@ -392,13 +468,12 @@ class ReportGeneratorService
                 return $date->format('m');
         }
     }
+
     private function formatYearPart(\DateTimeInterface $date, string $format): string
     {
         $yearNumber = (int) $date->format('Y');
-        
+
         switch ($format) {
-            case 'number':
-                return $date->format('Y');
             case 'word':
                 return $this->numberToWords($yearNumber);
             case 'word_upper':
@@ -410,83 +485,80 @@ class ReportGeneratorService
 
     private function numberToWords(int $number): string
     {
-        if ($number === 0) return 'Nol';
-        
+        if ($number === 0) {
+            return 'Nol';
+        }
+
         $units = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan'];
         $teens = ['Sepuluh', 'Sebelas', 'Dua Belas', 'Tiga Belas', 'Empat Belas', 'Lima Belas', 'Enam Belas', 'Tujuh Belas', 'Delapan Belas', 'Sembilan Belas'];
-        
-        $convert = function($n) use (&$convert, $units, $teens) {
+
+        $convert = function ($n) use (&$convert, $units, $teens) {
             if ($n < 10) {
                 return $units[$n];
-            } elseif ($n < 20) {
+            }
+            if ($n < 20) {
                 return $teens[$n - 10];
-            } elseif ($n < 100) {
-                $tens = intdiv($n, 10);
-                $remainder = $n % 10;
-                $result = $units[$tens] . ' Puluh';
-                if ($remainder > 0) {
-                    $result .= ' ' . $units[$remainder];
+            }
+            if ($n < 100) {
+                $result = $units[intdiv($n, 10)] . ' Puluh';
+                if ($n % 10 > 0) {
+                    $result .= ' ' . $units[$n % 10];
                 }
-                return $result;
-            } elseif ($n < 200) {
-                $remainder = $n - 100;
-                $result = 'Seratus';
-                if ($remainder > 0) {
-                    $result .= ' ' . $convert($remainder);
-                }
-                return $result;
-            } elseif ($n < 1000) {
-                $hundreds = intdiv($n, 100);
-                $remainder = $n % 100;
-                $result = $units[$hundreds] . ' Ratus';
-                if ($remainder > 0) {
-                    $result .= ' ' . $convert($remainder);
-                }
-                return $result;
-            } elseif ($n < 2000) {
-                $remainder = $n - 1000;
-                $result = 'Seribu';
-                if ($remainder > 0) {
-                    $result .= ' ' . $convert($remainder);
-                }
-                return $result;
-            } elseif ($n < 10000) {
-                $thousands = intdiv($n, 1000);
-                $remainder = $n % 1000;
-                $result = $units[$thousands] . ' Ribu';
-                if ($remainder > 0) {
-                    $result .= ' ' . $convert($remainder);
-                }
-                return $result;
-            } elseif ($n < 100000) {
-                $tenThousands = intdiv($n, 10000);
-                $remainder = $n % 10000;
-                $result = $convert($tenThousands) . ' Ribu';
-                if ($remainder > 0) {
-                    $result .= ' ' . $convert($remainder);
-                }
+
                 return $result;
             }
-            
+            if ($n < 200) {
+                $result = 'Seratus';
+                if ($n - 100 > 0) {
+                    $result .= ' ' . $convert($n - 100);
+                }
+
+                return $result;
+            }
+            if ($n < 1000) {
+                $result = $units[intdiv($n, 100)] . ' Ratus';
+                if ($n % 100 > 0) {
+                    $result .= ' ' . $convert($n % 100);
+                }
+
+                return $result;
+            }
+            if ($n < 2000) {
+                $result = 'Seribu';
+                if ($n - 1000 > 0) {
+                    $result .= ' ' . $convert($n - 1000);
+                }
+
+                return $result;
+            }
+            if ($n < 1000000) {
+                $result = $convert(intdiv($n, 1000)) . ' Ribu';
+                if ($n % 1000 > 0) {
+                    $result .= ' ' . $convert($n % 1000);
+                }
+
+                return $result;
+            }
+
             return (string) $n;
         };
-        
+
         return $convert($number);
     }
 
     private function formatManualNumber($value, array $config): string
     {
-        if (!is_numeric($value)) return (string) $value;
-        
-        $numberType = $config['number_type'] ?? 'number';
+        if (!is_numeric($value)) {
+            return (string) $value;
+        }
+
         $numValue = (float) $value;
-        
-        switch ($numberType) {
+
+        switch ($config['number_type'] ?? 'number') {
             case 'currency':
                 return 'Rp ' . number_format($numValue, 0, ',', '.');
             case 'integer':
                 return number_format((int) $numValue, 0, ',', '.');
-            case 'number':
             default:
                 return number_format($numValue, 2, ',', '.');
         }
@@ -495,44 +567,61 @@ class ReportGeneratorService
     private function evaluateFormula(array $config, array $sourceData, ?ReportTemplate $template = null): string
     {
         $templateStr = $config['template'] ?? '';
-        if (empty($templateStr)) return '';
+        if (empty($templateStr)) {
+            return '';
+        }
+
+        $templateStr = preg_replace('/(?<!\{)\{([a-z_:0-9]+)\}(?!\})/i', '{{$1}}', $templateStr) ?? $templateStr;
 
         $counterKey = $config['counter_key'] ?? ('tpl_' . ($template?->id ?? 0) . '_' . date('Y'));
 
         return preg_replace_callback('/\{\{\s*([a-z_:0-9]+)\s*\}\}/i', function ($m) use ($config, $counterKey, $sourceData, $template) {
             $var = trim($m[1]);
 
-            if ($var === 'tahun') return date('Y');
-            if ($var === 'bulan') return date('m');
-            if ($var === 'bulan_nama') return now()->translatedFormat('F');
-            if ($var === 'bulan_romawi') return $this->toRoman((int) date('m'));
-            if ($var === 'tanggal') return date('d');
-            if ($var === 'hari') return now()->translatedFormat('l');
-            if ($var === 'hari_tanggal') return now()->translatedFormat('l, d F Y');
+            if ($var === 'tahun') {
+                return date('Y');
+            }
+            if ($var === 'bulan') {
+                return date('m');
+            }
+            if ($var === 'bulan_nama') {
+                return now()->translatedFormat('F');
+            }
+            if ($var === 'bulan_romawi') {
+                return $this->toRoman((int) date('m'));
+            }
+            if ($var === 'tanggal') {
+                return date('d');
+            }
+            if ($var === 'hari') {
+                return now()->translatedFormat('l');
+            }
+            if ($var === 'hari_tanggal') {
+                return now()->translatedFormat('l, d F Y');
+            }
+
+            $startFrom = (int) ($config['last_number'] ?? 0);
 
             if (preg_match('/^urutan:(\d+)$/', $var, $cm)) {
-                $pad = (int) $cm[1];
-                $startFrom = (int) ($config['last_number'] ?? 0);
                 $val = $this->incrementCounter($template, $counterKey, $startFrom);
-                return str_pad($val, $pad, '0', STR_PAD_LEFT);
+
+                return str_pad((string) $val, (int) $cm[1], '0', STR_PAD_LEFT);
             }
             if ($var === 'urutan_romawi') {
-                $startFrom = (int) ($config['last_number'] ?? 0);
-                $val = $this->incrementCounter($template, $counterKey, $startFrom);
-                return $this->toRoman($val);
+                return $this->toRoman($this->incrementCounter($template, $counterKey, $startFrom));
             }
             if ($var === 'urutan') {
-                $startFrom = (int) ($config['last_number'] ?? 0);
                 return (string) $this->incrementCounter($template, $counterKey, $startFrom);
             }
             if (str_starts_with($var, 'auth:')) {
-                $field = substr($var, 5);
                 $user = Auth::user();
-                return $user ? (string) ($user->$field ?? '') : '';
+
+                return $user ? (string) ($user->{substr($var, 5)} ?? '') : '';
             }
 
             if (array_key_exists($var, $sourceData)) {
                 $v = $sourceData[$var];
+
                 return is_scalar($v) ? (string) $v : json_encode($v);
             }
 
@@ -542,7 +631,15 @@ class ReportGeneratorService
 
     private function incrementCounter(?ReportTemplate $template, string $key, int $startFrom = 0): int
     {
-        if (!$template) return $startFrom + 1;
+        if (!$template) {
+            return $startFrom + 1;
+        }
+
+        if ($this->previewMode) {
+            $counters = ($template->settings ?? [])['counters'] ?? [];
+
+            return isset($counters[$key]) ? ((int) $counters[$key] + 1) : ($startFrom + 1);
+        }
 
         return DB::transaction(function () use ($template, $key, $startFrom) {
             $template = ReportTemplate::where('id', $template->id)->lockForUpdate()->first();
@@ -550,7 +647,7 @@ class ReportGeneratorService
             $counters = $settings['counters'] ?? [];
 
             $current = isset($counters[$key]) ? ($counters[$key] + 1) : ($startFrom + 1);
-            
+
             $counters[$key] = $current;
             $settings['counters'] = $counters;
 
@@ -562,12 +659,16 @@ class ReportGeneratorService
 
     private function toRoman(int $number): string
     {
-        if ($number <= 0 || $number > 3999) return (string) $number;
+        if ($number <= 0 || $number > 3999) {
+            return (string) $number;
+        }
+
         $map = [
             1000 => 'M', 900 => 'CM', 500 => 'D', 400 => 'CD',
             100 => 'C', 90 => 'XC', 50 => 'L', 40 => 'XL',
-            10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I'
+            10 => 'X', 9 => 'IX', 5 => 'V', 4 => 'IV', 1 => 'I',
         ];
+
         $result = '';
         foreach ($map as $value => $symbol) {
             while ($number >= $value) {
@@ -575,6 +676,7 @@ class ReportGeneratorService
                 $number -= $value;
             }
         }
+
         return $result;
     }
 
@@ -586,12 +688,15 @@ class ReportGeneratorService
 
         if ($type === 'loop_manual') {
             $data = $manualInputs[$key] ?? [];
+
             return is_array($data) ? array_values($data) : [];
         }
 
         if ($type === 'loop_relation') {
             $relation = $config['relation'] ?? '';
-            if (empty($relation)) return [];
+            if (empty($relation)) {
+                return [];
+            }
 
             $relatedData = data_get($sourceData, $relation, []);
 
@@ -607,7 +712,9 @@ class ReportGeneratorService
 
     private function processLoopsInXml(string $xml, array $loopData): string
     {
-        if (empty($loopData)) return $xml;
+        if (empty($loopData)) {
+            return $xml;
+        }
 
         libxml_use_internal_errors(true);
         $dom = new \DOMDocument('1.0', 'UTF-8');
@@ -620,6 +727,7 @@ class ReportGeneratorService
 
         if (!@$dom->loadXML($xml)) {
             libxml_clear_errors();
+
             return $xml;
         }
 
@@ -632,44 +740,40 @@ class ReportGeneratorService
 
         libxml_clear_errors();
 
-        $xmlDecl = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
-        return $xmlDecl . $dom->saveXML($dom->documentElement);
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . $dom->saveXML($dom->documentElement);
     }
 
     private function processCollectionLoop($dom, $xpath, string $collectionName, array $items): void
     {
         $tNodes = $xpath->query('//w:t[contains(., "{{ loop:' . $collectionName . '")]');
 
-        if ($tNodes->length === 0) return;
-
-        $firstT = $tNodes->item(0);
-        $rowNode = $this->findAncestor($firstT, 'tr');
-
-        if (!$rowNode) {
-            $rowNode = $this->findAncestor($firstT, 'p');
+        if ($tNodes->length === 0) {
+            return;
         }
 
-        if (!$rowNode || !$rowNode->parentNode) return;
+        $firstT = $tNodes->item(0);
+        $rowNode = $this->findAncestor($firstT, 'tr') ?? $this->findAncestor($firstT, 'p');
+
+        if (!$rowNode || !$rowNode->parentNode) {
+            return;
+        }
 
         $parent = $rowNode->parentNode;
 
         if (empty($items)) {
             $parent->removeChild($rowNode);
+
             return;
         }
 
+        $template = $rowNode->cloneNode(true);
         $this->replaceLoopPlaceholdersInNode($rowNode, $xpath, $collectionName, $items[0]);
 
         $currentRow = $rowNode;
         for ($i = 1; $i < count($items); $i++) {
-            $clone = $rowNode->cloneNode(true);
+            $clone = $template->cloneNode(true);
+            $parent->insertBefore($clone, $currentRow->nextSibling);
             $this->replaceLoopPlaceholdersInNode($clone, $xpath, $collectionName, $items[$i]);
-
-            if ($currentRow->nextSibling) {
-                $parent->insertBefore($clone, $currentRow->nextSibling);
-            } else {
-                $parent->appendChild($clone);
-            }
             $currentRow = $clone;
         }
     }
@@ -678,9 +782,12 @@ class ReportGeneratorService
     {
         $current = $node->parentNode;
         while ($current) {
-            if ($current->localName === $localName) return $current;
+            if ($current->localName === $localName) {
+                return $current;
+            }
             $current = $current->parentNode;
         }
+
         return null;
     }
 
@@ -697,6 +804,7 @@ class ReportGeneratorService
                     if ($value instanceof \DateTimeInterface) {
                         $value = $value->format('d F Y');
                     }
+
                     return htmlspecialchars((string) ($value ?? '-'), ENT_XML1 | ENT_QUOTES, 'UTF-8');
                 },
                 $text
@@ -709,7 +817,9 @@ class ReportGeneratorService
 
     private function replacePlaceholdersInXml(string $xml, array $replacements): string
     {
-        if (empty($replacements)) return $xml;
+        if (empty($replacements)) {
+            return $xml;
+        }
 
         $result = $this->replaceWithDom($xml, $replacements);
         if ($result !== null) {
@@ -717,6 +827,7 @@ class ReportGeneratorService
         }
 
         Log::warning('DOM parse gagal, fallback ke string replacement');
+
         return $this->replaceWithStringFallback($xml, $replacements);
     }
 
@@ -734,41 +845,41 @@ class ReportGeneratorService
 
         if (!@$dom->loadXML($xml)) {
             libxml_clear_errors();
+
             return null;
         }
 
         $xpath = new \DOMXPath($dom);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
 
-        $paragraphs = $xpath->query('//w:p');
-        foreach ($paragraphs as $para) {
+        foreach ($xpath->query('//w:p') as $para) {
             foreach ($replacements as $key => $value) {
-                $this->replacePlaceholderInParagraph($para, $xpath, $key, $value);
+                $this->replacePlaceholderInParagraph($para, $xpath, (string) $key, (string) $value);
             }
         }
 
         libxml_clear_errors();
 
-        $xmlDecl = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
-        return $xmlDecl . $dom->saveXML($dom->documentElement);
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . $dom->saveXML($dom->documentElement);
     }
 
     private function replacePlaceholderInParagraph($para, \DOMXPath $xpath, string $key, string $value): void
     {
         $tNodes = $xpath->query('.//w:t', $para);
-        if ($tNodes->length === 0) return;
+        if ($tNodes->length === 0) {
+            return;
+        }
 
         $fullText = '';
-        $nodeMap  = [];
+        $nodeMap = [];
         foreach ($tNodes as $t) {
-            $start = mb_strlen($fullText, 'UTF-8');
-            $text  = $t->nodeValue ?? '';
-            $fullText .= $text;
+            $text = $t->nodeValue ?? '';
             $nodeMap[] = [
-                'node'   => $t,
-                'start'  => $start,
+                'node' => $t,
+                'start' => mb_strlen($fullText, 'UTF-8'),
                 'length' => mb_strlen($text, 'UTF-8'),
             ];
+            $fullText .= $text;
         }
 
         $pattern = '/\{\{\s*' . preg_quote($key, '/') . '\s*\}\}/u';
@@ -777,59 +888,53 @@ class ReportGeneratorService
         }
 
         $allMatches = [];
-        for ($i = 0; $i < count($matches[0]); $i++) {
+        foreach ($matches[0] as $hit) {
+            $charStart = mb_strlen(substr($fullText, 0, $hit[1]), 'UTF-8');
             $allMatches[] = [
-                'text'  => $matches[0][$i][0],
-                'start' => $matches[0][$i][1],
-                'end'   => $matches[0][$i][1] + mb_strlen($matches[0][$i][0], 'UTF-8'),
+                'text' => $hit[0],
+                'start' => $charStart,
+                'end' => $charStart + mb_strlen($hit[0], 'UTF-8'),
             ];
         }
-        usort($allMatches, fn($a, $b) => $b['start'] - $a['start']);
+        usort($allMatches, fn ($a, $b) => $b['start'] - $a['start']);
+
+        $safeValue = htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
         foreach ($allMatches as $match) {
             $affected = [];
             foreach ($nodeMap as $pos) {
-                $nodeStart = $pos['start'];
-                $nodeEnd   = $nodeStart + $pos['length'];
-                if ($nodeStart < $match['end'] && $nodeEnd > $match['start']) {
+                if ($pos['start'] < $match['end'] && $pos['start'] + $pos['length'] > $match['start']) {
                     $affected[] = $pos;
                 }
             }
-            if (empty($affected)) continue;
+            if (empty($affected)) {
+                continue;
+            }
 
-            $safeValue = htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $firstNode = $affected[0]['node'];
+            $localStart = $match['start'] - $affected[0]['start'];
+            $origText = $firstNode->nodeValue;
 
             if (count($affected) === 1) {
-                $node       = $affected[0]['node'];
-                $localStart = $match['start'] - $affected[0]['start'];
-                $matchLen   = mb_strlen($match['text'], 'UTF-8');
-                $origText   = $node->nodeValue;
-
-                $node->nodeValue =
+                $matchLen = mb_strlen($match['text'], 'UTF-8');
+                $firstNode->nodeValue =
                     mb_substr($origText, 0, $localStart, 'UTF-8')
                     . $safeValue
                     . mb_substr($origText, $localStart + $matchLen, null, 'UTF-8');
-            } else {
-                $firstNode  = $affected[0]['node'];
-                $localStart = $match['start'] - $affected[0]['start'];
-                $origText   = $firstNode->nodeValue;
+                continue;
+            }
 
-                $firstNode->nodeValue =
-                    mb_substr($origText, 0, $localStart, 'UTF-8')
-                    . $safeValue;
+            $firstNode->nodeValue = mb_substr($origText, 0, $localStart, 'UTF-8') . $safeValue;
 
-                for ($i = 1; $i < count($affected); $i++) {
-                    $node      = $affected[$i]['node'];
-                    $nodeStart = $affected[$i]['start'];
-                    $nodeEnd   = $nodeStart + $affected[$i]['length'];
-                    $nodeText  = $node->nodeValue;
+            for ($i = 1; $i < count($affected); $i++) {
+                $node = $affected[$i]['node'];
+                $nodeStart = $affected[$i]['start'];
+                $nodeEnd = $nodeStart + $affected[$i]['length'];
 
-                    if ($nodeEnd <= $match['end']) {
-                        $node->nodeValue = '';
-                    } else {
-                        $cutLen = $match['end'] - $nodeStart;
-                        $node->nodeValue = mb_substr($nodeText, $cutLen, null, 'UTF-8');
-                    }
+                if ($nodeEnd <= $match['end']) {
+                    $node->nodeValue = '';
+                } else {
+                    $node->nodeValue = mb_substr($node->nodeValue, $match['end'] - $nodeStart, null, 'UTF-8');
                 }
             }
         }
@@ -838,7 +943,7 @@ class ReportGeneratorService
     private function replaceWithStringFallback(string $xml, array $replacements): string
     {
         foreach ($replacements as $key => $value) {
-            $safeValue = htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            $safeValue = htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
             $variants = [
                 '{{ ' . $key . ' }}',
@@ -851,6 +956,7 @@ class ReportGeneratorService
                 $xml = str_replace($variant, $safeValue, $xml);
             }
         }
+
         return $xml;
     }
 
@@ -858,6 +964,7 @@ class ReportGeneratorService
     {
         if (!file_exists($filePath)) {
             Log::error('extractPlaceholdersFromDocx: file tidak ditemukan - ' . $filePath);
+
             return [];
         }
 
@@ -869,14 +976,16 @@ class ReportGeneratorService
         $xmlContent = $zip->getFromName('word/document.xml');
         $zip->close();
 
-        if ($xmlContent === false) return [];
+        if ($xmlContent === false) {
+            return [];
+        }
 
         $placeholders = $this->extractPlaceholdersWithDom($xmlContent);
 
         Log::info('extractPlaceholdersFromDocx result', [
-            'file'  => basename($filePath),
+            'file' => basename($filePath),
             'found' => count($placeholders),
-            'keys'  => array_column($placeholders, 'key'),
+            'keys' => array_column($placeholders, 'key'),
         ]);
 
         return $placeholders;
@@ -891,20 +1000,19 @@ class ReportGeneratorService
         }
         if (!@$dom->loadXML($xml)) {
             libxml_clear_errors();
+
             return $this->extractPlaceholdersWithRegex($xml);
         }
 
         $xpath = new \DOMXPath($dom);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
 
-        $seen         = [];
+        $seen = [];
         $placeholders = [];
 
-        $paragraphs = $xpath->query('//w:p');
-        foreach ($paragraphs as $para) {
-            $tNodes   = $xpath->query('.//w:t', $para);
+        foreach ($xpath->query('//w:p') as $para) {
             $fullText = '';
-            foreach ($tNodes as $t) {
+            foreach ($xpath->query('.//w:t', $para) as $t) {
                 $fullText .= $t->nodeValue;
             }
 
@@ -912,9 +1020,9 @@ class ReportGeneratorService
                 foreach ($matches[1] as $match) {
                     $key = trim(Str::snake($match));
                     if (!empty($key) && !isset($seen[$key])) {
-                        $seen[$key]     = true;
+                        $seen[$key] = true;
                         $placeholders[] = [
-                            'key'   => $key,
+                            'key' => $key,
                             'label' => Str::title(str_replace('_', ' ', $key)),
                         ];
                     }
@@ -923,6 +1031,7 @@ class ReportGeneratorService
         }
 
         libxml_clear_errors();
+
         return $placeholders;
     }
 
@@ -938,51 +1047,46 @@ class ReportGeneratorService
             if (!empty($key) && !isset($seen[$key])) {
                 $seen[$key] = true;
                 $placeholders[] = [
-                    'key'   => $key,
+                    'key' => $key,
                     'label' => Str::title(str_replace('_', ' ', $key)),
                 ];
             }
         }
+
         return $placeholders;
     }
 
     public function replaceDummyWithPlaceholders(string $docxPath, array $replacements): string
     {
-        if (empty($replacements)) {
-            $tempOutput = tempnam(sys_get_temp_dir(), 'docx_noop_');
-            copy($docxPath, $tempOutput);
-            return $tempOutput;
-        }
-
-        foreach ($replacements as $item) {
-            $find = trim($item['find'] ?? '');
-            if (empty($find)) continue;
-        }
-
-        $zip        = new \ZipArchive();
         $tempOutput = tempnam(sys_get_temp_dir(), 'docx_mapped_');
         copy($docxPath, $tempOutput);
 
+        if (empty($replacements)) {
+            return $tempOutput;
+        }
+
+        $zip = new \ZipArchive();
         if ($zip->open($tempOutput) !== true) {
+            @unlink($tempOutput);
             throw new \Exception('Gagal membuka file DOCX untuk diproses');
         }
 
         $xmlContent = $zip->getFromName('word/document.xml');
         if ($xmlContent === false) {
             $zip->close();
+            @unlink($tempOutput);
             throw new \Exception('word/document.xml tidak ditemukan');
         }
 
         Log::info('replaceDummyWithPlaceholders: mulai', ['count' => count($replacements)]);
 
-        usort($replacements, fn($a, $b) => mb_strlen($b['find'], 'UTF-8') - mb_strlen($a['find'], 'UTF-8'));
+        usort($replacements, fn ($a, $b) => mb_strlen($b['find'] ?? '', 'UTF-8') - mb_strlen($a['find'] ?? '', 'UTF-8'));
 
-        $xmlContent = $this->replaceDummyTextWithDom($xmlContent, $replacements);
-
-        $zip->addFromString('word/document.xml', $xmlContent);
+        $zip->addFromString('word/document.xml', $this->replaceDummyTextWithDom($xmlContent, $replacements));
         $zip->close();
 
         Log::info('replaceDummyWithPlaceholders: selesai');
+
         return $tempOutput;
     }
 
@@ -999,46 +1103,53 @@ class ReportGeneratorService
 
         if (!@$dom->loadXML($xml)) {
             libxml_clear_errors();
+
             return $this->replaceDummyTextWithString($xml, $replacements);
         }
 
         $xpath = new \DOMXPath($dom);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
 
-        $paragraphs = $xpath->query('//w:p');
-        foreach ($paragraphs as $para) {
+        foreach ($xpath->query('//w:p') as $para) {
             foreach ($replacements as $item) {
-                $find  = trim($item['find'] ?? '');
+                $find = trim($item['find'] ?? '');
                 $field = trim($item['replace'] ?? '');
-                if (empty($find) || empty($field)) continue;
+                $blank = trim($item['blank'] ?? '');
 
-                $placeholder = '{{ ' . $field . ' }}';
+                if ($find === '' || $field === '') {
+                    continue;
+                }
+
+                $placeholder = ($blank !== '' && str_contains($find, $blank))
+                    ? str_replace($blank, '{{ ' . $field . ' }}', $find)
+                    : '{{ ' . $field . ' }}';
+
                 $this->replaceTextInParagraph($para, $xpath, $find, $placeholder);
             }
         }
 
         libxml_clear_errors();
 
-        $xmlDecl = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n";
-        return $xmlDecl . $dom->saveXML($dom->documentElement);
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' . "\n" . $dom->saveXML($dom->documentElement);
     }
 
     private function replaceTextInParagraph($para, \DOMXPath $xpath, string $find, string $replace): void
     {
         $tNodes = $xpath->query('.//w:t', $para);
-        if ($tNodes->length === 0) return;
+        if ($tNodes->length === 0) {
+            return;
+        }
 
         $fullText = '';
-        $nodeMap  = [];
+        $nodeMap = [];
         foreach ($tNodes as $t) {
-            $start = mb_strlen($fullText, 'UTF-8');
-            $text  = $t->nodeValue ?? '';
-            $fullText .= $text;
+            $text = $t->nodeValue ?? '';
             $nodeMap[] = [
-                'node'   => $t,
-                'start'  => $start,
+                'node' => $t,
+                'start' => mb_strlen($fullText, 'UTF-8'),
                 'length' => mb_strlen($text, 'UTF-8'),
             ];
+            $fullText .= $text;
         }
 
         $pos = mb_strpos($fullText, $find, 0, 'UTF-8');
@@ -1061,50 +1172,48 @@ class ReportGeneratorService
                 }
             }
         }
-        if ($pos === false) return;
+        if ($pos === false) {
+            return;
+        }
 
         $matchStart = $pos;
-        $matchEnd   = $pos + mb_strlen($find, 'UTF-8');
-        $safeValue  = htmlspecialchars($replace, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $matchEnd = $pos + mb_strlen($find, 'UTF-8');
+        $safeValue = htmlspecialchars($replace, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
         $affected = [];
         foreach ($nodeMap as $p) {
-            $nodeStart = $p['start'];
-            $nodeEnd   = $nodeStart + $p['length'];
-            if ($nodeStart < $matchEnd && $nodeEnd > $matchStart) {
+            if ($p['start'] < $matchEnd && $p['start'] + $p['length'] > $matchStart) {
                 $affected[] = $p;
             }
         }
-        if (empty($affected)) return;
+        if (empty($affected)) {
+            return;
+        }
+
+        $firstNode = $affected[0]['node'];
+        $localStart = $matchStart - $affected[0]['start'];
+        $origText = $firstNode->nodeValue;
 
         if (count($affected) === 1) {
-            $node       = $affected[0]['node'];
-            $localStart = $matchStart - $affected[0]['start'];
-            $origText   = $node->nodeValue;
-            $node->nodeValue =
+            $firstNode->nodeValue =
                 mb_substr($origText, 0, $localStart, 'UTF-8')
                 . $safeValue
                 . mb_substr($origText, $localStart + mb_strlen($find, 'UTF-8'), null, 'UTF-8');
-        } else {
-            $firstNode  = $affected[0]['node'];
-            $localStart = $matchStart - $affected[0]['start'];
-            $origText   = $firstNode->nodeValue;
-            $firstNode->nodeValue =
-                mb_substr($origText, 0, $localStart, 'UTF-8')
-                . $safeValue;
 
-            for ($i = 1; $i < count($affected); $i++) {
-                $node      = $affected[$i]['node'];
-                $nodeStart = $affected[$i]['start'];
-                $nodeEnd   = $nodeStart + $affected[$i]['length'];
-                $nodeText  = $node->nodeValue;
+            return;
+        }
 
-                if ($nodeEnd <= $matchEnd) {
-                    $node->nodeValue = '';
-                } else {
-                    $cutLen = $matchEnd - $nodeStart;
-                    $node->nodeValue = mb_substr($nodeText, $cutLen, null, 'UTF-8');
-                }
+        $firstNode->nodeValue = mb_substr($origText, 0, $localStart, 'UTF-8') . $safeValue;
+
+        for ($i = 1; $i < count($affected); $i++) {
+            $node = $affected[$i]['node'];
+            $nodeStart = $affected[$i]['start'];
+            $nodeEnd = $nodeStart + $affected[$i]['length'];
+
+            if ($nodeEnd <= $matchEnd) {
+                $node->nodeValue = '';
+            } else {
+                $node->nodeValue = mb_substr($node->nodeValue, $matchEnd - $nodeStart, null, 'UTF-8');
             }
         }
     }
@@ -1112,12 +1221,18 @@ class ReportGeneratorService
     private function replaceDummyTextWithString(string $xml, array $replacements): string
     {
         foreach ($replacements as $item) {
-            $find        = trim($item['find'] ?? '');
-            $field       = trim($item['replace'] ?? '');
-            $placeholder = '{{ ' . $field . ' }}';
-            if (empty($find)) continue;
+            $find = trim($item['find'] ?? '');
+            $field = trim($item['replace'] ?? '');
+            $blank = trim($item['blank'] ?? '');
+            if ($find === '' || $field === '') {
+                continue;
+            }
 
-            $escapedFind        = htmlspecialchars($find, ENT_XML1, 'UTF-8');
+            $placeholder = ($blank !== '' && str_contains($find, $blank))
+                ? str_replace($blank, '{{ ' . $field . ' }}', $find)
+                : '{{ ' . $field . ' }}';
+
+            $escapedFind = htmlspecialchars($find, ENT_XML1, 'UTF-8');
             $escapedPlaceholder = htmlspecialchars($placeholder, ENT_XML1, 'UTF-8');
 
             if (strpos($xml, $escapedFind) !== false) {
@@ -1126,32 +1241,40 @@ class ReportGeneratorService
                 $xml = $this->replaceOnce($xml, $find, $escapedPlaceholder);
             }
         }
+
         return $xml;
     }
 
     private function replaceOnce(string $subject, string $search, string $replace): string
     {
         $pos = strpos($subject, $search);
-        if ($pos === false) return $subject;
+        if ($pos === false) {
+            return $subject;
+        }
+
         return substr($subject, 0, $pos) . $replace . substr($subject, $pos + strlen($search));
     }
 
     public function extractTextFromDocx(string $filePath): string
     {
-        if (!file_exists($filePath)) return '';
+        if (!file_exists($filePath)) {
+            return '';
+        }
+
         try {
             $zip = new \ZipArchive();
             if ($zip->open($filePath) === true) {
                 $xmlContent = $zip->getFromName('word/document.xml');
                 $zip->close();
                 if ($xmlContent !== false) {
-                    $text = $this->extractPlainTextWithDom($xmlContent);
-                    return preg_replace('/[ \t]+/', ' ', $text);
+                    return preg_replace('/[ \t]+/', ' ', $this->extractPlainTextWithDom($xmlContent));
                 }
             }
+
             return '';
         } catch (\Exception $e) {
             Log::warning('Failed to extract DOCX text: ' . $e->getMessage());
+
             return '';
         }
     }
@@ -1165,44 +1288,51 @@ class ReportGeneratorService
         }
         if (!@$dom->loadXML($xml)) {
             libxml_clear_errors();
+
             return strip_tags(html_entity_decode($xml, ENT_XML1, 'UTF-8'));
         }
 
         $xpath = new \DOMXPath($dom);
         $xpath->registerNamespace('w', 'http://schemas.openxmlformats.org/wordprocessingml/2006/main');
 
-        $result     = '';
-        $paragraphs = $xpath->query('//w:p');
-        foreach ($paragraphs as $para) {
+        $result = '';
+        foreach ($xpath->query('//w:p') as $para) {
             $paraText = '';
-            $tNodes   = $xpath->query('.//w:t', $para);
-            foreach ($tNodes as $t) {
+            foreach ($xpath->query('.//w:t', $para) as $t) {
                 $paraText .= $t->nodeValue;
             }
             $result .= $paraText . "\n";
         }
 
         libxml_clear_errors();
+
         return trim($result);
     }
 
     public function getTemplateAbsolutePath(string $relativePath): string
     {
         $relativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($relativePath, '/\\'));
+
         $path = storage_path('app/public/' . $relativePath);
-        if (file_exists($path)) return $path;
+        if (file_exists($path)) {
+            return $path;
+        }
 
         $path = storage_path('app/' . $relativePath);
-        if (file_exists($path)) return $path;
+        if (file_exists($path)) {
+            return $path;
+        }
 
         return storage_path('app/public/' . $relativePath);
     }
 
     private function formatValue($value, ?string $fieldType, string $dateFormat): string
     {
-        if (is_null($value) || $value === '') return '-';
+        if (is_null($value) || $value === '') {
+            return '-';
+        }
 
-        if ($fieldType === 'date' && !empty($value)) {
+        if ($fieldType === 'date') {
             try {
                 return is_string($value)
                     ? date($dateFormat, strtotime($value))
@@ -1224,12 +1354,13 @@ class ReportGeneratorService
         if (is_array($value) || is_object($value)) {
             return json_encode($value, JSON_UNESCAPED_UNICODE);
         }
+
         return (string) $value;
     }
 
     public function validateTemplate(ReportTemplate $template): array
     {
-        $errors   = [];
+        $errors = [];
         $warnings = [];
 
         if (empty($template->source_table)) {
@@ -1254,8 +1385,8 @@ class ReportGeneratorService
         }
 
         return [
-            'valid'    => empty($errors),
-            'errors'   => $errors,
+            'valid' => empty($errors),
+            'errors' => $errors,
             'warnings' => $warnings,
         ];
     }

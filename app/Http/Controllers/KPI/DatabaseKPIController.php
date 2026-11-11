@@ -188,16 +188,17 @@ class DatabaseKPIController extends Controller
             $cctvOk = false;
         }
 
-        $buildLogPercent = function ($url) use ($weekStart, $weekEnd, $monthStart, $monthEnd) {
+        $buildLogPercent = function ($urls) use ($weekStart, $weekEnd, $monthStart, $monthEnd) {
+            $urls = (array) $urls;
             $stats = activityLog::selectRaw("
                 COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as week_total,
-                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
+                SUM(CASE WHEN (status = '200' OR is_up = 1) AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as week_up,
                 COUNT(CASE WHEN created_at BETWEEN ? AND ? THEN 1 END) as month_total,
-                SUM(CASE WHEN status = '200' AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
+                SUM(CASE WHEN (status = '200' OR is_up = 1) AND created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as month_up
             ", [
                 $weekStart, $weekEnd, $weekStart, $weekEnd,
                 $monthStart, $monthEnd, $monthStart, $monthEnd
-            ])->where('url', $url)->first();
+            ])->whereIn('url', $urls)->first();
 
             $weekTotal = $stats->week_total ?? 0;
             $weekUp = $stats->week_up ?? 0;
@@ -211,15 +212,42 @@ class DatabaseKPIController extends Controller
         };
 
         if (!$cctvOk) {
-            $coffeeStats = $buildLogPercent('https://coffee.inixindobdg.co.id/');
-            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
+            $coffeeStats = $buildLogPercent([
+                'https://inixcoffee.inixindobdg.co.id/',
+                'https://inixcoffee.inixindobdg.co.id',
+                'https://192.168.95.60:8001/',
+                'https://192.168.95.60:8001',
+                'http://192.168.95.60:8001/',
+                'http://192.168.95.60:8001',
+                'https://coffee.inixindobdg.co.id/',
+                'https://coffee.inixindobdg.co.id',
+                'https://inixcoffe.inixindobdg.co.id/',
+                'https://inixcoffe.inixindobdg.co.id',
+                'https://coffeinix.inixindobdg.co.id/',
+                'https://coffeinix.inixindobdg.co.id',
+            ]);
+            $latteStats = $buildLogPercent([
+                'https://latte.inixindobdg.co.id/',
+                'https://latte.inixindobdg.co.id',
+                'http://192.168.95.60:8002/',
+                'http://192.168.95.60:8002',
+                'https://192.168.95.60:8002/',
+                'https://192.168.95.60:8002',
+            ]);
 
             $apkWeekPercent = $coffeeStats['week'];
             $apkMonthPercent = $coffeeStats['month'];
             $latteWeekPercent = $latteStats['week'];
             $latteMonthPercent = $latteStats['month'];
         } else {
-            $latteStats = $buildLogPercent('https://latte.inixindobdg.co.id/');
+            $latteStats = $buildLogPercent([
+                'https://latte.inixindobdg.co.id/',
+                'https://latte.inixindobdg.co.id',
+                'http://192.168.95.60:8002/',
+                'http://192.168.95.60:8002',
+                'https://192.168.95.60:8002/',
+                'https://192.168.95.60:8002',
+            ]);
             $latteWeekPercent = $latteStats['week'];
             $latteMonthPercent = $latteStats['month'];
         }
@@ -243,23 +271,101 @@ class DatabaseKPIController extends Controller
             }
 
             $urls = is_array($rawUrls) ? $rawUrls : array_filter(array_map('trim', explode(',', $rawUrls)));
+            $urls = array_values(array_unique(array_map(
+                fn($url) => rtrim(trim($url), '/') . '/',
+                $urls
+            )));
+            $aliases = [
+                'https://inixcoffee.inixindobdg.co.id/' => [
+                    'https://inixcoffee.inixindobdg.co.id/',
+                    'https://inixcoffee.inixindobdg.co.id',
+                    'https://192.168.95.60:8001/',
+                    'https://192.168.95.60:8001',
+                    'http://192.168.95.60:8001/',
+                    'http://192.168.95.60:8001',
+                    'https://coffee.inixindobdg.co.id/',
+                    'https://coffee.inixindobdg.co.id',
+                    'https://inixcoffe.inixindobdg.co.id/',
+                    'https://inixcoffe.inixindobdg.co.id',
+                    'https://coffeinix.inixindobdg.co.id/',
+                    'https://coffeinix.inixindobdg.co.id',
+                ],
+                'https://latte.inixindobdg.co.id/' => [
+                    'https://latte.inixindobdg.co.id/',
+                    'https://latte.inixindobdg.co.id',
+                    'http://192.168.95.60:8002/',
+                    'http://192.168.95.60:8002',
+                    'https://192.168.95.60:8002/',
+                    'https://192.168.95.60:8002',
+                ],
+            ];
+            $canonicalUrls = array_keys($aliases);
+            $lookupUrls = array_values(array_unique(array_merge(
+                $urls,
+                array_merge(...array_values($aliases))
+            )));
 
             // OPTIMASI: Mengambil semua data sekaligus, bukan query di dalam loop
-            $allChecks = activityLog::whereIn('url', $urls)
-                ->where('status', 'uptime')
+            $allChecks = activityLog::whereIn('url', $lookupUrls)
+                ->whereNotNull('is_up')
                 ->orderBy('created_at', 'desc')
-                ->limit(100 * count($urls))
+                ->limit(100 * count($lookupUrls))
                 ->get()
                 ->groupBy('url');
 
             $result = [];
-            foreach ($urls as $url) {
-                $checks = $allChecks->get($url, collect())->take(100);
-                
+            foreach ($canonicalUrls as $url) {
+                $checks = collect();
+                foreach ($aliases[$url] as $aliasUrl) {
+                    $checks = $checks->concat($allChecks->get($aliasUrl, collect()));
+                }
+                $checks = $checks->sortByDesc(fn($log) => Carbon::parse($log->checked_at ?? $log->created_at ?? now())->timestamp)->take(100);
+                $isDummy = $checks->isEmpty();
+
+                if ($isDummy) {
+                    $labels = [];
+                    $timestamps = [];
+                    $responseTimes = [];
+                    $statuses = [];
+
+                    for ($i = 47; $i >= 0; $i--) {
+                        $checkedAt = Carbon::now()->subMinutes($i * 30);
+                        $isUp = !in_array($i, [11, 35], true);
+                        $labels[] = $checkedAt->format('d M H:i');
+                        $timestamps[] = $checkedAt->toIso8601String();
+                        $responseTimes[] = $isUp ? random_int(85, 260) : random_int(300, 900);
+                        $statuses[] = $isUp;
+                    }
+                } else {
+                    $labels = [];
+                    $timestamps = [];
+                    $responseTimes = [];
+                    $statuses = [];
+
+                    foreach ($checks->reverse() as $log) {
+                        $checkedAt = Carbon::parse($log->checked_at ?? $log->created_at ?? now());
+                        $labels[] = $checkedAt->format('d M H:i');
+                        $timestamps[] = $checkedAt->toIso8601String();
+                        // Sertakan response_time_ms untuk semua record (UP maupun DOWN)
+                        $responseTimes[] = (int) ($log->response_time_ms ?? 0);
+                        $statuses[] = (bool) $log->is_up;
+                    }
+                }
+
+                // Hitung rata-rata response_time_ms dari SEMUA check (UP + DOWN)
+                // yang memiliki nilai response_time_ms (tidak null/0)
+                $allMs = array_filter($responseTimes, fn($v) => $v > 0);
+                $avgResponseMs = count($allMs) > 0
+                    ? (int) round(array_sum($allMs) / count($allMs))
+                    : 0;
+
                 $result[$url] = [
-                    'labels' => $checks->map(fn($log) => $log->created_at->format('d M H:i'))->values(),
-                    'response_times' => $checks->map(fn($log) => $log->response_time_ms ?? 0)->values(),
-                    'statuses' => $checks->map(fn($log) => (bool) $log->is_up)->values(),
+                    'labels'          => $labels,
+                    'timestamps'      => $timestamps,
+                    'response_times'  => $responseTimes,
+                    'statuses'        => $statuses,
+                    'is_dummy'        => $isDummy,
+                    'avg_response_ms' => $avgResponseMs, // rata-rata dari semua URL alias, UP+DOWN
                 ];
             }
 
@@ -396,7 +502,8 @@ class DatabaseKPIController extends Controller
         $request->validate([
             'id_karyawan' => 'required',
             'kodeForm'    => 'required|string',
-            'tipe'        => 'required'
+            'tipe'        => 'required|in:office,non_office',
+            'mode'        => 'nullable|in:print,download',
         ]);
 
         $tipe_button = $request->input('tipe');
@@ -514,6 +621,7 @@ class DatabaseKPIController extends Controller
         $evaluatorList = collect($evaluatorList)->unique(fn($item) => $item['nama'] . $item['jenis_penilaian'])->values();
 
         $data = [
+            'mode' => $request->input('mode', 'print'),
             'data' => [[
                 'evaluated' => $evaluated,
                 'dataAbsen' => $dataAbsen,
@@ -524,6 +632,19 @@ class DatabaseKPIController extends Controller
                 'tipe_pdf' => $tipe_button
             ]]
         ];
+
+        if ($request->input('mode') === 'download') {
+            $filename = sprintf(
+                'Rekap-Penilaian-%s-%s-%s.pdf',
+                Str::slug($karyawan->nama_lengkap),
+                $tipe_button,
+                $form->tahun
+            );
+
+            return Pdf::loadView('pdf.rekapPenilaian', $data)
+                ->setPaper('a4', 'portrait')
+                ->download($filename);
+        }
 
         return view('pdf.rekapPenilaian', $data);
     }
@@ -1043,7 +1164,7 @@ class DatabaseKPIController extends Controller
                 ->distinct('jenis_penilaian')
                 ->count();
 
-            $evaluatedEmployee = Karyawan::find($id_evaluated);
+            $evaluatedEmployee = karyawan::find($id_evaluated);
             $evaluatedName = $evaluatedEmployee ? $evaluatedEmployee->nama_lengkap : 'Pegawai';
 
             if ($completedCount >= $allForms->count()) {
@@ -1076,91 +1197,91 @@ class DatabaseKPIController extends Controller
             ->get();
     }
 
-    public function reviewPenilaian($kodeForm, $evaluatorId, $jenis_penilaian, $idKaryawan)
-    {
-        $id_evaluator = $evaluatorId;
-        $id_karyawan = $idKaryawan;
+    // public function reviewPenilaian($kodeForm, $evaluatorId, $jenis_penilaian, $idKaryawan)
+    // {
+    //     $id_evaluator = $evaluatorId;
+    //     $id_karyawan = $idKaryawan;
 
-        $jenisMap = [
-            'J01P' => 'General Manager',
-            'J02P' => 'Manager/SPV/Team Leader (Atasan Langsung)',
-            'J03P' => 'Rekan Kerja (Satu Divisi)',
-            'J04P' => 'Pekerja (Beda Divisi)',
-            'J05P' => 'Self Apprisial',
-        ];
-        $jenis_penilaian = $jenisMap[$jenis_penilaian] ?? 'not_found';
+    //     $jenisMap = [
+    //         'J01P' => 'General Manager',
+    //         'J02P' => 'Manager/SPV/Team Leader (Atasan Langsung)',
+    //         'J03P' => 'Rekan Kerja (Satu Divisi)',
+    //         'J04P' => 'Pekerja (Beda Divisi)',
+    //         'J05P' => 'Self Apprisial',
+    //     ];
+    //     $jenis_penilaian = $jenisMap[$jenis_penilaian] ?? 'not_found';
 
-        $dataEvaluator = shareForm::where('kode_form', $kodeForm)
-            ->where('id_evaluator', $id_evaluator)
-            ->where('jenis_penilaian', $jenis_penilaian)
-            ->first();
+    //     $dataEvaluator = shareForm::where('kode_form', $kodeForm)
+    //         ->where('id_evaluator', $id_evaluator)
+    //         ->where('jenis_penilaian', $jenis_penilaian)
+    //         ->first();
 
-        if (!$dataEvaluator) {
-            return response()->json(['status' => false, 'message' => 'Data evaluator tidak ditemukan.'], 404);
-        }
+    //     if (!$dataEvaluator) {
+    //         return response()->json(['status' => false, 'message' => 'Data evaluator tidak ditemukan.'], 404);
+    //     }
 
-        $dataForm = formPenilaian::where('kode_form', $kodeForm)
-            ->where('id_karyawan', $id_karyawan)
-            ->get();
+    //     $dataForm = formPenilaian::where('kode_form', $kodeForm)
+    //         ->where('id_karyawan', $id_karyawan)
+    //         ->get();
 
-        if ($dataForm->isEmpty()) {
-            return response()->json(['status' => false, 'message' => 'Data form penilaian tidak ditemukan.'], 404);
-        }
+    //     if ($dataForm->isEmpty()) {
+    //         return response()->json(['status' => false, 'message' => 'Data form penilaian tidak ditemukan.'], 404);
+    //     }
 
-        // OPTIMASI: Bulk fetch untuk menghindari N+1 di dalam loop
-        $kodeKategoris = $dataForm->pluck('kode_kategori')->unique();
-        $allKategori = kategoriKPI::whereIn('kode_kategori', $kodeKategoris)->get()->keyBy('id');
-        $allTipeKategori = tipeKategoriTabel::whereIn('id_kategori', $allKategori->keys())->get()->groupBy('id_kategori');
+    //     // OPTIMASI: Bulk fetch untuk menghindari N+1 di dalam loop
+    //     $kodeKategoris = $dataForm->pluck('kode_kategori')->unique();
+    //     $allKategori = kategoriKPI::whereIn('kode_kategori', $kodeKategoris)->get()->keyBy('id');
+    //     $allTipeKategori = tipeKategoriTabel::whereIn('id_kategori', $allKategori->keys())->get()->groupBy('id_kategori');
         
-        $allNilai = nilaiKPI::where('kode_form', $kodeForm)
-            ->where('id_evaluator', $id_evaluator)
-            ->where('id_evaluated', $id_karyawan)
-            ->where('jenis_penilaian', $jenis_penilaian)
-            ->get()
-            ->keyBy(fn($n) => $n->kode_kategori . '|' . $n->name_variabel);
+    //     $allNilai = nilaiKPI::where('kode_form', $kodeForm)
+    //         ->where('id_evaluator', $id_evaluator)
+    //         ->where('id_evaluated', $id_karyawan)
+    //         ->where('jenis_penilaian', $jenis_penilaian)
+    //         ->get()
+    //         ->keyBy(fn($n) => $n->kode_kategori . '|' . $n->name_variabel);
 
-        $result = [];
-        $statusForm = false;
-        $statusPenilaian = false;
+    //     $result = [];
+    //     $statusForm = false;
+    //     $statusPenilaian = false;
 
-        foreach ($dataForm as $form) {
-            $kategoriList = $allKategori->filter(fn($k) => $k->kode_kategori === $form->kode_kategori);
+    //     foreach ($dataForm as $form) {
+    //         $kategoriList = $allKategori->filter(fn($k) => $k->kode_kategori === $form->kode_kategori);
 
-            foreach ($kategoriList as $kategori) {
-                $tipeKategori = $allTipeKategori->get($kategori->id, collect());
-                $nilaiKey = $kategori->kode_kategori . '|' . $kategori->judul_kategori;
-                $nilai = $allNilai->get($nilaiKey);
+    //         foreach ($kategoriList as $kategori) {
+    //             $tipeKategori = $allTipeKategori->get($kategori->id, collect());
+    //             $nilaiKey = $kategori->kode_kategori . '|' . $kategori->judul_kategori;
+    //             $nilai = $allNilai->get($nilaiKey);
 
-                $statusPenilaian = is_null($nilai?->finished_at);
-                $statusForm = $nilai !== null;
+    //             $statusPenilaian = is_null($nilai?->finished_at);
+    //             $statusForm = $nilai !== null;
 
-                $result[$form->nama_penilaian]['kriteria'] = $form->nama_penilaian;
-                $result[$form->nama_penilaian]['items'][] = [
-                    'judul'       => $kategori->judul_kategori,
-                    'tipe'        => $kategori->tipe_kategori,
-                    'bobot'       => $kategori->bobot,
-                    'level'       => $kategori->level,
-                    'opsi'        => $tipeKategori,
-                    'id_nilaiKPI' => $nilai->id ?? null,
-                    'pesan'       => $nilai->pesan ?? '-',
-                    'nilai'       => $nilai->nilai ?? '-',
-                ];
-            }
-        }
+    //             $result[$form->nama_penilaian]['kriteria'] = $form->nama_penilaian;
+    //             $result[$form->nama_penilaian]['items'][] = [
+    //                 'judul'       => $kategori->judul_kategori,
+    //                 'tipe'        => $kategori->tipe_kategori,
+    //                 'bobot'       => $kategori->bobot,
+    //                 'level'       => $kategori->level,
+    //                 'opsi'        => $tipeKategori,
+    //                 'id_nilaiKPI' => $nilai->id ?? null,
+    //                 'pesan'       => $nilai->pesan ?? '-',
+    //                 'nilai'       => $nilai->nilai ?? '-',
+    //             ];
+    //         }
+    //     }
 
-        $evaluator = Karyawan::find($id_evaluator);
-        $evaluated = Karyawan::find($id_karyawan);
+    //     $evaluator = karyawan::find($id_evaluator);
+    //     $evaluated = karyawan::find($id_karyawan);
 
-        return view('databasekpi.reviewPenilaian', [
-            'statusPenilaian' => $statusPenilaian,
-            'jenis_penilaian' => $jenis_penilaian,
-            'status'          => $statusForm,
-            'kode_form'       => $kodeForm,
-            'evaluator'       => $evaluator,
-            'evaluated'       => $evaluated,
-            'penilaian'       => $result,
-        ]);
-    }
+    //     return view('databasekpi.reviewPenilaian', [
+    //         'statusPenilaian' => $statusPenilaian,
+    //         'jenis_penilaian' => $jenis_penilaian,
+    //         'status'          => $statusForm,
+    //         'kode_form'       => $kodeForm,
+    //         'evaluator'       => $evaluator,
+    //         'evaluated'       => $evaluated,
+    //         'penilaian'       => $result,
+    //     ]);
+    // }
 
     public function shareForm(Request $request)
     {
@@ -1182,7 +1303,7 @@ class DatabaseKPIController extends Controller
         $jenis_penilaian    = $request->input('jenis_penilaian');
         $jenis_form         = $request->input('jenis_form');
 
-        $karyawanEvaluated = Karyawan::find($id_evaluated);
+        $karyawanEvaluated = karyawan::find($id_evaluated);
         $dataFormKategori = formPenilaian::where('kode_form', $kode_form)
             ->where('id_karyawan', $id_evaluated)
             ->where('jenis_form', $jenis_form)
@@ -1217,7 +1338,7 @@ class DatabaseKPIController extends Controller
         $processedPairs = [];
 
         foreach ($id_evaluator_array as $id_evaluator) {
-            $karyawan = Karyawan::find($id_evaluator);
+            $karyawan = karyawan::find($id_evaluator);
             if (!$karyawan) continue;
 
             $isGM = strtoupper($karyawan->jabatan) === 'GM' || $jenis_penilaian === 'General Manager';
@@ -1549,7 +1670,7 @@ class DatabaseKPIController extends Controller
 
     public function getFromPenilaian(Request $request, $kode_form, $id_karyawan)
     {
-        $evaluatedEmployee = Karyawan::find($id_karyawan);
+        $evaluatedEmployee = karyawan::find($id_karyawan);
         if (!$evaluatedEmployee) return redirect()->back();
 
         $id_evaluator = Auth::user()->karyawan->id;
@@ -1644,7 +1765,7 @@ class DatabaseKPIController extends Controller
 
     public function getFromPenilaianUser(Request $request, $id_evaluator)
     {
-        $evaluatorEmploye = Karyawan::find($id_evaluator);
+        $evaluatorEmploye = karyawan::find($id_evaluator);
 
         if (!$evaluatorEmploye) {
             return redirect()->back();
@@ -1669,7 +1790,7 @@ class DatabaseKPIController extends Controller
             }
 
 
-            $evaluatedEmployee = Karyawan::find($share->id_evaluated);
+            $evaluatedEmployee = karyawan::find($share->id_evaluated);
 
             if (!$evaluatedEmployee) {
                 continue;

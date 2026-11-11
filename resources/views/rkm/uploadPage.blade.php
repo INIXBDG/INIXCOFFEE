@@ -272,6 +272,53 @@
                     $('#examEcCouncilModal').modal('show');
                 });
 
+                $('#formExamEcCouncil').on('submit', function(e) {
+                    e.preventDefault(); // Cegah form submit biasa
+                    
+                    let $form = $(this);
+                    let $submitBtn = $form.find('button[type="submit"]');
+                    let originalBtnText = $submitBtn.text();
+                    
+                    // Ubah tombol jadi loading (Opsional tapi bagus untuk UX)
+                    $submitBtn.text('Generating PDF...').prop('disabled', true);
+
+                    $.ajax({
+                        url: $form.attr('action'),
+                        method: $form.attr('method'),
+                        data: $form.serialize(),
+                        xhrFields: {
+                            responseType: 'blob'
+                        },
+                        success: function(data, status, xhr) {
+                            let filename = "Absensi_Exam.pdf"; 
+                            let disposition = xhr.getResponseHeader('Content-Disposition');
+                            if (disposition && disposition.indexOf('attachment') !== -1) {
+                                let filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                                let matches = filenameRegex.exec(disposition);
+                                if (matches != null && matches[1]) {
+                                    filename = matches[1].replace(/['"]/g, '');
+                                }
+                            }
+
+                            let blob = new Blob([data], { type: 'application/pdf' });
+                            let url = window.URL.createObjectURL(blob);
+                            let a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            
+                            $('#examEcCouncilModal').modal('hide');
+                            location.reload(); 
+                        },
+                        error: function(xhr) {
+                            alert('Gagal menggenerate PDF.');
+                            $submitBtn.text(originalBtnText).prop('disabled', false);
+                        }
+                    });
+                });
+
                 let pesertaIndex = 1;
 
                 $('#btn-tambah-peserta').on('click', function() {

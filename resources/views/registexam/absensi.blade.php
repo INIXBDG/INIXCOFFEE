@@ -127,8 +127,7 @@
 
     <div class="container">
 
-        <img src="{{ public_path('assets/img/inixs.png') }}" alt="Inixindo Logo" class="logo-inixindo" />
-
+<img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('assets/img/inixs.png'))) }}" alt="Inixindo Logo" class="logo-inixindo" />
         <div class="header">
             <p>Daftar Hadir Peserta Exam</p>
             <p>Materi : {{ $materi->nama_materi ?? 'N/A' }}</p>
@@ -161,7 +160,7 @@
 
                 <tr>
                     <td colspan="3" style="text-align: center; padding-top: 25px; padding-bottom: 25px;">
-                        Proctor : Anggie Anggrainie
+                        Proctor : Ferdi Ardiansyah
                     </td>
                     <td style="padding-top: 25px; padding-bottom: 25px;"></td>
                 </tr>

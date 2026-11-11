@@ -28,7 +28,7 @@ class LeadProject extends Model
 
     public function sales()
     {
-        return $this->belongsTo(Karyawan::class, 'sales_id', 'kode_karyawan');
+        return $this->belongsTo(karyawan::class, 'sales_id', 'kode_karyawan');
     }
 
     public function project()

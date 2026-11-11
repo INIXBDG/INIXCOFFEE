@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebPushController;
 use App\Http\Controllers\MoodleApiController;
 use App\Http\Controllers\Api\PickupDriverWebhookController;
+use App\Http\Controllers\Api\ContactwebController;
+use App\Http\Controllers\Api\RegisApiController;
+use App\Http\Controllers\HR\FeedbackInstukturController;
+use App\Http\Middleware\ApiBasicAuth;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,10 +31,10 @@ use App\Http\Controllers\Api\PickupDriverWebhookController;
 */
 
 Route::middleware('auth:api')->group(function () {
-    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('webpush.subscribe');
-    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('webpush.unsubscribe');
-    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('webpush.vapid-key');
-    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('webpush.test');
+    Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('api.webpush.subscribe');
+    Route::post('/webpush/unsubscribe', [WebPushController::class, 'unsubscribe'])->name('api.webpush.unsubscribe');
+    Route::get('/webpush/vapid-key', [WebPushController::class, 'getVapidKey'])->name('api.webpush.vapid-key');
+    Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('api.webpush.test');
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -66,7 +70,9 @@ Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'
 Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
 Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
 Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
+Route::get('jadwalRKM/data', [App\Http\Controllers\Api\RKMController::class, 'jadwalRKM'])->name('jadwalRKM.data');
 
+Route::post('/contact/web', [ContactWebController::class, 'store'])->name('ContactWeb');
 
 
 Route::post('/create/ticket', [TicketController::class, 'store']);
@@ -88,6 +94,26 @@ Route::post('/koordinasi-ob/webhook', [KoordinasiOfficeBoyController::class, 'we
 
 Route::prefix('pickup-driver')->group(function () {
     Route::post('webhook', [PickupDriverWebhookController::class, 'handle']);
-    Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
+    // Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
 });
 Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::class, 'requestHandler']);
+
+Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class, 'receivePayment'])->name('receivePayment');
+Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');
+Route::get('/feedback-instruktur/{year}/{type?}/{period?}',[FeedbackInstukturController::class, 'getDataFeedbackInstruktur']);
+Route::get('/feedback-instruktur/detail/{kode_karyawan}/{peran}/{year}/{type}/{period?}', [FeedbackInstukturController::class, 'getDetailRkmInstruktur']);
+
+Route::middleware(ApiBasicAuth::class)->group(function () {
+    Route::get('/feedback/data', [App\Http\Controllers\Api\FeedbackAPIController::class, 'index']);
+    Route::post('/feedback/cek', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekFeedback']);
+    Route::post('/feedback/cek-rkm', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekFeedbackRKM']);
+    Route::post('/feedback/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'store']);
+    Route::post('/feedback/souvenir/store', [App\Http\Controllers\Api\FeedbackAPIController::class, 'storeSouvenir']);
+    Route::get('/feedback/cek-souvenir/{id}/{ids}', [App\Http\Controllers\Api\FeedbackAPIController::class, 'cekSouvenir']);
+
+    Route::get('/kelasBerjalan', [RegisApiController::class, 'kelasBerjalan']);
+    Route::get('/cek-peserta/{id}', [RegisApiController::class, 'index']);
+    Route::get('/cekPeserta', [RegisApiController::class, 'cekPeserta']);
+    Route::get('/cekRKM', [RegisApiController::class, 'cekRKM']);
+    Route::post('/storePeserta/{id}', [RegisApiController::class, 'store']);
+});

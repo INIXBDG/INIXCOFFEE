@@ -3,10 +3,11 @@
 namespace App\Console;
 
 use App\Models\ActivityInstruktur;
-use App\Models\activityLog;
-use App\Models\Outstanding;
+use App\Models\outstanding;
 use App\Models\RKM;
 use App\Models\User;
+use App\Models\karyawan;
+use App\Models\PerhitunganTunjanganHR;
 use App\Notifications\OutstandingNotification;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
@@ -22,10 +23,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // 1. Kirim Notifikasi Outstanding Mingguan
+
         $schedule->call(function () {
             try {
-                $outstandings = Outstanding::where('status_pembayaran', '0')
+                $outstandings = outstanding::with('rkm.perusahaan', 'rkm.materi')
+                    ->where('status_pembayaran', '0')
                     ->whereDate('due_date', '>=', now())
                     ->get();
 
@@ -33,18 +35,41 @@ class Kernel extends ConsoleKernel
                 $path = '/outstanding';
 
                 foreach ($outstandings as $outstanding) {
-                    Notification::send($financeUsers, new OutstandingNotification($outstanding, $path));
+                    // Pastikan relasi rkm ada
+                    if (!$outstanding->rkm) {
+                        continue;
+                    }
+
+                    // 1. Siapkan data array (sama seperti di Controller)
+                    $data = [
+                        'nama_materi' => $outstanding->rkm->materi->nama_materi ?? '-',
+                        'nama_perusahaan' => $outstanding->rkm->perusahaan->nama_perusahaan ?? '-',
+                        'due_date' => $outstanding->due_date,
+                        'status_pembayaran' => $outstanding->status_pembayaran,
+                        'sales_key' => $outstanding->rkm->sales_key ?? '-',
+                        'net_sales' => $outstanding->net_sales ?? 0,
+                    ];
+
+                    // 2. Looping users karena OutstandingNotification butuh receiverId spesifik
+                    foreach ($financeUsers as $user) {
+                        Notification::send(
+                            $user,
+                            new OutstandingNotification($data, $path, $user->id)
+                        );
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to send notifications: '.$e->getMessage());
-                throw $e;
+                // Jangan throw $e agar scheduler tidak berhenti total jika satu gagal,
+                // atau biarkan throw $e jika ingin tahu errornya di log scheduler.
+                // throw $e;
             }
         })->weeklyOn(1, '08:00')->description('Kirim Notifikasi Outstanding Mingguan');
 
         // 2. Update Status Read Notifikasi Outstanding
         $schedule->call(function () {
             try {
-                $outstandings = Outstanding::where('status_pembayaran', '1')->get();
+                $outstandings = outstanding::where('status_pembayaran', '1')->get();
 
                 foreach ($outstandings as $outstanding) {
                     $rkm = RKM::where('id', $outstanding->id_rkm)->with('perusahaan', 'materi')->first();
@@ -63,54 +88,6 @@ class Kernel extends ConsoleKernel
                 throw $e;
             }
         })->dailyAt('23:00')->description('Update Status Read Notifikasi Outstanding');
-
-        // 3. Kirim Reminder Survey Kepuasan ITSM
-        $schedule->call(function () {
-            try {
-                $now = now();
-                $users = User::with(['surveyKepuasan' => fn ($q) => $q->latest('created_at')])->get();
-                $notifications = [];
-
-                foreach ($users as $user) {
-                    $lastSurvey = $user->surveyKepuasan->first();
-
-                    if (!$lastSurvey || $now->diffInMonths($lastSurvey->created_at) >= 3) {
-                        $notifications[] = [
-                            'id' => \Illuminate\Support\Str::uuid(),
-                            'type' => 'App\\Notifications\\SurveyReminderNotification',
-                            'notifiable_type' => 'App\\Models\\User',
-                            'notifiable_id' => $user->id,
-                            'data' => json_encode([
-                                'user' => 'System',
-                                'message' => [
-                                    'tipe' => 'survey_reminder',
-                                    'judul' => 'Survey Kepuasan ITSM!',
-                                    'deskripsi' => 'Dimohon untuk anda dapat mengisi survey kepuasan pelayanan ITSM.',
-                                ],
-                                'path' => route('surveykepuasan.index'),
-                                'status' => 'unread',
-                                'data' => [
-                                    'id_user' => $user->id,
-                                    'terakhir_survey' => $lastSurvey ? $lastSurvey->created_at->format('d/m/Y') : 'Belum Pernah',
-                                ],
-                            ]),
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ];
-                    }
-                }
-
-                if (!empty($notifications)) {
-                    DB::table('notifications')->insert($notifications);
-                    Log::info('Survey reminder executed successfully. Total: '.count($notifications));
-                } else {
-                    Log::info('Survey reminder executed, no pending notifications.');
-                }
-            } catch (\Throwable $e) {
-                Log::error('Survey reminder failed: '.$e->getMessage());
-                throw $e;
-            }
-        })->dailyAt('14:04')->description('Kirim Reminder Survey Kepuasan ITSM');
 
         // 4. Pembersihan Otomatis Activity Log
         // $schedule->call(function () {
@@ -211,7 +188,7 @@ class Kernel extends ConsoleKernel
 
                         $user = User::find($item->user_id);
                         if ($user) {
-                            $user->notify(new OutstandingNotification($userData, '/outstanding'));
+                            $user->notify(new OutstandingNotification($userData, '/outstanding', $user->id));
                             ++$notificationsSent;
                         }
                     } catch (\Exception $e) {
@@ -259,6 +236,28 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:up-jurnal-akuntansi')->dailyAt('08.00');
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
+        $schedule->command('app:legalitas-reminder')->dailyAt('08:00');
+        $schedule->call(function () {
+            $expired = karyawan::query()
+                ->where('bpjs_status', 'permanent')
+                ->whereNotNull('bpjs_restore_until')
+                ->where('bpjs_restore_until', '<=', now())
+                ->get();
+
+            foreach ($expired as $employee) {
+                PerhitunganTunjanganHR::onlyTrashed()
+                    ->where('karyawan_id', $employee->id)
+                    ->when($employee->bpjs_deleted_at, function ($query) use ($employee) {
+                        $query->where('deleted_at', '>=', $employee->bpjs_deleted_at);
+                    })
+                    ->forceDelete();
+
+                $employee->update([
+                    'bpjs_deleted_at' => null,
+                    'bpjs_restore_until' => null,
+                ]);
+            }
+        })->dailyAt('02:00')->description('Purge BPJS permanen setelah masa pemulihan 2 bulan');
     }
 
     protected function commands(): void

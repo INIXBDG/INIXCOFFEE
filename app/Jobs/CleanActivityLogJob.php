@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\ActivityLog;
+use App\Models\activityLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,7 +25,7 @@ class CleanActivityLogJob implements ShouldQueue
         Log::info('Menjalankan Job: CleanActivityLogJob...');
 
         try {
-            ActivityLog::whereNotIn('status', [
+            activityLog::whereNotIn('status', [
                 'login',
                 'logout',
                 'visit',

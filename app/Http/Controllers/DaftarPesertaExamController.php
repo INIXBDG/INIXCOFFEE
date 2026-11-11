@@ -10,6 +10,7 @@ use App\Models\registexam;
 use App\Models\Registrasi;
 use App\Models\RKM;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -66,7 +67,7 @@ class DaftarPesertaExamController extends Controller
 
     public function create($id)
     {
-        $exam = eksam::findOrFail($id);
+        $exam = eksam::with('registexam')->findOrFail($id);
         $idPerusahaan = $exam->rkm ? $exam->rkm->perusahaan_key : null;
         if (!$idPerusahaan) {
             return redirect()->back()->with('error', 'Data RKM atau Perusahaan tidak ditemukan pada pengajuan exam ini.');
@@ -79,27 +80,43 @@ class DaftarPesertaExamController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'id_exam' => 'required|exists:eksams,id',
-            'peserta_id' => 'required|array|min:1',
+            'id_exam'      => 'required|exists:eksams,id',
+            'peserta_id'   => 'nullable|array', // nullable: user boleh uncheck semua peserta
             'peserta_id.*' => 'required|integer|exists:pesertas,id',
         ], [
-            'peserta_id.required' => 'Pilih minimal 1 peserta',
             'peserta_id.array' => 'Data peserta tidak valid',
-            'peserta_id.min' => 'Pilih minimal 1 peserta',
         ]);
+
+        DB::beginTransaction();
 
         try {
             $exam = eksam::with('rkm.materi')->findOrFail($validated['id_exam']);
+            $pesertaIds = $validated['peserta_id'] ?? [];
+
+            $namaExam = $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? '');
 
             $createdCount = 0;
             $skippedCount = 0;
+            $deletedCount = 0;
 
-            foreach ($validated['peserta_id'] as $pesertaId) {
-                $exists = registexam::where('id_exam', $exam->id)
+            // 1. Hapus peserta yang sudah terdaftar di exam ini tapi sekarang di-uncheck
+            $registrasiDihapus = registexam::where('id_exam', $exam->id)
+                ->whereNotIn('id_peserta', $pesertaIds)
+                ->get();
+
+            foreach ($registrasiDihapus as $registrasi) {
+                DokumentasiExam::where('id_registrasi', $registrasi->id)->delete();
+                $registrasi->delete();
+                $deletedCount++;
+            }
+
+            // 2. Proses peserta yang dicentang
+            foreach ($pesertaIds as $pesertaId) {
+                $registExam = registexam::where('id_exam', $exam->id)
                     ->where('id_peserta', $pesertaId)
-                    ->exists();
+                    ->first();
 
-                if (!$exists) {
+                if (!$registExam) {
                     $peserta = Peserta::find($pesertaId);
 
                     $registExam = registexam::create([
@@ -113,19 +130,19 @@ class DaftarPesertaExamController extends Controller
 
                     DokumentasiExam::create([
                         'id_registrasi'       => $registExam->id,
-                        'nama_exam'           => $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? ''),
+                        'nama_exam'           => $namaExam,
                         'tanggal_pelaksanaan' => now()->format('Y-m-d'),
                     ]);
 
                     $createdCount++;
                 } else {
-                    $registExam = registexam::where('id_peserta', $pesertaId)->first();
-                    $dokumentasi = DokumentasiExam::where('id_registrasi', $registExam->id) ->first();
+                    // Sudah terdaftar: pastikan dokumentasinya ada
+                    $dokumentasi = DokumentasiExam::where('id_registrasi', $registExam->id)->first();
 
                     if (!$dokumentasi) {
                         DokumentasiExam::create([
                             'id_registrasi'       => $registExam->id,
-                            'nama_exam'           => $exam->materi?->nama_materi ?? ($exam->rkm?->materi?->nama_materi ?? ''),
+                            'nama_exam'           => $namaExam,
                             'tanggal_pelaksanaan' => now()->format('Y-m-d'),
                         ]);
                     }
@@ -134,10 +151,16 @@ class DaftarPesertaExamController extends Controller
                 }
             }
 
+            DB::commit();
+
             $message = "Berhasil mendaftarkan $createdCount peserta";
 
             if ($skippedCount > 0) {
                 $message .= " (Skipped: $skippedCount peserta sudah terdaftar)";
+            }
+
+            if ($deletedCount > 0) {
+                $message .= " (Dihapus: $deletedCount peserta di-uncheck)";
             }
 
             return redirect()
@@ -145,6 +168,7 @@ class DaftarPesertaExamController extends Controller
                 ->with('success', $message);
 
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::info('Terjadi kesalahan: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -159,9 +183,13 @@ class DaftarPesertaExamController extends Controller
         $registrasi = registexam::with([
             'peserta',
             'exam.materi',
+            'exam.rkm' => function ($query) {
+                $query->withTrashed();
+            },
             'exam.rkm.perusahaan',
-            'exam.rkm.instruktur'
-        ])->findOrFail($id);
+            'exam.rkm.instruktur',
+        ])
+        ->findOrFail($id);
 
         $perusahaan = $registrasi->exam?->rkm?->perusahaan ?? $registrasi->exam?->perusahaan;
         $instruktur = $registrasi->exam?->rkm?->instruktur ?? $registrasi->exam?->karyawan;
@@ -175,8 +203,9 @@ class DaftarPesertaExamController extends Controller
     {
         $validated = $request->validate([
             'nama_exam' => 'required|string|max:255',
+            'kategori_exam' => 'nullable|in:BNSP,Internasional,Inixcert,Authorize',
             'tanggal_pelaksanaan' => 'required|date',
-            'jam_pelaksanaan' => 'required|date_format:H:i',
+            'jam_pelaksanaan' => 'required',
             'skor' => 'nullable|numeric',
             'dokumentasi' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'invoice' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',

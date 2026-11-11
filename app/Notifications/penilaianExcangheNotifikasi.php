@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;

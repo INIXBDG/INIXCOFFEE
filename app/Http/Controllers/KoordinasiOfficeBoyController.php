@@ -17,8 +17,8 @@ class KoordinasiOfficeBoyController extends Controller
 
     public function __construct()
     {
-        $this->botToken = '8637052174:AAFSALsROZZSHz-fr2PM0IWe-EsYatdYXvI';
-        $this->groupId = '-5410138806';
+        $this->botToken = config('services.telegram.bot_token');
+        $this->groupId = config('services.telegram.group_id');
 
         $this->middleware('permission:View KoordinasiOfficeBoy', ['only' => ['index', 'getData']]);
         $this->middleware('permission:Store KoordinasiOfficeBoy', ['only' => ['store']]);
@@ -299,7 +299,7 @@ class KoordinasiOfficeBoyController extends Controller
             "Catatan: {$this->escapeMarkdownV2($data['catatan'] ?? '-')}\n\n" .
             "Silahkan buka detail di aplikasi\\.";
 
-        $detailUrl = 'https://coffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
+        $detailUrl = 'https://inixcoffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
 
         $inlineKeyboard = [
             [
@@ -364,7 +364,7 @@ class KoordinasiOfficeBoyController extends Controller
                 "Office Boy: {$this->escapeMarkdownV2($data['ob_name'])}\n" .
                 "Status: {$this->escapeMarkdownV2($data['status'])}\n\n";
 
-        $detailUrl = 'https://coffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
+        $detailUrl = 'https://inixcoffee.inixindobdg.co.id//office/koordinasi-ob/detail/' . $data['id_pengajuan'];
 
         if ($data['status'] === 'Dikerjakan') {
             $replyMarkup = [
@@ -416,13 +416,13 @@ class KoordinasiOfficeBoyController extends Controller
         }
     }
 
-    public function telegramDetail($id)
-    {
-        $koordinasi = KoordinasiOfficeBoy::with('tracking', 'karyawan', 'pembuat')
-                        ->findOrFail($id);
+    // public function telegramDetail($id)
+    // {
+    //     $koordinasi = KoordinasiOfficeBoy::with('tracking', 'karyawan', 'pembuat')
+    //                     ->findOrFail($id);
 
-        return view('office.koordinasiOfficeBoy.detail', compact('koordinasi'));
-    }
+    //     return view('office.koordinasiOfficeBoy.detail', compact('koordinasi'));
+    // }
 
     private function sendDetailToTelegram(int $id)
     {
@@ -461,7 +461,7 @@ class KoordinasiOfficeBoyController extends Controller
             ]);
         }
     }
-    
+
     public function webhook(Request $request)
     {
         $update = $request->all();

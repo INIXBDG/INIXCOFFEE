@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\KelasSetting;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\User;
 use App\Notifications\KelengkapanDataKelasNotification;
 use Illuminate\Console\Command;
@@ -53,7 +53,7 @@ class RemindKelengkapanDataKelas extends Command
                 continue;
             }
 
-            $karyawan = Karyawan::where('kode_karyawan', $kodeInstruktur)->first();
+            $karyawan = karyawan::where('kode_karyawan', $kodeInstruktur)->first();
             if (!$karyawan) {
                 Log::warning("Reminder kelengkapan data: karyawan dengan kode {$kodeInstruktur} tidak ditemukan.");
                 continue;

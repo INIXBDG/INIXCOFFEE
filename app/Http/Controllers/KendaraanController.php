@@ -8,7 +8,7 @@ use App\Models\tracking_pengajuan_barang;
 use App\Models\karyawan;
 use App\Models\KondisiKendaraan;
 use App\Models\PengajuanBarang;
-use App\Models\PerbaikanKendaraan;
+use App\Models\perbaikanKendaraan;
 use App\Models\User;
 use App\Models\vendorBengkel;
 use App\Notifications\KondisiKendaraan as NotificationsKondisiKendaraan;
@@ -42,9 +42,9 @@ class KendaraanController extends Controller
 
     public function indexKondisi()
     {
-        $latestPerKendaraan = PerbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
+        $latestPerKendaraan = perbaikanKendaraan::select('kendaraan')->selectRaw('MAX(id) as max_id')->groupBy('kendaraan');
 
-        $kendaraan = PerbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
+        $kendaraan = perbaikanKendaraan::joinSub($latestPerKendaraan, 'latest', function ($join) {
             $join->on('perbaikan_kendaraans.id', '=', 'latest.max_id');
         })
             ->where(function ($query) {
@@ -123,7 +123,7 @@ class KendaraanController extends Controller
         $kondisi = KondisiKendaraan::create($validated);
 
         if ($kondisi->keluhan != null) {
-            $perbaikan = new PerbaikanKendaraan();
+            $perbaikan = new perbaikanKendaraan();
             $perbaikan->id_kondisi_kendaraan = $kondisi->id;
             $perbaikan->kendaraan = $kondisi->jenis_kendaraan;
             $perbaikan->id_user = $kondisi->user_id;
@@ -136,7 +136,7 @@ class KendaraanController extends Controller
 
             $penerimaPerbaikan = User::whereIn('jabatan', ['GM', 'Finance & Accounting'])->get();
 
-            $karyawan = Karyawan::findOrFail($request->user_id);
+            $karyawan = karyawan::findOrFail($request->user_id);
 
             $data = [
                 'user' => $karyawan->nama_lengkap,
@@ -225,14 +225,14 @@ class KendaraanController extends Controller
     public function indexPerbaikan()
     {
         // Load relasi agar akses tracking lebih efisien
-        $perbaikan = PerbaikanKendaraan::with(['user.karyawan', 'vendor', 'pengajuanBarang.tracking'])->get();
+        $perbaikan = perbaikanKendaraan::with(['user.karyawan', 'vendor', 'pengajuanBarang.tracking'])->get();
         $vendor = vendorBengkel::all();
         return view('office.kendaraan.indexPerbaikan', compact('perbaikan', 'vendor'));
     }
 
     public function detailPerbaikan($id)
     {
-        $perbaikan = PerbaikanKendaraan::with('user.karyawan', 'vendor')->findOrFail($id);
+        $perbaikan = perbaikanKendaraan::with('user.karyawan', 'vendor')->findOrFail($id);
         $dataVendor = vendorBengkel::all();
         return view('office.kendaraan.updatePerbaikan', compact('perbaikan', 'dataVendor'));
     }
@@ -260,7 +260,7 @@ class KendaraanController extends Controller
             'deskripsi_kondisi.required' => 'Deskripsi kondisi wajib diisi.',
         ]);
 
-        $perbaikan = new PerbaikanKendaraan();
+        $perbaikan = new perbaikanKendaraan();
         $perbaikan->kendaraan = $request->kendaraan;
         $perbaikan->id_user = $request->id_user;
         $perbaikan->type_condition = $request->type_condition ?? 'Perawatan';
@@ -289,7 +289,7 @@ class KendaraanController extends Controller
 
         $penerimaPerbaikan = User::whereIn('jabatan', ['GM', 'Finance & Accounting'])->get();
 
-        $karyawan = Karyawan::findOrFail($request->id_user);
+        $karyawan = karyawan::findOrFail($request->id_user);
 
         $data = [
             'user' => $karyawan->nama_lengkap,
@@ -309,7 +309,7 @@ class KendaraanController extends Controller
 
     public function updatePerbaikan(Request $request, $id)
     {
-        $perbaikan = PerbaikanKendaraan::findOrFail($id);
+        $perbaikan = perbaikanKendaraan::findOrFail($id);
 
         $validated = $request->validate([
             'kendaraan'              => 'required|string|max:100',
@@ -396,7 +396,7 @@ class KendaraanController extends Controller
                             ?? $perbaikan->id_user
                             ?? Auth::id();
 
-                $karyawanPemohon = Karyawan::find($idKaryawan);
+                $karyawanPemohon = karyawan::find($idKaryawan);
 
                 if (!$karyawanPemohon) {
                     throw new \Exception('Data karyawan tidak ditemukan (id: ' . $idKaryawan . ')');
@@ -458,7 +458,7 @@ class KendaraanController extends Controller
 
                 // F. Kirim notifikasi
                 $penerima = User::whereIn('jabatan', ['GM', 'Finance & Accounting'])->get();
-                $karyawan = Karyawan::find($pengajuan->id_karyawan);
+                $karyawan = karyawan::find($pengajuan->id_karyawan);
 
                 $dataNotif = [
                     'user'      => $karyawan->nama_lengkap ?? 'Driver',
@@ -488,7 +488,7 @@ class KendaraanController extends Controller
 
     public function deletePerbaikan($id)
     {
-        $perbaikan = PerbaikanKendaraan::findOrFail($id);
+        $perbaikan = perbaikanKendaraan::findOrFail($id);
 
         if ($perbaikan->pengajuanbarangs_id) {
             $pengajuan = PengajuanBarang::find($perbaikan->pengajuanbarangs_id);
@@ -568,7 +568,7 @@ class KendaraanController extends Controller
 
     public function SelesaiPerbaikan(Request $request)
     {
-        $data = PerbaikanKendaraan::findOrFail($request->id);
+        $data = perbaikanKendaraan::findOrFail($request->id);
 
         // ✅ Ambil status "Selesai" dari tracking PengajuanBarang jika ada
         if ($data->pengajuanbarangs_id) {
@@ -638,7 +638,7 @@ class KendaraanController extends Controller
         $from = $request->from;
         $to   = $request->to ?? Carbon::now();
 
-        $query = PerbaikanKendaraan::with(['user.karyawan', 'vendor']);
+        $query = perbaikanKendaraan::with(['user.karyawan', 'vendor']);
 
         if ($from && $to) {
             $query->whereBetween('tanggal_kejadian', [

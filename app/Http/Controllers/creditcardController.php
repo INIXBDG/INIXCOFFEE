@@ -86,12 +86,12 @@ class creditcardController extends Controller
      * @param  mixed $id
      * @return View
      */
-    public function show(string $id): View
-    {
-        $post = cc::findOrFail($id);
+    // public function show(string $id): View
+    // {
+    //     $post = cc::findOrFail($id);
 
-        return view('creditcard.show', compact('post'));
-    }
+    //     return view('creditcard.show', compact('post'));
+    // }
 
     /**
      * edit

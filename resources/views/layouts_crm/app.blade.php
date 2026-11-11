@@ -40,6 +40,9 @@
     <!-- 3. Pemanggilan Aset Hasil Kompilasi Produksi Vite -->
     {{-- @vite(['resources/js/app.js']) --}}
 
+    <script src="{{ asset('assets/vendor/js/helpers.js') }}" defer></script>
+    <script src="{{ asset('assets/js/config.js') }}" defer></script>
+
     <style>
         .avatar {
             width: 40px;
@@ -242,10 +245,13 @@
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
-    <!-- 2. Pustaka Pendukung (Eksekusi Asinkron/Defer) -->
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}" defer></script>
     <script src="{{ asset('js/global-validator.js') }}" defer></script>
+
+    <script src="{{ asset('/js/compress_validator.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
@@ -361,32 +367,6 @@
                     });
                 }, 300);
             }
-        });
-
-        const menuToggleBtn = document.querySelector('.layout-menu-toggle .nav-link');
-        const overlay = document.querySelector('.layout-overlay');
-        const html = document.documentElement;
-
-        if (menuToggleBtn) {
-            menuToggleBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                html.classList.toggle('layout-menu-expanded');
-            });
-        }
-
-        // Klik di area overlay (backdrop gelap) buat nutup sidebar lagi
-        if (overlay) {
-            overlay.addEventListener('click', function () {
-                html.classList.remove('layout-menu-expanded');
-            });
-        }
-
-        document.querySelectorAll('#layout-menu .menu-link').forEach(function (link) {
-            link.addEventListener('click', function () {
-                if (window.innerWidth < 1200) { // breakpoint xl
-                    html.classList.remove('layout-menu-expanded');
-                }
-            });
         });
     </script>
 

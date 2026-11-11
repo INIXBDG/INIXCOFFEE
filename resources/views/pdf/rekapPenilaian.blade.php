@@ -68,49 +68,37 @@
             text-align: right !important;
         }
 
-        @media print {
-            @page {
-                size: A4 !important;
-                margin: 0 !important;
-            }
-
-            body {
-                margin: 20px !important;
-                padding: 10px !important;
-                margin-top: 40px !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            #button {
-                display: none !important;
-            }
-        }
-
-        @media screen {
-            body {
-                margin: 50px 200px !important;
-            }
-        }
-
         .button {
-            border-radius: 3px !important;
-            padding: 10px 25px !important;
-            margin: 15px !important;
-            background: linear-gradient(to right, #84d9d2, #07cdae) !important;
-            border: 0 !important;
-            font-size: 18px !important;
-            font-weight: normal !important;
-            color: white !important;
+            border-radius: 3px;
+            padding: 10px 25px;
+            margin: 15px 0;
+            background: linear-gradient(to right, #84d9d2, #07cdae);
+            border: 0;
+            font-size: 18px;
+            color: white;
             cursor: pointer;
         }
+
+        @page { size: A4; margin: 15mm; }
+
+        body { margin: 0; padding: 0; }
+
+        @if ($mode !== 'download')
+            /* Hanya untuk preview di browser */
+            @media screen {
+                body { margin: 30px auto; max-width: 900px; padding: 0 20px; }
+            }
+            @media print {
+                #button, .no-print { display: none !important; }
+            }
+        @endif
     </style>
 </head>
 <body>
-    <button id="button" class="button" onclick="window.print();">Print</button>
-
+    @if ($mode !== 'download')
+        <button id="button" class="button" onclick="window.print();">Print</button>
+    @endif
+    
     @foreach ($data as $formGroup)
     <div class="section">
         <h3>Rekap Penilaian - {{ $formGroup['evaluated']['nama'] ?? '-' }}</h3>

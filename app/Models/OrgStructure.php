@@ -27,7 +27,7 @@ class OrgStructure extends Model
 
     public function karyawans()
     {
-        return $this->hasMany(Karyawan::class, 'jabatan', 'jabatan')
+        return $this->hasMany(karyawan::class, 'jabatan', 'jabatan')
             ->where(function ($query) {
                 $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])->where('status_aktif', '1');
             })

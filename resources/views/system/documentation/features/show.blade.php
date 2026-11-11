@@ -62,11 +62,11 @@
 
         .modal-dialog-scrollable .modal-content {
             max-height: calc(100vh - 1rem);
-            overflow: hidden; 
+            overflow: hidden;
         }
         .modal-dialog-scrollable .modal-body {
             overflow-y: auto !important;
-            max-height: calc(100vh - 200px); 
+            max-height: calc(100vh - 200px);
         }
 
         @media (max-width: 576px) {
@@ -167,7 +167,7 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            {!! $feature->purpose !!}
+                            {!! clean($feature->purpose) !!}
                         </div>
                     </div>
                 @endif
@@ -180,7 +180,7 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            {!! $feature->problem_solved !!}
+                            {!! clean($feature->problem_solved) !!}
                         </div>
                     </div>
                 @endif
@@ -193,7 +193,7 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            {!! $feature->how_it_works !!}
+                            {!! clean($feature->how_it_works) !!}
                         </div>
                     </div>
                 @endif
@@ -206,7 +206,7 @@
                             </h5>
                         </div>
                         <div class="card-body">
-                            {!! $feature->user_access !!}
+                            {!! clean($feature->user_access) !!}
                         </div>
                     </div>
                 @endif

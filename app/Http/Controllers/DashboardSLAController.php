@@ -32,27 +32,52 @@ class DashboardSLAController extends Controller
      * Jam selesai kerja (misal: 17:00).
      */
     protected $businessEndHour = 17;
+
+    /**
+     * Ambil daftar hari libur (Format: Y-m-d).
+     * Saran: Ganti dengan Query ke tabel database, contoh: Holiday::pluck('date')->toArray();
+     */
+    private function getHolidays()
+    {
+        $tahun = date('Y');
+        $cacheKey = 'holidays_db_' . $tahun;
+
+        // Gunakan cache agar tidak query ke database berulang kali untuk setiap hitungan SLA
+        return Cache::remember($cacheKey, now()->addDays(30), function () use ($tahun) {
+            return HariLibur::where('year', $tahun)
+                ->pluck('tanggal')
+                ->toArray();
+        });
+    }
+
+    /**
+     * Cek apakah hari ini adalah hari kerja (Bukan Sabtu/Minggu, dan bukan Hari Libur)
+     */
+    private function isWorkingDay(Carbon $date, $holidays)
+    {
+        // isWeekday() = true jika Senin-Jumat
+        // in_array() = true jika tanggal ada di daftar libur. Kita pakai ! (NOT)
+        return $date->isWeekday() && !in_array($date->format('Y-m-d'), $holidays);
+    }
+
     // =========================================================================
     // HELPER: VALIDASI DAN PARSING TANGGAL
     // =========================================================================
     /**
      * Validasi input tanggal dan mengembalikannya sebagai objek Carbon.
+     * Mendukung parameter:
+     *   - tahun & bulan (integer 1-12, atau 'all' untuk seluruh tahun)
+     *   - start_date & end_date (format tanggal eksplisit)
+     * Default: bulan berjalan.
      */
     private function validateAndParseDates(Request $request)
     {
-        // --- LOGIKA BARU UNTUK SEMESTER ---
         $now = Carbon::now($this->timezone);
 
-        if ($now->month <= 6) {
-            // Semester 1 (Jan - Jun)
-            $defaultStartDate = $now->copy()->month(1)->startOfMonth()->startOfDay(); // 1 Jan
-            $defaultEndDate = $now->copy()->month(6)->endOfMonth()->endOfDay();   // 30 Jun
-        } else {
-            // Semester 2 (Jul - Dec)
-            $defaultStartDate = $now->copy()->month(7)->startOfMonth()->startOfDay(); // 1 Jul
-            $defaultEndDate = $now->copy()->month(12)->endOfMonth()->endOfDay();  // 31 Des
-        }
-        // --- SELESAI LOGIKA SEMESTER ---
+        // --- LOGIKA BARU: DEFAULT KE BULAN BERJALAN ---
+        $defaultStartDate = $now->copy()->startOfMonth()->startOfDay();
+        $defaultEndDate   = $now->copy()->endOfMonth()->endOfDay();
+        // ----------------------------------------------
 
         // Support parameter tahun dan bulan dari Filter Global dashboard
         if ($request->has('tahun') || $request->has('bulan')) {
@@ -85,32 +110,43 @@ class DashboardSLAController extends Controller
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
-        if ($validator->fails()) {
-            // Gunakan default SEMESTER jika validasi gagal
             return [
-                'startDate' => $defaultStartDate,
-                'endDate' => $defaultEndDate,
-                'filters' => [
-                    'start' => $defaultStartDate->toDateTimeString(),
-                    'end' => $defaultEndDate->toDateTimeString(),
-                    'error' => $validator->errors()->first()
-                ]
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
             ];
         }
 
-        // Gunakan input jika valid, atau default SEMESTER jika kosong
-        $startDate = $request->input('start_date')
-            ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
-            : $defaultStartDate;
+        // Prioritas 2: Jika ada parameter tahun & bulan dari filter global JS
+        $tahun = $request->input('tahun');
+        $bulan = $request->input('bulan'); // integer 1-12 atau 'all'
 
-        $endDate = $request->input('end_date')
-            ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
-            : $defaultEndDate;
+        if ($tahun && is_numeric($tahun)) {
+            $year = (int) $tahun;
 
+            if ($bulan && $bulan !== 'all' && is_numeric($bulan)) {
+                // Filter per bulan tertentu
+                $month      = (int) $bulan;
+                $startDate  = Carbon::createFromDate($year, $month, 1, $this->timezone)->startOfMonth()->startOfDay();
+                $endDate    = $startDate->copy()->endOfMonth()->endOfDay();
+            } else {
+                // bulan = 'all' → tampilkan seluruh tahun
+                $startDate  = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfMonth()->startOfDay();
+                $endDate    = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfMonth()->endOfDay();
+            }
+
+            return [
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
+            ];
+        }
+
+        // Prioritas 3: Default → bulan berjalan
         return [
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'filters' => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()]
+            'startDate' => $defaultStartDate,
+            'endDate'   => $defaultEndDate,
+            'filters'   => ['start' => $defaultStartDate->toDateTimeString(), 'end' => $defaultEndDate->toDateTimeString()],
         ];
     }
 
@@ -139,10 +175,6 @@ class DashboardSLAController extends Controller
         ];
     }
 
-    // =========================================================================
-    // FUNGSI UTAMA 1: DASHBOARD TIM (GABUNGAN)
-    // =========================================================================
-    // Terima $team dari rute (misal: 'programmer' atau 'tech-support')
     public function dashboardTim(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
@@ -186,42 +218,34 @@ class DashboardSLAController extends Controller
         return response()->json($kpi);
     }
 
-    // =========================================================================
-    // FUNGSI UTAMA 2: DASHBOARD PER USER (GABUNGAN)
-    // =========================================================================
-    // Terima $team dari rute
     public function dashboardUser(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
 
-        // --- KONDISI DINAMIS ---
-        // 1. Definisikan SEMUA mapping
         $allPicMaps = [
             'programmer' => [
-                'ardhan' => 'Ardhan',
-                'donna' => 'Donna',
-                'juliet' => 'Juli',
-                'stepanusberkatsinaga' => 'Stefan',
-                'sergiomosesriyanto' => 'Sergio',
-                'vickyryandysaputra' => 'Vicky',
-
+                'ardhan' => ['Ardhan'],
+                'donna' => ['Donna'],
+                'juliet' => ['Juli'],
+                'stepanusberkatsinaga' => ['Stefan', 'Stepanus Berkat Sinaga'],
+                'sergiomosesriyanto' => ['Sergio'],
+                'vickyryandysaputra' => ['Vicky'],
             ],
             'tech-support' => [
-                'eggiherlambang' => 'Eggi',
-                'naufal' => 'Naufal',
-                'ferdi' => 'Ferdi',
-                'ardhan' => 'Ardhan',
+                'eggiherlambang' => ['Eggi'],
+                'naufal' => ['Naufal'],
+                'ferdi' => ['Ferdi'],
+                'ardhan' => ['Ardhan'],
             ]
         ];
 
         // Pilih mapping dan keperluan berdasarkan $team
         $userToPicMap = $allPicMaps[$team] ?? [];
         $keperluan = ($team === 'programmer') ? '%Programming%' : '%Technical Support%';
-        // -----------------------
 
         $allUsernames = array_keys($userToPicMap);
 
-        // 2. Ambil data User
+        // 2. Ambil data User beserta relasi Karyawan
         $users = [];
         if (!empty($allUsernames)) {
             $users = User::query()
@@ -230,21 +254,31 @@ class DashboardSLAController extends Controller
                 ->get();
         }
 
-        // 3. Buat mapping (Username -> Nama Lengkap)
+        // 3. Buat mapping (Username -> Nama Lengkap) dari tabel Users/Karyawan
         $usernameToNamaLengkapMap = [];
         foreach ($users as $user) {
             $usernameToNamaLengkapMap[$user->username] = $user->karyawan->nama_lengkap ?? ($user->name ?? $user->username);
         }
 
-        // 4. Buat mapping final: (PIC (lowercase) -> Nama Lengkap)
+        // 4. Bangun Array Query & Lookup Map untuk grouping
+        $picNamesForQuery = [];
         $picLookupMap = [];
-        foreach ($userToPicMap as $username => $picName) {
-            $displayName = $usernameToNamaLengkapMap[$username] ?? $picName;
-            $picLookupMap[strtolower($picName)] = $displayName;
+
+        foreach ($userToPicMap as $username => $picNamesArray) {
+            // Tentukan nama tampilan utama (Nama lengkap, atau fallback ke variasi nama pertama)
+            $displayName = $usernameToNamaLengkapMap[$username] ?? $picNamesArray[0];
+
+            foreach ($picNamesArray as $picName) {
+                // Kumpulkan semua variasi nama untuk dimasukkan ke WhereIn Query
+                $picNamesForQuery[] = $picName;
+
+                // Petakan setiap variasi nama (lowercase) ke satu Nama Tampilan yang sama
+                // Contoh: 'stefan' -> 'Stepanus Berkat Sinaga' & 'stepanus berkat sinaga' -> 'Stepanus Berkat Sinaga'
+                $picLookupMap[strtolower($picName)] = $displayName;
+            }
         }
 
-        // 5. Ambil Data Mentah
-        $picNamesForQuery = array_values($userToPicMap);
+        // 5. Ambil Data Mentah dari database menggunakan array variasi nama
         $rawTickets = DB::table('tickets')
             ->select(
                 'id',
@@ -258,17 +292,17 @@ class DashboardSLAController extends Controller
                 'tanggal_selesai',
                 'jam_selesai'
             )
-            ->whereIn('pic', $picNamesForQuery)
+            ->whereIn('pic', $picNamesForQuery) // Akan mencari 'Stefan' DAN 'Stepanus Berkat Sinaga'
             ->whereNotNull('tanggal_selesai')
-            ->where('keperluan', 'LIKE', $keperluan) // <-- Gunakan variabel dinamis
+            ->where('keperluan', 'LIKE', $keperluan)
             ->where('created_at', '>=', $dateRange['startDate'])
             ->where('created_at', '<=', $dateRange['endDate'])
             ->get();
 
-        // 6. Kelompokkan tiket per user
+        // 6. Kelompokkan tiket per user berdasarkan Nama Tampilan
         $ticketsByUser = [];
         foreach ($rawTickets as $ticket) {
-            $picKey = strtolower($ticket->pic);
+            $picKey = strtolower(trim($ticket->pic));
             $namaLengkap = $picLookupMap[$picKey] ?? 'Lainnya';
             $ticketsByUser[$namaLengkap][] = $ticket;
         }
@@ -331,6 +365,7 @@ class DashboardSLAController extends Controller
                 ];
             }
         }
+
         ksort($kpiPerUser);
 
         // Sort semua tiket dari yang paling lama
@@ -342,11 +377,6 @@ class DashboardSLAController extends Controller
             'filters' => $dateRange['filters']
         ]);
     }
-
-    // =========================================================================
-    // FUNGSI UTAMA 3: DASHBOARD INSIDEN KRITIS (GABUNGAN)
-    // =========================================================================
-    // Terima $team dari rute
     public function dashboardKritis(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
@@ -376,6 +406,9 @@ class DashboardSLAController extends Controller
         ];
         $listInsiden = [];
 
+        // Ambil data hari libur SEBELUM masuk ke dalam foreach
+        $holidays = $this->getHolidays();
+
         foreach ($insidenSelesai as $insiden) {
             $trackingEvents = $insiden->tracking;
             $eventBatal = $trackingEvents->firstWhere('status', 'Tidak Ditangani');
@@ -399,7 +432,7 @@ class DashboardSLAController extends Controller
             $handler = $eventPenanganan->karyawan;
 
             // --- KONDISI DINAMIS ---
-            $isTargetRole = $handler && $handler->jabatan === $jabatan; // <-- Gunakan variabel dinamis
+            $isTargetRole = $handler && $handler->jabatan === $jabatan;
             if (!$isTargetRole) {
                 continue;
             }
@@ -418,7 +451,8 @@ class DashboardSLAController extends Controller
 
             // 1. Kalkulasi SLA Respon (Baru -> Penanganan)
             $stats['response_count']++;
-            $actualResponseHours = $this->calculateBusinessHours($timeBaru, $timePenanganan);
+            // Sisipkan $holidays di sini
+            $actualResponseHours = $this->calculateBusinessHours($timeBaru, $timePenanganan, $holidays);
             $stats['sum_response_hours'] += $actualResponseHours;
             $responseMet = ($actualResponseHours <= 1);
             if ($responseMet)
@@ -426,7 +460,8 @@ class DashboardSLAController extends Controller
 
             // 2. Kalkulasi SLA Resolusi (Penanganan -> Selesai)
             $stats['resolution_count']++;
-            $actualResolutionHours = $this->calculateBusinessHours($timePenanganan, $timeSelesai);
+            // Sisipkan $holidays di sini
+            $actualResolutionHours = $this->calculateBusinessHours($timePenanganan, $timeSelesai, $holidays);
             $stats['sum_resolution_hours'] += $actualResolutionHours;
             $resolutionMet = ($actualResolutionHours <= 8);
             if ($resolutionMet)
@@ -667,16 +702,13 @@ class DashboardSLAController extends Controller
         ]);
     }
 
-    // =========================================================================
-    // FUNGSI UTAMA 5: DASHBOARD TIM DIGITAL (TICKETING + KONTEN)
-    // =========================================================================
     public function dashboardDigital(Request $request)
     {
         $dateRange = $this->validateAndParseDates($request);
 
-        // --- BAGIAN A: SLA TICKETING (Tim Digital) ---
         $keperluan = '%Tim Digital%';
 
+        // --- BAGIAN A: SLA TICKETING (Tim Digital) ---
         // 1. Ambil Data Tiket
         $rawTickets = DB::table('tickets')
             ->select(
@@ -706,52 +738,70 @@ class DashboardSLAController extends Controller
             'weekly_details' => []
         ];
 
-        // 1. Generate Periode Mingguan dalam Semester Terpilih
-        $period = CarbonPeriod::create($dateRange['startDate'], '1 week', $dateRange['endDate']);
+        $holidays = $this->getHolidays(); // Panggil daftar hari libur
 
-        foreach ($period as $date) {
-            $startOfWeek = $date->copy()->startOfWeek();
-            $endOfWeek = $date->copy()->endOfWeek();
+        $uploadCount = 0;
 
-            // Batasi agar tidak melebihi range filter (jika filter parsial)
-            if ($startOfWeek < $dateRange['startDate']) {
-                $startOfWeek = $dateRange['startDate'];
-            }
-            if ($endOfWeek > $dateRange['endDate']) {
-                $endOfWeek = $dateRange['endDate'];
-            }
+        // 1. Mulai iterasi tepat dari hari Senin di sekitar startDate
+        $currentDate = $dateRange['startDate']->copy()->startOfWeek();
 
-            // Skip jika start > end (edge case akhir periode)
-            if ($startOfWeek > $endOfWeek) {
+        // Lakukan looping selama tanggal awal minggu (Senin) masih berada di dalam atau sama dengan bulan/semester filter
+        while ($currentDate <= $dateRange['endDate']) {
+            $startOfWeek = $currentDate->copy();
+            $endOfWeek = $currentDate->copy()->endOfWeek(); // Tetap hari Minggu (utuh)
+
+            if ($startOfWeek < $dateRange['startDate']->copy()->startOfDay()) {
+                $currentDate->addWeek();
                 continue;
             }
 
+            // TIDAK ADA LAGI PEMOTONGAN TANGGAL.
+            // endOfWeek dibiarkan utuh melewati bulan sekalipun (misal: 28 Sep - 04 Oct).
+
             $contentStats['total_weeks']++;
 
-            // 2. Hitung Upload pada Minggu Tersebut (Dengan format string Y-m-d untuk presisi DATE)
-            $startDateString = $startOfWeek->format('Y-m-d');
-            $endDateString = $endOfWeek->format('Y-m-d');
+            // --- Logika Hitung Hari Aktif & Target Dinamis ---
+            $activeWorkingDays = 0;
+            $tempDate = $startOfWeek->copy();
 
-            $query = ContentSchedule::whereBetween('upload_date', [$startDateString, $endDateString]);
+            // Hitung ada berapa hari kerja nyata di periode 1 minggu utuh ini
+            while ($tempDate <= $endOfWeek) {
+                if ($this->isWorkingDay($tempDate, $holidays)) {
+                    $activeWorkingDays++;
+                }
+                $tempDate->addDay();
+            }
 
-            // Pencatatan (Logging) diagnostik kueri SQL dan parameter
-            Log::info('--- Diagnostik Kueri Jadwal Konten ---', [
-                'periode_rentang' => "{$startDateString} s/d {$endDateString}",
-                'kueri_sql' => $query->toSql(),
-                'parameter_binding' => $query->getBindings()
-            ]);
+            // Jika range-nya hanya akhir pekan/libur panjang, lewati minggu ini
+            if ($activeWorkingDays == 0) {
+                $contentStats['total_weeks']--;
+                $currentDate->addWeek();
+                continue;
+            }
 
-            $uploadCount = $query->count();
+            // Hitung Target Proporsional
+            if ($activeWorkingDays >= 4) {
+                $dynamicTarget = 3;
+            } else {
+                $dynamicTarget = (int) round((3 / 5) * $activeWorkingDays);
 
-            // Pencatatan hasil eksekusi perhitungan
-            Log::info('--- Hasil Kueri ---', [
-                'jumlah_ditemukan' => $uploadCount
-            ]);
+                if ($dynamicTarget < 1 && $activeWorkingDays > 0) {
+                    $dynamicTarget = 1;
+                }
+            }
+
+            // PERBAIKAN: Gunakan format jam 00:00:00 s/d 23:59:59 untuk akurasi Datetime
+            $startDateString = $startOfWeek->copy()->startOfDay()->format('Y-m-d H:i:s');
+            $endDateString = $endOfWeek->copy()->endOfDay()->format('Y-m-d H:i:s');
+
+            // Query murni menggunakan Between (tanpa intervensi whereMonth)
+            // sehingga jika $endDateString tembus ke bulan depan, tetap terbaca utuh.
+            $uploadCount = ContentSchedule::whereBetween('upload_date', [$startDateString, $endDateString])->count();
 
             $contentStats['total_content'] += $uploadCount;
 
-            // 3. Cek Target (Minimal 3)
-            $isMet = $uploadCount >= 3;
+            $isMet = $uploadCount >= $dynamicTarget;
+
             if ($isMet) {
                 $contentStats['weeks_met']++;
             } else {
@@ -762,11 +812,14 @@ class DashboardSLAController extends Controller
                 'week_range' => $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y'),
                 'count' => $uploadCount,
                 'status' => $isMet ? 'Met' : 'Missed',
-                'target' => 3
+                'target' => $dynamicTarget,
+                'active_days' => $activeWorkingDays
             ];
+
+            // Lanjut bergeser ke hari Senin berikutnya
+            $currentDate->addWeek();
         }
 
-        // --- BAGIAN C: FINALISASI KPI GABUNGAN ---
         $totalTickets = $ticketStats['total_tickets'];
 
         $kpi = [
@@ -816,15 +869,14 @@ class DashboardSLAController extends Controller
         }
     }
 
-    // =========================================================================
-    // HELPER 2: PROSESOR SLA TIKET (HIGH, MEDIUM, LOW)
-    // =========================================================================
-    // (Fungsi ini 100% dapat digunakan kembali, tidak perlu diubah)
     private function processTicketSla($tickets)
     {
+        // 1. Ambil daftar hari libur di sini
+        $holidays = $this->getHolidays();
+
         $stats = [
             'total_tickets' => 0,
-            'response_count' => 0, // Jumlah tiket yg punya data respon
+            'response_count' => 0,
             'response_met' => 0,
             'resolution_met' => 0,
             'sum_response_hours' => 0,
@@ -840,15 +892,18 @@ class DashboardSLAController extends Controller
             // Tentukan Prioritas
             $priority = 'Other';
 
-            // Standarisasi string dari database untuk akurasi komparasi
+            // Standarisasi string (sudah ada di kode Anda sebelumnya)
             $tingkatKesulitan = strtolower(trim($ticket->tingkat_kesulitan ?? ''));
             $kategori = strtolower(trim($ticket->kategori ?? ''));
 
-            if (in_array($tingkatKesulitan, ['major', 'moderate'])) {
+            // Blok logika yang baru
+            if ($kategori === 'error (aplikasi)' && $tingkatKesulitan === 'major') {
+                $priority = 'High-Extended'; // Prioritas khusus 1 minggu
+            } elseif (in_array($tingkatKesulitan, ['major', 'moderate'])) {
                 $priority = 'High';
-            } elseif ($kategori == 'request') {
+            } elseif ($kategori === 'request') {
                 $priority = 'Low';
-            } elseif (in_array($tingkatKesulitan, ['minor', 'normal', '']) || $kategori == 'error (aplikasi)') {
+            } elseif (in_array($tingkatKesulitan, ['minor', 'normal', '']) || $kategori === 'error (aplikasi)') {
                 $priority = 'Medium';
             }
 
@@ -860,8 +915,8 @@ class DashboardSLAController extends Controller
             // Asumsi 'tanggal_selesai' & 'jam_selesai' PASTI ada (karena query)
             $resolution = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, $this->timezone);
 
-            // Hitung Jam Kerja Aktual Resolusi
-            $actualResolutionHours = $this->calculateBusinessHours($start, $resolution);
+            // Hitung Jam Kerja Aktual Resolusi dengan parameter hari libur
+            $actualResolutionHours = $this->calculateBusinessHours($start, $resolution, $holidays);
             $stats['sum_resolution_hours'] += $actualResolutionHours;
 
             // Lacak Waktu Resolusi Terlama
@@ -878,12 +933,11 @@ class DashboardSLAController extends Controller
             if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
                 $stats['response_count']++;
                 $response = Carbon::parse($ticket->tanggal_response . ' ' . $ticket->jam_response, $this->timezone);
-                $actualResponseHours = $this->calculateBusinessHours($start, $response);
+                $actualResponseHours = $this->calculateBusinessHours($start, $response, $holidays);
                 $stats['sum_response_hours'] += $actualResponseHours;
 
-                // Cek Kepatuhan SLA Response
                 if (
-                    ($priority == 'High' && $actualResponseHours <= 4) ||
+                    (in_array($priority, ['High', 'High-Extended']) && $actualResponseHours <= 4) ||
                     ($priority == 'Medium' && $actualResponseHours <= 8) ||
                     ($priority == 'Low' && $actualResponseHours <= 16)
                 ) {
@@ -891,12 +945,12 @@ class DashboardSLAController extends Controller
                 }
             }
 
-            // Cek Kepatuhan SLA Resolusi
             if (
                 ($priority == 'High' && $actualResolutionHours <= 24) ||
+                ($priority == 'High-Extended' && $actualResolutionHours <= 45) ||
                 ($priority == 'Medium' && $actualResolutionHours <= 40) ||
                 ($priority == 'Low')
-            ) // Low/Request dianggap 'met'
+            )
             {
                 $stats['resolution_met']++;
             }
@@ -904,77 +958,62 @@ class DashboardSLAController extends Controller
         return $stats;
     }
 
-    private function calculateBusinessHours(Carbon $start, Carbon $end)
+    private function calculateBusinessHours(Carbon $start, Carbon $end, $holidays = [])
     {
-        // Jika waktu selesai sebelum mulai, return 0
-        if ($end <= $start) {
-            return 0;
-        }
+        if ($end <= $start) return 0;
 
         $totalBusinessMinutes = 0;
         $current = $start->copy();
 
-        // 1. Tangani Hari Pertama (Partial)
-        if ($current->dayOfWeek !== Carbon::SATURDAY && $current->dayOfWeek !== Carbon::SUNDAY) {
-            // Tentukan jam mulai kalkulasi pada hari pertama
+        // 1. Tangani Hari Pertama
+        if ($this->isWorkingDay($current, $holidays)) { // <-- Ganti pengecekan hari pertama
             $dayStart = $current->copy()->hour($this->businessStartHour)->minute(0)->second(0);
-            // Tentukan jam selesai kalkulasi pada hari pertama
             $dayEnd = $current->copy()->hour($this->businessEndHour)->minute(0)->second(0);
 
-            if ($current < $dayStart) {
-                // Jika tiket dibuat sebelum jam kerja, mulai hitung dari jam kerja
-                $current = $dayStart;
-            }
-
-            // Tentukan batas akhir perhitungan di hari pertama
+            if ($current < $dayStart) $current = $dayStart;
             $endOfFirstDay = ($end < $dayEnd) ? $end : $dayEnd;
 
-            if ($current < $endOfFirstDay) {
-                if ($current->hour < $this->businessEndHour) {
-                    $totalBusinessMinutes += $current->diffInMinutes($endOfFirstDay);
-                }
+            if ($current < $endOfFirstDay && $current->hour < $this->businessEndHour) {
+                $totalBusinessMinutes += $current->diffInMinutes($endOfFirstDay);
             }
         }
 
-        // Pindahkan 'current' ke awal hari berikutnya
         $current->addDay()->startOfDay();
 
         // 2. Tangani Hari-Hari Penuh (Full Days)
         while ($current < $end->copy()->startOfDay()) {
-            if ($current->isWeekday()) {
+            if ($this->isWorkingDay($current, $holidays)) { // <-- Ganti isWeekday()
                 $totalBusinessMinutes += ($this->businessEndHour - $this->businessStartHour) * 60;
             }
             $current->addDay();
         }
 
         // 3. Tangani Hari Terakhir (Partial)
-        if ($end->isWeekday()) {
+        if ($this->isWorkingDay($end, $holidays)) { // <-- Ganti isWeekday()
             $dayStart = $end->copy()->hour($this->businessStartHour)->minute(0)->second(0);
             $dayEnd = $end->copy()->hour($this->businessEndHour)->minute(0)->second(0);
             $startOfLastDay = $dayStart;
             $endOfLastDay = ($end < $dayEnd) ? $end : $dayEnd;
 
-            if ($startOfLastDay < $endOfLastDay) {
-                if ($endOfLastDay->hour >= $this->businessStartHour) {
-                    $totalBusinessMinutes += $startOfLastDay->diffInMinutes($endOfLastDay);
-                }
+            if ($startOfLastDay < $endOfLastDay && $endOfLastDay->hour >= $this->businessStartHour) {
+                $totalBusinessMinutes += $startOfLastDay->diffInMinutes($endOfLastDay);
             }
         }
 
-        // Koreksi untuk kasus di mana start dan end di hari yang sama
+        // 4. Koreksi di Hari yang Sama
         if ($start->isSameDay($end)) {
             $dayStart = $start->copy()->hour($this->businessStartHour)->minute(0)->second(0);
             $dayEnd = $start->copy()->hour($this->businessEndHour)->minute(0)->second(0);
             $calcStart = ($start < $dayStart) ? $dayStart : $start;
             $calcEnd = ($end > $dayEnd) ? $dayEnd : $end;
-            if ($calcStart < $calcEnd && $calcStart->isWeekday() && $calcStart->hour < $this->businessEndHour && $calcEnd->hour >= $this->businessStartHour) {
+
+            if ($calcStart < $calcEnd && $this->isWorkingDay($calcStart, $holidays) && $calcStart->hour < $this->businessEndHour && $calcEnd->hour >= $this->businessStartHour) { // <-- Ganti isWeekday()
                 return $calcStart->diffInMinutes($calcEnd) / 60.0;
             } else {
                 return 0;
             }
         }
 
-        // Kembalikan dalam jam (float)
         return $totalBusinessMinutes / 60.0;
     }
 

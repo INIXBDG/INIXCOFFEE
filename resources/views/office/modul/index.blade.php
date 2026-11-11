@@ -92,8 +92,8 @@
                                 data-akhir="{{ $m->akhir_training }}" data-jumlah="{{ $m->jumlah }}"
                                 data-harga_satuan="{{ $m->harga_satuan }}" data-total="{{ $m->total }}"
                                 data-note="{{ $m->note ?? '' }}">
-                                <td>{{ $m->materi?->kode_alias ?? $m->materi?->kode_materi ?? '-' }}</td>
-                                <td>{{ $m->materi?->alias ?? $m->materi?->nama_materi ?? '-' }}</td>
+                                <td>{{ $m->materi?->kode_alias ?? $m->materi?->kode_materi ?? $m?->kode_materi ?? '-' }}</td>
+                                <td>{{ $m->materi?->alias ?? $m->materi?->nama_materi ?? $m?->nama_materi ?? '-' }}</td>
                                 <td>{{ \Carbon\Carbon::parse($m->awal_training)->translatedFormat('d M Y') }} s/d
                                     {{ \Carbon\Carbon::parse($m->akhir_training)->translatedFormat('d M Y') }}</td>
                                 <td>{{ $m->jumlah }}</td>

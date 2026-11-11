@@ -210,8 +210,12 @@
     <!-- GitHub button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script defer src="{{ asset('js/global-validator.js') }}"></script>
+    <script defer src="{{ asset('js/compress_validator.js') }}"></script>
 
     <!-- User Profile Ajax -->
     <script>

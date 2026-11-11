@@ -55,6 +55,19 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ __('Kategori Exam') }}</label>
+                                <select name="kategori_exam" id="kategori_exam" class="form-control">
+                                    <option value="">Pilih Kategori</option>
+                                    <option value="BNSP" {{ old('kategori_exam', $dokumentasi?->kategori_exam) == 'BNSP' ? 'selected' : '' }}>BNSP</option>
+                                    <option value="Internasional" {{ old('kategori_exam', $dokumentasi?->kategori_exam) == 'Internasional' ? 'selected' : '' }}>Internasional</option>
+                                    <option value="Inixcert" {{ old('kategori_exam', $dokumentasi?->kategori_exam) == 'Inixcert' ? 'selected' : '' }}>Inixcert</option>
+                                    <option value="Authorize" {{ old('kategori_exam', $dokumentasi?->kategori_exam) == 'Authorize' ? 'selected' : '' }}>Authorize</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <hr>
 
                         <div class="row mb-3">
@@ -71,7 +84,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">{{ __('Keterangan Lulus') }}</label>
                                 <select name="keterangan_lulus" id="keterangan_lulus" class="form-control">
-                                    <option value="" disable hidden>Pilih Keterangan</option>
+                                    <option value="" disabled hidden>Pilih Keterangan</option>
                                     <option value="lulus" {{ old('keterangan_lulus', $dokumentasi?->keterangan_lulus) == 'lulus' ? 'selected' : '' }}>Lulus</option>
                                     <option value="tidak lulus" {{ old('keterangan_lulus', $dokumentasi?->keterangan_lulus) == 'tidak lulus' ? 'selected' : '' }}>Tidak Lulus</option>
                                 </select>

@@ -4,20 +4,20 @@ namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\AbsensiKaryawan;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Models\karyawan;
-use Carbon\Carbon;
-use App\Models\pengajuancuti;
 use App\Models\HariLibur;
-use Illuminate\Support\Facades\Http;
+use App\Models\izinTigaJam;
+use App\Models\karyawan;
+use App\Models\pengajuancuti;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use App\Models\izinTigaJam;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class presenceController extends Controller
 {
@@ -26,17 +26,17 @@ class presenceController extends Controller
         return view('HR.presence.index');
     }
 
-    private function getSaturdayWorkingJabatan()
+    public function getSaturdayWorkingJabatan()
     {
         return ['office boy', 'technical support'];
     }
 
-    private function isSaturdayWorker($jabatan)
+    public function isSaturdayWorker($jabatan)
     {
         return in_array(strtolower(trim((string) $jabatan)), $this->getSaturdayWorkingJabatan());
     }
 
-    private function isExpectedToWork($tanggal, $jabatan)
+    public function isExpectedToWork($tanggal, $jabatan)
     {
         if ($tanggal->isSunday()) {
             return false;
@@ -47,25 +47,60 @@ class presenceController extends Controller
         return true;
     }
 
-    private function getKeteranganPrefix($record)
+    public function classifyKeterangan($record)
     {
-        $keterangan = trim((string) ($record->keterangan ?? ''));
-        if ($keterangan === '') {
-            return '';
+        if (!$record) {
+            return null;
         }
-        $parts = preg_split('/[\s(]+/', $keterangan);
-        return strtolower(trim($parts[0] ?? ''));
+        $t = strtolower(trim((string) ($record->keterangan ?? '')));
+        if ($t === '') {
+            return null;
+        }
+
+        if (str_contains($t, 'cuti')) {
+            return 'cuti';
+        }
+        if (str_contains($t, 'sakit')) {
+            return 'sakit';
+        }
+        if (str_contains($t, 'telat') || str_contains($t, 'terlambat')) {
+            return 'telat'; 
+        }
+        if (str_contains($t, 'izin') || str_contains($t, 'ijin')) {
+            return 'izin';
+        }
+        if (str_contains($t, 'tidak masuk') || str_contains($t, 'alpa')) {
+            return null;
+        }
+        if (str_contains($t, 'masuk')) {
+            return 'masuk';
+        }
+        return null;
     }
 
-    private function isLateRecord($absen)
+    public function isLateRecord($absen)
     {
         if (!$absen) {
             return false;
         }
-        return $this->getKeteranganPrefix($absen) === 'telat';
+        if ($this->classifyKeterangan($absen) === 'telat') {
+            return true;
+        }
+        return $this->parseLateMinutes($absen->waktu_keterlambatan ?? null) > 0;
     }
 
-    private function isPresentRecord($absen)
+    public function averageLatePerEmployee($rows)
+    {
+        $perEmployee = $rows->groupBy('id')->map(function ($items) {
+            $late = $items->where('status', 'telat');
+            $n = $late->count();
+            return $n > 0 ? $late->sum('late_minutes') / $n : 0;
+        });
+
+        return $perEmployee->isEmpty() ? 0 : round($perEmployee->avg(), 1);
+    }
+
+    public function isPresentRecord($absen)
     {
         if (!$absen) {
             return false;
@@ -73,375 +108,554 @@ class presenceController extends Controller
         if ($absen->jam_masuk) {
             return true;
         }
-        $prefix = $this->getKeteranganPrefix($absen);
-        return $prefix === 'masuk' || $prefix === 'telat';
+        return in_array($this->classifyKeterangan($absen), ['masuk', 'telat'], true);
     }
 
-    private function getActiveKaryawanQuery()
+    public function approvalState($value)
     {
-        return karyawan::where('status_aktif', '1')
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->whereNot('divisi', 'Direksi');
+        $v = strtolower(trim((string) $value));
+        if (in_array($v, ['1', 'approved', 'disetujui', 'setuju', 'acc', 'true', 'ya'], true)) {
+            return 'approved';
+        }
+        if (in_array($v, ['', '0', 'pending', 'menunggu', 'null'], true)) {
+            return 'pending';
+        }
+        return 'rejected';
     }
 
-    public function getAttendanceAnalytics(Request $request)
+    public function isIzinCounted($value)
     {
+        return in_array((string) $value, ['1', '2'], true);
+    }
+
+    public function isCutiMenikah($record)
+    {
+        foreach (['jenis_cuti', 'kategori', 'jenis', 'alasan', 'keterangan'] as $field) {
+            $value = strtolower((string) ($record->{$field} ?? ''));
+            if ($value !== '' && str_contains($value, 'menikah')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getActiveKaryawanQuery()
+    {
+        return karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->whereNotNull('nip')->whereNot('divisi', 'Direksi')->whereNot('jabatan', 'GM');
+    }
+
+    public function parseLateMinutes($waktu)
+    {
+        if (!$waktu || $waktu === '00:00:00') {
+            return 0;
+        }
+        $p = explode(':', $waktu);
+        return round(((int) $p[0]) * 60 + (int) ($p[1] ?? 0) + ((int) ($p[2] ?? 0)) / 60, 1);
+    }
+
+    public function startDateOf($emp)
+    {
+        if (!$emp->awal_probation) {
+            return null;
+        }
         try {
-            $bulan = (int) $request->input('month', now()->month);
-            $tahun = (int) $request->input('year', now()->year);
-            $divisi = $request->input('divisi', 'all');
-            $jabatan = $request->input('jabatan', 'all');
-
-            $this->syncHolidays($tahun);
-
-            $baseQuery = AbsensiKaryawan::query()->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)->with('karyawan:id,nama_lengkap,jabatan,divisi,status_aktif');
-
-            if ($divisi !== 'all') {
-                $baseQuery->whereHas('karyawan', fn($q) => $q->where('divisi', $divisi));
-            }
-            if ($jabatan !== 'all') {
-                $baseQuery->whereHas('karyawan', fn($q) => $q->where('jabatan', $jabatan));
-            }
-
-            $absensi = $baseQuery->get();
-            $karyawanIds = $absensi->pluck('id_karyawan')->unique();
-
-            $totalHariKerja = $this->countWorkingDays($bulan, $tahun);
-
-            $karyawanList = $this->getActiveKaryawanQuery()
-                ->when($divisi !== 'all', fn($q) => $q->where('divisi', $divisi))
-                ->when($jabatan !== 'all', fn($q) => $q->where('jabatan', $jabatan))
-                ->get(['id', 'jabatan']);
-
-            $totalKaryawan = $karyawanList->count();
-            $expectedRecords = $karyawanList->sum(fn($k) => $this->countWorkingDaysForJabatan($bulan, $tahun, $k->jabatan));
-
-            $approvedLeaves = $this->getApprovedLeaves($karyawanIds, $bulan, $tahun);
-
-            $startDate = "$tahun-" . str_pad($bulan, 2, '0', STR_PAD_LEFT) . "-01 00:00:00";
-            $endDate = "$tahun-" . str_pad($bulan, 2, '0', STR_PAD_LEFT) . "-" . date("t", strtotime("$tahun-$bulan-01")) . " 23:59:59";
-
-            $AbsenCuti = pengajuancuti::with('karyawan:id,nama_lengkap,divisi,foto')
-                ->where('tipe', 'Cuti')
-                ->whereBetween('tanggal_awal', [$startDate, $endDate])
-                ->where('approval_manager', '1')
-                ->get();
-
-            $dataCuti = $AbsenCuti->map(fn($c) => [
-                'id' => $c->id_karyawan,
-                'nama' => optional($c->karyawan)->nama_lengkap,
-                'divisi' => optional($c->karyawan)->divisi,
-                'foto' => optional($c->karyawan)->foto,
-                'alasan' => $c->alasan ?? $c->keterangan ?? '-',
-                'tanggal_awal' => $c->tanggal_awal,
-                'tanggal_akhir' => $c->tanggal_akhir,
-                'tipe' => 'Cuti'
-            ])->toArray();
-
-            $AbsenSakit = pengajuancuti::with('karyawan:id,nama_lengkap,divisi,foto')
-                ->where('tipe', 'Sakit')
-                ->whereBetween('tanggal_awal', [$startDate, $endDate])
-                ->where('approval_manager', '1')
-                ->get();
-
-            $dataSakit = $AbsenSakit->map(fn($s) => [
-                'id' => $s->id_karyawan,
-                'nama' => optional($s->karyawan)->nama_lengkap,
-                'divisi' => optional($s->karyawan)->divisi,
-                'foto' => optional($s->karyawan)->foto,
-                'alasan' => $s->alasan ?? $s->keterangan ?? '-',
-                'tanggal_awal' => $s->tanggal_awal,
-                'tanggal_akhir' => $s->tanggal_akhir,
-                'tipe' => 'Sakit'
-            ])->toArray();
-
-            $AbsenIzin = izinTigaJam::with('karyawan:id,nama_lengkap,divisi,foto')
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->get();
-
-            $dataIzin = $AbsenIzin->map(fn($i) => [
-                'id' => $i->id_karyawan,
-                'nama' => optional($i->karyawan)->nama_lengkap,
-                'divisi' => optional($i->karyawan)->divisi,
-                'foto' => optional($i->karyawan)->foto,
-                'alasan' => $i->alasan ?? '-',
-                'tanggal_pengajuan' => $i->tanggal_pengajuan,
-                'tipe' => 'Izin 3 Jam'
-            ])->toArray();
-
-            $summary = $this->calculateAttendanceSummary($absensi, $totalHariKerja, $totalKaryawan, $approvedLeaves, $expectedRecords);
-
-            $summary['total_cuti_sakit_izin'] = count($dataCuti) + count($dataSakit) + count($dataIzin);
-            $summary['detail_cuti'] = $dataCuti;
-            $summary['detail_sakit'] = $dataSakit;
-            $summary['detail_izin'] = $dataIzin;
-
-            $punctualityTrend = $this->calculatePunctualityTrend($absensi, $bulan, $tahun, $approvedLeaves);
-            $departmentComparison = $this->calculateDepartmentComparison($absensi, $bulan, $tahun, $approvedLeaves);
-            $attendanceHeatmap = $this->calculateAttendanceHeatmap($absensi, $bulan, $tahun);
-            $riskAnalysis = $this->calculateAttendanceRisk($absensi, $karyawanIds, $bulan, $tahun, $approvedLeaves);
-            $predictions = $this->generateAttendancePredictions($summary);
-            $opportunities = $this->generateOpportunities($summary, $riskAnalysis, $predictions);
-
-            return response()->json([
-                'success' => true,
-                'summary' => $summary,
-                'charts' => [
-                    'punctuality_trend' => $punctualityTrend,
-                    'department_comparison' => $departmentComparison,
-                    'attendance_heatmap' => $attendanceHeatmap,
-                    'risk_distribution' => $riskAnalysis['distribution'],
-                ],
-                'predictions' => $predictions,
-                'opportunities' => $opportunities,
-                'period' => [
-                    'month' => $bulan,
-                    'year' => $tahun,
-                    'display' => Carbon::createFromDate($tahun, $bulan, 1)->format('F Y'),
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat analytics: ' . $e->getMessage(),
-            ], 500);
+            return Carbon::parse($emp->awal_probation)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 
-    private function syncHolidays($tahun)
+    public function resolvePeriod(Request $request)
     {
-        $response = Http::get('https://libur.deno.dev/api', ['year' => $tahun]);
-        if ($response->successful()) {
-            foreach ($response->json() as $libur) {
-                HariLibur::updateOrCreate(['tanggal' => $libur['date']], ['nama' => $libur['name'], 'year' => $tahun]);
-            }
+        $now = now();
+        $year = $request->filled('year') ? (int) $request->input('year') : null;
+        $month = $request->filled('month') ? (int) $request->input('month') : null;
+        $quarter = $request->filled('quarter') ? (int) $request->input('quarter') : null;
+
+        if ($year === null && $month === null && $quarter === null) {
+            $year = $now->year;
+            $month = $now->month;
         }
-    }
 
-    private function countWorkingDays($bulan, $tahun)
-    {
-        $start = Carbon::createFromDate($tahun, $bulan, 1);
-        $end = $start->copy()->endOfMonth();
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-        $days = 0;
-        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            if (!$date->isWeekend() && !in_array($date->toDateString(), $holidays)) {
-                $days++;
-            }
+        $yearUsed = $year ?? $now->year;
+
+        if ($quarter !== null && $quarter >= 1 && $quarter <= 4) {
+            $start = Carbon::create($yearUsed, ($quarter - 1) * 3 + 1, 1)->startOfDay();
+            $end = $start->copy()->addMonths(2)->endOfMonth()->startOfDay();
+            $label = "Triwulan {$quarter} {$yearUsed}";
+            $type = 'quarter';
+            $month = null;
+        } elseif ($month !== null && $month >= 1 && $month <= 12) {
+            $start = Carbon::create($yearUsed, $month, 1)->startOfDay();
+            $end = $start->copy()->endOfMonth()->startOfDay();
+            $label = $start->translatedFormat('F Y');
+            $type = 'month';
+            $quarter = null;
+        } else {
+            $start = Carbon::create($yearUsed, 1, 1)->startOfDay();
+            $end = Carbon::create($yearUsed, 12, 31)->startOfDay();
+            $label = "Tahun {$yearUsed}";
+            $type = 'year';
+            $month = null;
+            $quarter = null;
         }
-        return $days;
-    }
-
-    private function countWorkingDaysForJabatan($bulan, $tahun, $jabatan)
-    {
-        $start = Carbon::createFromDate($tahun, $bulan, 1);
-        $end = $start->copy()->endOfMonth();
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-        $days = 0;
-        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            if (in_array($date->toDateString(), $holidays)) {
-                continue;
-            }
-            if ($this->isExpectedToWork($date, $jabatan)) {
-                $days++;
-            }
-        }
-        return $days;
-    }
-
-    private function getApprovedLeaves($karyawanIds, $bulan, $tahun)
-    {
-        $jabatanMap = karyawan::whereIn('id', $karyawanIds)->pluck('jabatan', 'id');
-
-        return pengajuancuti::whereIn('id_karyawan', $karyawanIds)
-            ->where('approval_manager', 1)
-            ->where(function ($q) use ($bulan, $tahun) {
-                $q->whereYear('tanggal_awal', $tahun)
-                    ->whereMonth('tanggal_awal', $bulan)
-                    ->orWhereYear('tanggal_akhir', $tahun)
-                    ->whereMonth('tanggal_akhir', $bulan)
-                    ->orWhereRaw('? BETWEEN tanggal_awal AND tanggal_akhir', [$tahun . '-' . str_pad($bulan, 2, '0', STR_PAD_LEFT) . '-01']);
-            })
-            ->get()
-            ->flatMap(function ($cuti) use ($jabatanMap) {
-                $start = Carbon::parse($cuti->tanggal_awal);
-                $end = Carbon::parse($cuti->tanggal_akhir);
-                $dates = [];
-                for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-                    if ($d->isSunday()) {
-                        continue;
-                    }
-                    if ($d->isSaturday() && !$this->isSaturdayWorker($jabatanMap[$cuti->id_karyawan] ?? null)) {
-                        continue;
-                    }
-                    $dates[] = [
-                        'id_karyawan' => $cuti->id_karyawan,
-                        'tanggal' => $d->toDateString(),
-                        'tipe' => $cuti->tipe,
-                    ];
-                }
-                return $dates;
-            });
-    }
-
-    private function calculateAttendanceSummary($absensi, $totalHariKerja, $totalKaryawan, $approvedLeaves, $expectedRecords)
-    {
-        $leaveDates = collect($approvedLeaves)->groupBy('id_karyawan')->map(fn($v) => $v->pluck('tanggal'));
-        $totalAbsen = $absensi->count();
-        $hadir = $absensi->filter(fn($a) => $this->isPresentRecord($a))->count();
-        $telat = $absensi->filter(fn($a) => $this->isLateRecord($a))->count();
-        $hadirExpected = $absensi->filter(fn($a) => $this->isPresentRecord($a) && $this->isExpectedToWork(Carbon::parse($a->tanggal), optional($a->karyawan)->jabatan))->count();
-        $absenDenganIzin = $absensi->filter(fn($a) => $leaveDates->get($a->id_karyawan, collect())->contains($a->tanggal))->count();
-        $tidakHadir = max(0, $expectedRecords - $hadirExpected - $absenDenganIzin);
-
-        $totalDetikTelat = $absensi->filter(fn($a) => $this->isLateRecord($a))->sum(function ($a) {
-            if (!$a->waktu_keterlambatan) {
-                return 0;
-            }
-            $p = explode(':', $a->waktu_keterlambatan);
-            return $p[0] * 3600 + $p[1] * 60 + ($p[2] ?? 0);
-        });
-
-        $rataRataTelat = $telat > 0 ? round($totalDetikTelat / $telat / 60, 1) : 0;
-        $attendanceRate = $expectedRecords > 0 ? round((($hadirExpected + $absenDenganIzin) / $expectedRecords) * 100, 1) : 0;
-        $punctualityRate = $hadir > 0 ? round((($hadir - $telat) / $hadir) * 100, 1) : 100;
 
         return [
-            'total_hari_kerja' => $totalHariKerja,
-            'total_karyawan' => $totalKaryawan,
-            'total_absen' => $totalAbsen,
-            'hadir' => $hadir,
-            'telat' => $telat,
-            'tidak_hadir' => $tidakHadir,
-            'cuti_sakit' => $absenDenganIzin,
-            'attendance_rate' => $attendanceRate,
-            'punctuality_rate' => $punctualityRate,
-            'avg_late_minutes' => $rataRataTelat,
-            'total_late_minutes' => round($totalDetikTelat / 60),
+            'start' => $start,
+            'end' => $end,
+            'label' => $label,
+            'type' => $type,
+            'year' => $yearUsed,
+            'month' => $month,
+            'quarter' => $quarter,
         ];
     }
 
-    private function calculatePunctualityTrend($absensi, $bulan, $tahun, $approvedLeaves)
+    public function syncHolidays($tahun)
     {
-        $leaveMap = collect($approvedLeaves)->groupBy('tanggal')->map(fn($v) => $v->pluck('id_karyawan'));
-        $trend = [];
-        $daysInMonth = Carbon::createFromDate($tahun, $bulan, 1)->daysInMonth;
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $tanggal = Carbon::createFromDate($tahun, $bulan, $d);
-            if ($tanggal->isSunday() || HariLibur::whereDate('tanggal', $tanggal)->exists()) {
-                continue;
-            }
-            $dailyAbsen = $absensi->where('tanggal', $tanggal->toDateString());
-            $total = $dailyAbsen->count();
-            $onLeave = $dailyAbsen->filter(fn($a) => $leaveMap->get($tanggal->toDateString(), collect())->contains($a->id_karyawan))->count();
-            $effectiveTotal = $total - $onLeave;
-            $telat = $dailyAbsen->filter(fn($a) => $this->isLateRecord($a))->count();
-            $trend[] = [
-                'date' => $tanggal->format('d/m'),
-                'total' => $effectiveTotal,
-                'late_count' => $telat,
-                'late_rate' => $effectiveTotal > 0 ? round(($telat / $effectiveTotal) * 100, 1) : 0,
-            ];
-        }
-        return $trend;
-    }
-
-    private function calculateDepartmentComparison($absensi, $bulan, $tahun, $approvedLeaves)
-    {
-        $leaveMap = collect($approvedLeaves)->groupBy('id_karyawan')->map(fn($v) => $v->pluck('tanggal'));
-        $divisi = $absensi->groupBy(fn($a) => optional($a->karyawan)->divisi ?? 'Unknown');
-        $result = [];
-        foreach ($divisi as $namaDivisi => $data) {
-            $total = $data->count();
-            $onLeave = $data->filter(fn($a) => $leaveMap->get($a->id_karyawan, collect())->contains($a->tanggal))->count();
-            $hadir = $data->filter(fn($a) => $this->isPresentRecord($a))->count() - $onLeave;
-            $telat = $data->filter(fn($a) => $this->isLateRecord($a))->count();
-            $effectiveTotal = max(1, $total - $onLeave);
-            $result[] = [
-                'divisi' => $namaDivisi,
-                'attendance_rate' => round(($hadir / $effectiveTotal) * 100, 1),
-                'punctuality_rate' => $hadir > 0 ? round((($hadir - $telat) / $hadir) * 100, 1) : 100,
-                'late_count' => $telat,
-                'employee_count' => $data->pluck('id_karyawan')->unique()->count(),
-            ];
-        }
-        return collect($result)->sortByDesc('attendance_rate')->take(10)->values()->toArray();
-    }
-
-    private function calculateAttendanceHeatmap($absensi, $bulan, $tahun)
-    {
-        $heatmap = [];
-        $weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-        $hours = range(7, 18);
-        foreach ($weekdays as $day) {
-            foreach ($hours as $hour) {
-                $heatmap["{$day}_{$hour}"] = 0;
-            }
-        }
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-        foreach ($absensi as $a) {
-            $tanggal = Carbon::parse($a->tanggal);
-            if ($tanggal->isWeekend() || in_array($tanggal->toDateString(), $holidays)) {
-                continue;
-            }
-            $dayName = $tanggal->format('D');
-            $jamMasuk = $a->jam_masuk ? Carbon::parse($a->jam_masuk)->format('H') : null;
-            if ($jamMasuk && in_array($dayName, $weekdays) && $jamMasuk >= 7 && $jamMasuk <= 18) {
-                $key = "{$dayName}_{$jamMasuk}";
-                $heatmap[$key] = ($heatmap[$key] ?? 0) + 1;
-            }
-        }
-        $maxValue = max($heatmap) ?: 1;
-        return ['labels' => array_keys($heatmap), 'values' => array_map(fn($v) => round(($v / $maxValue) * 100, 1), $heatmap), 'raw' => $heatmap];
-    }
-
-    private function calculateAttendanceRisk($absensi, $karyawanIds, $bulan, $tahun, $approvedLeaves)
-    {
-        $leaveMap = collect($approvedLeaves)->groupBy('id_karyawan')->map(fn($v) => $v->pluck('tanggal'));
-        $risks = [];
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-        foreach ($karyawanIds as $id) {
-            $data = $absensi->where('id_karyawan', $id);
-            $total = $data->count();
-            if ($total < 10) {
-                continue;
-            }
-            $onLeave = $data->filter(fn($a) => $leaveMap->get($a->id_karyawan, collect())->contains($a->tanggal))->count();
-            $telat = $data->filter(fn($a) => $this->isLateRecord($a))->count();
-            $tidakHadir = $data->filter(function ($a) use ($holidays) {
-                if ($a->jam_masuk) {
-                    return false;
+        try {
+            $response = Http::timeout(8)->get('https://libur.deno.dev/api', ['year' => $tahun]);
+            if ($response->successful()) {
+                foreach ($response->json() as $libur) {
+                    HariLibur::updateOrCreate(['tanggal' => $libur['date']], ['nama' => $libur['name'], 'year' => $tahun]);
                 }
-                $t = Carbon::parse($a->tanggal);
-                if (in_array($t->toDateString(), $holidays)) {
-                    return false;
-                }
-                return $this->isExpectedToWork($t, optional($a->karyawan)->jabatan);
-            })->count() - $onLeave;
-            $effectiveTotal = max(1, $total - $onLeave);
-            $lateRate = $telat / $effectiveTotal;
-            $absentRate = max(0, $tidakHadir) / $effectiveTotal;
-            $riskScore = $lateRate * 40 + $absentRate * 60;
-            $level = $riskScore >= 70 ? 'high' : ($riskScore >= 40 ? 'medium' : 'low');
-            $risks[] = [
-                'id_karyawan' => $id,
-                'nama' => optional($data->first()->karyawan)->nama_lengkap,
-                'divisi' => optional($data->first()->karyawan)->divisi,
-                'risk_score' => round($riskScore, 1),
-                'risk_level' => $level,
-                'late_rate' => round($lateRate * 100, 1),
-                'absent_rate' => round($absentRate * 100, 1),
-                'recommendation' => $this->getRiskRecommendation($level, $lateRate, $absentRate),
-            ];
+            }
+        } catch (\Throwable $e) {
+            return false;
         }
-        $distribution = ['high' => collect($risks)->where('risk_level', 'high')->count(), 'medium' => collect($risks)->where('risk_level', 'medium')->count(), 'low' => collect($risks)->where('risk_level', 'low')->count()];
-        return ['list' => collect($risks)->sortByDesc('risk_score')->take(20)->values()->toArray(), 'distribution' => $distribution];
+        return true;
     }
 
-    private function generateAttendancePredictions($summary)
+    public function ensureHolidays(Carbon $start, Carbon $end)
+    {
+        for ($y = $start->year; $y <= $end->year; $y++) {
+            if (!HariLibur::whereYear('tanggal', $y)->exists()) {
+                $this->syncHolidays($y);
+            }
+        }
+    }
+
+    public function getHolidayMap(Carbon $start, Carbon $end)
+    {
+        return HariLibur::whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $end->toDateString())->get()->mapWithKeys(fn($h) => [Carbon::parse($h->tanggal)->toDateString() => $h->nama])->toArray();
+    }
+
+    public function buildLeaveMap($ids, Carbon $start, Carbon $end)
+    {
+        $map = ['approved' => [], 'pending' => []];
+
+        $records = pengajuancuti::whereIn('id_karyawan', $ids)->whereDate('tanggal_awal', '<=', $end->toDateString())->whereDate('tanggal_akhir', '>=', $start->toDateString())->get();
+
+        foreach ($records as $c) {
+            $state = $this->approvalState($c->approval_manager);
+            if ($state === 'rejected') {
+                continue;
+            }
+
+            $from = Carbon::parse($c->tanggal_awal)->startOfDay();
+            $to = Carbon::parse($c->tanggal_akhir)->startOfDay();
+            if ($from->lt($start)) {
+                $from = $start->copy();
+            }
+            if ($to->gt($end)) {
+                $to = $end->copy();
+            }
+
+            $tipe = strtolower((string) $c->tipe) === 'sakit' ? 'sakit' : 'cuti';
+            $entry = [
+                'tipe' => $tipe,
+                'menikah' => $tipe === 'cuti' && $this->isCutiMenikah($c),
+                'alasan' => $c->alasan ?? ($c->keterangan ?? '-'),
+            ];
+
+            for ($d = $from->copy(); $d->lte($to); $d->addDay()) {
+                $key = $d->toDateString();
+                if ($state === 'approved') {
+                    $map['approved'][$c->id_karyawan][$key] = $entry;
+                } elseif (!isset($map['pending'][$c->id_karyawan][$key])) {
+                    $map['pending'][$c->id_karyawan][$key] = $entry;
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    public function buildIzinMap($ids, Carbon $start, Carbon $end)
+    {
+        $map = [];
+
+        $records = izinTigaJam::whereIn('id_karyawan', $ids)
+            ->whereDate('tanggal', '>=', $start->toDateString())
+            ->whereDate('tanggal', '<=', $end->toDateString())
+            ->whereIn('approval', [1, 2])
+            ->get();
+
+        foreach ($records as $i) {
+            if (!$this->isIzinCounted($i->approval)) {
+                continue;
+            }
+            $map[$i->id_karyawan][Carbon::parse($i->tanggal)->toDateString()] = $i->alasan ?: '-';
+        }
+
+        return $map;
+    }
+
+    public function buildDailyStatus(Carbon $start, Carbon $end, $divisi = null, $idKaryawan = null)
+    {
+        $employees = $this->getActiveKaryawanQuery()
+            ->when($divisi && $divisi !== 'all', fn($q) => $q->where('divisi', $divisi))
+            ->when($idKaryawan, fn($q) => $q->where('id', $idKaryawan))
+            ->get(['id', 'nama_lengkap', 'jabatan', 'divisi', 'foto', 'awal_probation']);
+
+        $holidays = $this->getHolidayMap($start, $end);
+        $today = now()->startOfDay();
+        $last = $end->lt($today) ? $end->copy() : $today->copy();
+
+        if ($start->gt($last) || $employees->isEmpty()) {
+            return ['rows' => collect(), 'employees' => $employees, 'holidays' => $holidays];
+        }
+
+        $ids = $employees->pluck('id')->all();
+
+        $attMap = [];
+        $attendance = AbsensiKaryawan::whereIn('id_karyawan', $ids)->whereDate('tanggal', '>=', $start->toDateString())->whereDate('tanggal', '<=', $last->toDateString())->get();
+        foreach ($attendance as $a) {
+            $attMap[$a->id_karyawan][Carbon::parse($a->tanggal)->toDateString()] = $a;
+        }
+
+        $leave = $this->buildLeaveMap($ids, $start, $last);
+        $izin = $this->buildIzinMap($ids, $start, $last);
+        $todayStr = $today->toDateString();
+        $afterWorkHours = now()->hour >= 17;
+
+        $rows = [];
+
+        foreach ($employees as $emp) {
+            $from = $start->copy();
+            $join = $this->startDateOf($emp);
+            if ($join && $join->gt($from)) {
+                $from = $join;
+            }
+
+            for ($d = $from->copy(); $d->lte($last); $d->addDay()) {
+                $date = $d->toDateString();
+                $absen = $attMap[$emp->id][$date] ?? null;
+                $present = $this->isPresentRecord($absen);
+
+                if (!$present && (isset($holidays[$date]) || !$this->isExpectedToWork($d, $emp->jabatan))) {
+                    continue;
+                }
+
+                $ket = $this->classifyKeterangan($absen);
+
+                $izinAlasan = $izin[$emp->id][$date] ?? null;
+                if ($izinAlasan === null && $ket === 'izin') {
+                    $izinAlasan = trim((string) $absen->keterangan) ?: '-';
+                }
+                $hasIzin = $izinAlasan !== null;
+                $approved = $leave['approved'][$emp->id][$date] ?? null;
+                $pending = $leave['pending'][$emp->id][$date] ?? null;
+
+                $status = 'tidak_hadir';
+                $sub = null;
+                $alasan = null;
+                $lateMinutes = 0;
+                $lateNotified = false;
+
+                if ($present) {
+                    if ($this->isLateRecord($absen)) {
+                        if ($hasIzin) {
+                            $status = 'izin';
+                            $alasan = $izinAlasan;
+                            $lateNotified = true;
+                        } else {
+                            $status = 'telat';
+                            $lateMinutes = $this->parseLateMinutes($absen->waktu_keterlambatan);
+                        }
+                    } else {
+                        $status = 'hadir';
+                    }
+                } elseif ($approved) {
+                    $status = $approved['tipe'];
+                    $sub = $approved['tipe'] === 'cuti' ? ($approved['menikah'] ? 'menikah' : 'lainnya') : null;
+                    $alasan = $approved['alasan'];
+                } elseif ($ket === 'cuti' || $ket === 'sakit') {
+                    $status = $ket;
+                    $isMenikah = str_contains(strtolower((string) $absen->keterangan), 'menikah');
+                    $sub = $ket === 'cuti' ? ($isMenikah ? 'menikah' : 'lainnya') : null;
+                    $alasan = trim((string) $absen->keterangan);
+                } elseif ($hasIzin) {
+                    $status = 'izin';
+                    $alasan = $izinAlasan;
+                } elseif ($pending) {
+                    $status = 'pending';
+                    $sub = $pending['tipe'];
+                    $alasan = $pending['alasan'];
+                }
+
+                if ($date === $todayStr && !$afterWorkHours && in_array($status, ['tidak_hadir', 'pending'])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'id' => $emp->id,
+                    'divisi' => $emp->divisi ?: 'Tanpa Divisi',
+                    'tanggal' => $date,
+                    'status' => $status,
+                    'sub' => $sub,
+                    'alasan' => $alasan,
+                    'has_izin' => $hasIzin,
+                    'late_minutes' => $lateMinutes,
+                    'late_notified' => $lateNotified,
+                    'jam_masuk' => $absen?->jam_masuk,
+                    'jam_keluar' => $absen?->jam_keluar,
+                    'izin_alasan' => $izinAlasan,
+                ];
+            }
+        }
+
+        return ['rows' => collect($rows), 'employees' => $employees, 'holidays' => $holidays];
+    }
+
+    public function calculateLeaveRecap($rows, $employees)
+    {
+        $emp = $employees->keyBy('id');
+        $recap = [];
+
+        foreach ($rows->groupBy('id') as $id => $items) {
+            $menikah = $items->where('status', 'cuti')->where('sub', 'menikah')->count();
+            $lainnya = $items->where('status', 'cuti')->where('sub', 'lainnya')->count();
+            $sakit = $items->where('status', 'sakit')->count();
+            $izin = $items->where('has_izin', true)->count();
+            $pending = $items->where('status', 'pending')->count();
+            $total = $menikah + $lainnya + $sakit + $izin;
+
+            if ($total + $pending === 0) {
+                continue;
+            }
+
+            $details = [];
+            foreach ($items->sortBy('tanggal') as $r) {
+                if ($r['status'] === 'cuti') {
+                    $details[] = ['tanggal' => $r['tanggal'], 'key' => 'cuti', 'jenis' => $r['sub'] === 'menikah' ? 'Cuti Menikah' : 'Cuti Lainnya', 'alasan' => $r['alasan'] ?: '-'];
+                } elseif ($r['status'] === 'sakit') {
+                    $details[] = ['tanggal' => $r['tanggal'], 'key' => 'sakit', 'jenis' => 'Sakit', 'alasan' => $r['alasan'] ?: '-'];
+                } elseif ($r['status'] === 'pending') {
+                    $details[] = ['tanggal' => $r['tanggal'], 'key' => 'pending', 'jenis' => ($r['sub'] === 'sakit' ? 'Sakit' : 'Cuti') . ' (Menunggu Persetujuan)', 'alasan' => $r['alasan'] ?: '-'];
+                }
+                if ($r['has_izin']) {
+                    $details[] = ['tanggal' => $r['tanggal'], 'key' => 'izin', 'jenis' => 'Izin 3 Jam', 'alasan' => ($r['izin_alasan'] ?? $r['alasan']) ?: '-'];
+                }
+            }
+
+            $e = $emp->get($id);
+            $recap[] = [
+                'id' => $id,
+                'nama' => optional($e)->nama_lengkap,
+                'divisi' => optional($e)->divisi,
+                'jabatan' => optional($e)->jabatan,
+                'foto' => optional($e)->foto,
+                'cuti' => $menikah + $lainnya,
+                'sakit' => $sakit,
+                'izin' => $izin,
+                'total' => $total,
+                'pending' => $pending,
+                'details' => $details,
+            ];
+        }
+
+        return collect($recap)->sortByDesc('total')->values()->toArray();
+    }
+    public function calculateAttendanceSummary($rows, $employees, $recap)
+    {
+        $count = fn($s) => $rows->where('status', $s)->count();
+
+        $hadir = $count('hadir');
+        $telat = $count('telat');
+        $cuti = $count('cuti');
+        $sakit = $count('sakit');
+        $izin = $count('izin');
+        $pending = $count('pending');
+        $tidakHadir = $count('tidak_hadir');
+
+        $total = $rows->count();
+        $denominator = $total - $cuti - $sakit;
+        $attended = $hadir + $telat + $izin;
+        $totalLate = $rows->where('status', '%LIKE%', ['telat', 'Telat'])->sum('late_minutes');
+        $avgLate = $this->averageLatePerEmployee($rows);
+
+        return [
+            'total_hari_kerja' => $rows->pluck('tanggal')->unique()->count(),
+            'total_karyawan' => $employees->count(),
+            'total_absen' => $hadir + $telat,
+            'hadir' => $hadir,
+            'telat' => $telat,
+            'cuti' => $cuti,
+            'sakit' => $sakit,
+            'izin' => $izin,
+            'pending' => $pending,
+            'tidak_hadir' => $tidakHadir,
+            'cuti_sakit' => $cuti + $sakit,
+            'attendance_rate' => $denominator > 0 ? round(($attended / $denominator) * 100, 1) : 0,
+            'punctuality_rate' => $hadir + $telat > 0 ? round(($hadir / ($hadir + $telat)) * 100, 1) : 100,
+            'avg_late_minutes' => $telat > 0 ? round($totalLate / $telat, 1) : 0,
+            'total_late_minutes' => $avgLate,
+            'total_cuti_sakit_izin' => collect($recap)->where('total', '>', 0)->count(),
+        ];
+    }
+
+    public function calculateDivisionLateness($rows)
+    {
+        return $rows->groupBy('divisi')->map(function ($items, $divisi) {
+            $telat = $items->where('status', 'telat')->count();
+            $attended = $items->whereIn('status', ['hadir', 'telat'])->count();
+            return [
+                'divisi' => $divisi,
+                'late_count' => $telat,
+                'attended' => $attended,
+                'late_percentage' => $attended > 0 ? round($telat / $attended * 100, 1) : 0,
+                'avg_late_minutes' => $this->averageLatePerEmployee($items),
+            ];
+        })->filter(fn($d) => $d['attended'] > 0)->sortByDesc('late_percentage')->values()->toArray();
+    }
+
+    public function calculateLeaveBreakdown($rows)
+    {
+        $labels = [
+            'hadir' => 'Hadir',
+            'cuti' => 'Cuti',
+            'sakit' => 'Sakit',
+            'izin' => 'Izin 3 Jam',
+        ];
+        $leaveKeys = ['cuti', 'sakit', 'izin'];
+
+        $sumPct = array_fill_keys(array_keys($labels), 0);
+        $dayCount = array_fill_keys(array_keys($labels), 0);
+        $sumHead = array_fill_keys(array_keys($labels), 0);
+        $totalDays = 0;
+
+        foreach ($rows->groupBy('tanggal') as $items) {
+            $total = $items->count();
+            $totalDays++;
+
+            $c = [
+                'hadir' => $items->whereIn('status', ['hadir', 'telat'])->count(), // telat = hadir
+                'cuti' => $items->where('status', 'cuti')->count(),
+                'sakit' => $items->where('status', 'sakit')->count(),
+                'izin' => $items->where('status', 'izin')->count(),
+            ];
+            $leaveTotal = $c['cuti'] + $c['sakit'] + $c['izin'];
+
+            foreach ($labels as $k => $_) {
+                // Cuti/sakit/izin: dikurangi dua kategori cuti lainnya
+                // Hadir: dikurangi seluruh cuti, sakit, dan izin
+                $excluded = in_array($k, $leaveKeys, true) ? $leaveTotal - $c[$k] : $leaveTotal;
+                $den = $total - $excluded;
+
+                $sumHead[$k] += $c[$k];
+                if ($den > 0) {
+                    $sumPct[$k] += $c[$k] / $den * 100;
+                    $dayCount[$k]++;
+                }
+            }
+        }
+
+        $items = [];
+        foreach ($labels as $k => $label) {
+            $items[] = [
+                'key' => $k,
+                'label' => $label,
+                'count' => $sumHead[$k],
+                'avg_per_day' => $totalDays > 0 ? round($sumHead[$k] / $totalDays, 1) : 0,
+                'percentage' => $dayCount[$k] > 0 ? round($sumPct[$k] / $dayCount[$k], 1) : 0,
+            ];
+        }
+
+        return [
+            'total' => $rows->count(),
+            'total_days' => $totalDays,
+            'items' => $items,
+        ];
+    }
+
+    public function calculateDivisionAttendance($rows)
+    {
+        return $rows
+            ->groupBy('divisi')
+            ->map(function ($items, $divisi) {
+                $total = max(1, $items->count());
+                $pct = fn($n) => round(($n / $total) * 100, 1);
+                return [
+                    'divisi' => $divisi,
+                    'hadir' => $pct($items->where('status', 'hadir')->count()),
+                    'terlambat' => $pct($items->where('status', 'telat')->count()),
+                    'izin' => $pct($items->where('has_izin', true)->count()),
+                    'sakit' => $pct($items->where('status', 'sakit')->count()),
+                ];
+            })
+            ->sortBy('divisi')
+            ->values()
+            ->toArray();
+    }
+
+    public function calculateLateNotification($rows)
+    {
+        $classify = function ($pct) {
+            if ($pct === null) return 'none';
+            if ($pct > 70) return 'warning';
+            if ($pct > 50) return 'warning';
+            return 'safe';
+        };
+
+        $latePct = function ($items) {
+            $sum = 0;
+            $days = 0;
+            foreach ($items->groupBy('tanggal') as $day) {
+                $den = $day->count() - $day->whereIn('status', ['cuti', 'sakit', 'izin'])->count();
+                if ($den > 0) {
+                    $sum += $day->where('status', 'telat')->count() / $den * 100;
+                    $days++;
+                }
+            }
+            return $days > 0 ? round($sum / $days, 1) : null;
+        };
+
+        $level = function ($pct) {
+            if ($pct === null) return 'none';
+            if ($pct > 70) return 'danger';
+            if ($pct > 50) return 'warning
+            ';
+            return 'safe';
+        };
+
+        $overallPct = $latePct($rows);
+
+        $divisions = $rows->groupBy('divisi')
+            ->map(function ($items, $divisi) use ($latePct, $level) {
+                $pct = $latePct($items);
+                return [
+                    'divisi' => $divisi,
+                    'percentage' => $pct,
+                    'status' => $level($pct),
+                    'late_count' => $items->where('status', 'telat')->count(),
+                ];
+            })
+            ->filter(fn($d) => in_array($d['status'], ['danger', 'warning'], true))
+            ->sortByDesc('percentage')
+            ->values()
+            ->toArray();
+
+        return [
+            'percentage' => $overallPct,
+            'status' => $level($overallPct),
+            'total_late' => $rows->where('status', 'telat')->count(),
+            'divisions' => $divisions,
+            'thresholds' => ['danger' => 70, 'warning' => 50],
+        ];
+    }
+    
+    public function generateAttendancePredictions($summary)
     {
         $currentRate = $summary['attendance_rate'];
         $projections = [
@@ -450,54 +664,441 @@ class presenceController extends Controller
             'next_year' => ['estimated_rate' => min(97, round($currentRate + rand(-5, 5), 1)), 'confidence' => 'very_low', 'factors' => ['Transformasi digital', 'Generasi workforce baru', 'Regulasi ketenagakerjaan']],
         ];
         $milestones = [['target' => 95, 'timeline' => '3 bulan', 'actions' => ['Reminder otomatis', 'Flexible time window 15 menit']], ['target' => 97, 'timeline' => '6 bulan', 'actions' => ['Program wellness', 'Transport allowance review']], ['target' => 99, 'timeline' => '12 bulan', 'actions' => ['AI-based predictive scheduling', 'Holistic work-life integration']]];
-        return ['current_rate' => $currentRate, 'projections' => $projections, 'milestones' => $milestones, 'key_drivers' => ['positive' => ['Budaya disiplin', 'Sistem reward', 'Komunikasi transparan'], 'negative' => ['Transportasi tidak memadai', 'Workload berlebihan', 'Kesehatan karyawan']]];
+        return [
+            'current_rate' => $currentRate,
+            'projections' => $projections,
+            'milestones' => $milestones,
+            'key_drivers' => [
+                'positive' => ['Budaya disiplin', 'Sistem reward', 'Komunikasi transparan'],
+                'negative' => ['Transportasi tidak memadai', 'Workload berlebihan', 'Kesehatan karyawan'],
+            ],
+        ];
     }
 
-    private function generateOpportunities($summary, $riskAnalysis, $predictions)
+    public function generateOpportunities($summary, $notification)
     {
         $opportunities = [];
+
         if ($summary['attendance_rate'] < 90) {
             $opportunities[] = ['level' => 'operational', 'priority' => 'high', 'title' => 'Optimasi Sistem Reminder', 'description' => 'Implementasi notifikasi H-1 dan H0 untuk meningkatkan kesadaran kehadiran', 'impact' => '+5-8% attendance rate', 'effort' => 'low', 'timeline' => '2-4 minggu'];
+        }
+        if ($summary['tidak_hadir'] > 0) {
+            $opportunities[] = ['level' => 'operational', 'priority' => 'high', 'title' => 'Konfirmasi Ketidakhadiran Tanpa Keterangan', 'description' => $summary['tidak_hadir'] . ' hari kerja belum memiliki cuti, sakit, atau izin. Minta karyawan atau atasan melengkapi pengajuan.', 'impact' => 'Data kehadiran lebih akurat', 'effort' => 'low', 'timeline' => '1 minggu'];
+        }
+        if ($summary['pending'] > 0) {
+            $opportunities[] = ['level' => 'tactical', 'priority' => 'medium', 'title' => 'Percepat Persetujuan Cuti', 'description' => $summary['pending'] . ' hari kerja masih menunggu persetujuan manager.', 'impact' => 'Tidak ada pengajuan menggantung', 'effort' => 'low', 'timeline' => '1 minggu'];
         }
         if ($summary['avg_late_minutes'] > 15) {
             $opportunities[] = ['level' => 'tactical', 'priority' => 'medium', 'title' => 'Flexible Time Window', 'description' => 'Berikan toleransi 15-30 menit untuk jam masuk tanpa penalty', 'impact' => '-40% late complaints', 'effort' => 'medium', 'timeline' => '1-2 bulan'];
         }
-        if ($riskAnalysis['distribution']['high'] > 0) {
-            $opportunities[] = ['level' => 'strategic', 'priority' => 'high', 'title' => 'Early Intervention Program', 'description' => 'Program coaching untuk karyawan dengan risk score tinggi', 'impact' => '-60% high-risk employees', 'effort' => 'high', 'timeline' => '3-6 bulan'];
+        if (in_array($notification['status'], ['danger', 'warning'])) {
+            $opportunities[] = ['level' => 'strategic', 'priority' => $notification['status'] === 'danger' ? 'high' : 'medium', 'title' => 'Disiplin Pemberitahuan Keterlambatan', 'description' => 'Hanya ' . $notification['percentage'] . '% keterlambatan yang diberitahukan lewat izin. Dorong karyawan mengajukan izin sebelum terlambat.', 'impact' => 'Keterlambatan terkomunikasi', 'effort' => 'medium', 'timeline' => '1-2 bulan'];
         }
         $opportunities[] = ['level' => 'transformational', 'priority' => 'low', 'title' => 'AI-Powered Attendance Intelligence', 'description' => 'Predictive analytics untuk antisipasi pola absensi dan optimalisasi shift', 'impact' => '+15% operational efficiency', 'effort' => 'very_high', 'timeline' => '6-12 bulan'];
+
         return collect($opportunities)->sortByDesc(fn($o) => (['high' => 4, 'medium' => 3, 'low' => 2][$o['priority']] ?? 1) * 10 - ($o['effort'] === 'low' ? 0 : 5))->values()->toArray();
     }
 
-    private function getRiskRecommendation($level, $lateRate, $absentRate)
+    public function buildAnalytics(Request $request)
     {
-        if ($level === 'high') {
-            return $absentRate > $lateRate ? 'Evaluasi engagement & workload; pertimbangkan counseling' : 'Review commute & schedule flexibility; tawarkan support';
+        $period = $this->resolvePeriod($request);
+        $divisi = $request->input('divisi', 'all');
+
+        $this->ensureHolidays($period['start'], $period['end']);
+
+        $data = $this->buildDailyStatus($period['start'], $period['end'], $divisi);
+        $rows = $data['rows'];
+
+        $recap = $this->calculateLeaveRecap($rows, $data['employees']);
+        $summary = $this->calculateAttendanceSummary($rows, $data['employees'], $recap);
+        $notification = $this->calculateLateNotification($rows);
+
+        $summary['leave_recap'] = $recap;
+
+        $activeEmployees = $this->getActiveKaryawanQuery()
+            ->orderBy('nama_lengkap')
+            ->get(['id', 'nama_lengkap', 'divisi']);
+
+        return [
+            'success' => true,
+            'summary' => $summary,
+            'charts' => [
+                'late_division' => $this->calculateDivisionLateness($rows),
+                'leave_breakdown' => $this->calculateLeaveBreakdown($rows),
+                'division_attendance' => $this->calculateDivisionAttendance($rows),
+                'late_notification' => $notification,
+            ],
+            'predictions' => $this->generateAttendancePredictions($summary),
+            'opportunities' => $this->generateOpportunities($summary, $notification),
+            'period' => [
+                'type' => $period['type'],
+                'month' => $period['month'],
+                'year' => $period['year'],
+                'quarter' => $period['quarter'],
+                'display' => $period['label'],
+                'start' => $period['start']->toDateString(),
+                'end' => $period['end']->toDateString(),
+            ],
+            'filters' => [
+                'divisions' => $activeEmployees->pluck('divisi')->filter()->unique()->sort()->values()->toArray(),
+                'employees' => $activeEmployees->map(fn($e) => ['id' => $e->id, 'nama' => $e->nama_lengkap])->values()->toArray(),
+            ],
+        ];
+    }
+
+    public function getAttendanceAnalytics(Request $request)
+    {
+        try {
+            return response()->json($this->buildAnalytics($request));
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal memuat analytics: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
-        if ($level === 'medium') {
-            return 'Monitoring berkala; berikan feedback konstruktif';
+    }
+
+    public function getAttendanceCalendar(Request $request)
+    {
+        try {
+            $bulan = (int) $request->input('month', now()->month);
+            $tahun = (int) $request->input('year', now()->year);
+            $divisi = $request->input('divisi', 'all');
+            $idKaryawan = $request->input('id_karyawan');
+
+            $start = Carbon::create($tahun, $bulan, 1)->startOfDay();
+            $end = $start->copy()->endOfMonth()->startOfDay();
+
+            $this->ensureHolidays($start, $end);
+
+            $data = $this->buildDailyStatus($start, $end, $divisi, $idKaryawan);
+            $byDate = $data['rows']->groupBy('tanggal');
+            $holidays = $data['holidays'];
+            $today = now()->startOfDay();
+
+            $calendar = [];
+            $totals = ['telat' => 0, 'cuti' => 0, 'sakit' => 0, 'izin' => 0, 'pending' => 0, 'tidak_hadir' => 0, 'libur' => 0, 'weekend' => 0];
+
+            for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+                $dateStr = $d->toDateString();
+                $items = $byDate->get($dateStr, collect());
+                $isHoliday = isset($holidays[$dateStr]);
+                $isWeekend = $d->isWeekend();
+
+                $counts = [
+                    'telat' => $items->where('status', 'telat')->count(),
+                    'cuti' => $items->where('status', 'cuti')->count(),
+                    'sakit' => $items->where('status', 'sakit')->count(),
+                    'izin' => $items->where('has_izin', true)->count(),
+                    'pending' => $items->where('status', 'pending')->count(),
+                    'tidak_hadir' => $items->where('status', 'tidak_hadir')->count(),
+                ];
+
+                foreach ($counts as $k => $v) {
+                    $totals[$k] += $v;
+                }
+                if ($isHoliday) {
+                    $totals['libur']++;
+                } elseif ($isWeekend) {
+                    $totals['weekend']++;
+                }
+
+                $calendar[] = [
+                    'date' => $dateStr,
+                    'day' => $d->day,
+                    'is_weekend' => $isWeekend,
+                    'is_holiday' => $isHoliday,
+                    'holiday_name' => $holidays[$dateStr] ?? null,
+                    'is_future' => $d->gt($today),
+                    'counts' => $counts,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'calendar' => $calendar,
+                'totals' => $totals,
+                'month' => $bulan,
+                'year' => $tahun,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal memuat kalender: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
-        return 'Maintain performance; consider as role model';
+    }
+
+    public function getDailyAttendanceDetails(Request $request)
+    {
+        try {
+            $tanggal = $request->input('date');
+
+            if (!$tanggal) {
+                return response()->json(['success' => false, 'message' => 'Tanggal tidak valid'], 400);
+            }
+
+            $date = Carbon::parse($tanggal)->startOfDay();
+            $this->ensureHolidays($date, $date);
+
+            $data = $this->buildDailyStatus($date, $date);
+            $employees = $data['employees']->keyBy('id');
+            $holidayNames = array_values($data['holidays']);
+
+            $lists = ['present' => [], 'late' => [], 'on_leave' => [], 'sick' => [], 'izin' => [], 'pending' => [], 'absent' => []];
+
+            foreach ($data['rows'] as $r) {
+                $e = $employees->get($r['id']);
+                if (!$e) {
+                    continue;
+                }
+
+                $item = [
+                    'id' => $e->id,
+                    'nama' => $e->nama_lengkap,
+                    'jabatan' => $e->jabatan,
+                    'divisi' => $e->divisi,
+                    'foto' => $e->foto,
+                    'jam_masuk' => $r['jam_masuk'],
+                    'late_minutes' => $r['late_minutes'],
+                    'label' => '',
+                    'catatan' => $r['alasan'] ?? '',
+                ];
+
+                switch ($r['status']) {
+                    case 'hadir':
+                        $lists['present'][] = $item;
+                        break;
+                    case 'telat':
+                        $lists['late'][] = $item;
+                        break;
+                    case 'cuti':
+                        $item['label'] = $r['sub'] === 'menikah' ? 'Cuti Menikah' : 'Cuti Lainnya';
+                        $lists['on_leave'][] = $item;
+                        break;
+                    case 'sakit':
+                        $item['label'] = 'Sakit';
+                        $lists['sick'][] = $item;
+                        break;
+                    case 'izin':
+                        $item['label'] = 'Izin 3 Jam';
+                        if ($r['late_notified']) {
+                            $item['catatan'] = 'Terlambat, sudah ada izin. ' . $item['catatan'];
+                        }
+                        $lists['izin'][] = $item;
+                        break;
+                    case 'pending':
+                        $item['label'] = ($r['sub'] === 'sakit' ? 'Sakit' : 'Cuti') . ' menunggu persetujuan';
+                        $lists['pending'][] = $item;
+                        break;
+                    default:
+                        $item['label'] = 'Belum ada keterangan';
+                        $lists['absent'][] = $item;
+                }
+            }
+
+            $total = $data['rows']->count();
+            $present = count($lists['present']);
+            $late = count($lists['late']);
+
+            $statistics = [
+                'total' => $total,
+                'present' => $present,
+                'late' => $late,
+                'on_leave' => count($lists['on_leave']),
+                'sick' => count($lists['sick']),
+                'izin' => count($lists['izin']),
+                'pending' => count($lists['pending']),
+                'absent' => count($lists['absent']),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'date' => $date->translatedFormat('d F Y'),
+                'day_name' => $date->translatedFormat('l'),
+                'is_weekend' => $date->isWeekend(),
+                'is_holiday' => count($holidayNames) > 0,
+                'holiday_names' => $holidayNames,
+                'statistics' => $statistics,
+                'employees' => $lists,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => 'Gagal memuat detail: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
+    }
+
+    public function getDivisionDailyStats(Request $request)
+    {
+        $period = $this->resolvePeriod($request);
+        $this->ensureHolidays($period['start'], $period['end']);
+
+        $data = $this->buildDailyStatus($period['start'], $period['end'], $request->input('divisi', 'all'));
+
+        $result = $data['rows']
+            ->groupBy('tanggal')
+            ->map(function ($items, $date) {
+                $divisions = $items->groupBy('divisi')->map(function ($g) {
+                    $total = $g->count();
+                    $attended = $g->whereIn('status', ['hadir', 'telat', 'izin'])->count();
+                    $onLeave = $g->whereIn('status', ['cuti', 'sakit'])->count();
+                    return [
+                        'total' => $total,
+                        'hadir' => $g->where('status', 'hadir')->count(),
+                        'telat' => $g->where('status', 'telat')->count(),
+                        'cuti' => $g->where('status', 'cuti')->count(),
+                        'sakit' => $g->where('status', 'sakit')->count(),
+                        'izin' => $g->where('has_izin', true)->count(),
+                        'pending' => $g->where('status', 'pending')->count(),
+                        'tidak_hadir' => $g->where('status', 'tidak_hadir')->count(),
+                        'rate' => $total - $onLeave > 0 ? round(($attended / ($total - $onLeave)) * 100, 1) : 100,
+                    ];
+                });
+                return ['date' => $date, 'day' => (int) substr($date, 8, 2), 'divisions' => $divisions];
+            })
+            ->sortKeys()
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $result]);
+    }
+
+    public function getTopLateEmployees(Request $request)
+    {
+        $period = $this->resolvePeriod($request);
+        $limit = (int) $request->input('limit', 10);
+
+        $this->ensureHolidays($period['start'], $period['end']);
+
+        $data = $this->buildDailyStatus($period['start'], $period['end'], $request->input('divisi', 'all'));
+        $employees = $data['employees']->keyBy('id');
+
+        $top = $data['rows']
+            ->where('status', 'telat')
+            ->groupBy('id')
+            ->map(function ($items, $id) use ($employees) {
+                $e = $employees->get($id);
+                $minutes = $items->sum('late_minutes');
+                $count = $items->count();
+                return [
+                    'id' => $id,
+                    'nama' => optional($e)->nama_lengkap,
+                    'jabatan' => optional($e)->jabatan,
+                    'divisi' => optional($e)->divisi,
+                    'foto' => optional($e)->foto,
+                    'late_count' => $count,
+                    'total_late_minutes' => round($minutes),
+                    'avg_late_minutes' => $count > 0 ? round($minutes / $count, 1) : 0,
+                ];
+            })
+            ->sortByDesc('total_late_minutes')
+            ->take($limit)
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $top]);
+    }
+
+    public function buildDailyMatrix($data, $period)
+    {
+        $daysInMonth = $period['start']->daysInMonth;
+        $headers = ['Nama', 'Divisi', 'Jabatan'];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $headers[] = $d;
+        }
+        array_push($headers, 'Total Hadir', 'Total Telat', 'Total Cuti', 'Total Sakit', 'Total Izin', 'Total Menunggu', 'Total Tanpa Keterangan');
+
+        $codes = ['hadir' => 'H', 'telat' => 'L', 'cuti' => 'C', 'sakit' => 'S', 'izin' => 'I', 'pending' => 'P', 'tidak_hadir' => 'T'];
+        $byEmp = $data['rows']->groupBy('id')->map(fn($g) => $g->keyBy('tanggal'));
+
+        $rows = [];
+        foreach ($data['employees'] as $emp) {
+            $mine = $byEmp->get($emp->id, collect());
+            $row = [$emp->nama_lengkap, $emp->divisi ?? '-', $emp->jabatan ?? '-'];
+
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $tanggal = $period['start']->copy()->day($d);
+                $dateStr = $tanggal->toDateString();
+                $r = $mine->get($dateStr);
+
+                if ($r) {
+                    $row[] = $codes[$r['status']];
+                } elseif (isset($data['holidays'][$dateStr])) {
+                    $row[] = 'B';
+                } elseif (!$this->isExpectedToWork($tanggal, $emp->jabatan)) {
+                    $row[] = 'X';
+                } else {
+                    $row[] = '-';
+                }
+            }
+
+            $row[] = $mine->where('status', 'hadir')->count();
+            $row[] = $mine->where('status', 'telat')->count();
+            $row[] = $mine->where('status', 'cuti')->count();
+            $row[] = $mine->where('status', 'sakit')->count();
+            $row[] = $mine->where('has_izin', true)->count();
+            $row[] = $mine->where('status', 'pending')->count();
+            $row[] = $mine->where('status', 'tidak_hadir')->count();
+            $rows[] = $row;
+        }
+
+        return ['headers' => $headers, 'rows' => $rows];
+    }
+
+    public function buildRecapMatrix($data)
+    {
+        $headers = ['Nama', 'Divisi', 'Jabatan', 'Hadir', 'Telat', 'Rata-rata Telat (menit)', 'Cuti Menikah', 'Cuti Lainnya', 'Sakit', 'Izin', 'Menunggu Persetujuan', 'Tanpa Keterangan'];
+        $byEmp = $data['rows']->groupBy('id');
+
+        $rows = [];
+        foreach ($data['employees'] as $emp) {
+            $mine = $byEmp->get($emp->id, collect());
+            $late = $mine->where('status', 'telat');
+            $telat = $late->count();
+            $rows[] = [$emp->nama_lengkap, $emp->divisi ?? '-', $emp->jabatan ?? '-', $mine->where('status', 'hadir')->count(), $telat, $telat > 0 ? round($late->sum('late_minutes') / $telat, 1) : 0, $mine->where('status', 'cuti')->where('sub', 'menikah')->count(), $mine->where('status', 'cuti')->where('sub', 'lainnya')->count(), $mine->where('status', 'sakit')->count(), $mine->where('has_izin', true)->count(), $mine->where('status', 'pending')->count(), $mine->where('status', 'tidak_hadir')->count()];
+        }
+
+        return ['headers' => $headers, 'rows' => $rows];
+    }
+
+    public function buildAttendanceMatrix(Request $request)
+    {
+        $period = $this->resolvePeriod($request);
+        $this->ensureHolidays($period['start'], $period['end']);
+
+        $data = $this->buildDailyStatus($period['start'], $period['end'], $request->input('divisi', 'all'));
+
+        if ($period['type'] === 'month') {
+            return $this->buildDailyMatrix($data, $period);
+        }
+        return $this->buildRecapMatrix($data);
     }
 
     public function exportAttendanceReport(Request $request)
     {
         $format = $request->input('format', 'pdf');
-        $bulan = (int) $request->input('month', now()->month);
-        $tahun = (int) $request->input('year', now()->year);
-        $periode = $request->input('periode', 'monthly');
-
-        $analytics = $this->getAttendanceAnalytics(new Request(['month' => $bulan, 'year' => $tahun]))->getData(true);
+        $period = $this->resolvePeriod($request);
+        $analytics = $this->buildAnalytics($request);
+        $matrix = $this->buildAttendanceMatrix($request);
 
         if ($format === 'csv') {
-            return $this->exportAttendanceExcel($analytics, $bulan, $tahun, $periode);
+            return $this->exportAttendanceExcel($analytics, $matrix, $period);
         }
-        return $this->exportAttendancePdf($analytics, $bulan, $tahun, $periode);
+        return $this->exportAttendancePdf($analytics, $matrix, $period);
     }
 
-    private function exportAttendanceExcel($analytics, $bulan, $tahun, $periode = 'monthly')
+    public function exportAttendanceExcel($analytics, $matrix, $period)
     {
-        $matrix = $this->buildAttendanceMatrix($bulan, $tahun, $periode);
+        $isDaily = $period['type'] === 'month';
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -509,95 +1110,69 @@ class presenceController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells('A2:C2');
-        $sheet->setCellValue('A2', 'Periode: ' . Carbon::createFromDate($tahun, $bulan, 1)->format('F Y'));
+        $sheet->setCellValue('A2', 'Periode: ' . $period['label']);
 
         $sheet->mergeCells('A3:C3');
-        $sheet->setCellValue('A3', 'Tipe: ' . strtoupper($periode));
+        $sheet->setCellValue('A3', 'Tipe: ' . ($isDaily ? 'HARIAN' : 'REKAP'));
 
         $sheet->mergeCells('A4:C4');
         $sheet->setCellValue('A4', 'Dicetak: ' . now()->format('d F Y H:i'));
         $sheet->getRowDimension(4)->setRowHeight(15);
-
         $sheet->getRowDimension(5)->setRowHeight(5);
 
         $col = 1;
         foreach ($matrix['headers'] as $header) {
-            $cell = $sheet->getCellByColumnAndRow($col, 6);
-            $cell->setValue($header);
-            $sheet->getStyleByColumnAndRow($col, 6)->getFont()->setBold(true)->setSize(8);
-            $sheet->getStyleByColumnAndRow($col, 6)->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                ->setVertical(Alignment::VERTICAL_CENTER)
-                ->setWrapText(true);
-            $sheet->getStyleByColumnAndRow($col, 6)->getFill()
-                ->setFillType(Fill::FILL_SOLID)
-                ->getStartColor()->setARGB('FF2C3E50');
-            $sheet->getStyleByColumnAndRow($col, 6)->getFont()->getColor()->setARGB('FFFFFFFF');
-            $sheet->getStyleByColumnAndRow($col, 6)->getBorders()->getAllBorders()
-                ->setBorderStyle(Border::BORDER_THIN);
+            $sheet->getCellByColumnAndRow($col, 6)->setValue($header);
+            $style = $sheet->getStyleByColumnAndRow($col, 6);
+            $style->getFont()->setBold(true)->setSize(8);
+            $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+            $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF2C3E50');
+            $style->getFont()->getColor()->setARGB('FFFFFFFF');
+            $style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-            if ($col === 1) $sheet->getColumnDimension('A')->setWidth(22);
-            elseif ($col === 2) $sheet->getColumnDimension('B')->setWidth(18);
-            elseif ($col === 3) $sheet->getColumnDimension('C')->setWidth(18);
-            elseif (in_array($header, ['Total Hadir', 'Total Telat', 'Total Cuti', 'Overall Avg Late'])) {
-                $sheet->getColumnDimensionByColumn($col)->setWidth(12);
-            } else {
+            if ($col === 1) {
+                $sheet->getColumnDimension('A')->setWidth(22);
+            } elseif ($col === 2 || $col === 3) {
+                $sheet->getColumnDimensionByColumn($col)->setWidth(18);
+            } elseif (is_int($header)) {
                 $sheet->getColumnDimensionByColumn($col)->setWidth(2.8);
+            } else {
+                $sheet->getColumnDimensionByColumn($col)->setWidth(13);
             }
             $col++;
         }
+        $sheet->getRowDimension(6)->setRowHeight($isDaily ? 30 : 36);
+
+        $display = ['H' => '✓', 'L' => 'L', 'C' => 'C', 'S' => 'S', 'I' => 'I', 'P' => 'P', 'T' => 'T', 'B' => 'B', 'X' => '•', '-' => ''];
+        $fills = ['L' => 'FFFEE2E2', 'C' => 'FFE0F2FE', 'S' => 'FFEDE9FE', 'I' => 'FFCCFBF1', 'P' => 'FFFFEDD5', 'T' => 'FFE5E7EB', 'B' => 'FFFEF3C7', 'X' => 'FFF3F4F6'];
+        $fontColors = ['L' => 'FFDC2626', 'C' => 'FF0284C7', 'S' => 'FF7C3AED', 'I' => 'FF0D9488', 'P' => 'FFF97316', 'T' => 'FF374151', 'B' => 'FFD97706', 'X' => 'FF999999'];
 
         $startRow = 7;
         foreach ($matrix['rows'] as $rIdx => $dataRow) {
             $row = $startRow + $rIdx;
             $col = 1;
             foreach ($dataRow as $cIdx => $cellValue) {
-                $cell = $sheet->getCellByColumnAndRow($col, $row);
+                $isDayCell = $isDaily && $col > 3 && is_int($matrix['headers'][$cIdx] ?? null);
+                $shown = $isDayCell && is_string($cellValue) ? $display[$cellValue] ?? $cellValue : $cellValue;
 
-                $displayValue = $cellValue;
-                if (is_string($cellValue)) {
-                    $displayValue = match($cellValue) {
-                        'H' => '✓',
-                        'L' => 'L',
-                        'Y' => 'C',
-                        'X' => '•',
-                        '-' => '',
-                        default => $cellValue,
-                    };
-                }
-                $cell->setValue($displayValue);
-
-                $sheet->getStyleByColumnAndRow($col, $row)->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $sheet->getStyleByColumnAndRow($col, $row)->getFont()->setSize(8);
-                $sheet->getStyleByColumnAndRow($col, $row)->getBorders()->getAllBorders()
-                    ->setBorderStyle(Border::BORDER_THIN);
+                $sheet->getCellByColumnAndRow($col, $row)->setValue($shown);
+                $style = $sheet->getStyleByColumnAndRow($col, $row);
+                $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $style->getFont()->setSize(8);
+                $style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
                 if ($col <= 3) {
-                    $sheet->getStyleByColumnAndRow($col, $row)->getAlignment()
-                        ->setHorizontal(Alignment::HORIZONTAL_LEFT);
-                    if ($col === 1) $sheet->getStyleByColumnAndRow($col, $row)->getFont()->setBold(true);
+                    $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+                    if ($col === 1) {
+                        $style->getFont()->setBold(true);
+                    }
                 }
 
-                if ($col > 3 && !in_array($matrix['headers'][$cIdx] ?? '', ['Total Hadir', 'Total Telat', 'Total Cuti', 'Overall Avg Late'])) {
-                    if ($cellValue === 'L' || $cellValue === 'Telat') {
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFill()
-                            ->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('FFFFF0F0');
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFont()
-                            ->setBold(true)->getColor()->setARGB('FFC00000');
-                    } elseif ($cellValue === 'Y' || $cellValue === 'Cuti/Holiday') {
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFill()
-                            ->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('FFFFF9E6');
-                    } elseif ($cellValue === 'X' || $cellValue === 'Weekend') {
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFill()
-                            ->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('FFFFEBEE');
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFont()
-                            ->getColor()->setARGB('FF999999');
-                        $sheet->getStyleByColumnAndRow($col, $row)->getFont()->setItalic(true);
+                if ($isDayCell && isset($fills[$cellValue])) {
+                    $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($fills[$cellValue]);
+                    $style->getFont()->getColor()->setARGB($fontColors[$cellValue]);
+                    if (in_array($cellValue, ['L', 'T'])) {
+                        $style->getFont()->setBold(true);
                     }
                 }
 
@@ -606,26 +1181,24 @@ class presenceController extends Controller
             $sheet->getRowDimension($row)->setRowHeight(18);
         }
 
-        $legendRow = $startRow + count($matrix['rows']) + 2;
-        $sheet->mergeCells("A{$legendRow}:C{$legendRow}");
-        $sheet->setCellValue("A{$legendRow}", 'KETERANGAN:');
-        $sheet->getStyle("A{$legendRow}")->getFont()->setBold(true)->setSize(9);
+        if ($isDaily) {
+            $legendRow = $startRow + count($matrix['rows']) + 2;
+            $sheet->setCellValue("A{$legendRow}", 'KETERANGAN:');
+            $sheet
+                ->getStyle("A{$legendRow}")
+                ->getFont()
+                ->setBold(true)
+                ->setSize(9);
 
-        $legendItems = [
-            ['✓', 'Hadir'],
-            ['L', 'Telat'],
-            ['C', 'Cuti/Holiday'],
-            ['•', 'Weekend'],
-            ['', 'Tidak Absen'],
-        ];
-
-        $lCol = 1;
-        foreach ($legendItems as $i => $item) {
-            $sheet->getCellByColumnAndRow($lCol, $legendRow + 1)->setValue($item[0]);
-            $sheet->getCellByColumnAndRow($lCol + 1, $legendRow + 1)->setValue($item[1]);
-            $sheet->getStyleByColumnAndRow($lCol, $legendRow + 1)->getAlignment()
-                ->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $lCol += 2;
+            $legend = [['✓', 'Hadir tepat waktu'], ['L', 'Terlambat'], ['C', 'Cuti disetujui'], ['S', 'Sakit disetujui'], ['I', 'Izin 3 jam disetujui'], ['P', 'Cuti/sakit menunggu persetujuan'], ['T', 'Tidak hadir tanpa keterangan'], ['B', 'Libur nasional'], ['•', 'Akhir pekan']];
+            foreach ($legend as $i => $item) {
+                $sheet->getCellByColumnAndRow(1, $legendRow + 1 + $i)->setValue($item[0]);
+                $sheet->getCellByColumnAndRow(2, $legendRow + 1 + $i)->setValue($item[1]);
+                $sheet
+                    ->getStyleByColumnAndRow(1, $legendRow + 1 + $i)
+                    ->getAlignment()
+                    ->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            }
         }
 
         $sheet->freezePane('D7');
@@ -636,7 +1209,7 @@ class presenceController extends Controller
         $sheet->getPageMargins()->setTop(0.5)->setRight(0.3)->setBottom(0.5)->setLeft(0.3);
         $sheet->getPageSetup()->setHorizontalCentered(true);
 
-        $filename = "Laporan_Attendance_{$periode}_{$bulan}_{$tahun}.xlsx";
+        $filename = 'Laporan_Attendance_' . Str::slug($period['label'], '_') . '.xlsx';
         $headers = [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -650,505 +1223,21 @@ class presenceController extends Controller
         return response()->stream(fn() => ob_end_flush(), 200, $headers);
     }
 
-    private function exportAttendancePdf($analytics, $bulan, $tahun, $periode = 'monthly')
+    public function exportAttendancePdf($analytics, $matrix, $period)
     {
-        $matrix = $this->buildAttendanceMatrix($bulan, $tahun, $periode);
-
         $pdf = Pdf::loadView('office.HR.exports.attendance_pdf', [
             'analytics' => $analytics,
             'period' => $analytics['period']['display'],
             'generated_at' => now()->format('d F Y H:i'),
             'matrix' => $matrix,
-            'periode_type' => $periode,
+            'periode_type' => $period['type'],
         ])
-        ->setPaper('a4', 'landscape')
-        ->setOption('margin_top', 15)
-        ->setOption('margin_bottom', 15)
-        ->setOption('margin_left', 10)
-        ->setOption('margin_right', 10);
-
-        return $pdf->download("Laporan_Attendance_{$periode}_{$bulan}_{$tahun}.pdf");
-    }
-
-    private function buildAttendanceMatrix($bulan, $tahun, $periode = 'monthly')
-    {
-        $holidays = HariLibur::whereYear('tanggal', $tahun)
-            ->pluck('tanggal')
-            ->map(fn($d) => Carbon::parse($d)->toDateString())
-            ->toArray();
-
-        $karyawan = $this->getActiveKaryawanQuery()
-            ->with([
-                'absensi' => fn($q) => $q
-                    ->whereMonth('tanggal', $bulan)
-                    ->whereYear('tanggal', $tahun)
-            ])
-            ->get();
-
-        $cutiApproved = pengajuancuti::where('approval_manager', 1)
-            ->where(function($q) use ($bulan, $tahun) {
-                $q->whereYear('tanggal_awal', $tahun)->whereMonth('tanggal_awal', $bulan)
-                ->orWhereYear('tanggal_akhir', $tahun)->whereMonth('tanggal_akhir', $bulan);
-            })
-            ->get();
-
-        $cutiMap = [];
-        foreach ($cutiApproved as $c) {
-            $start = Carbon::parse($c->tanggal_awal);
-            $end = Carbon::parse($c->tanggal_akhir);
-            for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-                if (!$d->isWeekend() && !in_array($d->toDateString(), $holidays)) {
-                    $cutiMap[$c->id_karyawan][] = $d->toDateString();
-                }
-            }
-        }
-
-        if ($periode === 'monthly') {
-            return $this->buildMonthlyMatrix($karyawan, $bulan, $tahun, $holidays, $cutiMap);
-        } elseif ($periode === 'quarterly') {
-            return $this->buildQuarterlyMatrix($karyawan, $tahun, $holidays, $cutiMap);
-        } else {
-            return $this->buildYearlyMatrix($karyawan, $tahun, $holidays, $cutiMap);
-        }
-    }
-
-    private function buildMonthlyMatrix($karyawan, $bulan, $tahun, $holidays, $cutiMap)
-    {
-        $daysInMonth = Carbon::createFromDate($tahun, $bulan, 1)->daysInMonth;
-        $headers = ['Nama', 'Divisi', 'Jabatan'];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $headers[] = $d;
-        }
-        $headers[] = 'Total Hadir';
-        $headers[] = 'Total Telat';
-        $headers[] = 'Total Cuti';
-
-        $rows = [];
-        foreach ($karyawan as $emp) {
-            $row = [$emp->nama_lengkap, $emp->divisi ?? '-', $emp->jabatan ?? '-'];
-            $hadir = 0; $telat = 0; $cuti = 0;
-
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $tanggal = Carbon::createFromDate($tahun, $bulan, $d);
-                $dateStr = $tanggal->toDateString();
-                $isWeekend = $tanggal->isWeekend();
-                $isHoliday = in_array($dateStr, $holidays);
-                $isCuti = in_array($emp->id, $cutiMap) && in_array($dateStr, $cutiMap[$emp->id]);
-
-                $absen = $emp->absensi->firstWhere('tanggal', $dateStr);
-                $isLate = $this->isLateRecord($absen);
-                $hasAttendance = $this->isPresentRecord($absen);
-
-                if ($isHoliday || $isCuti) {
-                    $row[] = 'Y';
-                    if ($isCuti) $cuti++;
-                } elseif ($hasAttendance) {
-                    $row[] = $isLate ? 'L' : 'H';
-                    $hadir++;
-                    if ($isLate) $telat++;
-                } elseif ($isWeekend && !$this->isExpectedToWork($tanggal, $emp->jabatan)) {
-                    $row[] = 'X';
-                } else {
-                    $row[] = '-';
-                }
-            }
-            $row[] = $hadir;
-            $row[] = $telat;
-            $row[] = $cuti;
-            $rows[] = $row;
-        }
-
-        return ['headers' => $headers, 'rows' => $rows];
-    }
-
-    private function buildQuarterlyMatrix($karyawan, $tahun, $holidays, $cutiMap)
-    {
-        $headers = ['Nama', 'Divisi', 'Jabatan', 'Q1 Avg Late (menit)', 'Q2 Avg Late (menit)', 'Q3 Avg Late (menit)', 'Q4 Avg Late (menit)', 'Year Avg Late'];
-        $rows = [];
-
-        foreach ($karyawan as $emp) {
-            $quarterData = [1=>[], 2=>[], 3=>[], 4=>[]];
-
-            $absensiTahun = AbsensiKaryawan::where('id_karyawan', $emp->id)
-                ->whereYear('tanggal', $tahun)
-                ->get();
-
-            foreach ($absensiTahun as $a) {
-                if ($this->isLateRecord($a)) {
-                    $q = Carbon::parse($a->tanggal)->quarter;
-                    if ($a->waktu_keterlambatan) {
-                        $p = explode(':', $a->waktu_keterlambatan);
-                        $menit = $p[0]*60 + $p[1];
-                        $quarterData[$q][] = $menit;
-                    }
-                }
-            }
-
-            $row = [$emp->nama_lengkap, $emp->divisi ?? '-', $emp->jabatan ?? '-'];
-            $allLate = [];
-            for ($q = 1; $q <= 4; $q++) {
-                $avg = !empty($quarterData[$q]) ? round(array_sum($quarterData[$q]) / count($quarterData[$q]), 1) : 0;
-                $row[] = $avg;
-                $allLate = array_merge($allLate, $quarterData[$q]);
-            }
-            $yearAvg = !empty($allLate) ? round(array_sum($allLate) / count($allLate), 1) : 0;
-            $row[] = $yearAvg;
-            $rows[] = $row;
-        }
-
-        return ['headers' => $headers, 'rows' => $rows];
-    }
-
-    private function buildYearlyMatrix($karyawan, $tahun, $holidays, $cutiMap)
-    {
-        $minYear = AbsensiKaryawan::min('tanggal') ? Carbon::parse(AbsensiKaryawan::min('tanggal'))->year : $tahun;
-        $maxYear = $tahun;
-
-        $headers = ['Nama', 'Divisi', 'Jabatan'];
-        for ($y = $minYear; $y <= $maxYear; $y++) {
-            for ($m = 1; $m <= 12; $m++) {
-                $headers[] = Carbon::createFromDate($y, $m, 1)->format('M Y');
-            }
-        }
-        $headers[] = 'Overall Avg Late';
-
-        $rows = [];
-        foreach ($karyawan as $emp) {
-            $row = [$emp->nama_lengkap, $emp->divisi ?? '-', $emp->jabatan ?? '-'];
-            $allLate = [];
-
-            for ($y = $minYear; $y <= $maxYear; $y++) {
-                for ($m = 1; $m <= 12; $m++) {
-                    $lateMinutes = AbsensiKaryawan::where('id_karyawan', $emp->id)
-                        ->whereYear('tanggal', $y)
-                        ->whereMonth('tanggal', $m)
-                        ->whereNotNull('waktu_keterlambatan')
-                        ->where('waktu_keterlambatan', '!=', '00:00:00')
-                        ->where('keterangan', 'LIKE', 'Telat%')
-                        ->get()
-                        ->map(fn($a) => $this->parseLateMinutes($a->waktu_keterlambatan));
-
-                    $avg = $lateMinutes->isNotEmpty() ? round($lateMinutes->avg(), 1) : 0;
-                    $row[] = $avg;
-                    if ($avg > 0) $allLate[] = $avg;
-                }
-            }
-            $overall = !empty($allLate) ? round(array_sum($allLate) / count($allLate), 1) : 0;
-            $row[] = $overall;
-            $rows[] = $row;
-        }
-
-        return ['headers' => $headers, 'rows' => $rows];
-    }
-
-    public function getDivisionDailyStats(Request $request)
-    {
-        $bulan = (int) $request->input('month', now()->month);
-        $tahun = (int) $request->input('year', now()->year);
-
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-
-        $absensi = AbsensiKaryawan::with('karyawan:id,nama_lengkap,divisi')->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)->get();
-
-        $cuti = pengajuancuti::where('approval_manager', 1)
-            ->where(function ($q) use ($bulan, $tahun) {
-                $q->whereYear('tanggal_awal', $tahun)->whereMonth('tanggal_awal', $bulan)->orWhereYear('tanggal_akhir', $tahun)->whereMonth('tanggal_akhir', $bulan);
-            })
-            ->get();
-
-        $cutiMap = [];
-        foreach ($cuti as $c) {
-            $start = Carbon::parse($c->tanggal_awal);
-            $end = Carbon::parse($c->tanggal_akhir);
-            for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-                if (!$d->isWeekend() && !in_array($d->toDateString(), $holidays)) {
-                    $cutiMap[$c->id_karyawan][] = $d->toDateString();
-                }
-            }
-        }
-
-        $result = [];
-        $daysInMonth = Carbon::createFromDate($tahun, $bulan, 1)->daysInMonth;
-
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $tanggal = Carbon::createFromDate($tahun, $bulan, $day);
-            if ($tanggal->isSunday() || in_array($tanggal->toDateString(), $holidays)) {
-                continue;
-            }
-
-            $dateStr = $tanggal->toDateString();
-            $divStats = $absensi
-                ->where('tanggal', $dateStr)
-                ->groupBy(function ($a) {
-                    return optional($a->karyawan)->divisi ?? 'Unknown';
-                })
-                ->map(function ($items) {
-                    $total = $items->count();
-                    $hadir = $items->filter(fn($a) => $this->isPresentRecord($a))->count();
-                    $telat = $items->filter(fn($a) => $this->isLateRecord($a))->count();
-                    $cutiCount = $items->filter(fn($a) => in_array($a->tanggal, $cutiMap[$a->id_karyawan] ?? []))->count();
-                    return [
-                        'total' => $total,
-                        'hadir' => $hadir - $cutiCount,
-                        'telat' => $telat,
-                        'cuti' => $cutiCount,
-                        'rate' => $total > 0 ? round((($hadir - $cutiCount) / $total) * 100, 1) : 100,
-                    ];
-                });
-
-            $result[] = ['date' => $tanggal->format('Y-m-d'), 'day' => $day, 'divisions' => $divStats];
-        }
-
-        return response()->json(['success' => true, 'data' => $result]);
-    }
-
-    public function getTopLateEmployees(Request $request)
-    {
-        $bulan = (int) $request->input('month', now()->month);
-        $tahun = (int) $request->input('year', now()->year);
-        $limit = (int) $request->input('limit', 10);
-
-        $topLate = AbsensiKaryawan::select('id_karyawan', DB::raw('SUM(CASE WHEN keterangan LIKE "Telat%" THEN 1 ELSE 0 END) as late_count'), DB::raw('SUM(CASE WHEN keterangan LIKE "Telat%" THEN TIME_TO_SEC(waktu_keterlambatan) ELSE 0 END) as total_seconds'))
-            ->whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->with('karyawan:id,nama_lengkap,jabatan,divisi,foto')
-            ->groupBy('id_karyawan')
-            ->having('late_count', '>', 0)
-            ->orderByDesc('total_seconds')
-            ->limit($limit)
-            ->get()
-            ->map(function ($item) {
-                $hours = floor($item->total_seconds / 3600);
-                $minutes = floor(($item->total_seconds % 3600) / 60);
-                return [
-                    'id' => $item->id_karyawan,
-                    'nama' => optional($item->karyawan)->nama_lengkap,
-                    'jabatan' => optional($item->karyawan)->jabatan,
-                    'divisi' => optional($item->karyawan)->divisi,
-                    'foto' => optional($item->karyawan)->foto,
-                    'late_count' => $item->late_count,
-                    'total_late_minutes' => $hours * 60 + $minutes,
-                    'avg_late_minutes' => $item->late_count > 0 ? round(($hours * 60 + $minutes) / $item->late_count, 1) : 0,
-                ];
-            });
-
-        return response()->json(['success' => true, 'data' => $topLate]);
-    }
-
-    public function getAttendanceCalendar(Request $request)
-    {
-        $bulan = (int) $request->input('month', now()->month);
-        $tahun = (int) $request->input('year', now()->year);
-        $idKaryawan = $request->input('id_karyawan');
-
-        $holidays = HariLibur::whereYear('tanggal', $tahun)->pluck('tanggal')->map(fn($d) => Carbon::parse($d)->toDateString())->toArray();
-
-        $absensi = AbsensiKaryawan::whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)->when($idKaryawan, fn($q) => $q->where('id_karyawan', $idKaryawan))->get()->keyBy('tanggal');
-
-        $cuti = pengajuancuti::where('approval_manager', 1)
-            ->when($idKaryawan, fn($q) => $q->where('id_karyawan', $idKaryawan))
-            ->where(function ($q) use ($bulan, $tahun) {
-                $q->whereYear('tanggal_awal', $tahun)->whereMonth('tanggal_awal', $bulan)->orWhereYear('tanggal_akhir', $tahun)->whereMonth('tanggal_akhir', $bulan);
-            })
-            ->get();
-
-        $cutiDates = [];
-        foreach ($cuti as $c) {
-            $start = Carbon::parse($c->tanggal_awal);
-            $end = Carbon::parse($c->tanggal_akhir);
-            for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-                if (!$d->isWeekend() && !in_array($d->toDateString(), $holidays)) {
-                    $cutiDates[] = $d->toDateString();
-                }
-            }
-        }
-
-        $calendar = [];
-        $daysInMonth = Carbon::createFromDate($tahun, $bulan, 1)->daysInMonth;
-
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $tanggal = Carbon::createFromDate($tahun, $bulan, $day);
-            $dateStr = $tanggal->toDateString();
-            $isWeekend = $tanggal->isWeekend();
-            $isHoliday = in_array($dateStr, $holidays);
-            $isCuti = in_array($dateStr, $cutiDates);
-
-            $absen = $absensi->get($dateStr);
-            $isLate = $this->isLateRecord($absen);
-            $hasAttendance = $this->isPresentRecord($absen);
-
-            $status = 'normal';
-            $bgColor = '';
-
-            if ($isLate) {
-                $status = 'late';
-                $bgColor = '#fee2e2';
-            } elseif ($hasAttendance) {
-                $status = 'present';
-                $bgColor = '#dcfce7';
-            } elseif ($isWeekend || $isHoliday) {
-                $status = 'holiday';
-                $bgColor = '#fef3c7';
-            } elseif ($isCuti) {
-                $status = 'leave';
-                $bgColor = '#fef3c7';
-            }
-
-            $calendar[] = [
-                'date' => $dateStr,
-                'day' => $day,
-                'day_name' => $tanggal->format('D'),
-                'status' => $status,
-                'bg_color' => $bgColor,
-                'late_minutes' => $isLate && $absen->waktu_keterlambatan ? $this->parseLateMinutes($absen->waktu_keterlambatan) : 0,
-                'jam_masuk' => $absen?->jam_masuk,
-                'jam_keluar' => $absen?->jam_keluar,
-            ];
-        }
-
-        return response()->json(['success' => true, 'calendar' => $calendar, 'month' => $bulan, 'year' => $tahun]);
-    }
-
-    public function getDailyAttendanceDetails(Request $request)
-    {
-        try {
-            $tanggal = $request->input('date');
-            $bulan = (int) $request->input('month', now()->month);
-            $tahun = (int) $request->input('year', now()->year);
-
-            if (!$tanggal) {
-                return response()->json(['success' => false, 'message' => 'Tanggal tidak valid'], 400);
-            }
-
-            $date = Carbon::parse($tanggal);
-            $isWeekend = $date->isWeekend();
-            $holidays = HariLibur::whereDate('tanggal', $tanggal)->get();
-            $isHoliday = $holidays->count() > 0;
-
-            $karyawan = $this->getActiveKaryawanQuery()->get();
-
-            $expectedKaryawan = $karyawan->filter(fn($emp) => !$isHoliday && $this->isExpectedToWork($date, $emp->jabatan));
-
-            $absensi = AbsensiKaryawan::whereDate('tanggal', $tanggal)
-                ->with('karyawan:id,nama_lengkap,jabatan,divisi,foto')
-                ->get()
-                ->keyBy('id_karyawan');
-
-            $cuti = pengajuancuti::where('approval_manager', 1)
-                ->where(function ($q) use ($tanggal) {
-                    $q->whereDate('tanggal_awal', '<=', $tanggal)
-                    ->whereDate('tanggal_akhir', '>=', $tanggal);
-                })
-                ->with('karyawan:id,nama_lengkap,jabatan,divisi,foto')
-                ->get();
-
-            $present = [];
-            $late = [];
-            $onLeave = [];
-            $sick = [];
-            $absent = [];
-
-            foreach ($karyawan as $emp) {
-                $absen = $absensi->get($emp->id);
-                $cutiRecord = $cuti->firstWhere('id_karyawan', $emp->id);
-
-                $employeeData = [
-                    'id' => $emp->id,
-                    'nama' => $emp->nama_lengkap,
-                    'jabatan' => $emp->jabatan,
-                    'divisi' => $emp->divisi,
-                    'foto' => $emp->foto,
-                ];
-
-                if ($cutiRecord) {
-                    if ($cutiRecord->tipe === 'Sakit') {
-                        $sick[] = array_merge($employeeData, [
-                            'tipe_cuti' => $cutiRecord->tipe,
-                            'keterangan' => $cutiRecord->keterangan ?? '-',
-                        ]);
-                    } else {
-                        $onLeave[] = array_merge($employeeData, [
-                            'tipe_cuti' => $cutiRecord->tipe,
-                            'keterangan' => $cutiRecord->keterangan ?? '-',
-                        ]);
-                    }
-                } elseif ($this->isPresentRecord($absen)) {
-                    $isLate = $this->isLateRecord($absen);
-                    $lateMinutes = $isLate && $absen->waktu_keterlambatan ? $this->parseLateMinutes($absen->waktu_keterlambatan) : 0;
-
-                    $employeeData['jam_masuk'] = $absen->jam_masuk;
-                    $employeeData['jam_keluar'] = $absen->jam_keluar;
-                    $employeeData['late_minutes'] = $lateMinutes;
-
-                    if ($isLate) {
-                        $late[] = $employeeData;
-                    } else {
-                        $present[] = $employeeData;
-                    }
-                } else {
-                    if ($expectedKaryawan->contains('id', $emp->id)) {
-                        $absent[] = $employeeData;
-                    }
-                }
-            }
-
-            $countPresent = count($present);
-            $countLate = count($late);
-            $countOnLeave = count($onLeave);
-            $countSick = count($sick);
-            $countAbsent = count($absent);
-
-            $attendedIds = array_merge(array_column($present, 'id'), array_column($late, 'id'));
-            $expectedIds = $expectedKaryawan->pluck('id')->toArray();
-            $totalEmployees = count(array_unique(array_merge($expectedIds, $attendedIds)));
-            $totalHadir = $countPresent + $countLate;
-
-            $statistics = [
-                'total' => $totalEmployees,
-                'present' => $countPresent,
-                'late' => $countLate,
-                'on_leave' => $countOnLeave,
-                'sick' => $countSick,
-                'absent' => $countAbsent,
-                'attendance_rate' => $totalEmployees > 0 ? round(($totalHadir / $totalEmployees) * 100, 1) : 0,
-                'punctuality_rate' => $totalHadir > 0 ? round(($countPresent / $totalHadir) * 100, 1) : 0,
-            ];
-
-            return response()->json([
-                'success' => true,
-                'date' => $date->format('d F Y'),
-                'day_name' => $date->format('l'),
-                'is_weekend' => $isWeekend,
-                'is_holiday' => $isHoliday,
-                'holiday_names' => $holidays->pluck('nama')->toArray(),
-                'statistics' => $statistics,
-                'employees' => [
-                    'present' => $present,
-                    'late' => $late,
-                    'on_leave' => $onLeave,
-                    'sick' => $sick,
-                    'absent' => $absent,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat detail: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    private function parseLateMinutes($waktu)
-    {
-        if (!$waktu || $waktu === '00:00:00') {
-            return 0;
-        }
-
-        $p = explode(':', $waktu);
-
-        $jam = (int) $p[0] * 60;
-        $menit = (int) $p[1];
-
-        return ($jam + $menit) / 2;
+            ->setPaper('a4', 'landscape')
+            ->setOption('margin_top', 15)
+            ->setOption('margin_bottom', 15)
+            ->setOption('margin_left', 10)
+            ->setOption('margin_right', 10);
+
+        return $pdf->download('Laporan_Attendance_' . Str::slug($period['label'], '_') . '.pdf');
     }
 }

@@ -55,6 +55,7 @@ const assistantRouteUrlMap = {
     "mengukur kualitas aplikasi agar minim bug": "/tickets",
     "konsistensi campaign digital": "/content-schedules",
     "efektifitas digital marketing": "/colaborator",
+    "timeline webinar": "/timeline",
     "keberhasilan support memenuhi sla": "/tickets",
     "kualitas layanan exam": "/registrasi",
     "presentase kinerja instruktur": "/activityinstruktur",
@@ -151,6 +152,132 @@ $(document).ready(function() {
     // Mencegah event bubbling
     $(document).on('click', '.buttonHapusTarget, .buttonForm', function(e) { e.stopPropagation(); });
 
+    $(document).on('click', '.buttonPanduan', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const route = ($(this).data('route') || '').toString().toLowerCase().trim();
+    const judul = $(this).data('judul') || 'Target KPI';
+
+    // Mapping assistant_route → key panduan
+    const panduanMap = {
+        'pelaksanaan kegiatan karyawan': 'pelaksanaan_kegiatan_karyawan',
+        'pengeluaran biaya karyawan': 'pengeluaran_biaya_karyawan',
+        'administrasi karyawan': 'administrasi_karyawan',
+        'mengukur kualitas aplikasi agar minim bug': 'mengukur_kualitas_aplikasi_agar_minim_bug',
+        'ketepatan waktu penyelesaian fitur': 'ketepatan_waktu_penyelesaian_fitur',
+        'keberhasilan support memenuhi sla': 'tingkat_keberhasilan_support_memenuhi_sla',
+        'kualitas layanan exam': 'kualitas_layanan_exam',
+        'meningkatkan kepuasan dan loyalitas peserta/client': 'meningkatkan_kepuasan_dan_loyalitas_peserta',
+        'availability sistem internal kritis': 'availability_sistem_internal_kritis',
+        'persentase gap kompetensi tim terhadap standar skill': 'persentase_gap_kompetensi',
+        'konsistensi campaign digital': 'konsistensi_campaign_digital',
+        'ketepatan waktu po': 'ketepatan_waktu_po',
+        'kualitas dokumentasi support dan proctor': 'kualitas_dokumentasi_support_dan_proctor',
+        'laporan mom': 'laporan_mom',
+        'akurasi kelengkapan data penjualan': 'akurasi_kelengkapan_data_penjualan',
+        'todo administrasi': 'todo_administrasi',
+        'peserta puas dengan pelayanan dan fasilitas training': 'peserta_puas_dengan_pelayanan_dan_fasilitas_training',
+        'dorong inovasi pelayanan': 'dorong_inovasi_pelayanan',
+        'penanganan komplain perseta': 'penanganan_komplain_peserta',
+        'report persiapan kelas': 'report_persiapan_kelas',
+        'kepuasan client itsm': 'kepuasan_client_itsm',
+        'inovation adaption rate': 'inovation_adaption_rate',
+        'perbaikan kendaraan': 'perbaikan_kendaraan',
+        'kontrol pengeluaran transportasi': 'kontrol_pengeluaran_transportasi',
+        'report kondisi kendaraan': 'report_kondisi_kendaraan',
+        'feedback kenyamanan berkendaran': 'feedback_kenyamanan_berkendara',
+        'pengembangan kurikulum pelatihan': 'pengembangan_kurikulum_pelatihan',
+        'peningkatan knowledge sharing': 'peningkatan_knowledge_sharing',
+        'peningkatan kontribusi pelatihan': 'peningkatan_kontribusi_pelatihan',
+        'evaluasi kinerja instruktur': 'evaluasi_kinerja_instruktur',
+        'pembuatan artikel': 'pembuatan_artikel',
+        'outstanding': 'outstanding',
+        'inisiatif efisiensi keuangan': 'inisiatif_efisiensi_keuangan',
+        'mengurangi manual work dan error': 'mengurangi_manual_work_dan_error',
+        'laporan analisis keuangan': 'laporan_analisis_keuangan',
+        'pencairan biaya operasional': 'pencairan_biaya_operasional',
+        'penyelesaian tagihan perusahaan': 'penyelesaian_tagihan_perusahaan',
+        'akurasi pencatatan masuk': 'akurasi_pencatatan_masuk',
+        'pemasukan kotor': 'pemasukan_kotor',
+        'pemasukan bersih': 'pemasukan_bersih',
+        'target penjualan project tahunan': 'target_penjualan_project_tahunan',
+        'kepuasan pelanggan': 'kepuasan_pelanggan',
+        'rasio biaya operasional terhadap revenue': 'rasio_biaya_operasional_terhadap_revenue',
+        'performa kpi departemen': 'performa_kpi_departemen',
+        'feedback kebersihan dan kenyamanan': 'feedback_kebersihan_dan_kenyamanan',
+        'penyelesaian tugas harian': 'penyelesaian_tugas_harian',
+        'efektifitas digital marketing': 'efektifitas_digital_marketing',
+        'timeline webinar': 'timeline_webinar',
+        'presentase kinerja instruktur': 'presentase_kinerja_instruktur',
+        'kepuasan peserta pelatihan': 'kepuasan_peserta_pelatihan',
+        'upseling lanjutan materi': 'upseling_lanjutan_materi',
+        'sertifikasi kompetensi internal': 'sertifikasi_kompetensi_internal',
+        'pelatihan kompetensi eksternal': 'pelatihan_kompetensi_eksternal',
+        'target penjualan tahunan': 'target_penjualan_tahunan',
+        'biaya akuisisi perclient': 'biaya_akuisisi_perclient',
+        'peningkatan kemampuan kompetensi sales': 'peningkatan_kemampuan_kompetensi_sales',
+        'meningkatkan revenue perusahaan': 'meningkatkan_revenue_perusahaan',
+        'customer acquisition cost': 'customer_acquisition_cost',
+        'evaluasi kinerja sales': 'evaluasi_kinerja_sales',
+        'pendapatan penjualan project': 'pendapatan_penjualan_project',
+        'leads project': 'leads_project',
+    };
+
+    const key = panduanMap[route] || null;
+
+    const $modal = $('#modalPanduan');
+    const $body  = $('#bodyContentPanduan');
+    const $title = $('#panduanTitle');
+
+    $title.text('Panduan: ' + judul);
+    $body.html(`
+        <div class="text-center py-5">
+            <i class="fa-solid fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+            <p class="text-muted mb-0">Memuat panduan...</p>
+        </div>
+    `);
+
+    // Tampilkan modal
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPanduan')).show();
+    } else {
+        $modal.modal('show');
+    }
+
+    if (!key) {
+        $body.html(`
+            <div class="alert alert-secondary text-center py-5 mb-0">
+                <i class="fa-solid fa-book-open fa-2x mb-3 text-muted"></i>
+                <p class="mb-0">Panduan untuk target ini belum tersedia.</p>
+                <small class="text-muted d-block mt-2">Route: <code>${route || '-'}</code></small>
+            </div>
+        `);
+        return;
+    }
+
+    // Load konten panduan dari server
+    $.ajax({
+        url: `/kpi-data/panduan/${key}`,
+        type: 'GET',
+        dataType: 'json',
+        success: function (res) {
+            $body.html(res.html || '<div class="alert alert-warning">Konten panduan kosong.</div>');
+            if (res.title) {
+                $title.text('Panduan: ' + res.title);
+            }
+        },
+        error: function () {
+            $body.html(`
+                <div class="alert alert-danger text-center py-4 mb-0">
+                    <i class="fa-solid fa-circle-exclamation fa-2x mb-3"></i>
+                    <p class="mb-0">Gagal memuat panduan. Silakan coba lagi.</p>
+                </div>
+            `);
+        }
+    });
+});
+
     // Handle Session Import Errors
     if (window.KPI_CONFIG && window.KPI_CONFIG.importErrors && window.KPI_CONFIG.importErrors.length > 0) {
         const errors = window.KPI_CONFIG.importErrors;
@@ -181,38 +308,84 @@ $(document).ready(function() {
                 response.routes.forEach(function(route) {
                     routeSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
                 });
+                routeSelect.trigger('change');
             }
+
             const jabatanSelect = $('#jabatan');
             if (jabatanSelect.length && response.jabatan_list) {
+                const currentSelectedJabatan = jabatanSelect.val() || [];
+                
                 jabatanSelect.empty();
                 response.jabatan_list.forEach(function(jab) {
                     jabatanSelect.append(`<option value="${jab}">${jab}</option>`);
                 });
+                
+                jabatanSelect.val(currentSelectedJabatan);
+                
                 jabatanSelect.trigger('change');
             }
         }
     });
 
+    let xhrKaryawan = null, xhrRoutes = null;
     $('#jabatan').off('change').on('change', function() {
-        const selectedJabatans = $(this).val() || [];
+        const selectedJabatans = $(this).val() || []; // Array karena multiple select
         const karyawanSelect = $('#karyawan');
-        karyawanSelect.empty().trigger('change');
-        if (selectedJabatans.length === 0) return;
+        const assistantRouteSelect = $('#assistant_route');
 
-        $.ajax({
+        karyawanSelect.empty().trigger('change');
+        assistantRouteSelect.empty().prop('disabled', true).html('<option selected disabled>-- Memuat routes... --</option>').trigger('change');
+        $('#detail_jangka_container').empty();
+
+        if (selectedJabatans.length === 0) {
+            assistantRouteSelect.html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>').trigger('change');
+            return;
+        }
+
+        if (xhrKaryawan) xhrKaryawan.abort();
+        xhrKaryawan = $.ajax({
             url: window.KPI_CONFIG.getKaryawanByJabatan,
             type: 'GET',
             data: { jabatan: selectedJabatans },
             success: function(response) {
                 karyawanSelect.empty();
-                response.forEach(function(emp) {
-                    karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
-                });
+                if (response && response.length > 0) {
+                    response.forEach(function(emp) {
+                        karyawanSelect.append(`<option value="${emp.id}">${emp.text}</option>`);
+                    });
+                }
                 karyawanSelect.trigger('change');
             }
         });
-    });
 
+        if (xhrRoutes) xhrRoutes.abort();
+        xhrRoutes = $.ajax({
+            url: window.KPI_CONFIG.getRoutesByJabatan,
+            type: 'GET',
+            data: { jabatan: selectedJabatans },
+            success: function(response) {
+                assistantRouteSelect.empty();
+                assistantRouteSelect.append('<option value="" selected disabled>-- Pilih Assistant Route --</option>');
+
+                if (response && response.length > 0) {
+                    response.forEach(route => {
+                        assistantRouteSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
+                    });
+                    assistantRouteSelect.prop('disabled', false);
+                } else {
+                    assistantRouteSelect.append('<option disabled>-- Tidak ada route tersedia untuk jabatan ini --</option>');
+                    assistantRouteSelect.prop('disabled', true);
+                }
+                
+                assistantRouteSelect.trigger('change'); 
+            },
+            error: function(xhr, status) {
+                if (status === 'abort') return;
+                assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>').trigger('change');
+                if (typeof Swal !== 'undefined') Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
+            }
+        });
+    });
     // Load Content Form (Initial Load)
     loadContentForm();
 
@@ -234,42 +407,6 @@ $(document).ready(function() {
     // Setup Form Listeners for Create Target Modal
     const $assistantRoute = $('#assistant_route');
     $assistantRoute.prop('disabled', true).html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
-
-    $('#jabatan').on('change', function() {
-        const selectedJabatan = $(this).val();
-        const assistantRouteSelect = $('#assistant_route');
-        
-        assistantRouteSelect.empty().prop('disabled', true).html('<option selected disabled>-- Memuat routes... --</option>');
-        $('#detail_jangka_container').empty();
-
-        if (!selectedJabatan || selectedJabatan.length === 0) {
-            assistantRouteSelect.html('<option selected disabled>-- Pilih Jabatan Terlebih Dahulu --</option>');
-            return;
-        }
-
-        $.ajax({
-            url: window.KPI_CONFIG.getRoutesByJabatan,
-            type: 'GET',
-            data: { jabatan: selectedJabatan },
-            success: function(response) {
-                assistantRouteSelect.empty();
-                assistantRouteSelect.append('<option selected disabled>-- Pilih Assistant Route --</option>');
-                if (response.length === 0) {
-                    assistantRouteSelect.append('<option disabled>-- Tidak ada Assistant Route tersedia untuk jabatan ini --</option>');
-                    assistantRouteSelect.prop('disabled', true);
-                    return;
-                }
-                response.forEach(route => {
-                    assistantRouteSelect.append(`<option value="${route.asistant_route}">${route.asistant_route}</option>`);
-                });
-                assistantRouteSelect.prop('disabled', false);
-            },
-            error: function() {
-                assistantRouteSelect.html('<option disabled>-- Gagal memuat routes --</option>');
-                if (typeof Swal !== 'undefined') Swal.fire('Error', 'Gagal memuat daftar assistant route', 'error');
-            }
-        });
-    });
 
     $(document).on('change', '#assistant_route', function() {
         const selectedRoute = $(this).val();
@@ -366,12 +503,22 @@ $(document).ready(function() {
                 const startDate = new Date(startOfYear);
                 const deadlineDate = new Date(tenggatWaktu);
 
-                if (isNaN(currentDate) || isNaN(startDate)) Tercapai = "Belum Dimulai";
-                else if (currentDate < startDate) Tercapai = "Belum Dimulai";
-                else if (!isNaN(deadlineDate) && (currentDate > deadlineDate || currentDate.getTime() === deadlineDate.getTime())) {
-                    Tercapai = (dataDetail.progress ?? 0) >= (data.nilai_target ?? 0) ? "Mencapai Target" : "Target Gagal";
+                const isInverse = dataDetail.is_inverse === true
+                    || data.condition === 'persentase gap kompetensi tim terhadap standar skill';
+
+                const progressVal = dataDetail.progress ?? 0;
+                const targetVal   = data.nilai_target ?? 0;
+
+                const capai = isInverse
+                    ? progressVal <= targetVal
+                    : progressVal >= targetVal;
+
+                if (isNaN(currentDate) || isNaN(startDate) || currentDate < startDate) {
+                    Tercapai = "Belum Dimulai";
+                } else if (!isNaN(deadlineDate) && (currentDate > deadlineDate || currentDate.getTime() === deadlineDate.getTime())) {
+                    Tercapai = capai ? "Mencapai Target" : "Target Gagal";
                 } else {
-                    Tercapai = (dataDetail.progress ?? 0) >= (data.nilai_target ?? 0) ? "Mencapai Target" : "Sedang Berjalan";
+                    Tercapai = capai ? "Mencapai Target" : "Sedang Berjalan";
                 }
 
                 const targetValueRaw = data.nilai_target ?? 0;
@@ -752,6 +899,7 @@ $(document).ready(function() {
                 const allowedAssistantRoutesForPerformaKPIDepartemen = ['performa kpi departemen'];
                 const allowedAssistantRoutesForKepuasanPelanggan = ['Kepuasan Pelanggan', 'kepuasan pelanggan'];
                 const allowedAssistantRoutesForLaporanAnalisisKeuangan = ['laporan analisis keuangan'];
+                const allowedinovationAdaptionRateRoutes = ['inovation adaption rate'];
 
                 let ContentTrafikSales = '';
                 const condition = data.condition || '';
@@ -835,6 +983,44 @@ $(document).ready(function() {
                     const divisionHtml = Object.entries(item.division_breakdown || {}).map(([div, val]) => `<div class="col mb-3"><div class="p-2 border rounded-3"><small class="text-muted d-block">${div}</small><h5 class="fw-bold mb-0">${val ?? 0}%</h5></div></div>`).join('');
                     const riskHtml = (item.risk_divisions && item.risk_divisions.length > 0) ? `<div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-danger mb-3">DIVISI BERISIKO</h6><div class="row">${item.risk_divisions.map(risk => `<div class="col mb-2"><div class="p-2 border rounded-3 text-center"><small class="text-muted d-block">${risk.name || '-'}</small><span class="fw-bold text-danger">${risk.value ?? 0}%</span></div></div>`).join('')}</div></div></div></div>` : '';
                     contentStatisticChart = `<div class="row g-4 mt-1"><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">RINGKASAN</h6><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total KPI</span><span class="fw-bold">${item.total_kpi ?? 0}</span></div><div class="d-flex justify-content-between mb-2"><span class="text-muted">Total Divisi</span><span class="fw-bold">${item.total_division ?? 0}</span></div><div class="d-flex justify-content-between"><span class="text-muted">Progress</span><span class="fw-bold text-primary">${item.progress ?? 0}%</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">PERFORMA DIVISI</h6><div class="mb-3"><small class="text-muted d-block">Top Division</small><span class="fw-bold text-success">${item.top_division?.name ?? '-'} (${item.top_division?.value ?? 0}%)</span></div><div><small class="text-muted d-block">Lowest Division</small><span class="fw-bold text-danger">${item.lowest_division?.name ?? '-'} (${item.lowest_division?.value ?? 0}%)</span></div></div></div></div><div class="col-lg-4"><div class="card shadow-sm border-0 rounded-4 h-100"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">STATUS</h6><div class="mb-2"><span class="badge bg-${trendColor}">Trend: ${trend} (${trendValue})</span></div><div class="mb-2"><span class="badge bg-${consistencyColor}">Konsistensi: ${consistency}</span></div><div><span class="badge bg-${targetColor}">Target: ${targetStatus}</span></div></div></div></div><div class="col-6"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold text-secondary mb-3">BREAKDOWN DIVISI</h6><div class="row text-center">${divisionHtml}</div></div></div></div>${riskHtml}<div class="col-12"><div class="alert alert-info rounded-4 shadow-sm mb-0"><i class="fa-solid fa-lightbulb me-2"></i>${item.insight ?? '-'}</div></div></div>`;
+                } else if (allowedinovationAdaptionRateRoutes.includes(condition)) {
+                    const item = dataDetail || {};
+                    const dataInovasi = item.dataInovasi || [];
+
+                    contentStatisticChart = `
+                        <div class="table-responsive mt-3">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 30%;">Judul</th>
+                                        <th>Deskripsi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${
+                                        dataInovasi.length
+                                            ? dataInovasi.map(inovasi => `
+                                                <tr>
+                                                    <td class="fw-semibold">
+                                                        ${inovasi.judul ?? '-'}
+                                                    </td>
+                                                    <td>
+                                                        ${inovasi.deskripsi ?? '-'}
+                                                    </td>
+                                                </tr>
+                                            `).join('')
+                                            : `
+                                                <tr>
+                                                    <td colspan="2" class="text-center text-muted">
+                                                        Tidak ada data inovasi
+                                                    </td>
+                                                </tr>
+                                            `
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
                 } else if (allowedAssistantRoutesForLaporanAnalisisKeuangan.includes(condition)) {
                     const bulanIndo = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
                     const analisaData = dataDetail.analisa_data || [];
@@ -843,20 +1029,11 @@ $(document).ready(function() {
                         return `<div class="col-md-4 mt-5"><div class="card border-0 shadow-sm h-100"><div class="mb-2 p-3"><h5 class="fw-bold text-primary mb-1">${bulanIndo[item.month] || '-'}</h5><small class="text-muted">Laporan Analisis Bulanan</small></div><div class="card-body d-flex flex-column" style="overflow-y: scroll; max-height: 280px;"><div class="mb-3"><p class="mb-0" style="text-align: justify;">${item.description || ''}</p></div></div><div class="mt-auto p-3"><a href="${fileUrl}" class="btn btn-sm btn-outline-primary w-100" ${item.file_paths ? 'download' : ''}><i class="menu-icon fa-solid fa-file-alt"></i></a></div></div></div>`;
                     }).join('')}</div>`;
                 } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(condition)) {
-                    const karyawanGap = Array.isArray(data.karyawan) ? data.karyawan : [];
-                    const isKoordinatorItsm = window.KPI_CONFIG.isKoordinatorItsm;
-                    const disabledAttr = isKoordinatorItsm ? '' : 'disabled';
-                    const submitBtnHtml = isKoordinatorItsm ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : '';
-                    
-                    contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><h6 class="fw-semibold mb-3">Input Presentase Kemampuan Programmer</h6><form id="formGapKompetensi"><input type="hidden" name="_token" value="${window.KPI_CONFIG.csrfToken}"><div class="row mb-2 fw-semibold text-muted border-bottom pb-2"><div class="col-md-4">Nama Karyawan</div><div class="col-md-4">Kemampuan (%)</div><div class="col-md-4">Standar (%)</div></div>${karyawanGap.map((item, index) => {
-                        const kemampuan = parseFloat(item.presentase_kemampuan ?? 0);
-                        const standar = parseFloat(item.presentase_standar ?? 100);
-                        let badge = '';
-                        if (kemampuan === 0) badge = `<span class="badge bg-danger">0%</span>`;
-                        else if (kemampuan < standar) badge = `<span class="badge bg-warning text-dark">Not Achieved</span>`;
-                        else badge = `<span class="badge bg-success">Achieved</span>`;
-                        return `<div class="row mb-2 align-items-center p-2 rounded"><div class="col-md-4 d-flex justify-content-between align-items-center"><span>${item.nama_lengkap ?? '-'}</span>${badge}</div><div class="col-md-4"><input type="number" step="0.1" class="form-control kemampuan-input" name="data[${index}][kemampuan]" value="${kemampuan}" ${disabledAttr}></div><div class="col-md-4"><input type="number" step="0.1" class="form-control standar-input" name="data[${index}][standar]" value="${standar}" ${disabledAttr}></div><input type="hidden" name="data[${index}][id]" value="${item.id || ''}"></div>`;
-                    }).join('')}${submitBtnHtml}</form></div></div></div>`;
+                    contentStatisticChart = buildGapKompetensiForm(
+                        data, 
+                        window.KPI_CONFIG.isKoordinatorItsm, 
+                        window.KPI_CONFIG.csrfToken
+                    );
                 } else {
                     contentStatisticChart = `<div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body"><div class="d-flex justify-content-between mb-3"><h6 class="fw-semibold mb-0">Statistik ${condition}</h6><div class="d-flex gap-2"><select class="form-select form-select-sm" id="filterType"><option value="year">Per Tahun</option><option value="month">Per Bulan</option></select><select class="form-select form-select-sm d-none" id="filterMonth"><option value="">Pilih Bulan</option></select></div></div><div style="height:300px"><canvas id="StatisticChart"></canvas></div></div></div></div>`;
                 }
@@ -1125,6 +1302,46 @@ $(document).ready(function() {
         });
     });
 
+    function buildGapKompetensiForm(data, canEdit, csrfToken) {
+        const list = Array.isArray(data.karyawan) ? data.karyawan : [];
+        const disabledAttr = canEdit ? '' : 'disabled';
+
+        const rows = list.map((item, i) => {
+            const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
+            const badge = skala === null
+                ? '<span class="badge bg-secondary">Belum dinilai</span>'
+                : `<span class="badge bg-info text-dark">${Math.round(skala * 10)}%</span>`;
+
+            return `
+                <div class="row mb-2 align-items-center p-2 rounded">
+                    <div class="col-md-6 d-flex justify-content-between align-items-center">
+                        <span>${item.nama_lengkap ?? '-'}</span>${badge}
+                    </div>
+                    <div class="col-md-6">
+                        <input type="number" min="1" max="10" step="0.5" class="form-control"
+                            name="data[${i}][kemampuan]" value="${skala ?? ''}"
+                            placeholder="1 - 10" ${disabledAttr}>
+                    </div>
+                    <input type="hidden" name="data[${i}][id_karyawan]" value="${item.id_karyawan}">
+                    <input type="hidden" name="data[${i}][detailTargetKey]" value="${item.detailTargetKey}">
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body">
+                <h6 class="fw-semibold mb-1">Penilaian Kemampuan Tim</h6>
+                <small class="text-muted d-block mb-3">Isi skala 1-10 (8 = 80%). Gap dihitung dari rata-rata seluruh anggota tim.</small>
+                <form id="formGapKompetensi">
+                    <input type="hidden" name="_token" value="${csrfToken}">
+                    <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
+                        <div class="col-md-6">Nama Karyawan</div><div class="col-md-6">Nilai (1-10)</div>
+                    </div>
+                    ${rows || '<div class="text-muted small">Tidak ada anggota tim.</div>'}
+                    ${canEdit ? '<div class="mt-3"><button type="submit" class="btn btn-primary">Simpan</button></div>' : ''}
+                </form>
+            </div></div></div>`;
+    }
+
     function generateDetailSkeleton() {
         return `
             <div class="skeleton-modal-content">
@@ -1313,7 +1530,7 @@ $(document).ready(function() {
             success: function(response) {
                 $('#modalBuatTarget').modal('hide');
                 form[0].reset();
-                $('.select2').val(null).trigger('change');
+                form.find('.select2').val(null).trigger('change');
                 $('#detail_jangka_container').empty();
                 $('#jangka_target_display, #tipe_target_display, #nilai_target_display').val('');
                 $('#jangka_target_hidden, #tipe_target_hidden, #nilai_target_hidden').val('');
@@ -1336,30 +1553,33 @@ $(document).ready(function() {
     });
 
     // Document Preview Logic
-    document.getElementById('manual_document').addEventListener('change', function(e) {
-        const preview = document.getElementById('documentPreview');
-        preview.innerHTML = '';
-        const file = e.target.files[0];
-        if (!file) return;
-        const fileType = file.type;
-        if (fileType.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.classList.add('img-fluid', 'rounded');
-                img.style.maxHeight = '300px';
-                preview.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        } else if (fileType === 'application/pdf') {
-            const pdfInfo = document.createElement('div');
-            pdfInfo.innerHTML = `<p class="mb-2"><strong>PDF:</strong> ${file.name}</p><embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">`;
-            preview.appendChild(pdfInfo);
-        } else {
-            preview.innerHTML = `<p><strong>File:</strong> ${file.name}</p>`;
-        }
-    });
+    const manualDoc = document.getElementById('manual_document');
+    if (manualDoc) {
+        manualDoc.addEventListener('change', function(e) {
+            const preview = document.getElementById('documentPreview');
+            preview.innerHTML = '';
+            const file = e.target.files[0];
+            if (!file) return;
+            const fileType = file.type;
+            if (fileType.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    img.classList.add('img-fluid', 'rounded');
+                    img.style.maxHeight = '300px';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            } else if (fileType === 'application/pdf') {
+                const pdfInfo = document.createElement('div');
+                pdfInfo.innerHTML = `<p class="mb-2"><strong>PDF:</strong> ${file.name}</p><embed src="${URL.createObjectURL(file)}" type="application/pdf" width="100%" height="300px">`;
+                preview.appendChild(pdfInfo);
+            } else {
+                preview.innerHTML = `<p><strong>File:</strong> ${file.name}</p>`;
+            }
+        });
+    }
 
     // Import Form Logic (Fetch API)
     const formImport = document.getElementById('formImport');
@@ -1534,9 +1754,42 @@ function processRawData(details) {
             } else {
                 progressValueDisplay = Math.round(progressNumeric) + '%';
             }
+            
+            let lengthProgress = actualTarget > 0
+                ? Math.min(Math.round((progress / actualTarget) * 100), 100)
+                : 0;
 
-            const lengthProgress = actualTarget > 0 ? Math.min(Math.round((progress / actualTarget) * 100), 100) : 0;
             let isTargetReached = false;
+
+            const isGapRoute = item.asistant_route === 'persentase gap kompetensi tim terhadap standar skill';
+
+            if (isGapRoute) {
+                const belumDinilai = item.progress === null || item.progress === undefined;
+                const gapValue = parseFloat(item.progress);
+                const targetGap = parseFloat(item.nilai_target) || 10;
+
+                if (belumDinilai || isNaN(gapValue)) {
+                    isTargetReached = false;
+                    lengthProgress = 0;
+                    progressValueDisplay = 'Belum dinilai';
+                } else {
+                    // Status tetap terbalik: gap kecil = bagus
+                    isTargetReached = gapValue <= targetGap;
+
+                    // Progress bar & teks mengikuti nilai gap (92.3% → bar 92.3%)
+                    lengthProgress = Math.max(0, Math.min(100, Math.round(gapValue)));
+                    progressValueDisplay = `Gap ${gapValue}%`;
+                }
+            } else {
+                if (item.tipe_target === 'angka') {
+                    isTargetReached = (item.manual_value ?? 0) >= actualTarget;
+                } else if (item.tipe_target === 'rupiah') {
+                    isTargetReached = progress >= actualTarget;
+                } else {
+                    isTargetReached = progressNumeric >= item.nilai_target;
+                }
+            }
+
             if (item.tipe_target === 'angka') isTargetReached = (item.manual_value ?? 0) >= actualTarget;
             else if (item.tipe_target === 'rupiah') isTargetReached = progress >= actualTarget;
             else isTargetReached = progressNumeric >= item.nilai_target;
@@ -1569,7 +1822,7 @@ function processRawData(details) {
             processed.push({
                 id: item.id, judul: item.judul, jangkaDisplay, statusText, badgeClass, formattedTarget, jabatanDisplay,
                 divisi: item.divisi || '-', pembuat: item.pembuat || '-', lengthProgress, progressValueDisplay, progressBg,
-                tenggat_waktu: item.tenggat_waktu, buttonIsiForm, routeUrl
+                tenggat_waktu: item.tenggat_waktu, buttonIsiForm, routeUrl, asistant_route: item.asistant_route
             });
         });
     });
@@ -1606,8 +1859,24 @@ function renderTable() {
                         <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Aksi</button>
                         <ul class="dropdown-menu">
                             ${item.buttonIsiForm}
-                            <li><a href="${item.routeUrl}" class="dropdown-item text-dark" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Lihat Detail KPI</a></li>
-                            <li><button type="button" class="dropdown-item text-danger buttonHapusTarget" data-id="${item.id}"><i class="fa-solid fa-trash-can me-2"></i> Hapus</button></li>
+                            <li>
+                                <a href="${item.routeUrl}" class="dropdown-item text-dark" target="_blank">
+                                    <i class="fa-solid fa-arrow-up-right-from-square me-2"></i> Lihat Detail KPI
+                                </a>
+                            </li>
+                            <li>
+                                <button type="button" 
+                                        class="dropdown-item text-info buttonPanduan" 
+                                        data-route="${item.asistant_route || ''}"
+                                        data-judul="${item.judul || ''}">
+                                    <i class="fa-solid fa-book-open me-2"></i> Panduan
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item text-danger buttonHapusTarget" data-id="${item.id}">
+                                    <i class="fa-solid fa-trash-can me-2"></i> Hapus
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </td>
@@ -1644,3 +1913,178 @@ window.changePage = function(page) {
     loadContentForm(page, searchVal);
     $('html, body').animate({ scrollTop: $('#content_target').offset().top - 100 }, 300);
 };
+
+function escHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+function syncPanduanPdfState() {
+    const $jabatan = $('#panduanPdfOpsi .cek-jabatan');
+    const total = $jabatan.length;
+    const checked = $jabatan.filter(':checked').length;
+
+    $('#cekSemuaPanduan')
+        .prop('checked', total > 0 && checked === total)
+        .prop('indeterminate', checked > 0 && checked < total);
+
+    $('#panduanPdfOpsi .cek-divisi').each(function () {
+        const grup = $(this).data('grup');
+        const $items = $('#panduanPdfOpsi .cek-jabatan[data-grup="' + grup + '"]');
+        const dipilih = $items.filter(':checked').length;
+        $(this)
+            .prop('checked', dipilih > 0 && dipilih === $items.length)
+            .prop('indeterminate', dipilih > 0 && dipilih < $items.length);
+    });
+
+    $('#btnDownloadPanduanPdf').prop('disabled', checked === 0);
+    $('#infoPanduanPdf').text(checked + ' jabatan dipilih');
+}
+
+function renderPanduanPdfOpsi(groups) {
+    if (!groups || groups.length === 0) {
+        $('#panduanPdfOpsi').html('<div class="alert alert-secondary mb-0">Belum ada panduan yang tersedia.</div>');
+        syncPanduanPdfState();
+        return;
+    }
+
+    let html = '';
+    groups.forEach(function (g, i) {
+        html += `<div class="border rounded-3 p-3 mb-3">
+            <div class="form-check mb-2">
+                <input class="form-check-input cek-divisi" type="checkbox" id="cekDivisi${i}" data-grup="${i}">
+                <label class="form-check-label fw-semibold" for="cekDivisi${i}">${escHtml(g.divisi)}</label>
+            </div>
+            <div class="row g-2 ps-3">`;
+
+        (g.items || []).forEach(function (it, j) {
+            const id = `cekJabatan${i}_${j}`;
+            html += `<div class="col-md-6">
+                <div class="form-check">
+                    <input class="form-check-input cek-jabatan" type="checkbox" name="jabatan[]" value="${escHtml(it.value)}" id="${id}" data-grup="${i}">
+                    <label class="form-check-label" for="${id}">${escHtml(it.label)} <span class="badge bg-light text-muted border">${it.total} panduan</span></label>
+                </div>
+            </div>`;
+        });
+
+        html += '</div></div>';
+    });
+
+    $('#panduanPdfOpsi').html(html);
+    syncPanduanPdfState();
+}
+
+function loadPanduanPdfOpsi() {
+    $('#panduanPdfOpsi').html('<div class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat pilihan...</div>');
+    $('#cekSemuaPanduan').prop('checked', false).prop('indeterminate', false);
+    $('#btnDownloadPanduanPdf').prop('disabled', true);
+    $('#infoPanduanPdf').text('0 jabatan dipilih');
+
+    const url = (window.KPI_CONFIG && window.KPI_CONFIG.panduanOpsi) ? window.KPI_CONFIG.panduanOpsi : null;
+
+    if (!url) {
+        $('#panduanPdfOpsi').html('<div class="alert alert-danger mb-0">URL panduanOpsi tidak ditemukan di KPI_CONFIG.</div>');
+        return;
+    }
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function (res) {
+            renderPanduanPdfOpsi(res.groups || []);
+        },
+        error: function (xhr) {
+            console.error('Gagal load panduan opsi', xhr.status, xhr.responseText);
+            $('#panduanPdfOpsi').html(
+                '<div class="alert alert-danger mb-0">Gagal memuat pilihan (' + xhr.status + '). Silakan coba lagi.</div>'
+            );
+        }
+    });
+}
+
+// Pakai click tombol + event modal (lebih andal)
+$(document).on('click', '[data-bs-target="#modalPanduanPdf"]', function () {
+    // delay sedikit biar modal sempat buka
+    setTimeout(loadPanduanPdfOpsi, 50);
+});
+
+$(document).on('show.bs.modal', '#modalPanduanPdf', function () {
+    loadPanduanPdfOpsi();
+});
+
+$(document).on('change', '#cekSemuaPanduan', function () {
+    $('#panduanPdfOpsi .cek-jabatan').prop('checked', $(this).is(':checked'));
+    syncPanduanPdfState();
+});
+
+$(document).on('change', '#panduanPdfOpsi .cek-divisi', function () {
+    const grup = $(this).data('grup');
+    $('#panduanPdfOpsi .cek-jabatan[data-grup="' + grup + '"]').prop('checked', $(this).is(':checked'));
+    syncPanduanPdfState();
+});
+
+$(document).on('change', '#panduanPdfOpsi .cek-jabatan', function () {
+    syncPanduanPdfState();
+});
+
+$(document).on('submit', '#formPanduanPdf', function (e) {
+    if ($('#panduanPdfOpsi .cek-jabatan:checked').length === 0) {
+        e.preventDefault();
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Peringatan', 'Pilih minimal satu jabatan.', 'warning');
+        } else {
+            alert('Pilih minimal satu jabatan.');
+        }
+        return;
+    }
+
+    const $btn = $('#btnDownloadPanduanPdf');
+    const originalHtml = '<i class="fa-solid fa-download"></i> <span>Download PDF</span>';
+
+    $btn.prop('disabled', true)
+        .html('<i class="fa-solid fa-spinner fa-spin me-1"></i><span>Menyiapkan PDF...</span>');
+
+    setTimeout(function () {
+        $btn.html(originalHtml);
+        syncPanduanPdfState();
+    }, 2500);
+});
+
+$(document).on('hidden.bs.modal', '#modalPanduanPdf', function () {
+    const $btn = $('#btnDownloadPanduanPdf');
+    $btn.html('<i class="fa-solid fa-download"></i> <span>Download PDF</span>');
+    syncPanduanPdfState();
+});
+
+// ==========================================================================
+// SAFEGUARD MODAL PANDUAN (agar selalu bisa ditutup)
+// ==========================================================================
+// 1) Pindahkan modal ke <body> supaya tidak tertutup backdrop akibat stacking context
+//    (parent dengan transform / position / overflow / z-index).
+$(function () {
+    ['modalPanduan', 'modalPanduanPdf'].forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) document.body.appendChild(el);
+    });
+});
+
+// 2) Tombol tutup eksplisit (mendukung data-bs-dismiss Bootstrap 5 maupun data-dismiss Bootstrap 4)
+$(document).on('click', '#modalPanduan [data-bs-dismiss="modal"], #modalPanduan [data-dismiss="modal"], #modalPanduanPdf [data-bs-dismiss="modal"], #modalPanduanPdf [data-dismiss="modal"]', function (e) {
+    e.preventDefault();
+    const el = $(this).closest('.modal')[0];
+    if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(el).hide();
+    } else {
+        $(el).modal('hide');
+    }
+});
+
+// 3) Bersihkan backdrop yang tersangkut setelah modal panduan tertutup
+$(document).on('hidden.bs.modal', '#modalPanduan, #modalPanduanPdf', function () {
+    if ($('.modal.show').length === 0) {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css({ overflow: '', 'padding-right': '' });
+    }
+});

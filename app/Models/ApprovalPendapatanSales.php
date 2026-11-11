@@ -34,6 +34,7 @@ class ApprovalPendapatanSales extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'biaya_lain_lain',
+        'pengurangan_phh',
         'exam',
     ];
 

@@ -3,7 +3,7 @@
 namespace App\Exports;
 
 use App\Models\RKM;
-use App\Models\Karyawan;
+use App\Models\karyawan;
 use App\Models\Perusahaan;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -128,9 +128,9 @@ class RkmExport implements FromView, ShouldAutoSize, WithStyles
             $perusahaan_ids = preg_split('/\s*,\s*/', $row->perusahaan_all ?? '', -1, PREG_SPLIT_NO_EMPTY);
             $instruktur_ids = preg_split('/\s*,\s*/', $row->instruktur_all ?? '', -1, PREG_SPLIT_NO_EMPTY);
 
-            $row->sales = !empty($sales_ids) ? Karyawan::whereIn('kode_karyawan', $sales_ids)->get() : collect();
+            $row->sales = !empty($sales_ids) ? karyawan::whereIn('kode_karyawan', $sales_ids)->get() : collect();
             $row->perusahaan = !empty($perusahaan_ids) ? Perusahaan::whereIn('id', $perusahaan_ids)->get() : collect();
-            $row->instruktur = !empty($instruktur_ids) ? Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get() : collect();
+            $row->instruktur = !empty($instruktur_ids) ? karyawan::whereIn('kode_karyawan', $instruktur_ids)->get() : collect();
         }
 
         // Urutkan berdasarkan status: merah (0), biru (1), lalu hitam

@@ -24,7 +24,7 @@ class Perusahaan extends Model
         'email',
         'foto_npwp',
         'history_sales',
-        'history_status',
+        // 'history_status',
     ];
 
     public function getHistorySalesArrayAttribute()

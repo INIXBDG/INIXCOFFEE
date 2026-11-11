@@ -16,6 +16,7 @@ class CertificateSummary extends Model
         'materi',
         'awal_training',
         'akhir_training',
-        'keterangan'
+        'keterangan',
+        'kategori'
     ];
 }

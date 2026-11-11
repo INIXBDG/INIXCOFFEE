@@ -43,7 +43,7 @@ class OfficeController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('permission:Fitur Menu Office', ['only' => ['dashboard']]);
-        
+
         $this->middleware('permission:View RekapRKM Office', ['only' => ['rekapRkm', 'rekapRkmJson']]);
         $this->middleware('permission:Update RekapRKM Office', ['only' => ['selectHide', 'toggleHide', 'bulkToggleHide']]);
     }
@@ -340,7 +340,6 @@ class OfficeController extends Controller
     {
         $year = $request->year ?? Carbon::now()->year;
 
-        // Cache data outstanding per tahun selama 5 menit
         $data = Cache::remember("grafik_outstanding_v2_{$year}", now()->addMinutes(5), function () use ($year) {
             return outstanding::select([
                 'id',
@@ -365,42 +364,55 @@ class OfficeController extends Controller
                 ->get();
         });
 
-        $belum_bayar = 0;
-        $tepat_waktu = 0;
-        $terlambat = 0;
+        $labelStatus = [
+            'on_track'  => 'On Track',
+            'tepat'     => 'Tepat Waktu',
+            'terlambat' => 'Terlambat',
+        ];
 
-        foreach ($data as $item) {
+        $data->each(fn($item) => $item->status_label = $labelStatus[$this->getStatus($item)]);
 
-            if ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) {
-                $belum_bayar++;
-            } elseif ($item->status_pembayaran == 1 && $item->tanggal_bayar) {
-
-                if ($item->tanggal_bayar <= $item->due_date) {
-                    $tepat_waktu++;
-                } else {
-                    $terlambat++;
-                }
-            }
-        }
+        $counts = $data->countBy('status_label');
+        $on_track    = $counts->get('On Track', 0);
+        $tepat_waktu = $counts->get('Tepat Waktu', 0);
+        $terlambat   = $counts->get('Terlambat', 0);
 
         return response()->json([
-            'labels' => ['Belum Bayar', 'Tepat Waktu', 'Terlambat'],
-            'data' => [$belum_bayar, $tepat_waktu, $terlambat],
-            'total' => $belum_bayar + $tepat_waktu + $terlambat,
-            'datas' => $data->map(function ($item) {
+            'labels' => ['On Track', 'Tepat Waktu', 'Terlambat'],
+            'data'   => [$on_track, $tepat_waktu, $terlambat],
+            'total'  => $tepat_waktu + $terlambat,
+            'datas'  => $data->map(function ($item) {
+                $amount = $item->rkm?->invoice?->amount;
+
                 return [
-                    'perusahaan' => $item->rkm?->perusahaan->nama_perusahaan ?? '-',
-                    'kelas' => $item->rkm?->materi->nama_materi ?? '-',
-                    'sales' => $item->sales_key ?? '-',
-                    'tanggal' => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
-                    'tagihan' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'tenggat_waktu' => $item->due_date ?? '-',
-                    'tanggal_bayar' => $item->tanggal_bayar ?? '-',
-                    'nominal_pembayaran' => $item->rkm?->invoice?->amount !== null ? (int) $item->rkm?->invoice->amount : '-',
-                    'status' => ($item->status_pembayaran == 0 && is_null($item->tanggal_bayar)) ? "Belum Bayar" : (($item->status_pembayaran == 1 && $item->tanggal_bayar) ? (($item->tanggal_bayar <= $item->due_date) ? "Tepat Waktu" : "Terlambat") : "Belum Bayar"),
+                    'perusahaan'         => $item->rkm?->perusahaan?->nama_perusahaan ?? '-',
+                    'kelas'              => $item->rkm?->materi?->nama_materi ?? '-',
+                    'sales'              => $item->sales_key ?? '-',
+                    'tanggal'            => $item->rkm?->tanggal_akhir?->format('d F Y') ?? '-',
+                    'tagihan'            => $amount !== null ? (int) $amount : '-',
+                    'tenggat_waktu'      => $item->due_date ?? '-',
+                    'tanggal_bayar'      => $item->tanggal_bayar ?? '-',
+                    'nominal_pembayaran' => $amount !== null ? (int) $amount : '-',
+                    'status'             => $item->status_label,
                 ];
-            })
+            })->values(),
         ]);
+    }
+
+    private function getStatus($data)
+    {
+        if ($data->status_pembayaran == 1 && !empty($data->tanggal_bayar) && !empty($data->due_date)) {
+            return Carbon::parse($data->tanggal_bayar)->lte(Carbon::parse($data->due_date))
+                ? 'tepat'
+                : 'terlambat';
+        }
+
+        if ($data->status_pembayaran != 1 && !empty($data->due_date)
+            && now()->lte(Carbon::parse($data->due_date)->addMonths(6))) {
+            return 'on_track';
+        }
+
+        return 'terlambat';
     }
 
     public function GrafikKetepatanWaktu(Request $request)
@@ -514,6 +526,8 @@ class OfficeController extends Controller
 
             $query->whereYear('created_at', $tahun)
                 ->whereBetween(DB::raw('MONTH(created_at)'), [$bulanMulai, $bulanSelesai]);
+        } else {
+            $query->whereYear('created_at', $tahun);
         }
 
         $feedbacks = $query->get();
@@ -732,12 +746,19 @@ class OfficeController extends Controller
     {
         Carbon::setLocale('id');
 
-        $filter = $request->filter;
-        $value = $request->value;
-
         $tahun = is_numeric($request->tahun)
             ? (int) $request->tahun
             : now()->year;
+        $filter = $request->filter ?: 'tahun';
+        $value = $request->value;
+
+        if (!in_array($filter, ['tahun', 'bulan', 'triwulan'], true)) {
+            $filter = 'tahun';
+        }
+
+        if (!is_numeric($value)) {
+            $value = $filter === 'tahun' ? $tahun : null;
+        }
 
         $query = pengajuancuti::join('karyawans', 'pengajuancutis.id_karyawan', '=', 'karyawans.id')
             ->where('pengajuancutis.approval_manager', '1');
@@ -810,9 +831,17 @@ class OfficeController extends Controller
     {
         Carbon::setLocale('id');
 
-        $filter = $request->filter;
-        $value  = $request->value;
         $tahun  = is_numeric($request->tahun) ? (int) $request->tahun : now()->year;
+        $filter = $request->filter ?: 'tahun';
+        $value  = $request->value;
+
+        if (!in_array($filter, ['tahun', 'bulan', 'triwulan'], true)) {
+            $filter = 'tahun';
+        }
+
+        if (!is_numeric($value)) {
+            $value = $filter === 'tahun' ? $tahun : null;
+        }
 
         // Skip cache jika export PDF
         if (!$request->boolean('exportTotalMengajar')) {
@@ -836,8 +865,8 @@ class OfficeController extends Controller
                     ->whereNotNull('asisten_key')
             );
 
-        $query = DB::table(DB::raw("({$baseQuery->toSql()}) as t"))
-            ->mergeBindings($baseQuery)
+        $query = DB::query()
+            ->fromSub($baseQuery, 't') // 't' adalah alias tabel virtual
             ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan')
             ->leftJoin('materis', 'materis.id', '=', 't.materi_key');
 
@@ -848,7 +877,8 @@ class OfficeController extends Controller
             ->when($filter === 'triwulan' && is_numeric($value), function ($q) use ($value, $tahun) {
                 $bulanMulai = ($value - 1) * 3 + 1;
                 $q->whereYear('t.tanggal_awal', $tahun)
-                    ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+                    ->whereMonth('t.tanggal_awal', '>=', $bulanMulai)
+                    ->whereMonth('t.tanggal_awal', '<=', $bulanMulai + 2);
             });
 
         $results = $query->select(
@@ -1162,7 +1192,7 @@ class OfficeController extends Controller
         $tahun = $request->tahun ?? now()->year;
         $bulan = $request->bulan;
 
-        $base = Karyawan::whereNot('jabatan', 'Outsource')
+        $base = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1205,7 +1235,7 @@ class OfficeController extends Controller
         $bulan = $request->bulan;
         $search = $request->search ?? '';
 
-        $query = Karyawan::whereNot('jabatan', 'Outsource')
+        $query = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1254,7 +1284,7 @@ class OfficeController extends Controller
         $labels = $kontrak = $tetap = $probation = [];
 
         // Base query yang sama untuk semua status aktif
-        $base = Karyawan::whereNot('jabatan', 'Outsource')
+        $base = karyawan::whereNot('jabatan', 'Outsource')
             ->where('kode_karyawan', 'NOT LIKE', 'OL%')
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNotNull('nip')
@@ -1312,8 +1342,8 @@ class OfficeController extends Controller
 
     public function detailMengajar($id, Request $request)
     {
-        $karyawan = Karyawan::findOrFail($id);
-        $kodeKaryawan = $karyawan->kode_karyawan; 
+        $karyawan = karyawan::findOrFail($id);
+        $kodeKaryawan = $karyawan->kode_karyawan;
 
         Carbon::setLocale('id');
 
@@ -1335,8 +1365,8 @@ class OfficeController extends Controller
                     ->whereNotNull('asisten_key')
             );
 
-        $query = DB::table(DB::raw("({$baseQuery->toSql()}) as t"))
-            ->mergeBindings($baseQuery)
+        $query = DB::query()
+            ->fromSub($baseQuery, 't') // 't' adalah alias tabel virtual
             ->join('karyawans', 't.kode_karyawan', '=', 'karyawans.kode_karyawan')
             ->where('t.kode_karyawan', $kodeKaryawan)
             ->leftJoin('materis', 'materis.id', '=', 't.materi_key')
@@ -1351,7 +1381,8 @@ class OfficeController extends Controller
             $bulanMulai = ($value - 1) * 3 + 1;
 
             $q->whereYear('t.tanggal_awal', $tahun)
-            ->whereBetween(DB::raw('MONTH(t.tanggal_awal)'), [$bulanMulai, $bulanMulai + 2]);
+                ->whereMonth('t.tanggal_awal', '>=', $bulanMulai)
+                ->whereMonth('t.tanggal_awal', '<=', $bulanMulai + 2);
         });
 
         $results = $query->select(
@@ -1589,90 +1620,116 @@ class OfficeController extends Controller
         });
     }
 
-        public function rekapRkmJson(Request $request)
+    public function rekapRkmJson(Request $request)
     {
-        $tahun      = $request->input('tahun', now()->year);
+        $tahun      = (int) $request->input('tahun', now()->year);
         $filterType = $request->input('filter_type', 'bulan');
-        $bulan      = $request->input('bulan', now()->month);
-        $triwulan   = $request->input('triwulan', ceil(now()->month / 3));
+        $bulan      = (int) $request->input('bulan', now()->month);
+        $triwulan   = (int) $request->input('triwulan', ceil(now()->month / 3));
 
+        // ===== Data utama (tabel & materi terbanyak) =====
         $query = RKM::with([
                 'materi:id,nama_materi',
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', '0')
-            ->where('metode_kelas', '!=', 'Exam Only')
+            ->whereIn('status', ['0', '3'])
+            // Periode mengikuti RKM (dibungkus closure supaya orWhere di dalam
+            // applyPeriodeFilter tidak bocor ke kondisi lain)
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
-                // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
-                $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
-                    $q1->whereDoesntHave('peluang');
-                    $this->applyPeriodeFilter($q1, 'tanggal_awal', $filterType, $tahun, $bulan, $triwulan);
-                })
-                // Kasus 2: RKM punya peluang -> filter tentatif/tahap + periode_mulai peluang
-                ->orWhereHas('peluang', function ($q2) use ($filterType, $tahun, $bulan, $triwulan) {
-                    $q2->where('tentatif', false)
-                    ->where('tahap', 'merah');
-                    $this->applyPeriodeFilter($q2, 'periode_mulai', $filterType, $tahun, $bulan, $triwulan);
+                $this->applyPeriodeFilter($q, 'tanggal_awal', $filterType, $tahun, $bulan, $triwulan);
+            })
+            // RKM tanpa peluang boleh masuk; kalau punya peluang harus merah & tidak tentatif
+            ->where(function ($q) {
+                $q->whereDoesntHave('peluang')
+                ->orWhereHas('peluang', function ($p) {
+                    $p->where('tentatif', false)
+                        ->where('tahap', 'merah');
                 });
             });
 
         $data = $query->get();
 
+        // ===== List peluang (tabel) =====
         $peluang = $data->map(function ($rkm) {
-            $pel = $rkm->peluang; // null kalau belum ada peluang (data lama)
-
             return [
                 'id'              => $rkm->id,
-                'periode_mulai' => optional($pel)->periode_mulai
-                    ? Carbon::parse($pel->periode_mulai)->format('d/m/Y')
-                    : ($rkm->tanggal_awal
-                        ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y')
-                        : '-'),
-
-                'periode_selesai' => optional($pel)->periode_selesai
-                    ? Carbon::parse($pel->periode_selesai)->format('d/m/Y')
-                    : ($rkm->tanggal_akhir
-                        ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y')
-                        : '-'),
+                'periode_mulai'   => $rkm->tanggal_awal
+                    ? Carbon::parse($rkm->tanggal_awal)->format('d/m/Y')
+                    : '-',
+                'periode_selesai' => $rkm->tanggal_akhir
+                    ? Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y')
+                    : '-',
                 'nama_materi'     => optional($rkm->materi)->nama_materi,
                 'nama_perusahaan' => optional($rkm->perusahaan)->nama_perusahaan,
                 'hide'            => $rkm->hide,
+                'hide_materi'     => $rkm->hide_materi,
+                'hide_perusahaan' => $rkm->hide_perusahaan,
                 'sales'           => $rkm->sales_key,
             ];
         });
 
-        $materiCount = $data
+        // ===== Materi terbanyak =====
+        $materiTerbanyak = $data
+            ->where('hide_materi', '!=', true)
             ->map(fn($rkm) => optional($rkm->materi)->nama_materi)
             ->filter()
             ->countBy()
-            ->sortDesc();
-
-        $materiTerbanyak = $materiCount->map(function ($jumlah, $namaMateri) {
-            return [
+            ->sortDesc()
+            ->map(fn($jumlah, $namaMateri) => [
                 'nama_materi' => $namaMateri,
                 'jumlah'      => $jumlah,
-            ];
-        })->values();
+            ])
+            ->values();
 
-        $rkmPerMinggu = $data
-            ->map(function ($rkm) {
-                $tanggal = optional($rkm->peluang)->periode_mulai ?? $rkm->tanggal_awal;
-                return ['tanggal' => $tanggal];
+        // ===== Rentang periode -> diperlebar ke minggu penuh =====
+        if ($filterType === 'triwulan') {
+            $start = Carbon::create($tahun, (($triwulan - 1) * 3) + 1, 1)->startOfMonth();
+            $end   = $start->copy()->addMonths(2)->endOfMonth();
+        } elseif ($filterType === 'tahun') {
+            $start = Carbon::create($tahun, 1, 1)->startOfYear();
+            $end   = $start->copy()->endOfYear();
+        } else { // bulan
+            $start = Carbon::create($tahun, $bulan, 1)->startOfMonth();
+            $end   = $start->copy()->endOfMonth();
+        }
+
+        $rangeStart = $start->copy()->startOfWeek(Carbon::MONDAY)->toDateString();
+        $rangeEnd   = $end->copy()->endOfWeek(Carbon::SUNDAY)->toDateString();
+
+        // ===== RKM per minggu (filter sama dengan showMonth) =====
+        $rkmMinggu = RKM::whereBetween('tanggal_awal', [$rangeStart, $rangeEnd])
+            ->whereHas('materi') // padanan join ke tabel materis
+            ->where('hide', false)
+            ->whereDoesntHave('peluang', function ($q) {
+                $q->where(function ($w) {
+                    $w->where('tentatif', 1)->orWhere('tahap', 'lost');
+                });
             })
-            ->filter(fn($item) => !empty($item['tanggal']))
-            ->groupBy(function ($item) {
-                return Carbon::parse($item['tanggal'])->startOfWeek(Carbon::MONDAY)->format('Y-m-d');
-            })
+            ->get(['id', 'materi_key', 'ruang', 'metode_kelas', 'event', 'tanggal_awal']);
+
+        $rkmPerMinggu = $rkmMinggu
+            ->groupBy(fn($r) => Carbon::parse($r->tanggal_awal)
+                ->startOfWeek(Carbon::MONDAY)
+                ->format('Y-m-d'))
             ->map(function ($items, $weekStart) {
                 $start = Carbon::parse($weekStart);
                 $end   = $start->copy()->endOfWeek(Carbon::SUNDAY);
+
+                // 1 grup = 1 kartu di showMonth
+                $jumlah = $items->unique(fn($r) => implode('|', [
+                    $r->materi_key,
+                    $r->ruang,
+                    $r->metode_kelas,
+                    $r->event,
+                    Carbon::parse($r->tanggal_awal)->toDateString(),
+                ]))->count();
 
                 return [
                     'week_start' => $start->format('Y-m-d'),
                     'week_end'   => $end->format('Y-m-d'),
                     'label'      => $start->translatedFormat('d M') . ' - ' . $end->translatedFormat('d M Y'),
-                    'jumlah'     => $items->count(),
+                    'jumlah'     => $jumlah,
                 ];
             })
             ->sortBy('week_start')
@@ -1729,7 +1786,7 @@ class OfficeController extends Controller
                 'perusahaan:id,nama_perusahaan',
                 'peluang',
             ])
-            ->where('status', '0')
+            ->whereIn('status', ['0', '3'])
             ->where(function ($q) use ($filterType, $tahun, $bulan, $triwulan) {
                 // Kasus 1: RKM tidak punya peluang -> filter pakai tanggal_awal milik RKM sendiri
                 $q->where(function ($q1) use ($filterType, $tahun, $bulan, $triwulan) {
@@ -1768,10 +1825,11 @@ class OfficeController extends Controller
         $request->validate([
             'rkm_id' => 'required|integer',
             'hide'   => 'required|boolean',
+            'field'  => 'required|in:hide,hide_materi,hide_perusahaan',
         ]);
 
         $rkm = RKM::findOrFail($request->rkm_id);
-        $rkm->update(['hide' => $request->hide]);
+        $rkm->update([$request->field => $request->hide]);
 
         return response()->json(['success' => true]);
     }
@@ -1782,9 +1840,10 @@ class OfficeController extends Controller
             'ids'   => 'required|array',
             'ids.*' => 'integer',
             'hide'  => 'required|boolean',
+            'field' => 'required|in:hide,hide_materi,hide_perusahaan',
         ]);
 
-        $count = RKM::whereIn('id', $request->ids)->update(['hide' => $request->hide]);
+        $count = RKM::whereIn('id', $request->ids)->update([$request->field => $request->hide]);
 
         return response()->json(['success' => true, 'count' => $count]);
     }

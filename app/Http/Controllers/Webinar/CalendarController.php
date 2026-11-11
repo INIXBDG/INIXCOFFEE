@@ -98,9 +98,11 @@ class CalendarController extends Controller
 
     public function updateEvent(Request $request, $mappingId)
     {
-        if (!auth()->check() || auth()->user()->jabatan !== 'Tim Digital') {
+        $user = auth()->user();
+
+        if (!$user || !$user->can('manage-master-plan')) {
             return response()->json([
-                'message' => 'Akses Ditolak: Hanya Tim Digital yang dapat mengubah Master Plan & Event.'
+                'message' => 'Akses Ditolak: Anda tidak memiliki izin untuk mengubah Master Plan & Event.'
             ], 403);
         }
 

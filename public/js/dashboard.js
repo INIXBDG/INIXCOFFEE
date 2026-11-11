@@ -948,11 +948,11 @@ function fetchTabInix(year) {
 
                 // Foto Karyawan Terbaik
                 const defaultImage = '/images/download.png';
-                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto) 
-                    ? `/storage/posts/${data.sales_terbaik.sales.foto}` 
+                const fotoSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.foto)
+                    ? `/storage/posts/${data.sales_terbaik.sales.foto}`
                     : defaultImage;
-                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto) 
-                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}` 
+                const fotoInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.foto)
+                    ? `/storage/posts/${data.instruktur_terbaik.instruktur.foto}`
                     : defaultImage;
                 const fotoOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.foto)
                     ? `/storage/posts/${data.office_terbaik.office.foto}`
@@ -967,17 +967,17 @@ function fetchTabInix(year) {
                 $('#foto_itsm').attr('src', fotoItsm);
 
                 // Nama Karyawan Terbaik
-                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap) 
-                    ? data.sales_terbaik.sales.nama_lengkap 
+                const namaSales = (data.sales_terbaik && data.sales_terbaik.sales && data.sales_terbaik.sales.nama_lengkap)
+                    ? data.sales_terbaik.sales.nama_lengkap
                     : (data.sales_terbaik && data.sales_terbaik.sales_key ? data.sales_terbaik.sales_key : 'Belum Ada');
-                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap) 
-                    ? data.instruktur_terbaik.instruktur.nama_lengkap 
+                const namaInstruktur = (data.instruktur_terbaik && data.instruktur_terbaik.instruktur && data.instruktur_terbaik.instruktur.nama_lengkap)
+                    ? data.instruktur_terbaik.instruktur.nama_lengkap
                     : 'Belum Ada';
-                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap) 
-                    ? data.office_terbaik.office.nama_lengkap 
+                const namaOffice = (data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.nama_lengkap)
+                    ? data.office_terbaik.office.nama_lengkap
                     : ((data.office_terbaik && data.office_terbaik.office && data.office_terbaik.office.office_nama) ? data.office_terbaik.office.office_nama : 'Belum Ada');
-                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap) 
-                    ? data.itsm_terbaik.itsm.nama_lengkap 
+                const namaItsm = (data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.nama_lengkap)
+                    ? data.itsm_terbaik.itsm.nama_lengkap
                     : ((data.itsm_terbaik && data.itsm_terbaik.itsm && data.itsm_terbaik.itsm.itsm_nama) ? data.itsm_terbaik.itsm.itsm_nama : 'Belum Ada');
 
                 $('#nama_sales').text(namaSales);
@@ -1028,8 +1028,8 @@ function fetchTabInix(year) {
                         else if (item.rank === 2) rankBadgeClass = 'rank-pill-2';
                         else if (item.rank === 3) rankBadgeClass = 'rank-pill-3';
 
-                        const kodeHtml = item.kode_materi && item.kode_materi !== '-' 
-                            ? `<span class="class-code-tag">${item.kode_materi}</span>` 
+                        const kodeHtml = item.kode_materi && item.kode_materi !== '-'
+                            ? `<span class="class-code-tag">${item.kode_materi}</span>`
                             : '';
 
                         const row = `
@@ -1534,6 +1534,11 @@ function renderTotalMengajarPerMateriChart(labels, data, title) {
 }
 
 function fetchUptimePresentase() {
+    if (typeof window.loadUptimePercentage === 'function') {
+        window.loadUptimePercentage();
+        return;
+    }
+
     $.ajax({
         url: '/dashboard/uptime/monitoring',
         type: 'GET',
@@ -1562,8 +1567,8 @@ function fetchUptimePresentase() {
 
             var coffeeWeekDowntimePerc = 100 - parseFloat(data.coffee_week);
             var coffeeMonthDowntimePerc = 100 - parseFloat(data.coffee_month);
-            $('#coffee-weekly-downtime-bar').css('width', coffeeWeekDowntimePerc);
-            $('#coffee-monthly-downtime-bar').css('width', coffeeMonthDowntimePerc);
+            $('#coffee-weekly-downtime-bar').css('width', coffeeWeekDowntimePerc + '%');
+            $('#coffee-monthly-downtime-bar').css('width', coffeeMonthDowntimePerc + '%');
 
             // Sembunyikan loading, tampilkan content
             $('#uptime-loading').addClass('d-none');
@@ -2971,137 +2976,125 @@ const getSlaClass = (val) => (val >= 90 ? 'text-success' : (val >= 80 ? 'text-wa
  * Memuat data SLA Digital berdasarkan filter bulan yang dipilih.
  * @param {string|null} selectedMonth - Nilai bulan (1-12) atau 'all'.
  */
-async function loadSlaDigital(selectedMonth = null) {
-    console.log('🚀 [SLA Digital] Memuat data dari endpoint dashboardDigital()');
+    async function loadSlaDigital() {
+        console.log('🚀 [SLA Digital] Memuat data');
 
-    const $container = $('#sla-digital-container');
-    const baseUrl = $container.data('url') || '/dashboard-digital';
+        const $container = $('#sla-digital-container');
+        const baseUrl = $container.data('url') || '/dashboard-sla/digital';
 
-    console.log('📡 [SLA Digital] Request URL:', baseUrl);
+        $('#digital_sla_period').text('Memuat periode data...');
+        $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
+        $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('...');
+        $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
-    // Set Loading State
-    $('#digital_sla_period').text('Memuat periode data...');
-    $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('...');
-    $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('...');
-    $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
+        try {
+            let startDate, endDate;
+            const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
+            const selectedMonth = $('#filterBulanDigital').val() || $('#globalBulanFilter').val();
 
-    try {
-        let startDate, endDate;
-        // Ambil referensi tahun aktif, gunakan tahun berjalan sebagai nilai awal
-        const currentYear = $('#tahun').val() ? parseInt($('#tahun').val()) : new Date().getFullYear();
+            const pad = n => String(n).padStart(2, '0');
+            if (selectedMonth && selectedMonth !== 'all') {
+                const monthIndex = parseInt(selectedMonth) - 1;
+                const lastDay = new Date(currentYear, monthIndex + 1, 0).getDate();
+                startDate = `${currentYear}-${pad(monthIndex + 1)}-01`;
+                endDate = `${currentYear}-${pad(monthIndex + 1)}-${pad(lastDay)}`;
+            } else {
+                startDate = `${currentYear}-01-01`;
+                endDate = `${currentYear}-12-31`;
+            }
 
-        // Logika resolusi tanggal berdasarkan parameter bulan
-        if (selectedMonth && selectedMonth !== 'all') {
-            const monthIndex = parseInt(selectedMonth) - 1;
-            startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
-            endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
-        } else if (selectedMonth === 'all') {
-            startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-            endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
-        } else {
-            const now = new Date();
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+            const response = await $.ajax({
+                url: baseUrl,
+                method: 'GET',
+                data: { start_date: startDate, end_date: endDate },
+                dataType: 'json',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                timeout: 15000
+            });
+
+            if (!response || !response.kpi) {
+                throw new Error('Response tidak valid.');
+            }
+
+            const { kpi, content_details } = response;
+
+            if (kpi.filters) {
+                const start = kpi.filters.start?.split(' ')[0] || '-';
+                const end = kpi.filters.end?.split(' ')[0] || '-';
+                $('#digital_sla_period').text(`Periode: ${start} s/d ${end}`);
+            }
+
+            const resComp = parseFloat(kpi.ticket_resolution_compliance) || 0;
+            const respComp = parseFloat(kpi.ticket_response_compliance) || 0;
+            const avgTime = parseFloat(kpi.avg_resolution_time) || 0;
+
+            $('#digital-ticket-res-sla').text(`${resComp.toFixed(1)}%`).attr('class', `fs-2 fw-bold ${getSlaClass(resComp)}`);
+            $('#digital-ticket-resp-sla').text(`${respComp.toFixed(1)}%`).attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
+            $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
+
+            const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
+            const totalContent = parseInt(kpi.total_content_uploaded) || 0;
+            const weeksMet = parseInt(kpi.weeks_met) || 0;
+            const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
+
+            $('#digital-content-sla').text(`${contentComp.toFixed(1)}%`).attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
+
+            const topDigitalEl = document.getElementById('top-digital-sla');
+            if (topDigitalEl) {
+                topDigitalEl.textContent = formatPercent(contentComp);
+                topDigitalEl.className = `fs-2 fw-bold ${getSlaClass(contentComp)}`;
+            }
+
+            $('#digital-content-total').text(totalContent);
+            $('#digital-weeks-met').text(weeksMet);
+            $('#digital-weeks-total').text(totalWeeks);
+
+            renderDigitalWeeklyTable(content_details || []);
+
+        } catch (err) {
+            console.error('❌ Error SLA Digital:', err);
+            $('#digital_sla_period').html(`<span class="text-danger">⚠️ Gagal: ${err.message}</span>`);
+            $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg').text('-').addClass('text-muted');
+            $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total').text('-').addClass('text-muted');
+            $('#digital-weekly-table-body').html(`<tr><td colspan="4" class="text-center py-3 text-danger">Error: ${err.message}</td></tr>`);
         }
-
-        const response = await $.ajax({
-            url: baseUrl,
-            method: 'GET',
-            data: { start_date: startDate, end_date: endDate },
-            dataType: 'json',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            timeout: 15000
-        });
-
-        console.log('✅ [SLA Digital] Response diterima:', response);
-
-        // Validasi response
-        if (!response || !response.kpi) {
-            throw new Error('Response tidak memiliki field "kpi". Cek endpoint /dashboard-digital');
-        }
-
-        const { kpi, content_details } = response;
-
-        // 1. Update Header Periode
-        if (kpi.filters) {
-            const start = kpi.filters.start?.split(' ')[0] || '-';
-            const end = kpi.filters.end?.split(' ')[0] || '-';
-            $('#digital_sla_period').text(`Periode: ${start} s/d ${end}`);
-        }
-
-        // 2. Update SLA Ticketing (Support) - kanan
-        const resComp = parseFloat(kpi.ticket_resolution_compliance) || 0;
-        const respComp = parseFloat(kpi.ticket_response_compliance) || 0;
-        const avgTime = parseFloat(kpi.avg_resolution_time) || 0;
-
-        $('#digital-ticket-res-sla')
-            .text(`${resComp.toFixed(1)}%`)
-            .attr('class', `fs-2 fw-bold ${getSlaClass(resComp)}`);
-        $('#digital-ticket-resp-sla')
-            .text(`${respComp.toFixed(1)}%`)
-            .attr('class', `fs-2 fw-bold ${getSlaClass(respComp)}`);
-        $('#digital-ticket-avg').text(`${avgTime.toFixed(1)} Jam`);
-
-        // 3. Update SLA Konten - kiri
-        const contentComp = parseFloat(kpi.content_sla_compliance) || 0;
-        const totalContent = parseInt(kpi.total_content_uploaded) || 0;
-        const weeksMet = parseInt(kpi.weeks_met) || 0;
-        const totalWeeks = parseInt(kpi.total_weeks_evaluated) || 0;
-
-        $('#digital-content-sla')
-            .text(`${contentComp.toFixed(1)}%`)
-            .attr('class', `fs-1 fw-bold ${getSlaClass(contentComp)}`);
-        $('#digital-content-total').text(totalContent);
-        $('#digital-weeks-met').text(weeksMet);
-        $('#digital-weeks-total').text(totalWeeks);
-
-        // 4. Render Tabel Mingguan dari content_details
-        renderDigitalWeeklyTable(content_details || []);
-
-        console.log('✅ [SLA Digital] Render selesai. Data:', {
-            ticketing: { resComp, respComp, avgTime },
-            content: { contentComp, totalContent, weeksMet, totalWeeks }
-        });
-
-    } catch (err) {
-        console.error('❌ [SLA Digital] Error:', err);
-        $('#digital_sla_period').html(`<span class="text-danger">⚠️ Gagal: ${err.message}</span>`);
-        $('#digital-ticket-res-sla, #digital-ticket-resp-sla, #digital-ticket-avg')
-            .text('-').addClass('text-muted');
-        $('#digital-content-sla, #digital-content-total, #digital-weeks-met, #digital-weeks-total')
-            .text('-').addClass('text-muted');
-        $('#digital-weekly-table-body')
-            .html(`<tr><td colspan="4" class="text-center py-3 text-danger">Error: ${err.message}</td></tr>`);
-    }
-}
-
-function renderDigitalWeeklyTable(data) {
-    const $tbody = $('#digital-weekly-table-body');
-
-    if (!data || !Array.isArray(data) || data.length === 0) {
-        $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
-        return;
     }
 
-    const rows = data.map(row => {
-        const period = row.week_range || row.period || '-';
-        const uploads = row.count ?? row.uploads ?? 0;
-        const target = row.target ?? 3;
-        const status = row.status || '-';
-        const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
+    function renderDigitalWeeklyTable(data) {
+        const $tbody =$('#digital-weekly-table-body');
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
+            return;
+        }
 
-        return `
-            <tr>
-                <td>${period}</td>
-                <td class="text-center fw-bold">${uploads}</td>
-                <td class="text-center">${target}</td>
-                <td class="text-center"><span class="badge ${badgeClass}">${status}</span></td>
-            </tr>
-        `;
-    }).join('');
+        const rows = data.map(row => {
+            const period = row.week_range || row.period || '-';
+            const uploads = row.count ?? row.uploads ?? 0;
+            const target = row.target ?? 3;
+            const status = row.status || '-';
 
-    $tbody.html(rows);
-}
+            // Render label hari aktif jika ada dari controller
+            const activeDaysLabel = row.active_days !== undefined
+                ? `<br><small class="text-muted">(${row.active_days} Hari Aktif)</small>`
+                : '';
+
+            const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
+
+            return `
+                <tr>
+                    <td>${period}</td>
+                    <td class="text-center fw-bold align-middle">${uploads}</td>
+                    <td class="text-center align-middle">
+                        <strong>${target}</strong>
+                        ${activeDaysLabel}
+                    </td>
+                    <td class="text-center align-middle"><span class="badge ${badgeClass}">${status}</span></td>
+                </tr>
+            `;
+        }).join('');
+
+        $tbody.html(rows);
+    }
 
 $(document).ready(function () {
 
@@ -3128,10 +3121,30 @@ $(document).ready(function () {
 
     // Event Listener Filter Bulan untuk SLA Digital
     $('#filterBulanDigital').on('change', function () {
+        $('#pills-sla-digital-tab').data('loaded', false);
         if (typeof loadSlaDigital === 'function') {
-            loadSlaDigital($(this).val());
+            loadSlaDigital();
         }
     });
+
+    // Event Listener Filter Bulan untuk SLA Programmer
+    $('#filterBulanProg').on('change', function () {
+        // Reset loaded flag agar tab bisa reload
+        $('#pills-sla-programmer-tab').data('loaded', false);
+        loadSlaTim();
+        loadSlaUser();
+        loadSlaKritis();
+    });
+
+    // Event Listener Filter Bulan untuk SLA Technical Support
+    $('#filterBulanTs').on('change', function () {
+        // Reset loaded flag agar tab bisa reload
+        $('#pills-sla-tech-support-tab').data('loaded', false);
+        loadSlaTsTim();
+        loadSlaTsUser();
+        loadSlaTsKritis();
+    });
+
 
     // Event Listeners PILLS (Tab Lama)
     $('#pills-jumlah-ticketing-tab').on('shown.bs.tab', function () { fetchJumlahTicketingData($('#filterBulan').val() || 'all'); });
@@ -3166,13 +3179,22 @@ $(document).ready(function () {
 
     function updateFilterDisplay(filters, elementId) {
         try {
-            const startDate = new Date(filters.start);
+            if (!filters || !filters.start || !filters.end) return;
+            const startDate = new Date(filters.start.replace(' ', 'T'));
+            const endDate = new Date(filters.end.replace(' ', 'T'));
             const year = startDate.getFullYear();
-            const month = startDate.getMonth();
-            const semester = (month < 6) ? 1 : 2;
             const el = document.getElementById(elementId);
             if (el) {
-                el.innerHTML = `<strong>Tahun: ${year} - Semester: ${semester}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                const isFullYear = 
+                    startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                    endDate.getMonth() === 11 && endDate.getDate() === 31;
+                
+                if (isFullYear) {
+                    el.innerHTML = `<strong>Tahun: ${year} - Semua Bulan</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                } else {
+                    const namaBulan = startDate.toLocaleString('id-ID', { month: 'long' });
+                    el.innerHTML = `<strong>Bulan: ${namaBulan} ${year}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                }
             }
         } catch (e) { console.error("Gagal update filter display", e); }
     }
@@ -3186,10 +3208,18 @@ $(document).ready(function () {
     const slaProgKritisUrl = "/dashboard-sla/programmer/kritis";
     let slaProgrammerChart;
 
+    function getSlaProgQueryString() {
+        const tahun = document.getElementById('globalTahunFilter')?.value || new Date().getFullYear();
+        const bulan = document.getElementById('filterBulanProg')?.value || document.getElementById('globalBulanFilter')?.value || 'all';
+        return `?tahun=${tahun}&bulan=${bulan}`;
+    }
+
     async function loadSlaTim() {
         try {
-            const response = await fetch(slaProgTimUrl); const kpi = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgTimUrl + qs); const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'sla_current_period');
+
 
             const resEl = document.getElementById('tim-sla-resolution');
             resEl.textContent = formatPercent(kpi.sla_resolution_compliance);
@@ -3214,7 +3244,8 @@ $(document).ready(function () {
 
     async function loadSlaUser() {
         try {
-            const response = await fetch(slaProgUserUrl); const data = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgUserUrl + qs); const data = await response.json();
             const tableBody = document.getElementById('sla-user-table-body'); tableBody.innerHTML = '';
             if (data.kpi.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return; }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
@@ -3225,7 +3256,8 @@ $(document).ready(function () {
 
     async function loadSlaKritis() {
         try {
-            const response = await fetch(slaProgKritisUrl); const data = await response.json();
+            const qs = getSlaProgQueryString();
+            const response = await fetch(slaProgKritisUrl + qs); const data = await response.json();
             const kpi = data.kpi;
             document.getElementById('kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
             document.getElementById('kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);
@@ -3250,9 +3282,16 @@ $(document).ready(function () {
     const slaTsKritisUrl = "/dashboard-sla/tech-support/kritis";
     let slaTsTimChart;
 
+    function getSlaTsQueryString() {
+        const tahun = document.getElementById('globalTahunFilter')?.value || new Date().getFullYear();
+        const bulan = document.getElementById('filterBulanTs')?.value || document.getElementById('globalBulanFilter')?.value || 'all';
+        return `?tahun=${tahun}&bulan=${bulan}`;
+    }
+
     async function loadSlaTsTim() {
         try {
-            const response = await fetch(slaTsTimUrl); const kpi = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsTimUrl + qs); const kpi = await response.json();
             updateFilterDisplay(kpi.filters, 'ts_sla_current_period');
 
             document.getElementById('ts-tim-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
@@ -3272,7 +3311,8 @@ $(document).ready(function () {
 
     async function loadSlaTsUser() {
         try {
-            const response = await fetch(slaTsUserUrl); const data = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsUserUrl + qs); const data = await response.json();
             const tableBody = document.getElementById('ts-sla-user-table-body'); tableBody.innerHTML = '';
             if (data.kpi.length === 0) { tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return; }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
@@ -3283,7 +3323,8 @@ $(document).ready(function () {
 
     async function loadSlaTsKritis() {
         try {
-            const response = await fetch(slaTsKritisUrl); const data = await response.json();
+            const qs = getSlaTsQueryString();
+            const response = await fetch(slaTsKritisUrl + qs); const data = await response.json();
             const kpi = data.kpi;
             document.getElementById('ts-kritis-sla-resolution').textContent = formatPercent(kpi.sla_resolution_compliance);
             document.getElementById('ts-kritis-sla-response').textContent = formatPercent(kpi.sla_response_compliance);

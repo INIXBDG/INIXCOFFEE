@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class JurnalArrayImport implements ToArray, WithCalculatedFormulas
 {
@@ -610,7 +611,7 @@ class JurnalAkuntansiController extends Controller
             * INSERT DATABASE
             * =====================================================
             */
-            \DB::transaction(function () use ($transactions) {
+            DB::transaction(function () use ($transactions) {
 
                 foreach ($transactions as $transaction) {
 

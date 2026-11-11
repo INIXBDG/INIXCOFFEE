@@ -12,16 +12,14 @@ use App\Models\Peserta;
 use App\Models\comment;
 use App\Models\Contact;
 use App\Models\eksam;
-use App\Models\exam;
 use App\Models\lokasi;
 use App\Models\Registrasi;
-use App\Models\nilaifeedback;
+use App\Models\Nilaifeedback;
 use App\Models\Peluang;
 use Carbon\CarbonImmutable;
 use App\Models\RKM;
 use App\Models\SopPerusahaan;
 use Illuminate\Support\Facades\DB;
-use generateWeeks;
 
 class PerusahaanController extends Controller
 {
@@ -263,7 +261,7 @@ class PerusahaanController extends Controller
             $registrasi = Registrasi::where('id_rkm', $rkm->id);
             $feedback = Nilaifeedback::where('id_rkm', $rkm->id);
             $exam = eksam::where('id_rkm', $rkm->id);
-            $comment = Comment::where('rkm_key', $rkm->id);
+            $comment = comment::where('rkm_key', $rkm->id);
 
             // Hapus semua entitas yang terkait dengan RKM
             $registrasi->delete();
@@ -309,8 +307,8 @@ class PerusahaanController extends Controller
             $sales_ids = explode(', ', $row->sales_all);
             $perusahaan_ids = explode(', ', $row->perusahaan_all);
 
-            $row->instruktur = Karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
-            $row->sales = Karyawan::whereIn('kode_karyawan', $sales_ids)->get();
+            $row->instruktur = karyawan::whereIn('kode_karyawan', $instruktur_ids)->get();
+            $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
             $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
         }
 

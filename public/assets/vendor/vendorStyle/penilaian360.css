@@ -2751,3 +2751,43 @@
         width: 100%;
     }
 }
+
+.pdf-dropdown { position: relative; display: inline-block; }
+
+.pdf-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+    padding: .5rem;
+    z-index: 1050;
+}
+.pdf-dropdown-menu.show { display: block; }
+
+.pdf-dropdown-title {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #94a3b8;
+    padding: .4rem .75rem .2rem;
+}
+
+.pdf-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem .75rem;
+    border-radius: 8px;
+    color: #334155;
+    font-size: .875rem;
+    text-decoration: none;
+}
+.pdf-dropdown-item:hover { background: #f1f5f9; color: #0f172a; }
+
+.pdf-dropdown-divider { height: 1px; background: #e2e8f0; margin: .4rem 0; }

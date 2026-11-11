@@ -923,7 +923,7 @@
         <strong>Executive Insight</strong>
         <ul>
             @foreach ($insights as $insight)
-                <li>{!! $insight !!}</li>
+                <li>{!! clean($insight) !!}</li>
             @endforeach
         </ul>
     </div>
@@ -1072,22 +1072,22 @@
 
     <div class="prediction-block">
         <div class="pred-title">Trajectory Prediction</div>
-        {!! $trajectoryText !!}
+        {!! clean($trajectoryText) !!}
     </div>
 
     <div class="prediction-block potential">
         <div class="pred-title">Growth Potential</div>
-        {!! $potentialText !!}
+        {!! clean($potentialText) !!}
     </div>
 
     <div class="prediction-block risk">
         <div class="pred-title">Risk Forecast</div>
-        {!! $riskText !!}
+        {!! clean($riskText) !!}
     </div>
 
     <div class="prediction-block outlook">
         <div class="pred-title">Strategic Outlook</div>
-        {!! $outlookText !!}
+        {!! clean($outlookText) !!}
     </div>
 
     <!-- METRIK PREDIKSI -->
@@ -1170,7 +1170,7 @@
                     $statusText = $prog >= 80 ? 'On Track' : ($prog >= 60 ? 'Perlu Dorongan' : 'Berbahaya');
                     $badgeClass = $prog >= 80 ? 'badge-success' : ($prog >= 60 ? 'badge-warning' : 'badge-danger');
                     $rankClass = $index < 3 ? 'rank-' . ($index + 1) : 'rank-other';
-                    
+
                     // Logika Warna Baris
                     $isTop = $index < 3;
                     $isBottom = ($totalKaryawan - 1 - $index) < 3 && $index >= 3;

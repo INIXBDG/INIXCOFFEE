@@ -15,7 +15,7 @@ class TunjanganKaryawan extends Model
         'tahun',
         'jenis_tunjangan',
         'keterangan',
-        'jumlah_absensi',
+        // 'jumlah_absensi',
         'total',
         'status_approval',
         'approved_by',
@@ -34,7 +34,7 @@ class TunjanganKaryawan extends Model
 
     public function jenistunjangan()
     {
-        return $this->belongsTo(jenistunjangan::class, 'jenis_tunjangan');
+        return $this->belongsTo(JenisTunjangan::class, 'jenis_tunjangan');
     }
 
     public function approvedBy()
