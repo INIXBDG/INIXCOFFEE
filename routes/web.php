@@ -97,6 +97,7 @@ use App\Http\Controllers\KPI\DatabaseKPIController as KPIDatabaseKPIController;
 use App\Http\Controllers\KPI\DataTargetController;
 use App\Http\Controllers\KPI\TargetKPIController;
 use App\Http\Controllers\LaporanHarianSalesController;
+use App\Http\Controllers\LaporanPengajuanPendingController;
 use App\Http\Controllers\laporanInsidentController;
 use App\Http\Controllers\LeadProjectController;
 use App\Http\Controllers\LemburController;
@@ -287,6 +288,16 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/pengajuanizin', izinTigaJamController::class);
     Route::resource('/pengajuanbarang', PengajuanBarangController::class);
     Route::resource('/suratperjalanan', SuratPerjalananController::class);
+
+    // =========================================================================
+    // LAPORAN PENGAJUAN PENDING (Cuti, Barang, SPJ khusus Koordinator ITSM, SPV Sales, Education Manager, GM)
+    // =========================================================================
+    Route::get('/laporan-pengajuan-pending', [LaporanPengajuanPendingController::class, 'index'])->name('laporan-pending.index');
+    Route::get('/laporan-pengajuan-pending/summary', [LaporanPengajuanPendingController::class, 'getSummary'])->name('laporan-pending.summary');
+    Route::get('/laporan-pengajuan-pending/data-cuti', [LaporanPengajuanPendingController::class, 'getDataCuti'])->name('laporan-pending.data-cuti');
+    Route::get('/laporan-pengajuan-pending/data-barang', [LaporanPengajuanPendingController::class, 'getDataBarang'])->name('laporan-pending.data-barang');
+    Route::get('/laporan-pengajuan-pending/data-spj', [LaporanPengajuanPendingController::class, 'getDataSPJ'])->name('laporan-pending.data-spj');
+    Route::get('/laporan-pengajuan-pending/data-semua', [LaporanPengajuanPendingController::class, 'getDataSemua'])->name('laporan-pending.data-semua');
     Route::resource('/rekapitulasiabsen', RekapitulasiAbsenController::class);
     Route::resource('/kelasanalisis', KelasAnalisisController::class);
     Route::resource('/paymantAdvance', netSalesController::class)->except(['show']);

@@ -1598,6 +1598,27 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @php
+                                                $jabatanAuth = auth()->user()->karyawan->jabatan ?? auth()->user()->jabatan ?? '';
+                                            @endphp
+                                            @if(in_array(strtolower($jabatanAuth), ['koordinator itsm', 'spv sales', 'education manager', 'gm', 'general manager']))
+                                                <div class="col-sm-6 mt-2" data-card-id="persetujuan_pengajuan_divisi">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2"><img
+                                                                    src="{{ asset('icon/check-circle.svg') }}"
+                                                                    class="img-responsive" width="30px"></div>
+                                                            <div class="col-md-10" style="margin-left: 10px"><a
+                                                                    href="{{ route('laporan-pending.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Persetujuan Pengajuan Divisi</h5>
+                                                                </a>
+                                                                <p class="card-text">Kelola persetujuan cuti, barang & SPJ divisi yang menunggu approval.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
