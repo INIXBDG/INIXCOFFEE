@@ -2274,12 +2274,6 @@ Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('sch
 Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
 Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
 
-Route::get('/visit-projects', [VisitProjectController::class, 'index'])->name('visit-projects.index');
-Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name('visit-projects.get');
-Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
-Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
-Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
-
 // CV Instruktur
 Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv-instruktur.index');
 Route::get('/cv-instruktur/data', [CVInstrukturController::class, 'data'])->name('cv-instruktur.data');
