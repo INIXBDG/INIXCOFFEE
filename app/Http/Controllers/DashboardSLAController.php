@@ -1,22 +1,21 @@
 <?php
 
 namespace App\Http\Controllers;
+
 // Pastikan semua 'use' statement ini ada dan benar
+use App\Models\ContentSchedule;
+use App\Models\EventTodo;
+use App\Models\karyawan;
+use App\Models\laporanInsiden;
+use App\Models\SurveyKepuasan;
+use App\Models\User;
+use App\Models\YearMapping;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use App\Models\Tickets;
-use App\Models\laporanInsiden;
-use App\Models\YearMapping;
-use App\Models\EventTodo;
-use App\Models\ContentSchedule;
-use Carbon\CarbonPeriod;
-use App\Models\trackingLaporanInsiden;
-use App\Models\karyawan;
-use App\Models\User;
-use App\Models\SurveyKepuasan;
-use Illuminate\Support\Facades\Log;
+use App\Models\HariLibur;
 
 class DashboardSLAController extends Controller
 {
@@ -35,12 +34,12 @@ class DashboardSLAController extends Controller
 
     /**
      * Ambil daftar hari libur (Format: Y-m-d).
-     * Saran: Ganti dengan Query ke tabel database, contoh: Holiday::pluck('date')->toArray();
+     * Saran: Ganti dengan Query ke tabel database, contoh: Holiday::pluck('date')->toArray();.
      */
     private function getHolidays()
     {
         $tahun = date('Y');
-        $cacheKey = 'holidays_db_' . $tahun;
+        $cacheKey = 'holidays_db_'.$tahun;
 
         // Gunakan cache agar tidak query ke database berulang kali untuk setiap hitungan SLA
         return Cache::remember($cacheKey, now()->addDays(30), function () use ($tahun) {
@@ -51,7 +50,7 @@ class DashboardSLAController extends Controller
     }
 
     /**
-     * Cek apakah hari ini adalah hari kerja (Bukan Sabtu/Minggu, dan bukan Hari Libur)
+     * Cek apakah hari ini adalah hari kerja (Bukan Sabtu/Minggu, dan bukan Hari Libur).
      */
     private function isWorkingDay(Carbon $date, $holidays)
     {
@@ -76,7 +75,7 @@ class DashboardSLAController extends Controller
 
         // --- LOGIKA BARU: DEFAULT KE BULAN BERJALAN ---
         $defaultStartDate = $now->copy()->startOfMonth()->startOfDay();
-        $defaultEndDate   = $now->copy()->endOfMonth()->endOfDay();
+        $defaultEndDate = $now->copy()->endOfMonth()->endOfDay();
         // ----------------------------------------------
 
         // Support parameter tahun dan bulan dari Filter Global dashboard
@@ -100,8 +99,8 @@ class DashboardSLAController extends Controller
                     'start' => $startDate->toDateTimeString(),
                     'end' => $endDate->toDateTimeString(),
                     'year' => $year,
-                    'month' => $month
-                ]
+                    'month' => $month,
+                ],
             ];
         }
 
@@ -109,44 +108,30 @@ class DashboardSLAController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
+        $validator->validate();
+
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $startDate = $request->filled('start_date')
+                ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
+                : $defaultStartDate;
+            $endDate = $request->filled('end_date')
+                ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
+                : $defaultEndDate;
 
             return [
                 'startDate' => $startDate,
-                'endDate'   => $endDate,
-                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
+                'endDate' => $endDate,
+                'filters' => [
+                    'start' => $startDate->toDateTimeString(),
+                    'end' => $endDate->toDateTimeString(),
+                ],
             ];
         }
 
-        // Prioritas 2: Jika ada parameter tahun & bulan dari filter global JS
-        $tahun = $request->input('tahun');
-        $bulan = $request->input('bulan'); // integer 1-12 atau 'all'
-
-        if ($tahun && is_numeric($tahun)) {
-            $year = (int) $tahun;
-
-            if ($bulan && $bulan !== 'all' && is_numeric($bulan)) {
-                // Filter per bulan tertentu
-                $month      = (int) $bulan;
-                $startDate  = Carbon::createFromDate($year, $month, 1, $this->timezone)->startOfMonth()->startOfDay();
-                $endDate    = $startDate->copy()->endOfMonth()->endOfDay();
-            } else {
-                // bulan = 'all' → tampilkan seluruh tahun
-                $startDate  = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfMonth()->startOfDay();
-                $endDate    = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfMonth()->endOfDay();
-            }
-
-            return [
-                'startDate' => $startDate,
-                'endDate'   => $endDate,
-                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
-            ];
-        }
-
-        // Prioritas 3: Default → bulan berjalan
         return [
             'startDate' => $defaultStartDate,
-            'endDate'   => $defaultEndDate,
-            'filters'   => ['start' => $defaultStartDate->toDateTimeString(), 'end' => $defaultEndDate->toDateTimeString()],
+            'endDate' => $defaultEndDate,
+            'filters' => ['start' => $defaultStartDate->toDateTimeString(), 'end' => $defaultEndDate->toDateTimeString()],
         ];
     }
 
@@ -212,7 +197,7 @@ class DashboardSLAController extends Controller
             'avg_resolution_time' => ($total > 0) ? $stats['sum_resolution_hours'] / $total : 0,
             'total_tickets' => $total,
             'tickets_by_priority' => $stats['priority_count'],
-            'filters' => $dateRange['filters']
+            'filters' => $dateRange['filters'],
         ];
 
         return response()->json($kpi);
@@ -236,7 +221,7 @@ class DashboardSLAController extends Controller
                 'naufal' => ['Naufal'],
                 'ferdi' => ['Ferdi'],
                 'ardhan' => ['Ardhan'],
-            ]
+            ],
         ];
 
         // Pilih mapping dan keperluan berdasarkan $team
@@ -312,8 +297,9 @@ class DashboardSLAController extends Controller
         $allTicketDetails = []; // <-- Kumpulan semua tiket detail dengan jam resolusi
 
         foreach ($ticketsByUser as $nama => $tickets) {
-            if ($nama === 'Lainnya')
+            if ($nama === 'Lainnya') {
                 continue;
+            }
 
             $stats = $this->processTicketSla($tickets);
             $total = $stats['total_tickets'];
@@ -343,25 +329,25 @@ class DashboardSLAController extends Controller
                 }
 
                 $start = Carbon::parse($ticket->created_at, $this->timezone);
-                $resolution = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, $this->timezone);
+                $resolution = Carbon::parse($ticket->tanggal_selesai.' '.$ticket->jam_selesai, $this->timezone);
                 $actualResolutionHours = $this->calculateBusinessHours($start, $resolution);
 
                 // Cek SLA Resolusi
                 $slaResolutionMet = (
-                    ($priority == 'High' && $actualResolutionHours <= 24) ||
-                    ($priority == 'Medium' && $actualResolutionHours <= 40) ||
-                    ($priority == 'Low')
+                    ($priority == 'High' && $actualResolutionHours <= 24)
+                    || ($priority == 'Medium' && $actualResolutionHours <= 40)
+                    || ($priority == 'Low')
                 );
 
                 $allTicketDetails[] = [
-                    'ticket_id'        => $ticket->ticket_id ?? ('#' . $ticket->id),
-                    'pic'              => $nama,
-                    'kategori'         => $ticket->kategori ?? '-',
-                    'priority'         => $priority,
-                    'created_at'       => $ticket->created_at,
-                    'tanggal_selesai'  => $ticket->tanggal_selesai,
+                    'ticket_id' => $ticket->ticket_id ?? ('#'.$ticket->id),
+                    'pic' => $nama,
+                    'kategori' => $ticket->kategori ?? '-',
+                    'priority' => $priority,
+                    'created_at' => $ticket->created_at,
+                    'tanggal_selesai' => $ticket->tanggal_selesai,
                     'resolution_hours' => round($actualResolutionHours, 2),
-                    'sla_met'          => $slaResolutionMet,
+                    'sla_met' => $slaResolutionMet,
                 ];
             }
         }
@@ -369,14 +355,15 @@ class DashboardSLAController extends Controller
         ksort($kpiPerUser);
 
         // Sort semua tiket dari yang paling lama
-        usort($allTicketDetails, fn($a, $b) => $b['resolution_hours'] <=> $a['resolution_hours']);
+        usort($allTicketDetails, fn ($a, $b) => $b['resolution_hours'] <=> $a['resolution_hours']);
 
         return response()->json([
             'kpi' => array_values($kpiPerUser),
             'ticket_details' => $allTicketDetails,
-            'filters' => $dateRange['filters']
+            'filters' => $dateRange['filters'],
         ]);
     }
+
     public function dashboardKritis(Request $request, $team)
     {
         $dateRange = $this->validateAndParseDates($request);
@@ -389,7 +376,7 @@ class DashboardSLAController extends Controller
         $insidenSelesai = laporanInsiden::whereHas('tracking', function ($q) {
             $q->whereIn('status', ['Selesai', 'Tidak Ditangani']);
         })
-            ->with(['tracking' => fn($q) => $q->orderBy('id', 'asc'), 'tracking.karyawan'])
+            ->with(['tracking' => fn ($q) => $q->orderBy('id', 'asc'), 'tracking.karyawan'])
             ->whereBetween('created_at', [$dateRange['startDate'], $dateRange['endDate']])
             ->get();
 
@@ -413,7 +400,7 @@ class DashboardSLAController extends Controller
             $trackingEvents = $insiden->tracking;
             $eventBatal = $trackingEvents->firstWhere('status', 'Tidak Ditangani');
             if ($eventBatal) {
-                $stats['total_tidak_ditangani']++;
+                ++$stats['total_tidak_ditangani'];
                 continue;
             }
 
@@ -425,8 +412,9 @@ class DashboardSLAController extends Controller
                 ->where('id', '>', $eventPenanganan ? $eventPenanganan->id : 0)
                 ->firstWhere('status', 'Selesai');
 
-            if (!$eventBaru || !$eventPenanganan || !$eventSelesai)
+            if (!$eventBaru || !$eventPenanganan || !$eventSelesai) {
                 continue;
+            }
 
             // Cek 'responder' di event 'Dalam Penanganan'
             $handler = $eventPenanganan->karyawan;
@@ -439,33 +427,35 @@ class DashboardSLAController extends Controller
             // -----------------------
 
             // --- Mulai Kalkulasi ---
-            $stats['total_insiden']++;
+            ++$stats['total_insiden'];
             $timeBaru = $this->getTrackingTimestamp($eventBaru);
             $timePenanganan = $this->getTrackingTimestamp($eventPenanganan);
             $timeSelesai = $this->getTrackingTimestamp($eventSelesai);
 
             if (!$timeBaru || !$timePenanganan || !$timeSelesai) {
-                $stats['total_insiden']--;
+                --$stats['total_insiden'];
                 continue;
             }
 
             // 1. Kalkulasi SLA Respon (Baru -> Penanganan)
-            $stats['response_count']++;
+            ++$stats['response_count'];
             // Sisipkan $holidays di sini
             $actualResponseHours = $this->calculateBusinessHours($timeBaru, $timePenanganan, $holidays);
             $stats['sum_response_hours'] += $actualResponseHours;
             $responseMet = ($actualResponseHours <= 1);
-            if ($responseMet)
-                $stats['response_met']++;
+            if ($responseMet) {
+                ++$stats['response_met'];
+            }
 
             // 2. Kalkulasi SLA Resolusi (Penanganan -> Selesai)
-            $stats['resolution_count']++;
+            ++$stats['resolution_count'];
             // Sisipkan $holidays di sini
             $actualResolutionHours = $this->calculateBusinessHours($timePenanganan, $timeSelesai, $holidays);
             $stats['sum_resolution_hours'] += $actualResolutionHours;
             $resolutionMet = ($actualResolutionHours <= 8);
-            if ($resolutionMet)
-                $stats['resolution_met']++;
+            if ($resolutionMet) {
+                ++$stats['resolution_met'];
+            }
 
             $listInsiden[] = [
                 'id' => $insiden->id,
@@ -530,7 +520,7 @@ class DashboardSLAController extends Controller
         // Loop berdasarkan ATURAN, bukan berdasarkan data transaksi.
         // Agar item SLA tetap muncul di dashboard meskipun belum ada di checklist user.
         foreach ($slaRules as $taskName => $rule) {
-            $stats['total_tasks']++;
+            ++$stats['total_tasks'];
 
             // Hitung Target Date
             $targetDate = $dDay->copy()->addDays($rule['offset'])->endOfDay();
@@ -552,21 +542,21 @@ class DashboardSLAController extends Controller
                     // Gunakan updated_at sebagai waktu penyelesaian
                     $actualDateObj = Carbon::parse($actualItem->updated_at, $this->timezone);
                     $actualDateStr = $actualDateObj->format('d M Y');
-                    $stats['completed_tasks']++;
+                    ++$stats['completed_tasks'];
 
                     // Logika Status: On Time vs Late
                     if ($actualDateObj->lte($targetDate)) {
                         $status = 'On Time';
-                        $stats['on_time']++;
+                        ++$stats['on_time'];
                     } else {
                         $status = 'Late';
-                        $stats['late']++;
+                        ++$stats['late'];
                     }
                 } else {
                     // Belum diceklis, cek deadline
                     if (Carbon::now($this->timezone)->gt($targetDate)) {
                         $status = 'Overdue';
-                        $stats['overdue']++;
+                        ++$stats['overdue'];
                     } else {
                         $status = 'On Progress';
                     }
@@ -585,7 +575,7 @@ class DashboardSLAController extends Controller
                 'actual_date' => $actualDateStr,
                 'status' => $status,
                 // Hitung selisih hari (opsional untuk sorting/indikator)
-                'days_diff' => $isDone ? $actualDateObj->diffInDays($targetDate, false) : 0
+                'days_diff' => $isDone ? $actualDateObj->diffInDays($targetDate, false) : 0,
             ];
         }
 
@@ -597,18 +587,18 @@ class DashboardSLAController extends Controller
             'total_late' => $stats['late'],
             'total_overdue' => $stats['overdue'],
             'event_title' => $mapping->eventDetail->title ?? 'Judul Belum Diset',
-            'event_date' => $dDay->format('d M Y')
+            'event_date' => $dDay->format('d M Y'),
         ];
 
         return response()->json([
             'kpi' => $kpi,
-            'details' => $details
+            'details' => $details,
         ]);
     }
 
     public function overallEventSla(Request $request)
     {
-        $mappings = \App\Models\YearMapping::with('eventDetail')->where('year', date('Y'))->orderBy('month')->get();
+        $mappings = YearMapping::with('eventDetail')->where('year', date('Y'))->orderBy('month')->get();
 
         $stats = [
             'total_tasks' => 0,
@@ -623,9 +613,9 @@ class DashboardSLAController extends Controller
 
         foreach ($mappings as $mapping) {
             $mappingId = $mapping->id;
-            $dDay = \Carbon\Carbon::parse($mapping->planned_date, $this->timezone)->startOfDay();
+            $dDay = Carbon::parse($mapping->planned_date, $this->timezone)->startOfDay();
 
-            $eventTodos = \App\Models\EventTodo::with('todo')
+            $eventTodos = EventTodo::with('todo')
                 ->where('year_mapping_id', $mappingId)
                 ->get()
                 ->keyBy(function ($item) {
@@ -641,22 +631,22 @@ class DashboardSLAController extends Controller
             ];
 
             foreach ($slaRules as $taskName => $rule) {
-                $eventStats['total_tasks']++;
+                ++$eventStats['total_tasks'];
                 $targetDate = $dDay->copy()->addDays($rule['offset'])->endOfDay();
                 $actualItem = $eventTodos->get($taskName);
 
                 if ($actualItem) {
                     if ($actualItem->is_checked) {
-                        $eventStats['completed_tasks']++;
-                        $actualDateObj = \Carbon\Carbon::parse($actualItem->updated_at, $this->timezone);
+                        ++$eventStats['completed_tasks'];
+                        $actualDateObj = Carbon::parse($actualItem->updated_at, $this->timezone);
                         if ($actualDateObj->lte($targetDate)) {
-                            $eventStats['on_time']++;
+                            ++$eventStats['on_time'];
                         } else {
-                            $eventStats['late']++;
+                            ++$eventStats['late'];
                         }
                     } else {
-                        if (\Carbon\Carbon::now($this->timezone)->gt($targetDate)) {
-                            $eventStats['overdue']++;
+                        if (Carbon::now($this->timezone)->gt($targetDate)) {
+                            ++$eventStats['overdue'];
                         }
                     }
                 }
@@ -675,7 +665,7 @@ class DashboardSLAController extends Controller
 
             $eventList[] = [
                 'id' => $mapping->id,
-                'month_name' => \Carbon\Carbon::createFromDate(null, $mapping->month)->translatedFormat('F'),
+                'month_name' => Carbon::createFromDate(null, $mapping->month)->translatedFormat('F'),
                 'theme' => $mapping->theme ?? 'Tema Belum Set',
                 'event_title' => $mapping->eventDetail->title ?? 'Belum Diset',
                 'planned_date' => $dDay->format('d M Y'),
@@ -692,13 +682,13 @@ class DashboardSLAController extends Controller
             'sla_compliance' => ($stats['completed_tasks'] > 0) ? ($stats['on_time'] / $stats['completed_tasks']) * 100 : 0,
             'total_late' => $stats['late'],
             'total_overdue' => $stats['overdue'],
-            'event_title' => 'Semua Event Webinar ' . date('Y'),
-            'event_date' => date('Y')
+            'event_title' => 'Semua Event Webinar '.date('Y'),
+            'event_date' => date('Y'),
         ];
 
         return response()->json([
             'kpi' => $kpi,
-            'events' => $eventList
+            'events' => $eventList,
         ]);
     }
 
@@ -735,7 +725,7 @@ class DashboardSLAController extends Controller
             'weeks_met' => 0,
             'weeks_missed' => 0,
             'total_content' => 0,
-            'weekly_details' => []
+            'weekly_details' => [],
         ];
 
         $holidays = $this->getHolidays(); // Panggil daftar hari libur
@@ -758,7 +748,7 @@ class DashboardSLAController extends Controller
             // TIDAK ADA LAGI PEMOTONGAN TANGGAL.
             // endOfWeek dibiarkan utuh melewati bulan sekalipun (misal: 28 Sep - 04 Oct).
 
-            $contentStats['total_weeks']++;
+            ++$contentStats['total_weeks'];
 
             // --- Logika Hitung Hari Aktif & Target Dinamis ---
             $activeWorkingDays = 0;
@@ -767,14 +757,14 @@ class DashboardSLAController extends Controller
             // Hitung ada berapa hari kerja nyata di periode 1 minggu utuh ini
             while ($tempDate <= $endOfWeek) {
                 if ($this->isWorkingDay($tempDate, $holidays)) {
-                    $activeWorkingDays++;
+                    ++$activeWorkingDays;
                 }
                 $tempDate->addDay();
             }
 
             // Jika range-nya hanya akhir pekan/libur panjang, lewati minggu ini
             if ($activeWorkingDays == 0) {
-                $contentStats['total_weeks']--;
+                --$contentStats['total_weeks'];
                 $currentDate->addWeek();
                 continue;
             }
@@ -803,17 +793,17 @@ class DashboardSLAController extends Controller
             $isMet = $uploadCount >= $dynamicTarget;
 
             if ($isMet) {
-                $contentStats['weeks_met']++;
+                ++$contentStats['weeks_met'];
             } else {
-                $contentStats['weeks_missed']++;
+                ++$contentStats['weeks_missed'];
             }
 
             $contentStats['weekly_details'][] = [
-                'week_range' => $startOfWeek->format('d M') . ' - ' . $endOfWeek->format('d M Y'),
+                'week_range' => $startOfWeek->format('d M').' - '.$endOfWeek->format('d M Y'),
                 'count' => $uploadCount,
                 'status' => $isMet ? 'Met' : 'Missed',
                 'target' => $dynamicTarget,
-                'active_days' => $activeWorkingDays
+                'active_days' => $activeWorkingDays,
             ];
 
             // Lanjut bergeser ke hari Senin berikutnya
@@ -836,12 +826,12 @@ class DashboardSLAController extends Controller
             'weeks_met' => $contentStats['weeks_met'],
 
             // Filter Info
-            'filters' => $dateRange['filters']
+            'filters' => $dateRange['filters'],
         ];
 
         return response()->json([
             'kpi' => $kpi,
-            'content_details' => $contentStats['weekly_details']
+            'content_details' => $contentStats['weekly_details'],
         ]);
     }
 
@@ -854,7 +844,7 @@ class DashboardSLAController extends Controller
         try {
             // Prioritas 1: Gunakan field tanggal & waktu eksplisit
             if (!empty($trackingEvent->tanggal_response) && !empty($trackingEvent->waktu_response)) {
-                return Carbon::parse($trackingEvent->tanggal_response . ' ' . $trackingEvent->waktu_response, $this->timezone);
+                return Carbon::parse($trackingEvent->tanggal_response.' '.$trackingEvent->waktu_response, $this->timezone);
             }
 
             // Prioritas 2: Fallback ke created_at
@@ -883,11 +873,11 @@ class DashboardSLAController extends Controller
             'sum_resolution_hours' => 0,
             'max_resolution_hours' => 0,
             'longest_ticket' => null,
-            'priority_count' => ['High' => 0, 'Medium' => 0, 'Low' => 0, 'Other' => 0],
+            'priority_count' => ['High' => 0, 'High-Extended' => 0, 'Medium' => 0, 'Low' => 0, 'Other' => 0],
         ];
 
         foreach ($tickets as $ticket) {
-            $stats['total_tickets']++;
+            ++$stats['total_tickets'];
 
             // Tentukan Prioritas
             $priority = 'Other';
@@ -907,13 +897,13 @@ class DashboardSLAController extends Controller
                 $priority = 'Medium';
             }
 
-            $stats['priority_count'][$priority]++;
+            ++$stats['priority_count'][$priority];
 
             // Parsing Waktu
             $start = Carbon::parse($ticket->created_at, $this->timezone);
 
             // Asumsi 'tanggal_selesai' & 'jam_selesai' PASTI ada (karena query)
-            $resolution = Carbon::parse($ticket->tanggal_selesai . ' ' . $ticket->jam_selesai, $this->timezone);
+            $resolution = Carbon::parse($ticket->tanggal_selesai.' '.$ticket->jam_selesai, $this->timezone);
 
             // Hitung Jam Kerja Aktual Resolusi dengan parameter hari libur
             $actualResolutionHours = $this->calculateBusinessHours($start, $resolution, $holidays);
@@ -931,36 +921,38 @@ class DashboardSLAController extends Controller
 
             // Hitung Jam Kerja Aktual Respon (JIKA ADA)
             if (!empty($ticket->tanggal_response) && !empty($ticket->jam_response)) {
-                $stats['response_count']++;
-                $response = Carbon::parse($ticket->tanggal_response . ' ' . $ticket->jam_response, $this->timezone);
+                ++$stats['response_count'];
+                $response = Carbon::parse($ticket->tanggal_response.' '.$ticket->jam_response, $this->timezone);
                 $actualResponseHours = $this->calculateBusinessHours($start, $response, $holidays);
                 $stats['sum_response_hours'] += $actualResponseHours;
 
                 if (
-                    (in_array($priority, ['High', 'High-Extended']) && $actualResponseHours <= 4) ||
-                    ($priority == 'Medium' && $actualResponseHours <= 8) ||
-                    ($priority == 'Low' && $actualResponseHours <= 16)
+                    (in_array($priority, ['High', 'High-Extended']) && $actualResponseHours <= 4)
+                    || ($priority == 'Medium' && $actualResponseHours <= 8)
+                    || ($priority == 'Low' && $actualResponseHours <= 16)
                 ) {
-                    $stats['response_met']++;
+                    ++$stats['response_met'];
                 }
             }
 
             if (
-                ($priority == 'High' && $actualResolutionHours <= 24) ||
-                ($priority == 'High-Extended' && $actualResolutionHours <= 45) ||
-                ($priority == 'Medium' && $actualResolutionHours <= 40) ||
-                ($priority == 'Low')
-            )
-            {
-                $stats['resolution_met']++;
+                ($priority == 'High' && $actualResolutionHours <= 24)
+                || ($priority == 'High-Extended' && $actualResolutionHours <= 45)
+                || ($priority == 'Medium' && $actualResolutionHours <= 40)
+                || ($priority == 'Low')
+            ) {
+                ++$stats['resolution_met'];
             }
         }
+
         return $stats;
     }
 
     private function calculateBusinessHours(Carbon $start, Carbon $end, $holidays = [])
     {
-        if ($end <= $start) return 0;
+        if ($end <= $start) {
+            return 0;
+        }
 
         $totalBusinessMinutes = 0;
         $current = $start->copy();
@@ -970,7 +962,9 @@ class DashboardSLAController extends Controller
             $dayStart = $current->copy()->hour($this->businessStartHour)->minute(0)->second(0);
             $dayEnd = $current->copy()->hour($this->businessEndHour)->minute(0)->second(0);
 
-            if ($current < $dayStart) $current = $dayStart;
+            if ($current < $dayStart) {
+                $current = $dayStart;
+            }
             $endOfFirstDay = ($end < $dayEnd) ? $end : $dayEnd;
 
             if ($current < $endOfFirstDay && $current->hour < $this->businessEndHour) {
@@ -1050,10 +1044,10 @@ class DashboardSLAController extends Controller
             $sumStars += (($q1 + $q4) / 2);
 
             // Perhitungan skor standar ITSM: Q1 (10-40), Q4 (10-40), Q2 (10-20)
-            $nilaiQ1 = match ((int)$survey->q1) {
+            $nilaiQ1 = match ((int) $survey->q1) {
                 1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
             };
-            $nilaiQ4 = match ((int)$survey->q4) {
+            $nilaiQ4 = match ((int) $survey->q4) {
                 1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
             };
             $nilaiQ2 = match ($survey->q2) {
@@ -1064,7 +1058,7 @@ class DashboardSLAController extends Controller
             $skor = 1 + ($totalBaris * 3) / 100;
 
             if ($skor >= 3.0) {
-                $respondenPuas++;
+                ++$respondenPuas;
             }
         }
 
@@ -1086,6 +1080,7 @@ class DashboardSLAController extends Controller
         if (!auth()->user()->karyawan || (auth()->user()->karyawan->divisi !== 'IT Service Management' && !auth()->user()->hasAnyRole(['Koordinator ITSM', 'Programmer', 'Technical Support', 'Tim Digital', 'Super Admin']))) {
             abort(403, 'Unauthorized action.');
         }
+
         return view('itsm.sla');
     }
 }
