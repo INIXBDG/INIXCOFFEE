@@ -2118,6 +2118,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/finish', [TicketController::class, 'finish'])->name('tickets.finish');
     Route::post('/tickets/{ticket}/block', [TicketController::class, 'block'])->name('tickets.block');
     Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+    Route::put('/tickets/{ticket}/edit-user', [TicketController::class, 'editUser'])->name('tickets.editUser');
+    Route::put('/tickets/{ticket}/edit-itsm', [TicketController::class, 'editItsm'])->name('tickets.editItsm');
     Route::get('/getTickets', [TicketController::class, 'getTickets'])->name('getTickets');
     Route::post('/internal/update-tickets', [TicketController::class, 'handleInternalUpdate']);
     Route::get('/internal/open-tickets', [TicketController::class, 'getOpenTickets']);

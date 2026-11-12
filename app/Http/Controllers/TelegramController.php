@@ -61,7 +61,7 @@ class TelegramController extends Controller
             $this->answerCallback($callback['id'], $callbackMessage);
 
             if ($success && isset($callback['message']['chat']['id'], $callback['message']['message_id'])) {
-                Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/editMessageReplyMarkup", [
+                Http::withOptions(['curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]])->timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/editMessageReplyMarkup", [
                     'chat_id' => $callback['message']['chat']['id'],
                     'message_id' => $callback['message']['message_id'],
                     'reply_markup' => json_encode(['inline_keyboard' => []]),
@@ -112,7 +112,7 @@ class TelegramController extends Controller
 
     private function answerCallback($callbackId, $message)
     {
-        Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/answerCallbackQuery", [
+        Http::withOptions(['curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]])->timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/answerCallbackQuery", [
             'callback_query_id' => $callbackId,
             'text'              => mb_substr($message, 0, 200),
         ]);
@@ -173,7 +173,7 @@ class TelegramController extends Controller
             $payload['secret_token'] = $webhookSecret;
         }
 
-        $response = Http::timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/setWebhook", $payload);
+        $response = Http::withOptions(['curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]])->timeout(10)->post("https://api.telegram.org/bot{$this->botToken}/setWebhook", $payload);
 
         return response()->json([
             'target_url' => $payload['url'],

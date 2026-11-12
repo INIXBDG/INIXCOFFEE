@@ -27,6 +27,7 @@ class Tickets extends Model
         'tingkat_kesulitan',
         'timestamp',
         'row',
+        'telegram_message_id',
     ];
 
     public function karyawan()
