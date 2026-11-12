@@ -229,7 +229,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('peluang:check')->dailyAt('12:00')->description('peluang:check');
         $schedule->command('app:tagihan-perusahaan-command')->daily()->description('app:tagihan-perusahaan-command');
         $schedule->command('app:update-administrasi-karyawan')->daily()->description('app:update-administrasi-karyawan');
-        $schedule->command('app:generate-libur-nasional')->daily()->description('app:generate-libur-nasional');
         $schedule->command('perusahaan:evaluasi-status')->daily()->description('perusahaan:evaluasi-status');
         $schedule->command('app:notification-pembelian-hr')->daily()->description('app:notification-pembelian-hr');
         $schedule->command('log:clean-activity')->tuesdays()->at('03:00')->description('Pembersihan Otomatis Activity Log');
