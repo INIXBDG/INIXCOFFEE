@@ -12,6 +12,90 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== MODAL EDIT USER (Edit Tiket oleh Pengaju) ===== --}}
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditUser" action="" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Keperluan</label>
+                            <select name="keperluan" id="editKeperluan" class="form-select" required>
+                                <option value="Technical Support">Technical Support</option>
+                                <option value="Tim Digital">Tim Digital</option>
+                                <option value="Programming">Programming</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Kategori</label>
+                            <select name="kategori" id="editKategori" class="form-select" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Detail Kendala</label>
+                            <textarea name="detail_kendala" id="editDetailKendala" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-1"></i> Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== MODAL EDIT ITSM (Edit Waktu Terima & Selesai oleh ITSM) ===== --}}
+    <div class="modal fade" id="editItsmModal" tabindex="-1" aria-labelledby="editItsmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editItsmModalLabel"><i class="bi bi-clock-history me-2"></i>Edit Waktu Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditItsm" action="" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <p class="text-muted small mb-3">ID Tiket: <strong id="itsmTicketIdLabel"></strong></p>
+                        <hr>
+                        <label class="form-label fw-semibold">Waktu Terima</label>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">Tanggal Terima</label>
+                                <input type="date" class="form-control" name="tanggal_response" id="editTanggalResponse">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">Jam Terima</label>
+                                <input type="time" class="form-control" name="jam_response" id="editJamResponse">
+                            </div>
+                        </div>
+                        <label class="form-label fw-semibold">Waktu Selesai</label>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">Tanggal Selesai</label>
+                                <input type="date" class="form-control" name="tanggal_selesai" id="editTanggalSelesai">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">Jam Selesai</label>
+                                <input type="time" class="form-control" name="jam_selesai" id="editJamSelesai">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 text-white">
+                            <i class="bi bi-save me-1"></i> Simpan Perubahan Waktu
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -127,13 +211,6 @@
                                 <th scope="col">Detail Kendala</th>
                                 <th scope="col">PIC</th>
                                 <th scope="col">Status</th>
-                                {{-- <th scope="col">Tanggal Response</th>
-                                <th scope="col">PIC</th>
-                                <th scope="col">Penanganan</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Tanggal Selesai</th>
-                                <th scope="col">Keterangan</th>
-                                <th scope="col">Tingkat Kesulitan</th> --}}
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -200,11 +277,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
 
 <script>
+    // Mapping kategori per keperluan (sama dengan halaman create)
+    const kategoriOptions = {
+        'Technical Support': [
+            {value: 'Jaringan', text: 'Jaringan'},
+            {value: 'Hardware', text: 'Hardware'},
+            {value: 'Software', text: 'Software'},
+            {value: 'Exam', text: 'Exam'}
+        ],
+        'Tim Digital': [
+            {value: 'Flyer', text: 'Flyer'},
+            {value: 'Banner Cetak', text: 'Banner Cetak'},
+            {value: 'Konten (Video)', text: 'Konten (Video)'},
+            {value: 'Kerja Sama Mitra', text: 'Kerja Sama Mitra'}
+        ],
+        'Programming': [
+            {value: 'Request', text: 'Request'},
+            {value: 'Error (Aplikasi)', text: 'Error (Aplikasi)'}
+        ]
+    };
+
+    function updateEditKategori(selectedKeperluan, selectedKategori) {
+        var $kategori = $('#editKategori');
+        $kategori.html('<option value="" disabled>Pilih Kategori</option>');
+        if (selectedKeperluan && kategoriOptions[selectedKeperluan]) {
+            $.each(kategoriOptions[selectedKeperluan], function(i, opt) {
+                var selected = (opt.value === selectedKategori) ? ' selected' : '';
+                $kategori.append('<option value="' + opt.value + '"' + selected + '>' + opt.text + '</option>');
+            });
+        }
+    }
+
     $(document).ready(function(){
         var userRole = '{{ auth()->user()->jabatan}}';
+        var authNama = '{{ auth()->user()->karyawan->nama_lengkap ?? "" }}';
+        var authDivisi = '{{ auth()->user()->karyawan->divisi ?? "" }}';
+
         $('#jabatantable').DataTable({
             "ajax": {
-                "url": "{{ route('getTickets') }}", // URL API untuk mengambil data
+                "url": "{{ route('getTickets') }}",
                 "type": "GET",
                 "beforeSend": function () {
                     $('#loadingModal').modal('show');
@@ -274,6 +385,7 @@
                         var pic = "{{ auth()->user()->username }}";
                         var divisi = "{{ auth()->user()->karyawan->divisi }}";
                         var canDeleteTicket = @json(auth()->user()->jabatan === 'Koordinator ITSM' && optional(auth()->user()->karyawan)->divisi === 'IT Service Management');
+
                         switch(pic.toLowerCase()) {
                             case 'ardhan':
                                 pic = 'Ardhan';
@@ -302,11 +414,15 @@
                             case 'eggiherlambang':
                                 pic = 'Eggi';
                                 break;
-                            // Tambahkan case lain jika diperlukan
                             default:
                                 pic = '';
                                 break;
                         }
+
+                        // Simpan data di global map agar aman dari karakter khusus / quote
+                        window.ticketDataMap = window.ticketDataMap || {};
+                        window.ticketDataMap[data.id] = data;
+
                         var actions = "";
                             actions += '<div class="dropdown">';
                             actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
@@ -319,16 +435,24 @@
                                 actions += '<button type="submit" disabled class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
                             }else if(divisi == 'IT Service Management'){
                                 actions += '<button type="button" class="dropdown-item" onclick="terimatiketModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-
-                                // actions += '<form onsubmit="return confirm(\'Anda akan menerima tiket ini ?\');" action="{{ url('/tickets') }}/' + row.id + '/accept" method="POST">';
-                                // actions += '@csrf';
-                                // actions += '<input type="hidden" name="pic" value="'+pic+'">';
-                                // actions += '<input type="hidden" name="row" value="'+data.row+'">';
-                                // actions += '@method('POST')';
-                                // actions += '<button type="submit" class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
-                                // actions += '</form>';
                             }
-                            actions += '<button type="button" class="dropdown-item" onclick=\'openDetailModal(' + JSON.stringify(data) + ')\'><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
+
+                            // Status belum diproses (Menunggu, null, kosong, atau selain Di Proses/Selesai/Terkendala)
+                            var statusBelumDiproses = (data.status !== 'Di Proses' && data.status !== 'Selesai' && data.status !== 'Terkendala');
+
+                            // Tombol Edit untuk Pengaju (hanya jika tiket belum diproses)
+                            // Jika user bukan ITSM, list tiket sudah otomatis milik sendiri
+                            var isOwner = (divisi !== 'IT Service Management') || (data.nama_karyawan && authNama && data.nama_karyawan.trim().toLowerCase() === authNama.trim().toLowerCase());
+                            if (statusBelumDiproses && (isOwner || divisi == 'IT Service Management')) {
+                                actions += '<button type="button" class="dropdown-item" onclick="openEditUserModal(' + data.id + ')"><img src="{{ asset('icon/edit-dark.svg') }}" class=""> Edit</button>';
+                            }
+
+                            // Tombol Edit Waktu untuk ITSM (jika tiket sudah diproses / selesai / terkendala)
+                            if (divisi == 'IT Service Management' && (data.status == 'Di Proses' || data.status == 'Selesai' || data.status == 'Terkendala')) {
+                                actions += '<button type="button" class="dropdown-item" onclick="openEditItsmModal(' + data.id + ')"><img src="{{ asset('icon/edit-dark.svg') }}" class=""> Edit</button>';
+                            }
+
+                            actions += '<button type="button" class="dropdown-item" onclick="openDetailModal(' + data.id + ')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
                             if (canDeleteTicket) {
                                 actions += '<button type="button" class="dropdown-item text-danger" onclick="hapusTiket(' + data.id + ')"><i class="bi bi-trash me-2"></i>Hapus</button>';
                             }
@@ -340,7 +464,7 @@
 
                 }
             ],
-            "order": [[0, 'desc']], // Ubah urutan menjadi descending untuk kolom ke-6
+            "order": [[0, 'desc']],
             "columnDefs" : [{"targets":[0], "type":"date"}],
 
         });
@@ -355,8 +479,8 @@
             method: 'POST',
             action: "{{ url('/tickets') }}/" + ticketId
         });
-        form.append('@csrf');
-        form.append('@method('DELETE')');
+        form.append('<input type="hidden" name="_token" value="{{ csrf_token() }}">');
+        form.append('<input type="hidden" name="_method" value="DELETE">');
         $('body').append(form);
         form.submit();
     }
@@ -376,24 +500,16 @@
         return rupiah;
     }
     function openApproveModal(ticketId, picValue, rowValue) {
-        // Set action URL untuk form "Tolak Tiket"
         var blockUrl = "{{ url('/tickets') }}/" + ticketId + "/block";
         $('#formBlock').attr('action', blockUrl);
-
-        // Set value untuk input hidden di form "Tolak Tiket"
         $('#blockPic').val(picValue);
         $('#blockRow').val(rowValue);
 
-        // Set action URL untuk form "Selesaikan Tiket"
         var finishUrl = "{{ url('/tickets') }}/" + ticketId + "/finish";
         $('#formFinish').attr('action', finishUrl);
-
-        // Set value untuk input hidden di form "Selesaikan Tiket"
         $('#finishPic').val(picValue);
         $('#finishRow').val(rowValue);
 
-
-        // Tampilkan modal
         $('#approveModal').modal('show');
     }
     function terimatiketModal(ticketId, picValue, rowValue) {
@@ -405,73 +521,115 @@
         $('#terimatiketModal').modal('show');
     }
 
-    function openDetailModal(data) {
+    // ===== OPEN MODAL EDIT USER =====
+    function openEditUserModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
+
+        var editUrl = "{{ url('/tickets') }}/" + data.id + "/edit-user";
+        $('#formEditUser').attr('action', editUrl);
+
+        // Set nilai keperluan
+        $('#editKeperluan').val(data.keperluan);
+
+        // Update kategori sesuai keperluan dan pilih kategori yang ada
+        updateEditKategori(data.keperluan, data.kategori);
+
+        // Set detail kendala
+        $('#editDetailKendala').val(data.detail_kendala);
+
+        $('#editUserModal').modal('show');
+    }
+
+    // Update kategori saat keperluan berubah di modal edit
+    $('#editKeperluan').on('change', function() {
+        updateEditKategori($(this).val(), '');
+    });
+
+    // ===== OPEN MODAL EDIT ITSM =====
+    function openEditItsmModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
+
+        var editUrl = "{{ url('/tickets') }}/" + data.id + "/edit-itsm";
+        $('#formEditItsm').attr('action', editUrl);
+        $('#itsmTicketIdLabel').text(data.ticket_id || '-');
+
+        // Isi nilai yang sudah ada
+        $('#editTanggalResponse').val(data.tanggal_response || '');
+        $('#editJamResponse').val(data.jam_response ? data.jam_response.substring(0, 5) : '');
+        $('#editTanggalSelesai').val(data.tanggal_selesai || '');
+        $('#editJamSelesai').val(data.jam_selesai ? data.jam_selesai.substring(0, 5) : '');
+
+        $('#editItsmModal').modal('show');
+    }
+
+    function openDetailModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
         console.log(data);
-        // Tampilkan modal
         var html = '';
             html += '<table class="table table-responsive table-borderless">';
             html += '<tbody>';
             html += '<tr>';
             html += '<td>Nama Karyawan</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.nama_karyawan || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.nama_karyawan || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Divisi</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.divisi || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.divisi || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Kategori</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.kategori || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.kategori || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Detail Kendala</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.detail_kendala || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.detail_kendala || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Keperluan</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.keperluan || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.keperluan || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Waktu Response</td>';
-            // Pastikan kedua bagian ada sebelum digabung, jika tidak, tampilkan '-'
             html += '<td>:</td>';
             html += '<td>' + ((data.tanggal_response || '-') + ' ' + (data.jam_response || '-')) + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Penanganan</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.penanganan || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.penanganan || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>PIC</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.pic || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.pic || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Status</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.status || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.status || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Waktu Selesai</td>';
-            // Pastikan kedua bagian ada sebelum digabung, jika tidak, tampilkan '-'
             html += '<td>:</td>';
             html += '<td>' + ((data.tanggal_selesai || '-') + ' ' + (data.jam_selesai || '-')) + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Keterangan</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.keterangan || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.keterangan || '-') + '</td>';
             html += '</tr>';
             html += '<tr>';
             html += '<td>Tingkat Kesulitan</td>';
             html += '<td>:</td>';
-            html += '<td>' + (data.tingkat_kesulitan || '-') + '</td>'; // Tambahkan || '-'
+            html += '<td>' + (data.tingkat_kesulitan || '-') + '</td>';
             html += '</tr>';
             html += '</tbody>';
             html += '</table>';

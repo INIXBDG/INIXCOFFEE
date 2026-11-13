@@ -153,7 +153,9 @@ class TicketController extends Controller
                 ."Kendala: {$ticket->detail_kendala}\n\n"
                 ."Silahkan klik tombol di bawah atau balas dengan `/terima {$ticket->ticket_id}`";
 
-            Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            $response = Http::withOptions([
+                'curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]
+            ])->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id' => $groupId,
                 'text' => $telegramMessage,
                 'parse_mode' => 'Markdown',
@@ -169,6 +171,15 @@ class TicketController extends Controller
                     ],
                 ]),
             ]);
+
+            if ($response->successful()) {
+                $resData = $response->json();
+                $messageId = $resData['result']['message_id'] ?? null;
+                if ($messageId) {
+                    $ticket->telegram_message_id = $messageId;
+                    $ticket->save();
+                }
+            }
         } catch (\Exception $e) {
             Log::error('Gagal mengirim tiket baru ke Telegram: '.$e->getMessage());
         }
@@ -206,7 +217,9 @@ class TicketController extends Controller
                       .'Status: Dibatalkan / Terkendala';
             }
 
-            Http::timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+            Http::withOptions([
+                'curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]
+            ])->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
                 'chat_id' => $groupId,
                 'text' => $text,
                 'parse_mode' => 'Markdown',
@@ -409,6 +422,150 @@ class TicketController extends Controller
         return redirect()->route('tickets.index')->with('success', 'Tiket berhasil dihapus.');
     }
 
+    /**
+     * Edit ticket oleh User (hanya bisa jika status belum diproses)
+     */
+    public function editUser(Request $request, Tickets $ticket)
+    {
+        $karyawan = auth()->user()->karyawan;
+        $karyawanNama = trim($karyawan->nama_lengkap ?? '');
+        $divisi = $karyawan->divisi ?? null;
+
+        // ITSM boleh edit semua, user biasa hanya bisa edit tiket miliknya sendiri
+        if ($divisi !== 'IT Service Management') {
+            $isOwner = (strcasecmp(trim($ticket->nama_karyawan), $karyawanNama) === 0);
+            if (!$isOwner && $ticket->karyawan && $ticket->karyawan->id == auth()->user()->karyawan_id) {
+                $isOwner = true;
+            }
+            abort_unless($isOwner, 403, 'Anda tidak memiliki hak untuk mengedit tiket ini.');
+        }
+
+        // Hanya bisa diedit jika belum diproses (bukan Di Proses, Selesai, atau Terkendala)
+        abort_if(in_array($ticket->status, ['Di Proses', 'Selesai', 'Terkendala']), 403, 'Tiket yang sudah diproses tidak dapat diedit.');
+
+        $request->validate([
+            'keperluan'      => 'required|string',
+            'kategori'       => 'required|string',
+            'detail_kendala' => 'required|string',
+        ]);
+
+        $ticket->update([
+            'keperluan'      => $request->keperluan,
+            'kategori'       => $request->kategori,
+            'detail_kendala' => $request->detail_kendala,
+        ]);
+
+        // Perbarui pesan di Telegram
+        $this->updateTelegramMessage($ticket);
+
+        return redirect()->route('tickets.index')->with('success', 'Tiket berhasil diperbarui.');
+    }
+
+    /**
+     * Update pesan tiket di Telegram saat diedit
+     */
+    private function updateTelegramMessage(Tickets $ticket)
+    {
+        try {
+            $botToken = env('TELEGRAM_BOT_TOKEN');
+            $groupId = env('TELEGRAM_GROUP_ID');
+
+            if (!$botToken || !$groupId) {
+                return;
+            }
+
+            $telegramMessage = "🔔 *Ada Ticketing Masuk:*\n\n"
+                ."ID Tiket: `{$ticket->ticket_id}`\n"
+                ."Nama: {$ticket->nama_karyawan}\n"
+                ."Divisi: {$ticket->divisi}\n"
+                ."Kategori: {$ticket->kategori}\n"
+                ."Keperluan: {$ticket->keperluan}\n"
+                ."Kendala: {$ticket->detail_kendala}\n\n"
+                ."Silahkan klik tombol di bawah atau balas dengan `/terima {$ticket->ticket_id}`";
+
+            $replyMarkup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '✅ Terima', 'callback_data' => "accept:{$ticket->ticket_id}"],
+                        ['text' => '❌ Tolak', 'callback_data' => "reject:{$ticket->ticket_id}"],
+                    ],
+                    [
+                        ['text' => '🏁 Selesai', 'callback_data' => "finish:{$ticket->ticket_id}"],
+                    ],
+                ],
+            ];
+
+            // 1. Jika ada telegram_message_id, edit pesan aslinya secara langsung
+            if ($ticket->telegram_message_id) {
+                $response = Http::withOptions([
+                    'curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]
+                ])->timeout(10)->post("https://api.telegram.org/bot{$botToken}/editMessageText", [
+                    'chat_id' => $groupId,
+                    'message_id' => (int) $ticket->telegram_message_id,
+                    'text' => $telegramMessage,
+                    'parse_mode' => 'Markdown',
+                    'reply_markup' => json_encode($replyMarkup),
+                ]);
+
+                if ($response->successful()) {
+                    return;
+                }
+
+                Log::warning('Gagal edit pesan Telegram asli, mengirim notifikasi pembaruan: '.$response->body());
+            }
+
+            // 2. Fallback: jika belum ada telegram_message_id (tiket lama) atau gagal edit (>48 jam), kirim pesan baru
+            $updateNotification = $telegramMessage;
+
+            $newMsgResponse = Http::withOptions([
+                'curl' => [CURLOPT_RESOLVE => ['api.telegram.org:443:149.154.166.110'], CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]
+            ])->timeout(10)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $groupId,
+                'text' => $updateNotification,
+                'parse_mode' => 'Markdown',
+                'reply_markup' => json_encode($replyMarkup),
+            ]);
+
+            if ($newMsgResponse->successful()) {
+                $newResData = $newMsgResponse->json();
+                $newMsgId = $newResData['result']['message_id'] ?? null;
+                if ($newMsgId && !$ticket->telegram_message_id) {
+                    $ticket->telegram_message_id = $newMsgId;
+                    $ticket->save();
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Gagal update tiket ke Telegram: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Edit waktu terima & waktu selesai oleh ITSM
+     */
+    public function editItsm(Request $request, Tickets $ticket)
+    {
+        $divisi = auth()->user()->karyawan->divisi ?? null;
+        abort_unless($divisi === 'IT Service Management', 403);
+
+        $request->validate([
+            'tanggal_response' => 'nullable|date',
+            'jam_response'     => 'nullable|string',
+            'tanggal_selesai'  => 'nullable|date',
+            'jam_selesai'      => 'nullable|string',
+            'pic'              => 'nullable|string',
+        ]);
+
+        $ticket->update([
+            'tanggal_response' => $request->tanggal_response,
+            'jam_response'     => $request->jam_response,
+            'tanggal_selesai'  => $request->tanggal_selesai,
+            'jam_selesai'      => $request->jam_selesai,
+            'pic'              => $request->pic ?? $ticket->pic,
+        ]);
+
+        return redirect()->route('tickets.index')->with('success', 'Data waktu tiket berhasil diperbarui.');
+    }
+
     public function show(Tickets $ticket)
     {
         return view('ticket.detail', compact('ticket'));
@@ -496,3 +653,9 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 }
+
+
+
+
+
+
