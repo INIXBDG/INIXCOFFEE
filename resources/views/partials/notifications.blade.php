@@ -1863,7 +1863,7 @@
         </div>
     @endif
 
-    @if (in_array($tipePesan, ['Mengajukan Lab', 'Mengajukan Subscription']))
+    @if (in_array($tipePesan, ['Mengajukan Lab', 'Mengajukan Permintaan Lab', 'Mengajukan Subscription']))
         <div class="notification mb-3 p-3 border rounded bg-light">
             <p class="mb-2">
                 <strong class="text-capitalize">{{ $notification->data['user'] ?? '-' }}</strong>
@@ -1880,7 +1880,11 @@
             </p>
 
             @if (!empty($notification->data['message']['rkm']))
-                @php $rkm = $notification->data['message']['rkm']; @endphp
+                @php
+                    $rkm = $notification->data['message']['rkm'];
+                    $tglAwal = $rkm['tanggal_awal'] ?? $rkm['tanggal_mulai'] ?? null;
+                    $tglAkhir = $rkm['tanggal_akhir'] ?? $rkm['tanggal_selesai'] ?? null;
+                @endphp
                 <div class="ms-3 mb-2">
                     <p class="mb-1">
                         Terkait RKM:
@@ -1889,11 +1893,11 @@
                     </p>
 
                     <p class="mb-0">
-                        @if (!empty($rkm['tanggal_awal']))
-                            Mulai {{ \Carbon\Carbon::parse($rkm['tanggal_awal'])->translatedFormat('d F Y') }}
+                        @if (!empty($tglAwal))
+                            Mulai {{ \Carbon\Carbon::parse($tglAwal)->translatedFormat('d F Y') }}
                         @endif
-                        @if (!empty($rkm['tanggal_akhir']))
-                            sampai {{ \Carbon\Carbon::parse($rkm['tanggal_akhir'])->translatedFormat('d F Y') }}
+                        @if (!empty($tglAkhir))
+                            sampai {{ \Carbon\Carbon::parse($tglAkhir)->translatedFormat('d F Y') }}
                         @endif
                     </p>
                 </div>
@@ -1918,15 +1922,23 @@
         </div>
     @endif
 
-    @if (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menolak Pengajuan Lab/Subscription', 'Update Status Pencairan oleh Finance']))
+    @if (in_array($tipePesan, [
+        'Menyetujui Pengajuan Lab/Subscription',
+        'Menyetujui Permintaan Lab',
+        'Akses Lab Telah Diberikan',
+        'Pengajuan Pengadaan Lab ke Finance',
+        'Menolak Pengajuan Lab/Subscription',
+        'Menolak Permintaan Lab',
+        'Update Status Pencairan oleh Finance'
+    ]))
         <div class="notification mb-3 p-3 border rounded bg-light">
             <p>
                 <strong style="text-transform: capitalize;">
                     {{ $notification->data['user'] ?? '-' }}
                 </strong>
-                @if ($tipePesan == 'Menyetujui Pengajuan Lab/Subscription')
-                    telah <strong>menyetujui</strong> pengajuan
-                @elseif ($tipePesan == 'Menolak Pengajuan Lab/Subscription')
+                @if (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menyetujui Permintaan Lab', 'Akses Lab Telah Diberikan', 'Pengajuan Pengadaan Lab ke Finance']))
+                    telah <strong>menyetujui / memproses</strong> pengajuan
+                @elseif (in_array($tipePesan, ['Menolak Pengajuan Lab/Subscription', 'Menolak Permintaan Lab']))
                     telah <strong>menolak</strong> pengajuan
                 @elseif ($tipePesan == 'Update Status Pencairan oleh Finance')
                     telah melakukan <strong>update status pencairan</strong> pada pengajuan
@@ -1954,41 +1966,6 @@
         </div>
     @endif
 
-    @if (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menolak Pengajuan Lab/Subscription', 'Update Status Pencairan oleh Finance']))
-        <div class="notification mb-3 p-3 border rounded bg-light">
-            <p>
-                <strong style="text-transform: capitalize;">
-                    {{ $notification->data['user'] ?? '-' }}
-                </strong>
-                @if ($tipePesan == 'Menyetujui Pengajuan Lab/Subscription')
-                    telah <strong>menyetujui</strong> pengajuan
-                @elseif ($tipePesan == 'Menolak Pengajuan Lab/Subscription')
-                    telah <strong>menolak</strong> pengajuan
-                @elseif ($tipePesan == 'Update Status Pencairan oleh Finance')
-                    telah melakukan <strong>update status pencairan</strong> pada pengajuan
-                @endif
-                milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
-            </p>
-            <p>
-                <em>{{ $notification->data['message']['status'] ?? '-' }}</em><br>
-                <small>Pada
-                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->translatedFormat('d F Y H:i') }}</small>
-            </p>
-
-            <div class="d-flex">
-                <a href="{{ $notification->data['path'] ?? '#' }}" class="btn btn-primary btn-sm me-2">
-                    Lihat Detail Pengajuan
-                </a>
-                <form action="{{ route('notifications.markAsRead', $notification->id) }}" method="POST" class="d-inline">
-                    @csrf
-                    @method('PUT')
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        Tandai sebagai Dibaca
-                    </button>
-                </form>
-            </div>
-        </div>
-    @endif
     @if (in_array($tipePesan, ['Mengajukan Klaim Modul', 'Klaim Modul Disetujui - Masuk Pengajuan Barang', 'Menolak Klaim Modul']))
         @php
             // Debug structure

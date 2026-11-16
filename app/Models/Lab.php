@@ -34,12 +34,17 @@ class Lab extends Model
     {
         return $query->where('tipe', 'subscription')
                      ->where('is_active', true)
-                     ->where('status', 'Active')
+                     ->where('status', 'active')
                      ->where('end_date', '>=', now());
     }
 
     public function materis()
     {
         return $this->belongsToMany(Materi::class, 'lab_materi', 'lab_id', 'materi_id');
+    }
+
+    public function pengajuans()
+    {
+        return $this->hasMany(PengajuanLabSubs::class, 'id_labs');
     }
 }
