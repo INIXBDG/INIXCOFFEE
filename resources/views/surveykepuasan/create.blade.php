@@ -119,11 +119,15 @@
     $canSurvey = !$alreadySurveyed;
 @endphp
 
-@if (auth()->user()->karyawan->divisi === "IT Service Management")
-<div class="text-end me-3 mt-3">
-    <a href="{{ route('surveyKepuasan.indexTable') }}" class="btn btn-primary">Lihat Hasil Survey</a>
+<div class="d-flex justify-content-between align-items-center me-3 mt-3 ms-3">
+    <div>
+        <a href="{{ route('surveykepuasan.index') }}" class="btn btn-secondary me-2"><i class="fas fa-list-check me-1"></i> Pilih Tiket Lain</a>
+        <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Tiket</a>
+    </div>
+    @if (optional(auth()->user()->karyawan)->divisi === "IT Service Management" || auth()->user()->can('View ITSM Only') || auth()->user()->jabatan === 'HRD')
+        <a href="{{ route('surveyKepuasan.indexTable') }}" class="btn btn-primary"><i class="fas fa-list me-1"></i> Lihat Rekap Hasil Survey</a>
+    @endif
 </div>
-@endif
 
 <div class="container py-4">
     @if ($canSurvey)
@@ -131,7 +135,11 @@
     <div class="survey-card">
         <div class="survey-header">
             <h4>Survey Kepuasan Kinerja ITSM</h4>
-            <p>Berikan penilaian jujur Anda untuk membantu kami meningkatkan layanan</p>
+            <p class="mb-2">Berikan penilaian jujur Anda untuk membantu kami meningkatkan layanan</p>
+            <div class="badge bg-light text-dark p-2 text-wrap" style="font-size: 0.95rem; font-weight: normal;">
+                <i class="fas fa-ticket-alt text-primary me-1"></i> ID Tiket: <strong>{{ $ticket->ticket_id }}</strong> | 
+                <strong>Kendala:</strong> {{ $ticket->detail_kendala }}
+            </div>
         </div>
 
         <div class="card-body p-4">
@@ -206,10 +214,18 @@
     <div class="survey-card text-center py-5">
         <i class="fas fa-check-circle text-success mb-3" style="font-size: 3rem;"></i>
         <h4 class="fw-bold">Terima kasih sudah berpartisipasi!</h4>
-        <p class="text-muted mb-0">
-            Anda telah mengisi survey pada
-            <strong>{{ \Carbon\Carbon::parse($latestSurvey->created_at)->locale('id')->translatedFormat('l, d F Y') }}</strong>.
+        <p class="text-muted mb-3">
+            Anda telah mengisi survey untuk tiket <strong>{{ $ticket->ticket_id }}</strong> pada
+            <strong>{{ $latestSurvey ? \Carbon\Carbon::parse($latestSurvey->created_at)->locale('id')->translatedFormat('l, d F Y H:i') : '-' }}</strong>.
         </p>
+        <div>
+            <a href="{{ route('surveykepuasan.index') }}" class="btn btn-primary me-2">
+                <i class="fas fa-list-check me-1"></i> Pilih Tiket Lain
+            </a>
+            <a href="{{ route('tickets.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Kembali ke Daftar Tiket
+            </a>
+        </div>
     </div>
     @endif
 </div>

@@ -105,10 +105,32 @@ class DashboardSLAController extends Controller
             ];
         }
 
-        $validator = Validator::make($request->all(), [
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
+        // Prioritas 1: Jika ada start_date & end_date eksplisit, gunakan itu
+        if ($request->filled('start_date') || $request->filled('end_date')) {
+            $validator = Validator::make($request->all(), [
+                'start_date' => 'nullable|date',
+                'end_date'   => 'nullable|date|after_or_equal:start_date',
+            ]);
+
+            if ($validator->fails()) {
+                return [
+                    'startDate' => $defaultStartDate,
+                    'endDate'   => $defaultEndDate,
+                    'filters'   => [
+                        'start' => $defaultStartDate->toDateTimeString(),
+                        'end'   => $defaultEndDate->toDateTimeString(),
+                        'error' => $validator->errors()->first(),
+                    ],
+                ];
+            }
+
+            $startDate = $request->filled('start_date')
+                ? Carbon::parse($request->input('start_date'), $this->timezone)->startOfDay()
+                : $defaultStartDate;
+
+            $endDate = $request->filled('end_date')
+                ? Carbon::parse($request->input('end_date'), $this->timezone)->endOfDay()
+                : $defaultEndDate;
 
             return [
                 'startDate' => $startDate,
