@@ -173,26 +173,39 @@
                                         {{ \Carbon\Carbon::parse($peluang->biru)->translatedFormat('d F Y') }}
                                     </li>
 
+                                    @if ($regis)
+                                        <li class="mb-3 small text-muted">
+                                            <div>
+                                                <strong class="text-dark">Regis Dibuat:</strong>
+                                                {{ $regis->created_at ? \Carbon\Carbon::parse($regis->created_at)->translatedFormat('d F Y H:i') : '-' }}
+                                            </div>
+                                            <div>
+                                                <strong class="text-dark">Regis Diupdate:</strong>
+                                                {{ $regis->updated_at ? \Carbon\Carbon::parse($regis->updated_at)->translatedFormat('d F Y H:i') : '-' }}
+                                            </div>
+                                        </li>
+                                    @endif
+
                                     <div class="d-flex gap-2 flex-wrap mb-3">
                                         @if ($regis)
                                             <a href="{{ asset('storage/' . $regis->path) }}" target="_blank"
                                                 class="btn btn-sm btn-success">
                                                 <i class="bi bi-file-earmark-pdf"></i> Lihat Regis Form
                                             </a>
+                                        @endif
+                                        <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
+                                            class="btn btn-sm btn-info">
+                                            <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                            data-bs-target="#uploadPdfModal">
+                                            <i class="bi bi-upload"></i>
+                                            @if ($regis)
+                                                Edit PDF
+                                            @else
+                                                Upload PDF
                                             @endif
-                                            <a href="{{ route('crm.index.regis', ['id' => $peluang->id]) }}" target="_blank"
-                                                class="btn btn-sm btn-info">
-                                                <i class="bi bi-file-earmark-plus"></i> Generate Regis Form
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#uploadPdfModal">
-                                                <i class="bi bi-upload"></i>
-                                                @if ($regis)
-                                                    Edit PDF
-                                                @else
-                                                    Upload PDF
-                                                @endif
-                                            </button>
+                                        </button>
                                     </div>
                                 @endif
 
