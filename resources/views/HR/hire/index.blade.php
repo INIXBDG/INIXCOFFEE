@@ -4565,20 +4565,19 @@
                     <label class="form-label-custom">Kode RIASEC <span class="required">*</span></label>
                     <input type="text" name="hasil" id="rsKode" class="form-control-custom" maxlength="6" placeholder="Contoh: RIA" value="${esc(d.hasil || '')}" required style="text-transform:uppercase;">
                     <div class="form-hint">1–6 huruf dari R, I, A, S, E, C tanpa mengulang. Huruf pertama adalah yang dominan.</div>
-                    <label class="form-label-custom mt-3">Skor per huruf <small class="text-muted fw-normal">(opsional, 0–100)</small></label>
+                    <label class="form-label-custom mt-3">Skor per huruf <small class="text-muted fw-normal">(opsional)</small></label>
                     <div class="row g-2">
                         ${Object.keys(INFO.riasec).map(h => `
                                         <div class="col-4">
                                             <div class="muted-small mb-1" title="${esc(INFO.riasec[h].nama)}">${h} · ${esc(INFO.riasec[h].nama)}</div>
-                                            <input type="number" min="0" max="100" step="0.1" name="skor_detail[${h.toLowerCase()}]" data-huruf="${h}" class="form-control-custom rs-skor" value="${detail[h.toLowerCase()] ?? ''}">
+                                            <input type="number" min="0" step="0.1" name="skor_detail[${h.toLowerCase()}]" data-huruf="${h}" class="form-control-custom rs-skor" value="${detail[h.toLowerCase()] ?? ''}">
                                         </div>`).join('')}
                     </div>
                     <div class="form-hint">Jika kode dikosongkan, kode otomatis diisi dari tiga skor tertinggi.</div>`;
             } else {
-                inti =
-                    `
-                    <label class="form-label-custom">Skor <span class="required">*</span> <span class="unit-hint">0–100</span></label>
-                    <input type="number" name="skor" id="ptSkor" class="form-control-custom" min="0" max="100" step="0.01" value="${d.skor ?? ''}" required>
+                inti = `
+                    <label class="form-label-custom">Skor <span class="required">*</span></label>
+                    <input type="number" name="skor" id="ptSkor" class="form-control-custom" min="0" step="0.01" value="${d.skor ?? ''}" required>
                     <div class="form-hint" id="ptLevel">${d.skor !== undefined && d.skor !== null ? 'Kategori: ' + esc(levelSkor(d.skor)) : 'Kategori skor akan tampil otomatis.'}</div>`;
             }
 
@@ -4879,8 +4878,7 @@
                     },
                     scales: {
                         r: {
-                            beginAtZero: true,
-                            max: 100
+                            beginAtZero: true
                         }
                     }
                 }
@@ -4981,7 +4979,6 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 100
                         }
                     }
                 }

@@ -447,6 +447,7 @@ class RKMController extends Controller
         // return $id;
         $karyawan = karyawan::whereIn('jabatan', ['Instruktur', 'Education Manager', 'Outsource'])
             ->where('status_aktif', '1')
+            ->where('kode_karyawan', '!=', null)
             ->get();
         $array = explode('ixb', $id);
         $materi_key = $array[0];

@@ -214,18 +214,16 @@ class presenceController extends Controller
     public function syncHolidays($tahun)
     {
         try {
-            $response = Http::timeout(8)->get('https://libur.deno.dev/api', ['year' => $tahun]);
-            if ($response->successful()) {
-                foreach ($response->json() as $libur) {
-                    HariLibur::updateOrCreate(['tanggal' => $libur['date']], ['nama' => $libur['name'], 'year' => $tahun]);
-                }
-            }
+            $data = HariLibur::whereYear('tanggal', $tahun)
+                ->where('tipe', 'nasional')
+                ->get();
+
+            return $data->isNotEmpty();
         } catch (\Throwable $e) {
             return false;
         }
-        return true;
     }
-
+    
     public function ensureHolidays(Carbon $start, Carbon $end)
     {
         for ($y = $start->year; $y <= $end->year; $y++) {

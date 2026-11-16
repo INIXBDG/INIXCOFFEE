@@ -567,6 +567,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/master-labs/{id}', [PengajuanLabdanSubsController::class, 'updateMasterLab']);
     Route::get('/api/get-labs-by-rkm/{id}', [PengajuanLabdanSubsController::class, 'getLabsByRkm']);
     Route::get('/api/get-master-labs', [PengajuanLabdanSubsController::class, 'getMasterLabs'])->name('api.master-labs');
+    Route::post('/api/master-labs', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'storeMasterLab'])->name('api.master-labs.store');
+    Route::post('/api/master-labs/{id}/assign', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'assignLabUser'])->name('api.master-labs.assign');
 
     Route::get('getPengajuanSubs/{month}/{year}', [PengajuanSubsController::class, 'getPengajuanSubs'])->name('getPengajuanSubs');
     Route::put('pengajuansubs/updatesubs/{id}', [PengajuanSubsController::class, 'updateLabSubs'])->name('pengajuansubs.updatesubs');
@@ -2134,6 +2136,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard-sla/event/overall', [DashboardSLAController::class, 'overallEventSla']);
     Route::get('/dashboard-sla/event/{mappingId}', [DashboardSLAController::class, 'dashboardEventSla']);
     Route::get('/dashboard-sla/digital', [DashboardSLAController::class, 'dashboardDigital']);
+    Route::get('/dashboard-sla/survey-yearly', [DashboardSLAController::class, 'surveyYearly']);
     Route::get('/dashboard/uptime/monitoring', [KPIDatabaseKPIController::class, 'UptimePresentase'])->name('dashboard.uptimeMonitoring');
 
     // Laporan Insiden
@@ -2275,12 +2278,6 @@ Route::post('/perusahaan/merge', [PerusahaanController::class, 'merge'])->name('
 Route::get('/schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule.index');
 Route::get('/schedule-logs/data', [ScheduleLogController::class, 'data'])->name('schedule.data');
 Route::delete('/schedule-logs/clear-all', [ScheduleLogController::class, 'clearAll'])->name('schedule.clear');
-
-Route::get('/visit-projects', [VisitProjectController::class, 'index'])->name('visit-projects.index');
-Route::get('/visit-projects/get', [VisitProjectController::class, 'get'])->name('visit-projects.get');
-Route::post('/visit-projects/store', [VisitProjectController::class, 'store'])->name('visit-projects.store');
-Route::put('/visit-projects/{visitProject}', [VisitProjectController::class, 'update'])->name('visit-projects.update');
-Route::delete('/visit-projects/{visitProject}', [VisitProjectController::class, 'destroy'])->name('visit-projects.destroy');
 
 // CV Instruktur
 Route::get('/cv-instruktur', [CVInstrukturController::class, 'index'])->name('cv-instruktur.index');

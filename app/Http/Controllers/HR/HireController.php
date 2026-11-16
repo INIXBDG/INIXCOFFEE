@@ -618,7 +618,7 @@ class HireController extends Controller
             }
         }
         $pelamar->psikotests()->delete();
-        
+
         $this->hapusBerkas($pelamar->penilaians()->pluck('file_penilaian')->all());
 
         $pelamar->delete();
@@ -1162,9 +1162,9 @@ class HireController extends Controller
                 },
             ];
             $aturan['skor_detail'] = 'nullable|array';
-            $aturan['skor_detail.*'] = 'nullable|numeric|min:0|max:100';
+            $aturan['skor_detail.*'] = 'nullable|numeric|min:0';
         } else {
-            $aturan['skor'] = 'required|numeric|min:0|max:100';
+            $aturan['skor'] = 'required|numeric|min:0';
         }
 
         $request->validate($aturan, [

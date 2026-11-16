@@ -125,45 +125,29 @@ $(document).ready(function () {
     function updateFilterDisplay(filters, elementId) {
         try {
             if (!filters || !filters.start || !filters.end) return;
-            const startDate = new Date(filters.start.replace(' ', 'T'));
-            const endDate   = new Date(filters.end.replace(' ', 'T'));
-            const year      = startDate.getFullYear();
-            const el        = document.getElementById(elementId);
-            if (!el) return;
-
-            // Cek apakah range mencakup seluruh tahun (1 Jan – 31 Des)
-            const isFullYear =
-                startDate.getMonth() === 0 && startDate.getDate() === 1 &&
-                endDate.getMonth()   === 11 && endDate.getDate()   === 31;
-
-            if (isFullYear) {
-                el.innerHTML = `<strong>Tahun: ${year} - Semua Bulan</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+            const startDate = new Date(filters.start);
+            const year = filters.year || startDate.getFullYear();
+            const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            let periodText = `Tahun: ${year}`;
+            if (filters.month && filters.month !== 'all') {
+                periodText += ` - Bulan: ${monthNames[parseInt(filters.month)] || filters.month}`;
             } else {
-                const namaBulan = startDate.toLocaleString('id-ID', { month: 'long' });
-                el.innerHTML = `<strong>Bulan: ${namaBulan} ${year}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
+                const month = startDate.getMonth();
+                const semester = (month < 6) ? 1 : 2;
+                periodText += ` - Semester: ${semester}`;
+            }
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.innerHTML = `<strong>${periodText}</strong><br><small class="text-muted">(Data: ${filters.start.split(' ')[0]} s/d ${filters.end.split(' ')[0]})</small>`;
             }
         } catch (e) { console.error("Gagal update filter display", e); }
     }
 
-    // Bangun parameter start_date & end_date dari pilihan filter global
+    // Resolusi Parameter URL berdasarkan status Filter Global
     function buildQueryString() {
-        const year          = parseInt($('#globalTahunFilter').val()) || new Date().getFullYear();
-        const selectedMonth = $('#globalBulanFilter').val();
-
-        let startDate, endDate;
-
-        const pad = n => String(n).padStart(2, '0');
-        if (selectedMonth && selectedMonth !== 'all') {
-            const monthIndex = parseInt(selectedMonth) - 1;
-            const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-            startDate = `${year}-${pad(monthIndex + 1)}-01`;
-            endDate   = `${year}-${pad(monthIndex + 1)}-${pad(lastDay)}`;
-        } else {
-            startDate = `${year}-01-01`;
-            endDate   = `${year}-12-31`;
-        }
-
-        return `?start_date=${startDate}&end_date=${endDate}`;
+        const year = $('#globalTahunFilter').val() || new Date().getFullYear();
+        const month = $('#globalBulanFilter').val() || 'all';
+        return `?tahun=${year}&bulan=${month}`;
     }
 
     // =======================================================================
@@ -200,28 +184,18 @@ $(document).ready(function () {
             document.getElementById('tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('slaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority || {};
+            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
             if (slaProgrammerChart) slaProgrammerChart.destroy();
-
             if (kpi.total_tickets > 0) {
                 $('#programmer-chart-row').show();
                 slaProgrammerChart = new Chart(chartCtx, {
                     type: 'bar',
                     data: {
-                        // Tambahkan 'High (Ext)' ke labels
-                        labels: ['High', 'High (Ext)', 'Medium', 'Low', 'Other'],
+                        labels: ['High', 'Medium', 'Low', 'Other'],
                         datasets: [{
                             label: 'Jumlah Tiket',
-                            // Tarik data 'High-Extended'
-                            data: [
-                                pData.High || 0,
-                                pData['High-Extended'] || 0,
-                                pData.Medium || 0,
-                                pData.Low || 0,
-                                pData.Other || 0
-                            ],
-                            // Tambahkan warna maroon (#842029) untuk High-Extended
-                            backgroundColor: ['#dc3545', '#842029', '#ffc107', '#198754', '#6c757d']
+                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
+                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
@@ -261,26 +235,18 @@ $(document).ready(function () {
                     </tr>`;
                 });
             }
-            data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                            const priority = item.tickets_by_priority || {};
 
-                            // Tambahkan span badge untuk HE (High-Extended)
-                            const badgeHtml = `
-                                <span class="badge bg-danger">H:${priority.High || 0}</span>
-                                <span class="badge bg-dark">HE:${priority['High-Extended'] || 0}</span>
-                                <span class="badge bg-warning text-dark">M:${priority.Medium || 0}</span>
-                                <span class="badge bg-success">L:${priority.Low || 0}</span>
-                            `;
+            // --- Tabel Detail Semua Tiket (Pagination) ---
+            const tickets = data.ticket_details || [];
 
-                            tableBody.innerHTML += `<tr>
-                                <td><strong>${item.nama_programmer}</strong></td>
-                                <td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td>
-                                <td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td>
-                                <td>${formatHours(item.avg_resolution_time)}</td>
-                                <td><strong>${formatValue(item.total_tickets)}</strong></td>
-                                <td>${badgeHtml}</td>
-                            </tr>`;
-                        });
+            // Reset search & simpan data baru, lalu render halaman 1
+            progTicketAllData     = tickets;
+            progTicketCurrentPage = 1;
+            progTicketSearchQuery = '';
+            $('#prog-ticket-search').val('');   // kosongkan input box
+
+            renderProgTicketPage(1);
+
         } catch (error) { console.error('Gagal SLA Prog User:', error); }
     }
 
@@ -339,25 +305,18 @@ $(document).ready(function () {
             document.getElementById('ts-tim-total-tickets').textContent = formatValue(kpi.total_tickets);
 
             const chartCtx = document.getElementById('tsSlaTimPriorityChart').getContext('2d');
-            const pData = kpi.tickets_by_priority || {};
+            const pData = kpi.tickets_by_priority || { High: 0, Medium: 0, Low: 0, Other: 0 };
             if (slaTsTimChart) slaTsTimChart.destroy();
-
             if (kpi.total_tickets > 0) {
                 $('#ts-chart-row').show();
                 slaTsTimChart = new Chart(chartCtx, {
                     type: 'bar',
                     data: {
-                        labels: ['High', 'High (Ext)', 'Medium', 'Low', 'Other'],
+                        labels: ['High', 'Medium', 'Low', 'Other'],
                         datasets: [{
                             label: 'Jumlah Tiket',
-                            data: [
-                                pData.High || 0,
-                                pData['High-Extended'] || 0,
-                                pData.Medium || 0,
-                                pData.Low || 0,
-                                pData.Other || 0
-                            ],
-                            backgroundColor: ['#dc3545', '#842029', '#ffc107', '#198754', '#6c757d']
+                            data: [pData.High, pData.Medium, pData.Low, pData.Other],
+                            backgroundColor: ['#dc3545', '#ffc107', '#198754', '#6c757d']
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
@@ -377,24 +336,8 @@ $(document).ready(function () {
                 tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada data.</td></tr>'; return;
             }
             data.kpi.sort((a, b) => b.total_tickets - a.total_tickets).forEach(item => {
-                const priority = item.tickets_by_priority || {};
-
-                // Tambahkan span badge untuk HE
-                const badgeHtml = `
-                    <span class="badge bg-danger">H:${priority.High || 0}</span>
-                    <span class="badge bg-dark">HE:${priority['High-Extended'] || 0}</span>
-                    <span class="badge bg-warning text-dark">M:${priority.Medium || 0}</span>
-                    <span class="badge bg-success">L:${priority.Low || 0}</span>
-                `;
-
-                tableBody.innerHTML += `<tr>
-                    <td><strong>${item.nama_programmer}</strong></td>
-                    <td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td>
-                    <td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td>
-                    <td>${formatHours(item.avg_resolution_time)}</td>
-                    <td><strong>${formatValue(item.total_tickets)}</strong></td>
-                    <td>${badgeHtml}</td>
-                </tr>`;
+                const priority = item.tickets_by_priority || { High: 0, Medium: 0 };
+                tableBody.innerHTML += `<tr><td><strong>${item.nama_programmer}</strong></td><td class="${getSlaClass(item.sla_resolution_compliance)}">${formatPercent(item.sla_resolution_compliance)}</td><td class="${getSlaClass(item.sla_response_compliance)}">${formatPercent(item.sla_response_compliance)}</td><td>${formatHours(item.avg_resolution_time)}</td><td><strong>${formatValue(item.total_tickets)}</strong></td><td><span class="badge bg-danger">H:${priority.High}</span> <span class="badge bg-warning">M:${priority.Medium}</span></td></tr>`;
             });
         } catch (error) { console.error('Gagal SLA TS User:', error); }
     }
@@ -506,13 +449,26 @@ $(document).ready(function () {
         $('#digital-weekly-table-body').html('<tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> Memuat data...</td></tr>');
 
         try {
-            const query    = buildQueryString();
+            let startDate, endDate;
+            const currentYear = $('#globalTahunFilter').val() ? parseInt($('#globalTahunFilter').val()) : new Date().getFullYear();
+            const selectedMonth = $('#globalBulanFilter').val();
+
+            if (selectedMonth && selectedMonth !== 'all') {
+                const monthIndex = parseInt(selectedMonth) - 1;
+                startDate = new Date(currentYear, monthIndex, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, monthIndex + 1, 0).toISOString().split('T')[0];
+            } else {
+                startDate = new Date(currentYear, 0, 1).toISOString().split('T')[0];
+                endDate = new Date(currentYear, 11, 31).toISOString().split('T')[0];
+            }
+
             const response = await $.ajax({
-                url:         baseUrl + query,
-                method:      'GET',
-                dataType:    'json',
-                headers:     { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                timeout:     15000
+                url: baseUrl,
+                method: 'GET',
+                data: { start_date: startDate, end_date: endDate },
+                dataType: 'json',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                timeout: 15000
             });
 
             if (!response || !response.kpi) {
@@ -564,7 +520,7 @@ $(document).ready(function () {
     }
 
     function renderDigitalWeeklyTable(data) {
-        const $tbody =$('#digital-weekly-table-body');
+        const $tbody = $('#digital-weekly-table-body');
         if (!data || !Array.isArray(data) || data.length === 0) {
             $tbody.html('<tr><td colspan="4" class="text-center py-3 text-muted">Belum ada data mingguan</td></tr>');
             return;
@@ -575,23 +531,14 @@ $(document).ready(function () {
             const uploads = row.count ?? row.uploads ?? 0;
             const target = row.target ?? 3;
             const status = row.status || '-';
-
-            // Render label hari aktif jika ada dari controller
-            const activeDaysLabel = row.active_days !== undefined
-                ? `<br><small class="text-muted">(${row.active_days} Hari Aktif)</small>`
-                : '';
-
             const badgeClass = status === 'Met' ? 'bg-success' : (status === 'Missed' ? 'bg-warning text-dark' : 'bg-secondary');
 
             return `
                 <tr>
                     <td>${period}</td>
-                    <td class="text-center fw-bold align-middle">${uploads}</td>
-                    <td class="text-center align-middle">
-                        <strong>${target}</strong>
-                        ${activeDaysLabel}
-                    </td>
-                    <td class="text-center align-middle"><span class="badge ${badgeClass}">${status}</span></td>
+                    <td class="text-center fw-bold">${uploads}</td>
+                    <td class="text-center">${target}</td>
+                    <td class="text-center"><span class="badge ${badgeClass}">${status}</span></td>
                 </tr>
             `;
         }).join('');
