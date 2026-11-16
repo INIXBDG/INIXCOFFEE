@@ -192,8 +192,11 @@
 
     <div class="row justify-content-center">
         <div class="col-md-12">
-            <div class="d-flex justify-content-end">
-                    <a href="{{ route('tickets.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Ticket</a>
+            <div class="d-flex justify-content-end align-items-center">
+                @if (optional(auth()->user()->karyawan)->divisi === 'IT Service Management')
+                    <a href="{{ route('surveyKepuasan.indexTable') }}" class="btn btn-md btn-outline-primary me-2"><i class="fa-solid fa-square-poll-vertical me-1"></i> Hasil Survey Kepuasan</a>
+                @endif
+                <a href="{{ route('tickets.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Ticket</a>
             </div>
             <div class="card m-4">
                 <div class="card-body table-responsive">
@@ -359,16 +362,45 @@
                {
                     "data": null,
                     "render": function(data) {
+                        var authNama = "{{ optional(auth()->user()->karyawan)->nama_lengkap }}";
+                        var isTicketOwner = (data.nama_karyawan && authNama && data.nama_karyawan.trim().toLowerCase() === authNama.trim().toLowerCase());
+
                         if (data.status == 'Di Proses') {
                             return `
                                 <span class="badge rounded-pill bg-warning text-dark">
                                     <i class="bi bi-hourglass-split me-1"></i> Di Proses
                                 </span>`;
                         } else if (data.status == 'Selesai') {
+                            if (data.is_surveyed) {
+                                return `
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Selesai
+                                    </span>`;
+                            }
+
+                            // Jika pemilik tiket, tampilkan tombol Isi Survey
+                            if (isTicketOwner) {
+                                return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1 text-nowrap">
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Selesai
+                                        </span>
+                                        <a href="/survey/kepuasan?ticket_id=${encodeURIComponent(data.ticket_id)}" class="btn btn-warning btn-sm py-0 px-2 rounded-pill fw-semibold text-dark text-decoration-none shadow-sm" style="font-size: 0.72rem; line-height: 1.6;" title="Klik untuk Mengisi Survey Kepuasan">
+                                            <i class="fas fa-star text-dark me-1"></i> Isi Survey
+                                        </a>
+                                    </div>`;
+                            }
+
+                            // Jika tim ITSM atau bukan pemilik tiket, hanya tampilkan info bahwa user belum survei (tanpa tombol isi)
                             return `
-                                <span class="badge rounded-pill bg-success">
-                                    <i class="bi bi-check-circle me-1"></i> Selesai
-                                </span>`;
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1 text-nowrap">
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Selesai
+                                    </span>
+                                    <span class="badge rounded-pill bg-light text-muted border border-secondary" style="font-size: 0.72rem;" title="User belum mengisi survey">
+                                        <i class="fas fa-clock text-warning me-1"></i> Belum Survei
+                                    </span>
+                                </div>`;
                         } else if (data.status == 'Terkendala') {
                             return `
                                 <span class="badge rounded-pill bg-danger">
@@ -450,6 +482,14 @@
                             // Tombol Edit Waktu untuk ITSM (jika tiket sudah diproses / selesai / terkendala)
                             if (divisi == 'IT Service Management' && (data.status == 'Di Proses' || data.status == 'Selesai' || data.status == 'Terkendala')) {
                                 actions += '<button type="button" class="dropdown-item" onclick="openEditItsmModal(' + data.id + ')"><img src="{{ asset('icon/edit-dark.svg') }}" class=""> Edit</button>';
+                            }
+
+                            if (data.status == 'Selesai') {
+                                if (isOwner && !data.is_surveyed) {
+                                    actions += '<a class="dropdown-item text-primary fw-semibold" href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '"><i class="fas fa-star text-warning me-2"></i> Isi Survey</a>';
+                                } else if (isOwner && data.is_surveyed) {
+                                    actions += '<a class="dropdown-item text-muted" href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '"><i class="fas fa-check-circle text-success me-2"></i> Lihat Survey</a>';
+                                }
                             }
 
                             actions += '<button type="button" class="dropdown-item" onclick="openDetailModal(' + data.id + ')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
@@ -630,6 +670,24 @@
             html += '<td>Tingkat Kesulitan</td>';
             html += '<td>:</td>';
             html += '<td>' + (data.tingkat_kesulitan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Survey Kepuasan</td>';
+            html += '<td>:</td>';
+            var detailAuthNama = "{{ optional(auth()->user()->karyawan)->nama_lengkap }}";
+            var isDetailOwner = (data.nama_karyawan && detailAuthNama && data.nama_karyawan.trim().toLowerCase() === detailAuthNama.trim().toLowerCase());
+
+            if (data.status == 'Selesai') {
+                if (data.is_surveyed) {
+                    html += '<td><span class="badge bg-success me-2"><i class="fas fa-check-circle me-1"></i> Sudah Survei</span></td>';
+                } else if (isDetailOwner) {
+                    html += '<td><a href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '" class="btn btn-warning btn-sm"><i class="fas fa-star me-1"></i> Isi Survey Kepuasan</a></td>';
+                } else {
+                    html += '<td><span class="badge bg-light text-muted border"><i class="fas fa-clock text-warning me-1"></i> User Belum Mengisi Survey</span></td>';
+                }
+            } else {
+                html += '<td><span class="text-muted">Menunggu tiket selesai</span></td>';
+            }
             html += '</tr>';
             html += '</tbody>';
             html += '</table>';

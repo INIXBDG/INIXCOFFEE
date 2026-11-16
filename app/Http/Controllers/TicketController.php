@@ -343,7 +343,7 @@ class TicketController extends Controller
             .'Terimakasih!';
 
         $pembuatTiket = User::whereHas('karyawan', function ($query) use ($ticket) {
-            $query->where('nama_lengkap', $ticket->nama_karyawan);
+            $query->whereRaw('LOWER(TRIM(nama_lengkap)) = ?', [strtolower(trim($ticket->nama_karyawan))]);
         })->first();
 
         // Pengiriman notifikasi sistem jika pengguna ditemukan
