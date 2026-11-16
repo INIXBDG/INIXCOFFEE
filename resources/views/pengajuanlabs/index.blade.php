@@ -14,13 +14,13 @@
             <ul class="nav nav-tabs mb-4" id="labTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active fw-bold" id="pengajuan-tab" data-bs-toggle="tab" data-bs-target="#pengajuan-pane" type="button" role="tab">
-                        Daftar Pengajuan
+                        Daftar Permintaan & Tracking Penggunaan
                     </button>
                 </li>
 
                 <li class="nav-item" role="presentation">
                     <button class="nav-link fw-bold text-primary" id="kelola-tab" data-bs-toggle="tab" data-bs-target="#kelola-pane" type="button" role="tab" onclick="loadMasterLabs()">
-                        Kelola Master Lab
+                        Management Master Lab
                     </button>
                 </li>
             </ul>
@@ -31,18 +31,13 @@
                 <div class="tab-pane fade show active" id="pengajuan-pane" role="tabpanel">
                     @if($bolehMengajukan)
                         <div class="d-flex justify-content-end">
-                            @if (isset($tracking) && $tracking == 'tutup')
-                                <button class="btn btn-md btn-secondary mx-4" disabled title="Selesaikan pengajuan sebelumnya terlebih dahulu">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
-                                </button>
-                            @else
-                                <a href="{{ route('pengajuanlabsdansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Lab">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
-                                </a>
-                            @endif
+                            <a href="{{ route('pengajuanlabsdansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Permintaan Lab">
+                                <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Lab
+                            </a>
                         </div>
                     @endif
 
+                    {{-- MODAL APPROVE / REJECT --}}
                     <div class="modal fade" id="approveRejectModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -73,6 +68,7 @@
                         </div>
                     </div>
 
+                    {{-- MODAL UPLOAD INVOICE --}}
                     <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <form id="uploadInvoiceForm" enctype="multipart/form-data">
@@ -80,7 +76,7 @@
                                 <input type="hidden" id="uploadInvoiceId">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Upload Invoice</h5>
+                                        <h5 class="modal-title">Upload Invoice Lab (Tim ITSM)</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
@@ -97,7 +93,7 @@
                         </div>
                     </div>
 
-                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
+                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support', 'Education Manager']))
                         <div class="card m-4">
                             <div class="card-body d-flex justify-content-center">
                                 <div class="col-md-4 mx-1">
@@ -125,20 +121,20 @@
                         </div>
                     @endif
 
+                    {{-- TABEL 1: ANTREAN PERMINTAAN & PENGADAAN LAB --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Pengajuan Lab</h3>
+                            <h3 class="card-title text-center my-1">Antrean Permintaan & Pengadaan Lab</h3>
                             <table class="table table-striped" id="pengajuanLabSubsTable">
                                 <thead>
                                     <tr>
                                         <th>Tanggal</th>
-                                        <th>Pengaju</th>
-                                        <th>Divisi</th>
+                                        <th>Peminta</th>
                                         <th>Jabatan</th>
-                                        <th>Kategori</th>
-                                        <th>Nama Lab</th>
+                                        <th>Status Penanganan</th>
+                                        <th>Nama Lab & Vendor</th>
                                         <th>Status Tracking Terkini</th>
-                                        <th>RKM / Materi</th>
+                                        <th>RKM / Materi & Jadwal</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -147,20 +143,20 @@
                         </div>
                     </div>
 
+                    {{-- TABEL 2: TRACKING PENGGUNAAN LAB (AKSES DIBERIKAN) --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1 text-primary">Data Permintaan Lab Existing</h3>
+                            <h3 class="card-title text-center my-1">Tracking Penggunaan Lab (Permintaan Akses & Assign Aktif)</h3>
                             <table class="table table-striped" id="pengajuanExistingTable">
                                 <thead>
                                     <tr>
-                                        <th>Tanggal</th>
-                                        <th>Pengaju</th>
-                                        <th>Divisi</th>
+                                        <th>Tgl Pencatatan</th>
+                                        <th>Pengguna Lab</th>
                                         <th>Jabatan</th>
-                                        <th>Kategori</th>
-                                        <th>Nama Lab</th>
-                                        <th>Status Akhir</th>
+                                        <th>Nama Lab & Vendor</th>
                                         <th>RKM / Materi</th>
+                                        <th>Jadwal Penggunaan</th>
+                                        <th>Status Penggunaan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -169,16 +165,16 @@
                         </div>
                     </div>
 
+                    {{-- TABEL 3: RIWAYAT PENGADAAN BARANG SELESAI / DITOLAK --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Riwayat Pengajuan Selesai</h3>
+                            <h3 class="card-title text-center my-1">Riwayat Pengadaan Lab Selesai / Ditolak</h3>
                             <table class="table table-striped" id="pengajuanSelesaiTable">
                                 <thead>
                                     <tr>
                                         <th>Tanggal</th>
-                                        <th>Pengaju</th>
+                                        <th>Peminta / PIC ITSM</th>
                                         <th>Divisi</th>
-                                        <th>Jabatan</th>
                                         <th>Kategori</th>
                                         <th>Nama Lab</th>
                                         <th>Status Akhir</th>
@@ -196,38 +192,254 @@
                 @if($isTeknis)
                 <div class="tab-pane fade" id="kelola-pane" role="tabpanel">
                     <div class="card m-4">
-                        <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Master Data Laboratorium</h3>
-                            <table class="table table-striped text-nowrap" id="masterLabTable" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Nama Lab</th>
-                                        <th>Vendor</th>
-                                        <th>Tipe</th>
-                                        <th>Status</th>
-                                        <th>Deskripsi</th>
-                                        <th>URL Lab</th>
-                                        <th>Kode Akses</th>
-                                        <th>Masa Aktif</th>
-                                        <th>Mata Uang</th>
-                                        <th>Harga Asli</th>
-                                        <th>Kurs</th>
-                                        <th>Estimasi (Rp)</th>
-                                        <th>Materi Terhubung</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="card-title mb-0 fw-bold">Master Data Laboratorium</h4>
+                                <button type="button" class="btn btn-primary fw-bold" onclick="openAddMasterLabModal()">
+                                    + Tambah Lab yang Sudah Berjalan
+                                </button>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle" id="masterLabTable" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th width="18%">Nama Lab & Vendor</th>
+                                            <th width="12%">Tipe & Status</th>
+                                            <th width="22%">Sedang Digunakan Oleh</th>
+                                            <th width="18%">Akses & Kredensial</th>
+                                            <th width="14%">Masa Aktif & Biaya</th>
+                                            <th width="10%">Materi</th>
+                                            <th width="6%" class="text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
+                    {{-- MODAL 1: TAMBAH LAB YANG SUDAH BERJALAN (EXISTING/LEGACY LAB) --}}
+                    <div class="modal fade" id="addMasterLabModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Tambah Data Lab yang Sudah Berjalan</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="addMasterLabForm">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Nama Lab / Software <span class="text-danger">*</span></label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="nama_labs" required placeholder="Contoh: kodekloud / AWS Cloud">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Vendor / Merk</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="merk" placeholder="Contoh: KodeKloud / AWS">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tipe Aset</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="tipe" id="add_tipe">
+                                                    <option value="subscription">Subscription (Berlangganan)</option>
+                                                    <option value="one-time">One-Time</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row" id="row_add_duration" style="display: none;">
+                                            <label class="col-sm-4 col-form-label">Durasi Akses (Menit)</label>
+                                            <div class="col-sm-8">
+                                                <input type="number" class="form-control" name="duration_minutes" id="add_duration_minutes">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Status Saat Ini</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="status">
+                                                    <option value="active" selected>Active (Sedang Berjalan)</option>
+                                                    <option value="pending">Pending</option>
+                                                    <option value="expired">Expired</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">URL Lab</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="lab_url" placeholder="https://...">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kode Akses / Credentials</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="access_code" placeholder="Username / Password / Key">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tanggal Mulai & Berakhir</label>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="start_date" title="Tanggal Mulai">
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="end_date" title="Tanggal Berakhir">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Mata Uang & Harga</label>
+                                            <div class="col-sm-3">
+                                                <select class="form-select" name="mata_uang" id="add_mata_uang">
+                                                    <option value="Rupiah">Rupiah</option>
+                                                    <option value="Dollar">Dollar</option>
+                                                    <option value="Euro">Euro</option>
+                                                    <option value="Poundsterling">Poundsterling</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-sm-5">
+                                                <input type="number" step="0.01" class="form-control calculate-add-harga" name="harga" id="add_harga" placeholder="Nominal Harga Asli" value="0">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kurs & Estimasi (Rp)</label>
+                                            <div class="col-sm-3">
+                                                <input type="number" step="0.01" class="form-control calculate-add-harga" name="kurs" id="add_kurs" value="1" readonly>
+                                            </div>
+                                            <div class="col-sm-5">
+                                                <input type="number" class="form-control bg-light" name="harga_rupiah" id="add_harga_rupiah" value="0" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Deskripsi / Catatan</label>
+                                            <div class="col-sm-8">
+                                                <textarea class="form-control" name="desc" rows="2" placeholder="Catatan teknis lab..."></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Terhubung ke Materi</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="materi_ids[]" id="add_materi" multiple="multiple" style="width: 100%;">
+                                                    @if(isset($materis))
+                                                        @foreach($materis as $m)
+                                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <hr>
+                                        <h6 class="fw-bold text-primary mb-3">Langsung Assign Instruktur yang Sedang Menggunakan (Opsional)</h6>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Pilih Instruktur</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="assigned_kode_karyawan[]" id="add_assigned_instruktur" multiple="multiple" style="width: 100%;">
+                                                    @if(isset($instrukturs))
+                                                        @foreach($instrukturs as $inst)
+                                                            <option value="{{ $inst->kode_karyawan }}">{{ $inst->nama_lengkap }} ({{ $inst->jabatan }})</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                                <small class="text-muted">Bisa pilih lebih dari satu instruktur jika lab dipakai bersama.</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Tautkan ke RKM (Opsional)</label>
+                                            <div class="col-sm-8">
+                                                <select class="form-select" name="assigned_id_rkm">
+                                                    <option value="">-- Non-RKM / Umum --</option>
+                                                    @if(isset($rkms))
+                                                        @foreach($rkms as $rkm)
+                                                            <option value="{{ $rkm->id }}">
+                                                                {{ $rkm->perusahaan->nama_perusahaan ?? '-' }} - {{ $rkm->materi->nama_materi ?? '-' }} ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d/m/Y') }})
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan Lab & Assign</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- MODAL 2: ASSIGN INSTRUKTUR PENGGUNA LAB PADA MASTER LAB TERTENTU --}}
+                    <div class="modal fade" id="assignLabUserModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Assign Pengguna Lab: <span id="assign_lab_title" class="text-primary"></span></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="assignLabUserForm">
+                                    @csrf
+                                    <input type="hidden" id="assign_lab_id">
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Pilih Instruktur / Pengguna <span class="text-danger">*</span></label>
+                                            <select class="form-select" name="kode_karyawan_list[]" id="assign_kode_karyawan" multiple="multiple" style="width: 100%;" required>
+                                                @if(isset($instrukturs))
+                                                    @foreach($instrukturs as $inst)
+                                                        <option value="{{ $inst->kode_karyawan }}">{{ $inst->nama_lengkap }} ({{ $inst->jabatan }})</option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Jadwal RKM <span class="text-muted small">(Opsional)</span></label>
+                                            <select class="form-select" name="id_rkm" id="assign_id_rkm">
+                                                <option value="">-- Tanpa RKM (Penggunaan Umum / Berjalan) --</option>
+                                                @if(isset($rkms))
+                                                    @foreach($rkms as $rkm)
+                                                        <option value="{{ $rkm->id }}">
+                                                            {{ $rkm->perusahaan->nama_perusahaan ?? '-' }} - {{ $rkm->materi->nama_materi ?? '-' }} ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d M Y') }})
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Catatan Penggunaan (Opsional)</label>
+                                            <textarea class="form-control" name="catatan_assign" rows="2" placeholder="Contoh: Digunakan untuk kelas berjalan / persiapan materi"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan & Berikan Akses</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- MODAL 3: EDIT MASTER LAB --}}
                     <div class="modal fade" id="editMasterLabModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold">Edit Data Teknis Lab</h5>
+                                    <h5 class="modal-title fw-bold">Edit Data Master Lab</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form id="editMasterLabForm">
@@ -281,35 +493,35 @@
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Deskripsi</label>
                                             <div class="col-sm-8">
-                                                <textarea class="form-control" name="deskripsi" id="edit_deskripsi" rows="3"></textarea>
+                                                <textarea class="form-control" name="desc" id="edit_deskripsi" rows="3"></textarea>
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">URL Lab</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control" name="url_labs" id="edit_url_labs">
+                                                <input type="text" class="form-control" name="lab_url" id="edit_url_labs">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Kode Akses / Key</label>
                                             <div class="col-sm-8">
-                                                <input type="text" class="form-control" name="kode_akses" id="edit_kode_akses">
+                                                <input type="text" class="form-control" name="access_code" id="edit_kode_akses">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Tanggal Mulai</label>
                                             <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="tanggal_mulai" id="edit_tanggal_mulai">
+                                                <input type="date" class="form-control" name="start_date" id="edit_tanggal_mulai">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Tanggal Berakhir</label>
                                             <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="tanggal_berakhir" id="edit_tanggal_berakhir">
+                                                <input type="date" class="form-control" name="end_date" id="edit_tanggal_berakhir">
                                             </div>
                                         </div>
 
@@ -328,7 +540,7 @@
                                         <div class="mb-3 row">
                                             <label class="col-sm-4 col-form-label">Nominal Harga Asli</label>
                                             <div class="col-sm-8">
-                                                <input type="number" step="0.01" class="form-control calculate-harga" name="nominal_harga_asli" id="edit_nominal_harga_asli">
+                                                <input type="number" step="0.01" class="form-control calculate-harga" name="harga" id="edit_nominal_harga_asli">
                                             </div>
                                         </div>
 
@@ -386,13 +598,16 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const userRole = "{{ auth()->user()->karyawan->jabatan ?? '' }}";
-    const userId = {{ auth()->user()->karyawan->id ?? 'null' }};
+    const userKode = "{{ auth()->user()->karyawan->kode_karyawan ?? '' }}";
 
     $(document).ready(function() {
         loadAllTables();
 
         $('.calculate-harga').on('input', calculateEstimasiRupiah);
         $('#edit_mata_uang').on('change', calculateEstimasiRupiah);
+
+        $('.calculate-add-harga').on('input', calculateAddEstimasiRupiah);
+        $('#add_mata_uang').on('change', calculateAddEstimasiRupiah);
 
         $('#edit_materi').select2({
             theme: 'bootstrap-5',
@@ -401,12 +616,42 @@
             dropdownParent: $('#editMasterLabModal')
         });
 
+        $('#add_materi').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Materi Terkait...",
+            allowClear: true,
+            dropdownParent: $('#addMasterLabModal')
+        });
+
+        $('#add_assigned_instruktur').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Instruktur yang sedang menggunakan...",
+            allowClear: true,
+            dropdownParent: $('#addMasterLabModal')
+        });
+
+        $('#assign_kode_karyawan').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Instruktur...",
+            allowClear: true,
+            dropdownParent: $('#assignLabUserModal')
+        });
+
         $('#edit_tipe').on('change', function() {
             if ($(this).val() === 'one-time') {
                 $('#row_edit_duration').slideDown();
             } else {
                 $('#row_edit_duration').slideUp();
                 $('#edit_duration_minutes').val('');
+            }
+        });
+
+        $('#add_tipe').on('change', function() {
+            if ($(this).val() === 'one-time') {
+                $('#row_add_duration').slideDown();
+            } else {
+                $('#row_add_duration').slideUp();
+                $('#add_duration_minutes').val('');
             }
         });
     });
@@ -422,6 +667,20 @@
             $('#edit_kurs').prop('readonly', false);
             let kurs = parseFloat($('#edit_kurs').val()) || 0;
             $('#edit_harga_rupiah').val(nominal * kurs);
+        }
+    }
+
+    function calculateAddEstimasiRupiah() {
+        let mataUang = $('#add_mata_uang').val();
+        let nominal = parseFloat($('#add_harga').val()) || 0;
+
+        if (mataUang === 'Rupiah') {
+            $('#add_kurs').val(1).prop('readonly', true);
+            $('#add_harga_rupiah').val(nominal);
+        } else {
+            $('#add_kurs').prop('readonly', false);
+            let kurs = parseFloat($('#add_kurs').val()) || 0;
+            $('#add_harga_rupiah').val(nominal * kurs);
         }
     }
 
@@ -441,45 +700,43 @@
                     $.each(res.data, function(index, item) {
                         let trackTexts = (item.tracking || []).map(t => t.tracking || '');
                         let lastTrack = trackTexts.length > 0 ? trackTexts[trackTexts.length - 1] : '';
+                        let allTracksLower = trackTexts.join(' ').toLowerCase();
 
-                        let isSelesai = lastTrack && (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan'));
-
+                        let isDitolak = allTracksLower.includes('ditolak');
                         let isExistingApproved = item.jenis_transaksi === 'existing' &&
-                                                 trackTexts.some(t => t && t.toLowerCase().includes('telah disetujui oleh koordinator itsm dan lihat akses nya di detail'));
+                                                 allTracksLower.includes('lihat akses nya di detail');
+                        let isBarangSelesai = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') &&
+                                              (lastTrack.toLowerCase() === 'selesai' || lastTrack.toLowerCase().includes('pencairan sudah selesai'));
 
                         if (isExistingApproved) {
-                            rowsExisting += renderRowSelesai(item, lastTrack);
-                        } else if (isSelesai) {
+                            rowsExisting += renderRowTrackingAkses(item, lastTrack);
+                        } else if (isBarangSelesai || isDitolak) {
                             rowsSelesai += renderRowSelesai(item, lastTrack);
                         } else {
                             rowsAktif += renderRow(item, lastTrack);
                         }
                     });
 
-                    // Render Tabel 1 (Aktif)
                     if ($.fn.DataTable.isDataTable('#pengajuanLabSubsTable')) $('#pengajuanLabSubsTable').DataTable().destroy();
                     $("#pengajuanLabSubsTable tbody").html(rowsAktif);
                     $('#pengajuanLabSubsTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Tidak ada pengajuan aktif saat ini." }
+                        "language": { "emptyTable": "Tidak ada antrean permintaan lab saat ini." }
                     });
 
-                    // Render Tabel 2 (Existing Disetujui)
                     if ($.fn.DataTable.isDataTable('#pengajuanExistingTable')) $('#pengajuanExistingTable').DataTable().destroy();
                     $("#pengajuanExistingTable tbody").html(rowsExisting);
                     $('#pengajuanExistingTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Belum ada pengajuan existing yang disetujui." }
+                        "language": { "emptyTable": "Belum ada penggunaan akses lab aktif." }
                     });
 
-                    // Render Tabel 3 (Selesai Baru)
                     if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) $('#pengajuanSelesaiTable').DataTable().destroy();
                     $("#pengajuanSelesaiTable tbody").html(rowsSelesai);
                     $('#pengajuanSelesaiTable').DataTable({
                         "order": [[ 0, "desc" ]],
                         "language": { "emptyTable": "Belum ada riwayat selesai." }
                     });
-
                 }
             },
             error: function() {
@@ -489,19 +746,19 @@
     }
 
     function renderRow(item, status) {
-        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
-                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
-                      '<span class="badge bg-success">Lab Existing</span>');
+        let handlerInfo = item.lab_snapshot?.handled_by ? `<br><small class="text-muted">PIC ITSM: ${item.lab_snapshot.handled_by}</small>` : '';
+        let kategori = item.jenis_transaksi === 'baru' ? `<span class="fw-bold text-dark">Pengadaan Baru</span>${handlerInfo}` :
+                      (item.jenis_transaksi === 'pembaharuan' ? `<span class="fw-bold text-dark">Perpanjangan Lab</span>${handlerInfo}` :
+                      `<span class="fw-bold text-dark">Menunggu Eksekusi ITSM</span>`);
 
-        let labName = item.lab ? item.lab.nama_labs : '-';
-        let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
+        let labName = item.lab ? `${item.lab.nama_labs} <br><small class="text-muted">(${item.lab.merk || '-'})</small>` : '-';
+        let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">${item.rkm.perusahaan?.nama_perusahaan ?? '-'} (${moment(item.rkm.tanggal_awal).format('DD/MM/YY')} - ${moment(item.rkm.tanggal_akhir).format('DD/MM/YY')})</small>` : '<span class="text-muted">Non-RKM / Umum</span>';
         let btns = generateButtons(item, status);
 
         return `
             <tr>
                 <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
                 <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
-                <td>${item.karyawan?.divisi ?? '-'}</td>
                 <td>${item.karyawan?.jabatan ?? '-'}</td>
                 <td>${kategori}</td>
                 <td>${labName}</td>
@@ -512,14 +769,65 @@
         `;
     }
 
+    function renderRowTrackingAkses(item, status) {
+        let labName = item.lab ? `<strong>${item.lab.nama_labs}</strong> <br><small class="text-muted">${item.lab.merk || '-'}</small>` : '-';
+        let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '<span class="text-muted">Non-RKM / Umum</span>';
+
+        let jadwalRkm = 'Mengikuti Masa Aktif Lab';
+        let statusPakai = '<span class="fw-bold text-dark">Sedang Digunakan</span>';
+
+        if (item.rkm && item.rkm.tanggal_awal && item.rkm.tanggal_akhir) {
+            let start = moment(item.rkm.tanggal_awal);
+            let end = moment(item.rkm.tanggal_akhir).endOf('day');
+            let now = moment();
+
+            jadwalRkm = `${start.format('DD MMM YYYY')} - ${end.format('DD MMM YYYY')}`;
+
+            if (now.isBetween(start, end, null, '[]')) {
+                statusPakai = '<span class="fw-bold text-dark">Sedang Digunakan (Kelas Berlangsung)</span>';
+            } else if (now.isBefore(start)) {
+                statusPakai = '<span class="fw-bold text-dark">Akses Siap (Menunggu Jadwal Kelas)</span>';
+            } else {
+                statusPakai = '<span class="text-muted">Selesai Digunakan (Kelas Berakhir)</span>';
+            }
+        } else if (item.lab && item.lab.end_date) {
+            let endLab = moment(item.lab.end_date).endOf('day');
+            jadwalRkm = `Exp Lab: ${endLab.format('DD MMM YYYY')}`;
+            if (moment().isAfter(endLab)) {
+                statusPakai = '<span class="text-muted">Masa Aktif Lab Habis</span>';
+            }
+        }
+
+        let btns = `
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                <ul class="dropdown-menu shadow">
+                    <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Lihat Akses & Detail</button></li>
+                </ul>
+            </div>`;
+
+        return `
+            <tr>
+                <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.jabatan ?? '-'}</td>
+                <td>${labName}</td>
+                <td>${rkmInfo}</td>
+                <td>${jadwalRkm}</td>
+                <td>${statusPakai}</td>
+                <td>${btns}</td>
+            </tr>
+        `;
+    }
+
     function renderRowSelesai(item, status) {
-        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' :
-                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
-                      '<span class="badge bg-success">Existing</span>');
+        let handlerInfo = item.lab_snapshot?.handled_by ? `<br><small class="text-muted">PIC ITSM: ${item.lab_snapshot.handled_by}</small>` : '';
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="fw-bold text-dark">Pengadaan Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="fw-bold text-dark">Perpanjangan</span>' :
+                      '<span class="fw-bold text-dark">Permintaan Lab</span>');
 
         let labName = item.lab ? item.lab.nama_labs : '-';
-        let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
-
+        let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : 'Non-RKM';
         let invoiceBtn = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') ? invoiceAction(item.id, item.invoice, item) : '';
 
         let btns = `
@@ -534,9 +842,8 @@
         return `
             <tr>
                 <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
-                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}${handlerInfo}</td>
                 <td>${item.karyawan?.divisi ?? '-'}</td>
-                <td>${item.karyawan?.jabatan ?? '-'}</td>
                 <td>${kategori}</td>
                 <td>${labName}</td>
                 <td>${formatStatus(status)}</td>
@@ -547,40 +854,35 @@
     }
 
     function generateButtons(item, status) {
-        let isOwner = (item.karyawan_id == userId);
+        let isOwner = (item.kode_karyawan === userKode);
+        let statusLower = status ? status.toLowerCase() : '';
+
         let btns = `<div class="dropdown">
             <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        let statusLower = status ? status.toLowerCase() : '';
-
         if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
             btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
         }
 
-        let canApprove = false;
-
         if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
-            canApprove = true;
-        }
-        else if (userRole === 'Koordinator ITSM' && statusLower.includes('ditinjau oleh koordinator itsm')) {
-            canApprove = true;
-        }
-
-        if (canApprove) {
             btns += `
                 <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve</button></li>
+                <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve (Teruskan ke ITSM)</button></li>
                 <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Reject</button></li>
             `;
         }
 
         if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !statusLower.includes('selesai')) {
-             btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
+            btns += `
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item fw-bold text-primary" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Proses Lab (Akses / Pengadaan)</button></li>
+                <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Tolak Permintaan</button></li>
+            `;
         }
 
-        if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
+        if ((item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') && (userRole === 'Technical Support' || userRole === 'Koordinator ITSM' || userRole === 'Finance & Accounting')) {
             btns += invoiceAction(item.id, item.invoice, item);
         }
 
@@ -591,7 +893,7 @@
     function invoiceAction(id, invoice, item) {
         let dataLengkap = item.lab && item.lab.harga;
         if (!dataLengkap) {
-            return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Tunggu Data Teknis)</button></li>`;
+            return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Isi Harga Dulu)</button></li>`;
         }
         if (invoice) {
             return `<li><a class="dropdown-item" href="/storage/pengajuanlabsubs/${invoice}" target="_blank"><img src="{{ asset('icon/eye.svg') }}" width="16" class="me-1"> Lihat Invoice</a></li>`;
@@ -612,10 +914,10 @@
         $('#reasonContainer').addClass('d-none');
 
         if (type === 'approve') {
-            $('#actionLabel').text('Anda yakin ingin MENYETUJUI pengajuan ini?');
+            $('#actionLabel').text('Setujui permintaan lab ini dan teruskan ke Tim ITSM?');
             $('#modalApproval').val('1');
         } else if (type === 'reject') {
-            $('#actionLabel').text('Anda yakin ingin MENOLAK pengajuan ini?');
+            $('#actionLabel').text('Anda yakin ingin MENOLAK permintaan lab ini?');
             $('#modalApproval').val('2');
             $('#reasonContainer').removeClass('d-none');
         }
@@ -626,6 +928,62 @@
         $('#uploadInvoiceId').val(id);
         new bootstrap.Modal(document.getElementById('uploadInvoiceModal')).show();
     }
+
+    function openAddMasterLabModal() {
+        $('#addMasterLabForm')[0].reset();
+        $('#add_materi').val([]).trigger('change');
+        $('#add_assigned_instruktur').val([]).trigger('change');
+        new bootstrap.Modal(document.getElementById('addMasterLabModal')).show();
+    }
+
+    function openAssignLabModal(labId, labName) {
+        $('#assign_lab_id').val(labId);
+        $('#assign_lab_title').text(labName);
+        $('#assignLabUserForm')[0].reset();
+        $('#assign_kode_karyawan').val([]).trigger('change');
+        new bootstrap.Modal(document.getElementById('assignLabUserModal')).show();
+    }
+
+    $('#addMasterLabForm').on('submit', function(e) {
+        e.preventDefault();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: "{{ route('api.master-labs.store') }}",
+            type: 'POST',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('addMasterLabModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+                $('#masterLabTable').DataTable().ajax.reload(null, false);
+                loadAllTables();
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Gagal menyimpan data lab.', 'error');
+            }
+        });
+    });
+
+    $('#assignLabUserForm').on('submit', function(e) {
+        e.preventDefault();
+        let labId = $('#assign_lab_id').val();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: `/api/master-labs/${labId}/assign`,
+            type: 'POST',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('assignLabUserModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+                $('#masterLabTable').DataTable().ajax.reload(null, false);
+                loadAllTables();
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Gagal meng-assign instruktur.', 'error');
+            }
+        });
+    });
 
     $('#approvalForm').on('submit', function(e) {
         e.preventDefault();
@@ -659,7 +1017,7 @@
             data: formData,
             processData: false,
             contentType: false,
-            success: function(res) {
+            success: function() {
                 bootstrap.Modal.getInstance(document.getElementById('uploadInvoiceModal')).hide();
                 Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Invoice berhasil diupload', timer: 1500, showConfirmButton: false }).then(() => {
                     window.location.reload();
@@ -672,7 +1030,7 @@
     function editPengajuan(id) { window.location.href = `/pengajuanlabsdansubs/${id}/edit`; }
 
     function deletePengajuan(id) {
-        if(confirm('Yakin ingin menghapus pengajuan ini?')) {
+        if(confirm('Yakin ingin menghapus permintaan lab ini?')) {
             $.ajax({
                 url: `/pengajuanlabsdansubs/${id}`,
                 type: 'DELETE',
@@ -684,6 +1042,19 @@
                 }
             });
         }
+    }
+    
+    function copyAccessCode(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Kode akses berhasil disalin!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        });
     }
 
     let masterLabTableInit = false;
@@ -697,96 +1068,134 @@
         $('#masterLabTable').DataTable({
             processing: true,
             serverSide: false,
+            autoWidth: false,
             ajax: {
                 url: "{{ route('api.master-labs') }}",
                 type: 'GET'
             },
             columns: [
-                { data: 'nama_labs' },
-                { data: 'merk', render: data => data || '-' },
-                {
-                    data: 'tipe',
-                    render: function(data) {
-                        return data === 'subscription' ? 'Subscription' : 'One-Time';
-                    }
-                },
-                {
-                    data: 'status',
-                    render: function(data) {
-                        let color = 'secondary';
-                        if(data === 'active') color = 'success';
-                        if(data === 'pending') color = 'warning text-dark';
-                        if(data === 'expired') color = 'danger';
-                        return `<span class="badge bg-${color}">${data}</span>`;
-                    }
-                },
-                {
-                    data: 'desc',
-                    render: function(data) {
-                        if(!data) return '-';
-                        return data.length > 20 ? data.substr(0, 20) + '...' : data;
-                    }
-                },
-                {
-                    data: 'lab_url',
-                    render: function(data) {
-                        if(!data) return '-';
-                        return `<a href="${data}" target="_blank" class="text-primary">Link</a>`;
-                    }
-                },
-                { data: 'access_code', render: data => data || '-' },
+                // 1. Nama Lab & Vendor
                 {
                     data: null,
                     render: function(data, type, row) {
-                        let start = row.start_date ? moment(row.start_date).format('DD/MM/YYYY') : '-';
-                        let end = row.end_date ? moment(row.end_date).format('DD/MM/YYYY') : '-';
-                        if(start === '-' && end === '-') return '-';
-                        return `${start} - <br>${end}`;
+                        let merk = row.merk ? row.merk : 'Tanpa Vendor';
+                        return `<div class="fw-bold text-dark">${row.nama_labs}</div>
+                                <small class="text-muted">${merk}</small>`;
                     }
                 },
-                { data: 'mata_uang', render: data => data || '-' },
+                // 2. Tipe & Status (Tanpa Highlight Warna)
                 {
-                    data: 'harga',
-                    render: function(data) {
-                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
+                    data: null,
+                    render: function(data, type, row) {
+                        let tipeLabel = row.tipe === 'subscription' ? 'Subscription' : 'One-Time';
+                        let statusCap = row.status ? row.status.charAt(0).toUpperCase() + row.status.slice(1) : '-';
+                        let durasi = (row.tipe === 'one-time' && row.duration_minutes) ? `<br><small class="text-muted">${row.duration_minutes} Menit</small>` : '';
+
+                        return `<div class="fw-bold text-dark">${statusCap}</div>
+                                <small class="text-muted">${tipeLabel}</small>${durasi}`;
                     }
                 },
+                // 3. Sedang Digunakan Oleh (Tanpa Highlight Biru)
                 {
-                    data: 'kurs',
+                    data: 'active_users',
                     render: function(data) {
-                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
+                        if (!data || data.length === 0) {
+                            return '<span class="text-muted small"><em>Belum ada instruktur di-assign</em></span>';
+                        }
+                        return data.map(u => `
+                            <div class="mb-1 pb-1 border-bottom">
+                                <span class="fw-bold text-dark small">${u.nama}</span><br>
+                                <small class="text-muted" style="font-size: 0.78rem;">${u.perusahaan} (${u.periode})</small>
+                            </div>
+                        `).join('');
                     }
                 },
+                // 4. Akses & Kredensial (Dilengkapi Tombol Copy Kode Akses)
                 {
-                    data: 'harga_rupiah',
-                    render: function(data) {
-                        return data ? 'Rp ' + new Intl.NumberFormat('id-ID').format(data) : '-';
+                    data: null,
+                    render: function(data, type, row) {
+                        let urlHtml = row.lab_url
+                            ? `<a href="${row.lab_url}" target="_blank" class="fw-bold text-primary text-decoration-none small">Buka Link Lab ↗</a>`
+                            : '<span class="text-muted small">URL: -</span>';
+
+                        let codeHtml = '<div class="text-muted small">Kode: -</div>';
+                        if (row.access_code) {
+                            let safeCode = row.access_code.replace(/'/g, "\\'");
+                            let shortCode = row.access_code.length > 18 ? row.access_code.substr(0, 18) + '...' : row.access_code;
+                            codeHtml = `
+                                <div class="mt-1 d-flex align-items-center gap-1">
+                                    <code class="text-dark bg-light border px-1 rounded small" title="${row.access_code}">${shortCode}</code>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size: 0.72rem;" onclick="copyAccessCode('${safeCode}')" title="Salin Kode Akses">
+                                        Salin
+                                    </button>
+                                </div>`;
+                        }
+
+                        return `${urlHtml}${codeHtml}`;
                     }
                 },
+                // 5. Masa Aktif & Estimasi Biaya
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        let start = row.start_date ? moment(row.start_date).format('DD/MM/YY') : '-';
+                        let end = row.end_date ? moment(row.end_date).format('DD/MM/YY') : '-';
+                        let periode = (start === '-' && end === '-') ? '<span class="text-muted small">Masa Aktif: -</span>' : `<div class="small fw-bold text-dark">${start} - ${end}</div>`;
+
+                        let harga = row.harga_rupiah && row.harga_rupiah > 0
+                            ? `<small class="text-muted">Rp ${new Intl.NumberFormat('id-ID').format(row.harga_rupiah)}</small>`
+                            : '<small class="text-muted">Rp -</small>';
+
+                        return `${periode}${harga}`;
+                    }
+                },
+                // 6. Materi Terhubung
                 {
                     data: 'materis',
                     render: function(data) {
-                        if(!data || data.length === 0) return '<span class="text-muted" style="font-size:0.8rem">Belum terhubung</span>';
-                        return data.map(m => `<div class="mb-1"><span class="badge bg-light text-dark border text-wrap text-start" style="line-height: 1.4;">${m.nama_materi}</span></div>`).join('');
+                        if (!data || data.length === 0) {
+                            return '<span class="text-muted small">-</span>';
+                        }
+                        return data.map(m => `<div class="small text-dark">• ${m.nama_materi}</div>`).join('');
                     }
                 },
+                // 7. Aksi (Dropdown Rapi)
                 {
                     data: null,
+                    className: 'text-center',
                     render: function(data, type, row) {
+                        let safeName = (row.nama_labs || '').replace(/'/g, "\\'");
+                        let rowJson = JSON.stringify(row).replace(/'/g, "&#39;");
+
                         return `
-                            <div class="d-flex">
-                                <button class="btn btn-sm btn-primary me-1" onclick='openEditMasterLabModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
-                                    Edit
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Aksi
                                 </button>
-                                <button class="btn btn-sm btn-success" onclick="renewLab(${row.id}, '${row.nama_labs}')" title="Perbarui/Perpanjang Lab">
-                                    Perbarui
-                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li>
+                                        <button class="dropdown-item fw-bold" onclick="openAssignLabModal(${row.id}, '${safeName}')">
+                                            Assign Pengguna
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" onclick='openEditMasterLabModal(${rowJson})'>
+                                            Edit Data Lab
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-success fw-bold" onclick="renewLab(${row.id}, '${safeName}')">
+                                            Perbarui / Perpanjang
+                                        </button>
+                                    </li>
+                                </ul>
                             </div>
                         `;
                     }
                 }
             ],
-            order: [[ 3, "asc" ]]
+            order: [[ 0, "asc" ]]
         });
 
         masterLabTableInit = true;
@@ -808,7 +1217,7 @@
 
         $('#edit_tanggal_mulai').val(startDate);
         $('#edit_tanggal_berakhir').val(endDate);
-        $('#edit_mata_uang').val(lab.mata_uang || 'Dollar');
+        $('#edit_mata_uang').val(lab.mata_uang || 'Rupiah');
         $('#edit_nominal_harga_asli').val(lab.harga);
         $('#edit_kurs').val(lab.kurs);
 
@@ -832,18 +1241,18 @@
             url: `/api/master-labs/${id}`,
             type: 'PUT',
             data: formData,
-            success: function(res) {
+            success: function() {
                 bootstrap.Modal.getInstance(document.getElementById('editMasterLabModal')).hide();
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
-                    text: 'Data lab berhasil diperbarui',
+                    text: 'Data Master Lab berhasil diperbarui',
                     timer: 1500,
                     showConfirmButton: false
                 });
                 $('#masterLabTable').DataTable().ajax.reload(null, false);
             },
-            error: function(err) {
+            error: function() {
                 Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan data', 'error');
             }
         });
@@ -851,8 +1260,8 @@
 
     function renewLab(id, namaLab) {
         Swal.fire({
-            title: 'Perbarui Lab?',
-            text: `Buat pengajuan perpanjangan otomatis untuk lab: ${namaLab}`,
+            title: 'Perbarui / Perpanjang Lab?',
+            text: `Buat draft perpanjangan untuk lab: ${namaLab} atas nama Anda (${userRole})`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Buat Pengajuan',
@@ -862,9 +1271,7 @@
                 $.ajax({
                     url: `/api/master-labs/${id}/renew`,
                     type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
+                    data: { _token: '{{ csrf_token() }}' },
                     success: function(res) {
                         Swal.fire('Berhasil!', res.message, 'success').then(() => {
                             window.location.reload();
@@ -877,7 +1284,6 @@
             }
         });
     }
-
 </script>
 @endpush
 @endsection

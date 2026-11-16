@@ -567,6 +567,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/master-labs/{id}', [PengajuanLabdanSubsController::class, 'updateMasterLab']);
     Route::get('/api/get-labs-by-rkm/{id}', [PengajuanLabdanSubsController::class, 'getLabsByRkm']);
     Route::get('/api/get-master-labs', [PengajuanLabdanSubsController::class, 'getMasterLabs'])->name('api.master-labs');
+    Route::post('/api/master-labs', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'storeMasterLab'])->name('api.master-labs.store');
+    Route::post('/api/master-labs/{id}/assign', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'assignLabUser'])->name('api.master-labs.assign');
 
     Route::get('getPengajuanSubs/{month}/{year}', [PengajuanSubsController::class, 'getPengajuanSubs'])->name('getPengajuanSubs');
     Route::put('pengajuansubs/updatesubs/{id}', [PengajuanSubsController::class, 'updateLabSubs'])->name('pengajuansubs.updatesubs');
