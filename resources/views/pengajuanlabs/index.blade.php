@@ -388,15 +388,26 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold">Assign Pengguna Lab: <span id="assign_lab_title" class="text-primary"></span></h5>
+                                    <h5 class="modal-title fw-bold">Kelola Pengguna Lab: <span id="assign_lab_title" class="text-primary"></span></h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form id="assignLabUserForm">
                                     @csrf
                                     <input type="hidden" id="assign_lab_id">
                                     <div class="modal-body">
+
+                                        {{-- DAFTAR PENGGUNA SAAT INI (UNTUK UNASSIGN) --}}
                                         <div class="mb-3">
-                                            <label class="form-label fw-bold">Pilih Instruktur / Pengguna <span class="text-danger">*</span></label>
+                                            <label class="form-label fw-bold">Pengguna Aktif Saat Ini</label>
+                                            <div id="current_assigned_users_list" class="border rounded p-2 bg-light" style="max-height: 160px; overflow-y: auto;">
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        {{-- FORM TAMBAH ASSIGN BARU --}}
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Tambah / Assign Pengguna Baru <span class="text-danger">*</span></label>
                                             <select class="form-select" name="kode_karyawan_list[]" id="assign_kode_karyawan" multiple="multiple" style="width: 100%;" required>
                                                 @if(isset($instrukturs))
                                                     @foreach($instrukturs as $inst)
@@ -426,7 +437,7 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                                         <button type="submit" class="btn btn-primary">Simpan & Berikan Akses</button>
                                     </div>
                                 </form>
@@ -703,14 +714,16 @@
                         let allTracksLower = trackTexts.join(' ').toLowerCase();
 
                         let isDitolak = allTracksLower.includes('ditolak');
+                        let isUnassigned = allTracksLower.includes('di-unassign') || allTracksLower.includes('akses dicabut');
                         let isExistingApproved = item.jenis_transaksi === 'existing' &&
-                                                 allTracksLower.includes('lihat akses nya di detail');
+                                                 allTracksLower.includes('lihat akses nya di detail') &&
+                                                 !isUnassigned;
                         let isBarangSelesai = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') &&
                                               (lastTrack.toLowerCase() === 'selesai' || lastTrack.toLowerCase().includes('pencairan sudah selesai'));
 
                         if (isExistingApproved) {
                             rowsExisting += renderRowTrackingAkses(item, lastTrack);
-                        } else if (isBarangSelesai || isDitolak) {
+                        } else if (isBarangSelesai || isDitolak || isUnassigned) {
                             rowsSelesai += renderRowSelesai(item, lastTrack);
                         } else {
                             rowsAktif += renderRow(item, lastTrack);
@@ -798,11 +811,26 @@
             }
         }
 
+        let safeUser = (item.karyawan?.nama_lengkap ?? 'Pengguna').replace(/'/g, "\\'");
+        let safeLab = (item.lab?.nama_labs ?? 'Lab').replace(/'/g, "\\'");
+
+        let unassignOption = '';
+        if (userRole === 'Technical Support' || userRole === 'Koordinator ITSM') {
+            unassignOption = `
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item text-danger fw-bold" onclick="unassignLabUser(${item.id}, '${safeUser}', '${safeLab}')">
+                        Unassign / Cabut Akses
+                    </button>
+                </li>`;
+        }
+
         let btns = `
             <div class="dropdown">
                 <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
                 <ul class="dropdown-menu shadow">
                     <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Lihat Akses & Detail</button></li>
+                    ${unassignOption}
                 </ul>
             </div>`;
 
@@ -936,12 +964,79 @@
         new bootstrap.Modal(document.getElementById('addMasterLabModal')).show();
     }
 
-    function openAssignLabModal(labId, labName) {
-        $('#assign_lab_id').val(labId);
-        $('#assign_lab_title').text(labName);
+    function openAssignLabModal(row) {
+        $('#assign_lab_id').val(row.id);
+        $('#assign_lab_title').text(row.nama_labs);
         $('#assignLabUserForm')[0].reset();
         $('#assign_kode_karyawan').val([]).trigger('change');
+
+        let listContainer = $('#current_assigned_users_list');
+        listContainer.empty();
+
+        if (row.active_users && row.active_users.length > 0) {
+            let html = row.active_users.map(u => {
+                let safeUser = (u.nama || '').replace(/'/g, "\\'");
+                let safeLab = (row.nama_labs || '').replace(/'/g, "\\'");
+                return `
+                    <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-white border rounded">
+                        <div>
+                            <div class="fw-bold small text-dark">${u.nama}</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">${u.perusahaan} (${u.periode})</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.75rem;"
+                                onclick="unassignLabUser(${u.pengajuan_id}, '${safeUser}', '${safeLab}')">
+                            Unassign
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            listContainer.html(html);
+        } else {
+            listContainer.html('<span class="text-muted small"><em>Belum ada pengguna yang di-assign pada lab ini.</em></span>');
+        }
+
         new bootstrap.Modal(document.getElementById('assignLabUserModal')).show();
+    }
+
+    function unassignLabUser(pengajuanId, namaUser, namaLab) {
+        Swal.fire({
+            title: 'Unassign Pengguna?',
+            text: `Cabut akses penggunaan lab "${namaLab}" untuk ${namaUser}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Unassign',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/api/master-labs/unassign/${pengajuanId}`,
+                    type: 'POST',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function(res) {
+                        let modalEl = document.getElementById('assignLabUserModal');
+                        let modalInst = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInst) modalInst.hide();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        if (masterLabTableInit) {
+                            $('#masterLabTable').DataTable().ajax.reload(null, false);
+                        }
+                        loadAllTables();
+                    },
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Gagal melakukan unassign.', 'error');
+                    }
+                });
+            }
+        });
     }
 
     $('#addMasterLabForm').on('submit', function(e) {
@@ -1043,7 +1138,7 @@
             });
         }
     }
-    
+
     function copyAccessCode(text) {
         navigator.clipboard.writeText(text).then(() => {
             Swal.fire({
@@ -1095,19 +1190,29 @@
                                 <small class="text-muted">${tipeLabel}</small>${durasi}`;
                     }
                 },
-                // 3. Sedang Digunakan Oleh (Tanpa Highlight Biru)
+                // 3. Sedang Digunakan Oleh (Dilengkapi Tombol Unassign Cepat)
                 {
                     data: 'active_users',
-                    render: function(data) {
+                    render: function(data, type, row) {
                         if (!data || data.length === 0) {
                             return '<span class="text-muted small"><em>Belum ada instruktur di-assign</em></span>';
                         }
-                        return data.map(u => `
-                            <div class="mb-1 pb-1 border-bottom">
-                                <span class="fw-bold text-dark small">${u.nama}</span><br>
-                                <small class="text-muted" style="font-size: 0.78rem;">${u.perusahaan} (${u.periode})</small>
-                            </div>
-                        `).join('');
+                        let safeLab = (row.nama_labs || '').replace(/'/g, "\\'");
+                        return data.map(u => {
+                            let safeUser = (u.nama || '').replace(/'/g, "\\'");
+                            return `
+                                <div class="mb-1 pb-1 border-bottom d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold text-dark small">${u.nama}</span><br>
+                                        <small class="text-muted" style="font-size: 0.78rem;">${u.perusahaan} (${u.periode})</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 ms-2" style="font-size: 0.72rem;"
+                                            onclick="unassignLabUser(${u.pengajuan_id}, '${safeUser}', '${safeLab}')" title="Unassign / Cabut Akses ${u.nama}">
+                                        &times; Unassign
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
                     }
                 },
                 // 4. Akses & Kredensial (Dilengkapi Tombol Copy Kode Akses)
@@ -1174,8 +1279,8 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow">
                                     <li>
-                                        <button class="dropdown-item fw-bold" onclick="openAssignLabModal(${row.id}, '${safeName}')">
-                                            Assign Pengguna
+                                        <button class="dropdown-item fw-bold" onclick='openAssignLabModal(${rowJson})'>
+                                            Assign / Unassign Pengguna
                                         </button>
                                     </li>
                                     <li>
@@ -1287,3 +1392,4 @@
 </script>
 @endpush
 @endsection
+

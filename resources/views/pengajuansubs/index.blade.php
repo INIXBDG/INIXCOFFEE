@@ -7,20 +7,19 @@
             @php
                 $userJabatan = auth()->user()->karyawan->jabatan ?? '';
                 $isTeknis = in_array($userJabatan, ['Technical Support', 'Koordinator ITSM']);
-                $bolehMengajukan = in_array($userJabatan, ['Instruktur', 'Education Manager', 'Koordinator ITSM']);
             @endphp
 
             @if($isTeknis)
             <ul class="nav nav-tabs mb-4" id="subsTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active fw-bold" id="pengajuan-tab" data-bs-toggle="tab" data-bs-target="#pengajuan-pane" type="button" role="tab">
-                        Daftar Pengajuan
+                        Daftar Permintaan & Tracking Penggunaan
                     </button>
                 </li>
 
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link fw-bold" id="kelola-tab" data-bs-toggle="tab" data-bs-target="#kelola-pane" type="button" role="tab" onclick="loadMasterSubs()">
-                        Kelola Subscription
+                    <button class="nav-link fw-bold text-primary" id="kelola-tab" data-bs-toggle="tab" data-bs-target="#kelola-pane" type="button" role="tab" onclick="loadMasterSubs()">
+                        Management Master Subscription
                     </button>
                 </li>
             </ul>
@@ -29,20 +28,13 @@
             <div class="tab-content" id="subsTabsContent">
 
                 <div class="tab-pane fade show active" id="pengajuan-pane" role="tabpanel">
-                    @if($bolehMengajukan)
-                        <div class="d-flex justify-content-end">
-                            @if (isset($tracking) && $tracking == 'tutup')
-                                <button class="btn btn-md btn-secondary mx-4" disabled title="Selesaikan pengajuan sebelumnya terlebih dahulu">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Subscription
-                                </button>
-                            @else
-                                <a href="{{ route('pengajuansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Subscription">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Subscription
-                                </a>
-                            @endif
-                        </div>
-                    @endif
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ route('pengajuansubs.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" title="Ajukan Permintaan Subscription">
+                            <img src="{{ asset('icon/plus.svg') }}" width="30px"> Permintaan Subscription
+                        </a>
+                    </div>
 
+                    {{-- MODAL APPROVE / REJECT --}}
                     <div class="modal fade" id="approveRejectModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
@@ -63,20 +55,6 @@
                                             <label class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
                                             <textarea class="form-control" name="alasan" id="alasan" rows="3"></textarea>
                                         </div>
-
-                                        <div class="mb-3 d-none" id="financeStatusContainer">
-                                            <label class="form-label">Update Status Pencairan</label>
-                                            <select class="form-select" id="finance_status" name="finance_status">
-                                                <option value="">-- Pilih Status --</option>
-                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager">Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
-                                                <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                                <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi</option>
-                                                <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur Utama</option>
-                                                <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam proses Pencairan</option>
-                                                <option value="Pencairan Sudah Selesai">Pencairan Sudah Selesai</option>
-                                                <option value="Selesai">Selesai</option>
-                                            </select>
-                                        </div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -87,6 +65,7 @@
                         </div>
                     </div>
 
+                    {{-- MODAL UPLOAD INVOICE --}}
                     <div class="modal fade" id="uploadInvoiceModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog">
                             <form id="uploadInvoiceForm" enctype="multipart/form-data">
@@ -94,7 +73,7 @@
                                 <input type="hidden" id="uploadInvoiceId">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Upload Invoice</h5>
+                                        <h5 class="modal-title">Upload Invoice Subscription (Tim ITSM)</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
@@ -111,52 +90,48 @@
                         </div>
                     </div>
 
-                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support','Education Manager']))
-                        <div class="card m-4 shadow-sm border-0">
-                            <div class="card-body">
-                                <div class="row align-items-end">
-                                    <div class="col-md-5">
-                                        <label class="form-label fw-bold text-secondary small">Tahun</label>
-                                        <select id="tahun" class="form-select">
-                                            @for ($y = 2023; $y <= now()->year + 1; $y++)
-                                                <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label class="form-label fw-bold text-secondary small">Bulan</label>
-                                        <select id="bulan" class="form-select">
-                                            @foreach (range(1, 12) as $m)
-                                                <option value="{{ $m }}" {{ $m == now()->month ? 'selected' : '' }}>
-                                                    {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 mt-3 mt-md-0">
-                                        <button onclick="loadAllTables()" class="btn click-primary w-100 d-flex align-items-center justify-content-center fw-bold" style="height: 38px; border: none;">
-                                            <i class="fa-solid fa-magnifying-glass me-2"></i> Cari
-                                        </button>
-                                    </div>
+                    @if (in_array($userJabatan, ['Finance & Accounting', 'GM', 'Koordinator ITSM', 'Technical Support', 'Education Manager', 'SPV Sales']))
+                        <div class="card m-4">
+                            <div class="card-body d-flex justify-content-center">
+                                <div class="col-md-4 mx-1">
+                                    <label class="form-label">Tahun</label>
+                                    <select id="tahun" class="form-select">
+                                        @for ($y = 2023; $y <= now()->year + 1; $y++)
+                                            <option value="{{ $y }}" {{ $y == now()->year ? 'selected' : '' }}>{{ $y }}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mx-1">
+                                    <label class="form-label">Bulan</label>
+                                    <select id="bulan" class="form-select">
+                                        @foreach (range(1, 12) as $m)
+                                            <option value="{{ $m }}" {{ $m == now()->month ? 'selected' : '' }}>
+                                                {{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mx-1">
+                                    <button onclick="loadAllTables()" class="btn click-primary w-100" style="margin-top: 32px">Cari Data</button>
                                 </div>
                             </div>
                         </div>
                     @endif
 
+                    {{-- TABEL 1: ANTREAN PERMINTAAN & PENGADAAN SUBSCRIPTION --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Pengajuan Subs</h3>
+                            <h3 class="card-title text-center my-1">Antrean Permintaan & Pengadaan Subscription</h3>
                             <table class="table table-striped" id="pengajuanSubsTable">
                                 <thead>
                                     <tr>
                                         <th>Tanggal</th>
-                                        <th>Pengaju</th>
+                                        <th>Peminta</th>
                                         <th>Divisi</th>
                                         <th>Jabatan</th>
-                                        <th>Kategori</th>
-                                        <th>Nama Subs</th>
-                                        <th>Status Tracking</th>
-                                        <th>RKM / Materi</th>
+                                        <th>Status Penanganan</th>
+                                        <th>Nama Subscription & Jumlah Akun</th>
+                                        <th>Status Tracking Terkini</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -165,20 +140,19 @@
                         </div>
                     </div>
 
+                    {{-- TABEL 2: TRACKING PENGGUNAAN SUBSCRIPTION AKTIF --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Permintaan Subs Existing</h3>
+                            <h3 class="card-title text-center my-1">Tracking Penggunaan Subscription (Permintaan Akses & Assign Aktif)</h3>
                             <table class="table table-striped" id="pengajuanExistingTable">
                                 <thead>
                                     <tr>
-                                        <th>Tanggal</th>
-                                        <th>Pengaju</th>
-                                        <th>Divisi</th>
-                                        <th>Jabatan</th>
-                                        <th>Kategori</th>
-                                        <th>Nama Subs</th>
-                                        <th>Status Akhir</th>
-                                        <th>RKM / Materi</th>
+                                        <th>Tgl Pencatatan</th>
+                                        <th>Pengguna Subscription</th>
+                                        <th>Divisi / Jabatan</th>
+                                        <th>Nama Subscription & Identitas Akun</th>
+                                        <th>Masa Aktif Subscription</th>
+                                        <th>Status Penggunaan</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -187,20 +161,19 @@
                         </div>
                     </div>
 
+                    {{-- TABEL 3: RIWAYAT PENGADAAN SUBSCRIPTION SELESAI / DITOLAK / DI-UNASSIGN --}}
                     <div class="card m-4">
                         <div class="card-body table-responsive">
-                            <h3 class="card-title text-center my-1">Data Riwayat Pengajuan Selesai</h3>
+                            <h3 class="card-title text-center my-1">Riwayat Pengadaan Subscription Selesai / Ditolak</h3>
                             <table class="table table-striped" id="pengajuanSelesaiTable">
                                 <thead>
                                     <tr>
                                         <th>Tanggal</th>
-                                        <th>Pengaju</th>
+                                        <th>Peminta / PIC ITSM</th>
                                         <th>Divisi</th>
-                                        <th>Jabatan</th>
                                         <th>Kategori</th>
-                                        <th>Nama Subs</th>
+                                        <th>Nama Subscription & Qty</th>
                                         <th>Status Akhir</th>
-                                        <th>RKM</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -214,42 +187,38 @@
                 @if($isTeknis)
                 <div class="tab-pane fade" id="kelola-pane" role="tabpanel">
                     <div class="card m-4">
-                        <div class="card-body table-responsive">
+                        <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h3 class="card-title my-1">Data Subscription</h3>
-                                <button class="btn btn-primary btn-md click-primary" onclick="openAddMasterSubsModal()">
-                                    <img src="{{ asset('icon/plus.svg') }}" width="20px" class="me-1"> Tambah Subscription
+                                <h4 class="card-title mb-0 fw-bold">Master Data Subscription</h4>
+                                <button type="button" class="btn btn-primary fw-bold" onclick="openAddMasterSubsModal()">
+                                    + Tambah Subscription yang Sudah Berjalan
                                 </button>
                             </div>
-                            <table class="table table-striped text-nowrap" id="masterSubsTable" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th>Nama</th>
-                                        <th>Vendor</th>
-                                        <th>Tipe</th>
-                                        <th>Status</th>
-                                        <th>Deskripsi</th>
-                                        <th>Tanggal Aktif</th>
-                                        <th>Mata Uang</th>
-                                        <th>Harga Asli</th>
-                                        <th>Kurs</th>
-                                        <th>Estimasi</th>
-                                        <th>Materi Terhubung</th>
-                                        <th>Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
+
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle" id="masterSubsTable" style="width:100%">
+                                    <thead>
+                                        <tr>
+                                            <th width="22%">Nama Subscription & Vendor</th>
+                                            <th width="13%">Tipe & Status</th>
+                                            <th width="25%">Sedang Digunakan Oleh</th>
+                                            <th width="18%">Akses & Kredensial</th>
+                                            <th width="15%">Masa Aktif & Biaya</th>
+                                            <th width="7%" class="text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Modal Tambah Master Subs -->
+                    {{-- MODAL 1: TAMBAH SUBSCRIPTION YANG SUDAH BERJALAN --}}
                     <div class="modal fade" id="addMasterSubsModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold">Tambah Data Subscription</h5>
+                                    <h5 class="modal-title fw-bold">Tambah Data Subscription yang Sudah Berjalan</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form id="addMasterSubsForm">
@@ -259,6 +228,14 @@
                                             <label class="col-sm-4 col-form-label">Nama Subscription <span class="text-danger">*</span></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" name="nama_subs" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Identitas Akun / Email Terdaftar</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="akun_identitas">
+                                                <small class="text-muted">pembeda untuk subscription yang sama.</small>
                                             </div>
                                         </div>
 
@@ -280,10 +257,10 @@
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Status</label>
+                                            <label class="col-sm-4 col-form-label">Status Saat Ini</label>
                                             <div class="col-sm-8">
                                                 <select class="form-select" name="status">
-                                                    <option value="active">Active</option>
+                                                    <option value="active" selected>Active (Sedang Berjalan)</option>
                                                     <option value="pending">Pending</option>
                                                     <option value="expired">Expired</option>
                                                 </select>
@@ -291,89 +268,141 @@
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Deskripsi</label>
+                                            <label class="col-sm-4 col-form-label">URL Subscription</label>
                                             <div class="col-sm-8">
-                                                <textarea class="form-control" name="desc" rows="3"></textarea>
+                                                <input type="text" class="form-control" name="subs_url" placeholder="https://...">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Tanggal Mulai</label>
+                                            <label class="col-sm-4 col-form-label">Kode Akses / Credentials</label>
                                             <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="start_date">
+                                                <input type="text" class="form-control" name="access_code" placeholder="Email / Password / Key">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Tanggal Berakhir</label>
-                                            <div class="col-sm-8">
-                                                <input type="date" class="form-control" name="end_date">
+                                            <label class="col-sm-4 col-form-label">Tanggal Mulai & Berakhir</label>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="start_date" title="Tanggal Mulai">
+                                            </div>
+                                            <div class="col-sm-4">
+                                                <input type="date" class="form-control" name="end_date" title="Tanggal Berakhir">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Mata Uang</label>
-                                            <div class="col-sm-8">
+                                            <label class="col-sm-4 col-form-label">Mata Uang & Harga</label>
+                                            <div class="col-sm-3">
                                                 <select class="form-select" name="mata_uang" id="add_mata_uang">
-                                                    <option value="Dollar">Dollar</option>
                                                     <option value="Rupiah">Rupiah</option>
+                                                    <option value="Dollar">Dollar</option>
                                                     <option value="Euro">Euro</option>
                                                     <option value="Poundsterling">Poundsterling</option>
                                                 </select>
                                             </div>
-                                        </div>
-
-                                        <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Nominal Harga Asli</label>
-                                            <div class="col-sm-8">
-                                                <input type="number" step="0.01" class="form-control calculate-harga-add" name="harga" id="add_harga">
+                                            <div class="col-sm-5">
+                                                <input type="number" step="0.01" class="form-control calculate-harga-add" name="harga" id="add_harga" placeholder="Nominal Harga Asli" value="0">
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Kurs (Rate)</label>
-                                            <div class="col-sm-8">
-                                                <input type="number" step="0.01" class="form-control calculate-harga-add" name="kurs" id="add_kurs">
+                                            <label class="col-sm-4 col-form-label">Kurs & Estimasi (Rp)</label>
+                                            <div class="col-sm-3">
+                                                <input type="number" step="0.01" class="form-control calculate-harga-add" name="kurs" id="add_kurs" value="1" readonly>
+                                            </div>
+                                            <div class="col-sm-5">
+                                                <input type="number" class="form-control bg-light" name="harga_rupiah" id="add_harga_rupiah" value="0" readonly>
                                             </div>
                                         </div>
 
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Estimasi Rupiah</label>
+                                            <label class="col-sm-4 col-form-label">Deskripsi / Catatan</label>
                                             <div class="col-sm-8">
-                                                <div class="input-group">
-                                                    <span class="input-group-text bg-light">Rp.</span>
-                                                    <input type="number" class="form-control bg-light" name="harga_rupiah" id="add_harga_rupiah" readonly>
-                                                </div>
+                                                <textarea class="form-control" name="desc" rows="2"></textarea>
                                             </div>
                                         </div>
 
+                                        <hr>
+                                        <h6 class="fw-bold text-primary mb-3">Langsung Assign Karyawan yang Sedang Menggunakan (Opsional)</h6>
+
                                         <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Terhubung ke Materi</label>
+                                            <label class="col-sm-4 col-form-label">Pilih Karyawan</label>
                                             <div class="col-sm-8">
-                                                <select class="form-select" name="materi_ids[]" id="add_materi" multiple="multiple" style="width: 100%;">
-                                                    @if(isset($materis))
-                                                        @foreach($materis as $m)
-                                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
+                                                <select class="form-select" name="assigned_kode_karyawan[]" id="add_assigned_karyawan" multiple="multiple" style="width: 100%;">
+                                                    @if(isset($karyawans))
+                                                        @foreach($karyawans as $kar)
+                                                            <option value="{{ $kar->kode_karyawan }}">{{ $kar->nama_lengkap }} ({{ $kar->jabatan }} - {{ $kar->divisi }})</option>
                                                         @endforeach
                                                     @endif
                                                 </select>
+                                                <small class="text-muted">Bisa pilih lebih dari satu karyawan jika subscription dipakai bersama.</small>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="submit" class="btn btn-dark" style="background-color: #1a2a40;">Simpan Subscription</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <button type="submit" class="btn btn-primary">Simpan Subscription & Assign</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Modal Edit Master Subs -->
+                    {{-- MODAL 2: ASSIGN / UNASSIGN PENGGUNA SUBSCRIPTION PADA MASTER SUBSCRIPTION --}}
+                    <div class="modal fade" id="assignSubsUserModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Kelola Pengguna Subscription: <span id="assign_subs_title" class="text-primary"></span></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="assignSubsUserForm">
+                                    @csrf
+                                    <input type="hidden" id="assign_subs_id">
+                                    <div class="modal-body">
+
+                                        {{-- DAFTAR PENGGUNA SAAT INI (UNTUK UNASSIGN) --}}
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Pengguna Aktif Saat Ini</label>
+                                            <div id="current_assigned_users_list" class="border rounded p-2 bg-light" style="max-height: 160px; overflow-y: auto;">
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        {{-- FORM TAMBAH ASSIGN BARU --}}
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Tambah / Assign Pengguna Baru <span class="text-danger">*</span></label>
+                                            <select class="form-select" name="kode_karyawan_list[]" id="assign_kode_karyawan" multiple="multiple" style="width: 100%;" required>
+                                                @if(isset($karyawans))
+                                                    @foreach($karyawans as $kar)
+                                                        <option value="{{ $kar->kode_karyawan }}">{{ $kar->nama_lengkap }} ({{ $kar->jabatan }} - {{ $kar->divisi }})</option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Catatan Penggunaan (Opsional)</label>
+                                            <textarea class="form-control" name="catatan_assign" rows="2"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                        <button type="submit" class="btn btn-primary">Simpan & Berikan Akses</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- MODAL 3: EDIT MASTER SUBS --}}
                     <div class="modal fade" id="editMasterSubsModal" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold">Edit Data Teknis Subscription</h5>
+                                    <h5 class="modal-title fw-bold">Edit Data Master Subscription</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <form id="editMasterSubsForm">
@@ -386,6 +415,14 @@
                                             <label class="col-sm-4 col-form-label">Nama Subscription <span class="text-danger">*</span></label>
                                             <div class="col-sm-8">
                                                 <input type="text" class="form-control" name="nama_subs" id="edit_nama_subs" required>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Identitas Akun / Email Terdaftar</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="akun_identitas" id="edit_akun_identitas" placeholder="Contoh: claude1@inixindo.id / Seat #1">
+                                                <small class="text-muted">Memudahkan TS membedakan antar akun pada layanan subscription yang sama.</small>
                                             </div>
                                         </div>
 
@@ -421,6 +458,20 @@
                                             <label class="col-sm-4 col-form-label">Deskripsi</label>
                                             <div class="col-sm-8">
                                                 <textarea class="form-control" name="desc" id="edit_deskripsi" rows="3"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">URL Subscription</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="subs_url" id="edit_url_subs">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 row">
+                                            <label class="col-sm-4 col-form-label">Kode Akses / Key</label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control" name="access_code" id="edit_kode_akses">
                                             </div>
                                         </div>
 
@@ -474,19 +525,6 @@
                                             </div>
                                         </div>
 
-                                        <div class="mb-3 row">
-                                            <label class="col-sm-4 col-form-label">Terhubung ke Materi</label>
-                                            <div class="col-sm-8">
-                                                <select class="form-select" name="materi_ids[]" id="edit_materi" multiple="multiple" style="width: 100%;">
-                                                    @if(isset($materis))
-                                                        @foreach($materis as $m)
-                                                            <option value="{{ $m->id }}">{{ $m->nama_materi }}</option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                            </div>
-                                        </div>
-
                                     </div>
                                     <div class="modal-footer">
                                         <button type="submit" class="btn btn-dark" style="background-color: #1a2a40;">Simpan Perubahan</button>
@@ -512,7 +550,7 @@
 
 <script>
     const userRole = "{{ auth()->user()->karyawan->jabatan ?? '' }}";
-    const userId = {{ auth()->user()->karyawan->id ?? 'null' }};
+    const userKode = "{{ auth()->user()->karyawan->kode_karyawan ?? '' }}";
 
     $(document).ready(function() {
         loadAllTables();
@@ -523,18 +561,18 @@
         $('.calculate-harga-add').on('input', calculateEstimasiRupiahAdd);
         $('#add_mata_uang').on('change', calculateEstimasiRupiahAdd);
 
-        $('#edit_materi').select2({
+        $('#add_assigned_karyawan').select2({
             theme: 'bootstrap-5',
-            placeholder: "Pilih Materi Terkait...",
-            allowClear: true,
-            dropdownParent: $('#editMasterSubsModal')
-        });
-
-        $('#add_materi').select2({
-            theme: 'bootstrap-5',
-            placeholder: "Pilih Materi Terkait...",
+            placeholder: "Pilih Karyawan yang sedang menggunakan...",
             allowClear: true,
             dropdownParent: $('#addMasterSubsModal')
+        });
+
+        $('#assign_kode_karyawan').select2({
+            theme: 'bootstrap-5',
+            placeholder: "Pilih Karyawan...",
+            allowClear: true,
+            dropdownParent: $('#assignSubsUserModal')
         });
     });
 
@@ -582,15 +620,19 @@
                     $.each(res.data, function(index, item) {
                         let trackTexts = (item.tracking || []).map(t => t.tracking || '');
                         let lastTrack = trackTexts.length > 0 ? trackTexts[trackTexts.length - 1] : '';
+                        let allTracksLower = trackTexts.join(' ').toLowerCase();
 
-                        let isSelesai = lastTrack && (lastTrack.includes('Selesai') || lastTrack.includes('Siap Digunakan'));
-
+                        let isDitolak = allTracksLower.includes('ditolak');
+                        let isUnassigned = allTracksLower.includes('di-unassign') || allTracksLower.includes('akses dicabut');
                         let isExistingApproved = item.jenis_transaksi === 'existing' &&
-                                                 trackTexts.some(t => t && t.toLowerCase().includes('telah disetujui oleh koordinator itsm dan lihat akses nya di detail'));
+                                                 allTracksLower.includes('lihat akses nya di detail') &&
+                                                 !isUnassigned;
+                        let isBarangSelesai = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') &&
+                                              (lastTrack.toLowerCase() === 'selesai' || lastTrack.toLowerCase().includes('pencairan sudah selesai'));
 
                         if (isExistingApproved) {
-                            rowsExisting += renderRowSelesai(item, lastTrack);
-                        } else if (isSelesai) {
+                            rowsExisting += renderRowTrackingAkses(item, lastTrack);
+                        } else if (isBarangSelesai || isDitolak || isUnassigned) {
                             rowsSelesai += renderRowSelesai(item, lastTrack);
                         } else {
                             rowsAktif += renderRow(item, lastTrack);
@@ -601,14 +643,14 @@
                     $("#pengajuanSubsTable tbody").html(rowsAktif);
                     $('#pengajuanSubsTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Tidak ada pengajuan aktif saat ini." }
+                        "language": { "emptyTable": "Tidak ada antrean permintaan subscription saat ini." }
                     });
 
                     if ($.fn.DataTable.isDataTable('#pengajuanExistingTable')) $('#pengajuanExistingTable').DataTable().destroy();
                     $("#pengajuanExistingTable tbody").html(rowsExisting);
                     $('#pengajuanExistingTable').DataTable({
                         "order": [[ 0, "desc" ]],
-                        "language": { "emptyTable": "Belum ada pengajuan existing yang disetujui." }
+                        "language": { "emptyTable": "Belum ada penggunaan akses subscription aktif." }
                     });
 
                     if ($.fn.DataTable.isDataTable('#pengajuanSelesaiTable')) $('#pengajuanSelesaiTable').DataTable().destroy();
@@ -626,12 +668,16 @@
     }
 
     function renderRow(item, status) {
-        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-info">Pengadaan Baru</span>' :
-                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
-                      '<span class="badge bg-success">Subs Existing</span>');
+        let handlerInfo = item.subs_snapshot?.handled_by ? `<br><small class="text-muted">PIC ITSM: ${item.subs_snapshot.handled_by}</small>` : '';
+        let kategori = item.jenis_transaksi === 'baru' ? `<span class="fw-bold text-dark">Pengadaan Baru</span>${handlerInfo}` :
+                      (item.jenis_transaksi === 'pembaharuan' ? `<span class="fw-bold text-dark">Perpanjangan Subscription</span>${handlerInfo}` :
+                      `<span class="fw-bold text-dark">Menunggu Eksekusi ITSM</span>`);
 
-        let subsName = item.subs ? item.subs.nama_subs : '-';
-        let rkmInfo = item.rkm ? `${item.rkm.materi?.nama_materi ?? '-'} <br><small class="text-muted">(${item.rkm.perusahaan?.nama_perusahaan ?? '-'})</small>` : '-';
+        let reqQty = item.subs_snapshot?.qty || item.subs_snapshot?.requested_qty || 1;
+
+        let subsName = item.subs
+            ? `<strong>${item.subs.nama_subs}</strong> <span class="fw-bold text-dark">(${reqQty} Akun)</span><br><small class="text-muted">Vendor: ${item.subs.merk || '-'}</small>`
+            : '-';
         let btns = generateButtons(item, status);
 
         return `
@@ -643,20 +689,77 @@
                 <td>${kategori}</td>
                 <td>${subsName}</td>
                 <td>${formatStatus(status)}</td>
-                <td>${rkmInfo}</td>
+                <td>${btns}</td>
+            </tr>
+        `;
+    }
+
+    function renderRowTrackingAkses(item, status) {
+        let identitasInfo = '';
+        if (item.subs && item.subs.desc && item.subs.desc.startsWith('[Akun:')) {
+            let match = item.subs.desc.match(/^\[Akun:\s*(.*?)\]/);
+            if (match && match[1]) {
+                identitasInfo = `<br><small class="text-dark">Akun: <code>${match[1]}</code></small>`;
+            }
+        }
+        let subsName = item.subs ? `<strong>${item.subs.nama_subs}</strong> <br><small class="text-muted">${item.subs.merk || '-'}</small>${identitasInfo}` : '-';
+
+        let masaAktifSubs = 'Mengikuti Masa Aktif Subscription';
+        let statusPakai = '<span class="fw-bold text-dark">Sedang Digunakan</span>';
+
+        if (item.subs && item.subs.end_date) {
+            let startSubs = item.subs.start_date ? moment(item.subs.start_date).format('DD MMM YYYY') : '-';
+            let endSubs = moment(item.subs.end_date).endOf('day');
+            masaAktifSubs = `${startSubs} s/d ${endSubs.format('DD MMM YYYY')}`;
+            if (moment().isAfter(endSubs)) {
+                statusPakai = '<span class="text-muted">Masa Aktif Subscription Habis</span>';
+            }
+        }
+
+        let safeUser = (item.karyawan?.nama_lengkap ?? 'Pengguna').replace(/'/g, "\\'");
+        let safeSubs = (item.subs?.nama_subs ?? 'Subscription').replace(/'/g, "\\'");
+
+        let unassignOption = '';
+        if (userRole === 'Technical Support' || userRole === 'Koordinator ITSM') {
+            unassignOption = `
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button class="dropdown-item text-danger fw-bold" onclick="unassignSubsUser(${item.id}, '${safeUser}', '${safeSubs}')">
+                        Unassign / Cabut Akses
+                    </button>
+                </li>`;
+        }
+
+        let btns = `
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
+                <ul class="dropdown-menu shadow">
+                    <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Lihat Akses & Detail</button></li>
+                    ${unassignOption}
+                </ul>
+            </div>`;
+
+        return `
+            <tr>
+                <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.divisi ?? '-'} / ${item.karyawan?.jabatan ?? '-'}</td>
+                <td>${subsName}</td>
+                <td>${masaAktifSubs}</td>
+                <td>${statusPakai}</td>
                 <td>${btns}</td>
             </tr>
         `;
     }
 
     function renderRowSelesai(item, status) {
-        let kategori = item.jenis_transaksi === 'baru' ? '<span class="badge bg-danger">Baru</span>' :
-                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="badge bg-warning text-dark">Pembaharuan</span>' :
-                      '<span class="badge bg-success">Existing</span>');
+        let handlerInfo = item.subs_snapshot?.handled_by ? `<br><small class="text-muted">PIC ITSM: ${item.subs_snapshot.handled_by}</small>` : '';
+        let kategori = item.jenis_transaksi === 'baru' ? '<span class="fw-bold text-dark">Pengadaan Baru</span>' :
+                      (item.jenis_transaksi === 'pembaharuan' ? '<span class="fw-bold text-dark">Perpanjangan</span>' :
+                      '<span class="fw-bold text-dark">Permintaan Subscription</span>');
 
-        let subsName = item.subs ? item.subs.nama_subs : '-';
-        let rkmInfo = item.rkm ? (item.rkm.materi?.nama_materi ?? '-') : '-';
-
+        let reqQty = item.subs_snapshot?.qty || item.subs_snapshot?.requested_qty || 1;
+        let subsName = item.subs ? `${item.subs.nama_subs} <small class="text-muted">(${reqQty} Akun)</small>` : '-';
         let invoiceBtn = (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') ? invoiceAction(item.id, item.invoice, item) : '';
 
         let btns = `
@@ -671,70 +774,55 @@
         return `
             <tr>
                 <td>${moment(item.created_at).format('DD/MM/YYYY')}</td>
-                <td>${item.karyawan?.nama_lengkap ?? '-'}</td>
+                <td>${item.karyawan?.nama_lengkap ?? '-'}${handlerInfo}</td>
                 <td>${item.karyawan?.divisi ?? '-'}</td>
-                <td>${item.karyawan?.jabatan ?? '-'}</td>
                 <td>${kategori}</td>
                 <td>${subsName}</td>
                 <td>${formatStatus(status)}</td>
-                <td>${rkmInfo}</td>
                 <td>${btns}</td>
             </tr>
         `;
     }
 
     function generateButtons(item, status) {
-        let isOwner = (item.karyawan && item.karyawan.id == userId);
+        let isOwner = (item.kode_karyawan === userKode);
+        let statusLower = status ? status.toLowerCase() : '';
+
         let btns = `<div class="dropdown">
             <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">Aksi</button>
             <ul class="dropdown-menu shadow">
                 <li><button class="dropdown-item" onclick="viewDetail(${item.id})"><img src="{{ asset('icon/clipboard-primary.svg') }}" width="16" class="me-1"> Detail</button></li>`;
 
-        let statusLower = status ? status.toLowerCase() : '';
-
-        if (isOwner && !statusLower.includes('selesai') && !statusLower.includes('siap digunakan')) {
-            btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Batalkan Pengajuan</button></li>`;
+        if (isOwner && statusLower.includes('diajukan') && !statusLower.includes('ditolak')) {
+            btns += `<li><button class="dropdown-item text-danger" onclick="deletePengajuan(${item.id})"><img src="{{ asset('icon/trash-danger.svg') }}" width="16" class="me-1"> Hapus</button></li>`;
         }
 
-        let canApprove = false;
-
+        let canApproveAtasan = false;
         if (userRole === 'Education Manager' && statusLower.includes('ditinjau oleh education manager')) {
-            canApprove = true;
-        }
-        else if (userRole === 'Koordinator ITSM' && statusLower.includes('ditinjau oleh koordinator itsm')) {
-            canApprove = true;
+            canApproveAtasan = true;
+        } else if (userRole === 'SPV Sales' && statusLower.includes('ditinjau oleh spv sales')) {
+            canApproveAtasan = true;
+        } else if (userRole === 'GM' && statusLower.includes('ditinjau oleh gm')) {
+            canApproveAtasan = true;
         }
 
-        if (canApprove) {
+        if (canApproveAtasan) {
             btns += `
                 <li><hr class="dropdown-divider"></li>
-                <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve</button></li>
+                <li><button class="dropdown-item text-success" onclick="openApproveRejectModal(${item.id}, 'approve')"><img src="{{ asset('icon/check-circle.svg') }}" width="16" class="me-1"> Approve (Teruskan ke ITSM)</button></li>
                 <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Reject</button></li>
             `;
         }
 
         if ((userRole === 'Technical Support' || userRole === 'Koordinator ITSM') && !statusLower.includes('selesai')) {
-             btns += `<li><button class="dropdown-item" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Edit Teknis</button></li>`;
+            btns += `
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item fw-bold text-primary" onclick="editPengajuan(${item.id})"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Proses Subscription (Akses / Pengadaan)</button></li>
+                <li><button class="dropdown-item text-danger" onclick="openApproveRejectModal(${item.id}, 'reject')"><img src="{{ asset('icon/x-circle.svg') }}" width="16" class="me-1"> Tolak Permintaan</button></li>
+            `;
         }
 
-        if ((userRole === 'Finance & Accounting' || userRole === 'Finance &amp; Accounting') && (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan')) {
-             const financeStatuses = [
-                'diproses oleh finance',
-                'sedang dikonfirmasi oleh bagian finance kepada general manager',
-                'sedang dikonfirmasi oleh bagian finance kepada direksi',
-                'finance menunggu approve direksi',
-                'membuat permintaan ke direktur utama',
-                'pengajuan sedang dalam proses pencairan',
-                'pencairan sudah selesai',
-                'selesai'
-             ];
-
-             if (financeStatuses.some(finStatus => statusLower.includes(finStatus))) {
-                  btns += `<li><button class="dropdown-item text-warning" onclick="openApproveRejectModal(${item.id}, 'finance-update')"><img src="{{ asset('icon/edit-warning.svg') }}" width="16" class="me-1"> Update Pencairan</button></li>`;
-              }
-        }
-
-        if (item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') {
+        if ((item.jenis_transaksi === 'baru' || item.jenis_transaksi === 'pembaharuan') && (userRole === 'Technical Support' || userRole === 'Koordinator ITSM' || userRole === 'Finance & Accounting')) {
             btns += invoiceAction(item.id, item.invoice, item);
         }
 
@@ -745,7 +833,7 @@
     function invoiceAction(id, invoice, item) {
         let dataLengkap = item.subs && item.subs.harga;
         if (!dataLengkap) {
-            return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Tunggu Data Teknis)</button></li>`;
+            return `<li><button class="dropdown-item text-muted" disabled><img src="{{ asset('icon/upload.svg') }}" width="16" class="me-1"> Upload Invoice (Isi Harga Dulu)</button></li>`;
         }
         if (invoice) {
             return `<li><a class="dropdown-item" href="/storage/pengajuansubs/${invoice}" target="_blank"><img src="{{ asset('icon/eye.svg') }}" width="16" class="me-1"> Lihat Invoice</a></li>`;
@@ -764,18 +852,14 @@
         $('#modalApproval').val('');
         $('#alasan').val('');
         $('#reasonContainer').addClass('d-none');
-        $('#financeStatusContainer').addClass('d-none');
 
         if (type === 'approve') {
-            $('#actionLabel').text('Anda yakin ingin MENYETUJUI pengajuan ini?');
+            $('#actionLabel').text('Setujui permintaan subscription ini dan teruskan ke Tim ITSM?');
             $('#modalApproval').val('1');
         } else if (type === 'reject') {
-            $('#actionLabel').text('Anda yakin ingin MENOLAK pengajuan ini?');
+            $('#actionLabel').text('Anda yakin ingin MENOLAK permintaan subscription ini?');
             $('#modalApproval').val('2');
             $('#reasonContainer').removeClass('d-none');
-        } else if (type === 'finance-update') {
-            $('#actionLabel').text('Pilih status proses pencairan:');
-            $('#financeStatusContainer').removeClass('d-none');
         }
         new bootstrap.Modal(document.getElementById('approveRejectModal')).show();
     }
@@ -785,14 +869,132 @@
         new bootstrap.Modal(document.getElementById('uploadInvoiceModal')).show();
     }
 
+    function openAddMasterSubsModal() {
+        $('#addMasterSubsForm')[0].reset();
+        $('#add_assigned_karyawan').val([]).trigger('change');
+        new bootstrap.Modal(document.getElementById('addMasterSubsModal')).show();
+    }
+
+    function openAssignSubsModal(row) {
+        $('#assign_subs_id').val(row.id);
+        $('#assign_subs_title').text(row.nama_subs);
+        $('#assignSubsUserForm')[0].reset();
+        $('#assign_kode_karyawan').val([]).trigger('change');
+
+        let listContainer = $('#current_assigned_users_list');
+        listContainer.empty();
+
+        if (row.active_users && row.active_users.length > 0) {
+            let html = row.active_users.map(u => {
+                let safeUser = (u.nama || '').replace(/'/g, "\\'");
+                let safeSubs = (row.nama_subs || '').replace(/'/g, "\\'");
+                return `
+                    <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-white border rounded">
+                        <div>
+                            <div class="fw-bold small text-dark">${u.nama}</div>
+                            <small class="text-muted" style="font-size: 0.75rem;">${u.divisi} (${u.periode})</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 0.75rem;"
+                                onclick="unassignSubsUser(${u.pengajuan_id}, '${safeUser}', '${safeSubs}')">
+                            Unassign
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            listContainer.html(html);
+        } else {
+            listContainer.html('<span class="text-muted small"><em>Belum ada pengguna yang di-assign pada subscription ini.</em></span>');
+        }
+
+        new bootstrap.Modal(document.getElementById('assignSubsUserModal')).show();
+    }
+
+    function unassignSubsUser(pengajuanId, namaUser, namaSubs) {
+        Swal.fire({
+            title: 'Unassign Pengguna?',
+            text: `Cabut akses penggunaan subscription "${namaSubs}" untuk ${namaUser}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Unassign',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/api/master-subs/unassign/${pengajuanId}`,
+                    type: 'POST',
+                    data: { _token: '{{ csrf_token() }}' },
+                    success: function(res) {
+                        let modalEl = document.getElementById('assignSubsUserModal');
+                        let modalInst = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInst) modalInst.hide();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        if (masterSubsTableInit) {
+                            $('#masterSubsTable').DataTable().ajax.reload(null, false);
+                        }
+                        loadAllTables();
+                    },
+                    error: function(err) {
+                        Swal.fire('Gagal', err.responseJSON?.message || 'Gagal melakukan unassign.', 'error');
+                    }
+                });
+            }
+        });
+    }
+
+    $('#addMasterSubsForm').on('submit', function(e) {
+        e.preventDefault();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: "{{ route('api.master-subs.store') }}",
+            type: 'POST',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('addMasterSubsModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+                $('#masterSubsTable').DataTable().ajax.reload(null, false);
+                loadAllTables();
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Gagal menyimpan data subscription.', 'error');
+            }
+        });
+    });
+
+    $('#assignSubsUserForm').on('submit', function(e) {
+        e.preventDefault();
+        let subsId = $('#assign_subs_id').val();
+        let formData = $(this).serialize();
+
+        $.ajax({
+            url: `/api/master-subs/${subsId}/assign`,
+            type: 'POST',
+            data: formData,
+            success: function(res) {
+                bootstrap.Modal.getInstance(document.getElementById('assignSubsUserModal')).hide();
+                Swal.fire({ icon: 'success', title: 'Berhasil', text: res.message, timer: 1500, showConfirmButton: false });
+                $('#masterSubsTable').DataTable().ajax.reload(null, false);
+                loadAllTables();
+            },
+            error: function(err) {
+                Swal.fire('Gagal', err.responseJSON?.message || 'Gagal meng-assign pengguna.', 'error');
+            }
+        });
+    });
+
     $('#approvalForm').on('submit', function(e) {
         e.preventDefault();
         let id = $('#modalId').val();
         let formData = $(this).serialize();
-
-        if ($('#financeStatusContainer').is(':visible')) {
-             formData = formData.replace('approval=', '') + '&approval=' + $('#finance_status').val();
-        }
 
         $.ajax({
             url: `/pengajuansubs/${id}`,
@@ -821,7 +1023,7 @@
             data: formData,
             processData: false,
             contentType: false,
-            success: function(res) {
+            success: function() {
                 bootstrap.Modal.getInstance(document.getElementById('uploadInvoiceModal')).hide();
                 Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Invoice berhasil diupload', timer: 1500, showConfirmButton: false }).then(() => {
                     window.location.reload();
@@ -834,7 +1036,7 @@
     function editPengajuan(id) { window.location.href = `/pengajuansubs/${id}/edit`; }
 
     function deletePengajuan(id) {
-        if(confirm('Yakin ingin menghapus pengajuan ini?')) {
+        if(confirm('Yakin ingin menghapus permintaan subscription ini?')) {
             $.ajax({
                 url: `/pengajuansubs/${id}`,
                 type: 'DELETE',
@@ -848,6 +1050,19 @@
         }
     }
 
+    function copyAccessCode(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Kode akses berhasil disalin!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        });
+    }
+
     let masterSubsTableInit = false;
 
     function loadMasterSubs() {
@@ -859,149 +1074,170 @@
         $('#masterSubsTable').DataTable({
             processing: true,
             serverSide: false,
+            autoWidth: false,
             ajax: {
                 url: "{{ route('api.master-subs') }}",
                 type: 'GET'
             },
             columns: [
-                { data: 'nama_subs' },
-                { data: 'merk', render: data => data || '-' },
-                {
-                    data: 'tipe',
-                    render: function(data) {
-                        return data === 'subscription' ? 'Subscription' : 'One-Time';
-                    }
-                },
-                {
-                    data: 'status',
-                    render: function(data) {
-                        let color = 'secondary';
-                        if(data === 'active') color = 'success';
-                        if(data === 'pending') color = 'warning text-dark';
-                        if(data === 'expired') color = 'danger';
-                        return `<span class="badge bg-${color}">${data}</span>`;
-                    }
-                },
-                {
-                    data: 'desc',
-                    render: function(data) {
-                        if(!data) return '-';
-                        return data.length > 20 ? data.substr(0, 20) + '...' : data;
-                    }
-                },
+                // 1. Nama Subscription, Identitas Akun & Status Pemakaian
                 {
                     data: null,
                     render: function(data, type, row) {
-                        let start = row.start_date ? moment(row.start_date).format('DD/MM/YYYY') : '-';
-                        let end = row.end_date ? moment(row.end_date).format('DD/MM/YYYY') : '-';
-                        if(start === '-' && end === '-') return '-';
-                        return `${start} - <br>${end}`;
+                        let merk = row.merk ? row.merk : 'Tanpa Vendor';
+                        let identitasHtml = row.akun_identitas
+                            ? `<div class="small text-dark mt-1">Akun: <code>${row.akun_identitas}</code></div>`
+                            : (row.clean_desc ? `<div class="small text-muted mt-1">${row.clean_desc}</div>` : '');
+
+                        let activeCount = (row.active_users && row.active_users.length) ? row.active_users.length : 0;
+                        let usageIndicator = activeCount > 0
+                            ? `<div class="small fw-bold text-dark mt-1">Terpakai: ${activeCount} Akun</div>`
+                            : `<div class="small text-muted mt-1">Tersedia (Idle)</div>`;
+
+                        return `<div class="fw-bold text-dark">${row.nama_subs}</div>
+                                <small class="text-muted">${merk}</small>
+                                ${identitasHtml}
+                                ${usageIndicator}`;
                     }
                 },
-                { data: 'mata_uang', render: data => data || '-' },
-                {
-                    data: 'harga',
-                    render: function(data) {
-                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
-                    }
-                },
-                {
-                    data: 'kurs',
-                    render: function(data) {
-                        return data ? new Intl.NumberFormat('id-ID').format(data) : '0';
-                    }
-                },
-                {
-                    data: 'harga_rupiah',
-                    render: function(data) {
-                        return data ? 'Rp ' + new Intl.NumberFormat('id-ID').format(data) : '-';
-                    }
-                },
-                {
-                    data: 'materis',
-                    render: function(data) {
-                        if(!data || data.length === 0) return '<span class="text-muted" style="font-size:0.8rem">Belum terhubung</span>';
-                        return data.map(m => `<div class="mb-1"><span class="badge bg-light text-dark border text-wrap text-start" style="line-height: 1.4;">${m.nama_materi}</span></div>`).join('');
-                    }
-                },
+                // 2. Tipe & Status (Teks Bersih Tanpa Badge Warna)
                 {
                     data: null,
                     render: function(data, type, row) {
+                        let tipeLabel = row.tipe === 'subscription' ? 'Subscription' : 'One-Time';
+                        let statusCap = row.status ? row.status.charAt(0).toUpperCase() + row.status.slice(1) : '-';
+
+                        return `<div class="fw-bold text-dark">${statusCap}</div>
+                                <small class="text-muted">${tipeLabel}</small>`;
+                    }
+                },
+                // 3. Sedang Digunakan Oleh (Dilengkapi Tombol Unassign Cepat)
+                {
+                    data: 'active_users',
+                    render: function(data, type, row) {
+                        if (!data || data.length === 0) {
+                            return '<span class="text-muted small"><em>Tersedia (Idle) - Belum di-assign</em></span>';
+                        }
+                        let safeSubs = (row.nama_subs || '').replace(/'/g, "\\'");
+                        return data.map(u => {
+                            let safeUser = (u.nama || '').replace(/'/g, "\\'");
+                            return `
+                                <div class="mb-1 pb-1 border-bottom d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold text-dark small">${u.nama}</span><br>
+                                        <small class="text-muted" style="font-size: 0.78rem;">${u.divisi} (${u.periode})</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 ms-2" style="font-size: 0.72rem;"
+                                            onclick="unassignSubsUser(${u.pengajuan_id}, '${safeUser}', '${safeSubs}')" title="Unassign / Cabut Akses ${u.nama}">
+                                        &times; Unassign
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                },
+                // 4. Akses & Kredensial (Dilengkapi Tombol Copy Kode Akses)
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        let urlHtml = row.subs_url
+                            ? `<a href="${row.subs_url}" target="_blank" class="fw-bold text-primary text-decoration-none small">Buka Link Subs ↗</a>`
+                            : '<span class="text-muted small">URL: -</span>';
+
+                        let codeHtml = '<div class="text-muted small">Kode: -</div>';
+                        if (row.access_code) {
+                            let safeCode = row.access_code.replace(/'/g, "\\'");
+                            let shortCode = row.access_code.length > 18 ? row.access_code.substr(0, 18) + '...' : row.access_code;
+                            codeHtml = `
+                                <div class="mt-1 d-flex align-items-center gap-1">
+                                    <code class="text-dark bg-light border px-1 rounded small" title="${row.access_code}">${shortCode}</code>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size: 0.72rem;" onclick="copyAccessCode('${safeCode}')" title="Salin Kode Akses">
+                                        Salin
+                                    </button>
+                                </div>`;
+                        }
+
+                        return `${urlHtml}${codeHtml}`;
+                    }
+                },
+                // 5. Masa Aktif & Estimasi Biaya
+                {
+                    data: null,
+                    render: function(data, type, row) {
+                        let start = row.start_date ? moment(row.start_date).format('DD/MM/YY') : '-';
+                        let end = row.end_date ? moment(row.end_date).format('DD/MM/YY') : '-';
+                        let periode = (start === '-' && end === '-') ? '<span class="text-muted small">Masa Aktif: -</span>' : `<div class="small fw-bold text-dark">${start} - ${end}</div>`;
+
+                        let harga = row.harga_rupiah && row.harga_rupiah > 0
+                            ? `<small class="text-muted">Rp ${new Intl.NumberFormat('id-ID').format(row.harga_rupiah)}</small>`
+                            : '<small class="text-muted">Rp -</small>';
+
+                        return `${periode}${harga}`;
+                    }
+                },
+                // 6. Aksi (Dropdown Rapi)
+                {
+                    data: null,
+                    className: 'text-center',
+                    render: function(data, type, row) {
+                        let safeName = (row.nama_subs || '').replace(/'/g, "\\'");
+                        let rowJson = JSON.stringify(row).replace(/'/g, "&#39;");
+
                         return `
-                            <div class="d-flex">
-                                <button class="btn btn-sm btn-primary me-1" onclick='openEditMasterSubsModal(${JSON.stringify(row).replace(/'/g, "&#39;")})'>
-                                    Edit
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Aksi
                                 </button>
-                                <button class="btn btn-sm btn-success" onclick="renewSubs(${row.id}, '${row.nama_subs}')" title="Perbarui/Perpanjang Subs">
-                                    Perbarui
-                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li>
+                                        <button class="dropdown-item fw-bold" onclick='openAssignSubsModal(${rowJson})'>
+                                            Assign / Unassign Pengguna
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" onclick='openEditMasterSubsModal(${rowJson})'>
+                                            Edit Data Subscription
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <button class="dropdown-item text-success fw-bold" onclick="renewSubs(${row.id}, '${safeName}')">
+                                            Perbarui / Perpanjang
+                                        </button>
+                                    </li>
+                                </ul>
                             </div>
                         `;
                     }
                 }
             ],
-            order: [[ 3, "asc" ]]
+            order: [[ 0, "asc" ]]
         });
 
         masterSubsTableInit = true;
     }
 
-    function openAddMasterSubsModal() {
-        $('#addMasterSubsForm')[0].reset();
-        $('#add_materi').val([]).trigger('change');
-        $('#add_harga_rupiah').val('');
-        new bootstrap.Modal(document.getElementById('addMasterSubsModal')).show();
-    }
+    function openEditMasterSubsModal(sub) {
+        $('#edit_subs_id').val(sub.id);
+        $('#edit_nama_subs').val(sub.nama_subs);
+        $('#edit_akun_identitas').val(sub.akun_identitas || '');
+        $('#edit_merk').val(sub.merk);
+        $('#edit_tipe').val(sub.tipe);
+        $('#edit_status').val(sub.status);
+        $('#edit_deskripsi').val(sub.clean_desc !== undefined ? sub.clean_desc : sub.desc);
+        $('#edit_url_subs').val(sub.subs_url);
+        $('#edit_kode_akses').val(sub.access_code);
 
-    $('#addMasterSubsForm').on('submit', function(e) {
-        e.preventDefault();
-        let formData = $(this).serialize();
-
-        $.ajax({
-            url: "{{ route('api.master-subs.store') }}",
-            type: 'POST',
-            data: formData,
-            success: function(res) {
-                bootstrap.Modal.getInstance(document.getElementById('addMasterSubsModal')).hide();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil',
-                    text: 'Subscription master berhasil ditambahkan',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-                $('#masterSubsTable').DataTable().ajax.reload(null, false);
-            },
-            error: function(err) {
-                Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan data', 'error');
-            }
-        });
-    });
-
-    function openEditMasterSubsModal(subs) {
-        $('#edit_subs_id').val(subs.id);
-        $('#edit_nama_subs').val(subs.nama_subs);
-        $('#edit_merk').val(subs.merk);
-        $('#edit_tipe').val(subs.tipe).trigger('change');
-        $('#edit_status').val(subs.status);
-        $('#edit_deskripsi').val(subs.desc);
-
-        let startDate = subs.start_date ? subs.start_date.split(' ')[0] : '';
-        let endDate = subs.end_date ? subs.end_date.split(' ')[0] : '';
+        let startDate = sub.start_date ? sub.start_date.split(' ')[0] : '';
+        let endDate = sub.end_date ? sub.end_date.split(' ')[0] : '';
 
         $('#edit_tanggal_mulai').val(startDate);
         $('#edit_tanggal_berakhir').val(endDate);
-        $('#edit_mata_uang').val(subs.mata_uang || 'Dollar');
-        $('#edit_nominal_harga_asli').val(subs.harga);
-        $('#edit_kurs').val(subs.kurs);
+        $('#edit_mata_uang').val(sub.mata_uang || 'Rupiah');
+        $('#edit_nominal_harga_asli').val(sub.harga);
+        $('#edit_kurs').val(sub.kurs);
 
         calculateEstimasiRupiah();
-
-        let selectedMateriIds = [];
-        if (subs.materis && subs.materis.length > 0) {
-            selectedMateriIds = subs.materis.map(m => m.id);
-        }
-        $('#edit_materi').val(selectedMateriIds).trigger('change');
 
         new bootstrap.Modal(document.getElementById('editMasterSubsModal')).show();
     }
@@ -1015,18 +1251,18 @@
             url: `/api/master-subs/${id}`,
             type: 'PUT',
             data: formData,
-            success: function(res) {
+            success: function() {
                 bootstrap.Modal.getInstance(document.getElementById('editMasterSubsModal')).hide();
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
-                    text: 'Data subscription berhasil diperbarui',
+                    text: 'Data Master Subscription berhasil diperbarui',
                     timer: 1500,
                     showConfirmButton: false
                 });
                 $('#masterSubsTable').DataTable().ajax.reload(null, false);
             },
-            error: function(err) {
+            error: function() {
                 Swal.fire('Gagal', 'Terjadi kesalahan saat menyimpan data', 'error');
             }
         });
@@ -1034,8 +1270,8 @@
 
     function renewSubs(id, namaSubs) {
         Swal.fire({
-            title: 'Perbarui Subscription?',
-            text: `Buat pengajuan perpanjangan otomatis untuk subscription: ${namaSubs}`,
+            title: 'Perbarui / Perpanjang Subscription?',
+            text: `Buat draft perpanjangan untuk subscription: ${namaSubs} atas nama Anda (${userRole})`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: 'Ya, Buat Pengajuan',
@@ -1045,9 +1281,7 @@
                 $.ajax({
                     url: `/api/master-subs/${id}/renew`,
                     type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
+                    data: { _token: '{{ csrf_token() }}' },
                     success: function(res) {
                         Swal.fire('Berhasil!', res.message, 'success').then(() => {
                             window.location.reload();
@@ -1060,7 +1294,6 @@
             }
         });
     }
-
 </script>
 @endpush
 @endsection

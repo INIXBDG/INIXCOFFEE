@@ -1,120 +1,105 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- Load CSS Select2 & Bootstrap 5 Theme --}}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <a href="{{ url()->previous() }}" class="btn btn-secondary mb-3">
+                    <a href="{{ route('pengajuansubs.index') }}" class="btn btn-secondary mb-3">
                         <img src="{{ asset('icon/arrow-left.svg') }}" width="20px"> Kembali
                     </a>
 
-                    <h5 class="card-title text-center mb-4 fw-bold">Pengajuan Subscription (Divisi Education)</h5>
+                    <h5 class="card-title text-center mb-4 fw-bold">Form Permintaan Subscription</h5>
 
                     <form method="POST" action="{{ route('pengajuansubs.store') }}">
                         @csrf
                         <input type="hidden" name="kode_karyawan" value="{{ $karyawan->kode_karyawan }}">
+                        <input type="hidden" name="id_existing_subs" id="id_existing_subs" value="{{ old('id_existing_subs') }}">
 
                         @if ($errors->has('error'))
                             <div class="alert alert-danger">{{ $errors->first('error') }}</div>
                         @endif
 
-
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Nama Karyawan</label>
+                            <label class="col-md-4 col-form-label text-md-start">Nama Peminta</label>
                             <div class="col-md-6">
                                 <input disabled type="text" class="form-control" value="{{ $karyawan->nama_lengkap }}">
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Divisi</label>
+                            <label class="col-md-4 col-form-label text-md-start">Jabatan / Divisi</label>
                             <div class="col-md-6">
-                                <input disabled type="text" class="form-control" value="{{ $karyawan->divisi }}">
+                                <input disabled type="text" class="form-control" value="{{ $karyawan->jabatan }} ({{ $karyawan->divisi }})">
                             </div>
                         </div>
 
                         <hr class="my-4">
 
+                        {{-- INPUT LANGSUNG NAMA SUBSCRIPTION (BISA CARI YANG SUDAH ADA ATAU KETIK BARU) --}}
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Pilih RKM <span class="text-danger">*</span></label>
+                            <label class="col-md-4 col-form-label text-md-start">Nama Subscription / Software <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <select id="id_rkm" name="id_rkm" class="form-select @error('id_rkm') is-invalid @enderror" required>
-                                    <option value="">-- Pilih Jadwal Kelas --</option>
-                                    @foreach($rkms as $rkm)
-                                        <option value="{{ $rkm->id }}" {{ old('id_rkm') == $rkm->id ? 'selected' : '' }}>
-                                            {{ $rkm->perusahaan->nama_perusahaan ?? '-' }}
-                                            ({{ \Carbon\Carbon::parse($rkm->tanggal_awal)->translatedFormat('d M Y') }})
-                                        </option>
-                                    @endforeach
+                                <select name="nama_subs" id="nama_subs" class="form-select @error('nama_subs') is-invalid @enderror" required>
+                                    <option value="">-- Cari Subscription atau Ketik Nama Baru --</option>
+                                    <optgroup label="Daftar Subscription Terdaftar">
+                                        @foreach($masterSubs as $sub)
+                                            <option value="{{ $sub->nama_subs }}"
+                                                    data-id="{{ $sub->id }}"
+                                                    data-merk="{{ $sub->merk ?? '-' }}"
+                                                    {{ old('nama_subs') == $sub->nama_subs ? 'selected' : '' }}>
+                                                {{ $sub->nama_subs }} ({{ $sub->merk ?? 'Tanpa Merk' }})
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
                                 </select>
-                                @error('id_rkm')
-                                    <div class="text-danger">{{ $message }}</div>
+                                <small class="text-muted d-block mt-1">
+                                    Ketik untuk mencari subscription yang sudah ada, atau langsung ketik nama subscription baru lalu tekan <strong>Enter</strong>.
+                                </small>
+                                @error('nama_subs')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Materi</label>
+                            <label class="col-md-4 col-form-label text-md-start">Vendor / Merk <span class="text-danger">*</span></label>
                             <div class="col-md-6">
-                                <input type="text" id="view_materi" class="form-control bg-light" readonly
-                                       placeholder="Otomatis terisi...">
+                                <input type="text" name="merk" id="merk" class="form-control @error('merk') is-invalid @enderror"
+                                       value="{{ old('merk') }}" required>
+                                @error('merk')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
-
-                        <hr class="my-4">
 
                         <div class="row mb-3">
-                            <label class="col-md-4 col-form-label text-md-start">Sumber Subscription</label>
-                            <div class="col-md-8 pt-2">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="sumber_subs" id="opt_existing" value="existing" checked disabled>
-                                    <label class="form-check-label" for="opt_existing">
-                                        Gunakan Subscription Terdaftar
-                                    </label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="sumber_subs" id="opt_new" value="new" disabled>
-                                    <label class="form-check-label" for="opt_new">
-                                        Request Subscription Baru
-                                    </label>
-                                </div>
+                            <label class="col-md-4 col-form-label text-md-start">Jumlah Akun / Lisensi <span class="text-danger">*</span></label>
+                            <div class="col-md-6">
+                                <input type="number" name="qty" id="qty" min="1" class="form-control @error('qty') is-invalid @enderror"
+                                       value="{{ old('qty', 1) }}" required>
+                                @error('qty')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
-                        <div id="section_existing">
-                            <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Pilih Subscription</label>
-                                <div class="col-md-6">
-                                    <select id="id_existing_subs" name="id_existing_subs" class="form-select" disabled>
-                                        <option value="">-- Menunggu RKM --</option>
-                                    </select>
-                                    <small class="text-muted d-block mt-1" id="hint_existing"></small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="section_new" class="d-none">
-                            <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Nama Subscription / Software</label>
-                                <div class="col-md-6">
-                                    <input type="text" name="new_nama_subs" class="form-control">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <label class="col-md-4 col-form-label text-md-start">Vendor / Merk</label>
-                                <div class="col-md-6">
-                                    <input type="text" name="new_merk" class="form-control">
-                                </div>
+                        <div class="row mb-3">
+                            <label class="col-md-4 col-form-label text-md-start">Catatan Kebutuhan</label>
+                            <div class="col-md-6">
+                                <textarea name="catatan" class="form-control" rows="3">{{ old('catatan') }}</textarea>
                             </div>
                         </div>
 
                         <div class="row mb-0 mt-4">
                             <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary px-4" id="btn_submit" disabled>
-                                    <i class="bi bi-save me-1"></i> Simpan Pengajuan
+                                <button type="submit" class="btn btn-primary px-4" id="btn_submit">
+                                    <i class="bi bi-send me-1"></i> Kirim Permintaan Subscription
                                 </button>
                             </div>
                         </div>
@@ -124,72 +109,57 @@
         </div>
     </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    const rkmSelect = $('#id_rkm');
-    const existingSelect = $('#id_existing_subs');
-    const materiInput = $('#view_materi');
-    const radios = $('input[name="sumber_subs"]');
-    const submitBtn = $('#btn_submit');
-    const sectionExisting = $('#section_existing');
-    const sectionNew = $('#section_new');
+    const namaSubsSelect = $('#nama_subs');
+    const hiddenExistingId = $('#id_existing_subs');
+    const merkInput = $('#merk');
 
-    rkmSelect.change(function() {
-        let rkmId = $(this).val();
-
-        existingSelect.empty().append('<option value="">Loading data...</option>').prop('disabled', true);
-        materiInput.val('');
-        radios.prop('disabled', true);
-        submitBtn.prop('disabled', true);
-
-        if (rkmId) {
-            $.ajax({
-                url: '/api/get-subs-by-rkm/' + rkmId,
-                type: 'GET',
-                success: function(response) {
-                    materiInput.val(response.materi_nama);
-                    radios.prop('disabled', false);
-                    submitBtn.prop('disabled', false);
-                    existingSelect.empty().append('<option value="">-- Pilih Subscription Terdaftar --</option>');
-
-                    if (response.subs.length > 0) {
-                        $.each(response.subs, function(k, v) {
-                            let typeLabel = v.tipe === 'subscription' ? '[Subs]' : '[One-Time]';
-                            let merkLabel = v.merk ? `(${v.merk})` : '';
-                            existingSelect.append(`<option value="${v.id}">${typeLabel} ${v.nama_subs} ${merkLabel}</option>`);
-                        });
-                        $('#opt_existing').prop('checked', true).trigger('change');
-                        existingSelect.prop('disabled', false);
-                    } else {
-                        existingSelect.append('<option value="" disabled>Belum ada subscription terdaftar untuk materi ini</option>');
-                        $('#opt_new').prop('checked', true).trigger('change');
-                    }
-                },
-                error: function() {
-                    alert('Gagal mengambil data Subscription.');
-                }
-            });
+    // Inisialisasi Select2 dengan fitur Tags (bisa pilih atau ketik baru langsung)
+    namaSubsSelect.select2({
+        theme: 'bootstrap-5',
+        placeholder: "Cari Subscription",
+        allowClear: true,
+        tags: true,
+        width: '100%',
+        createTag: function (params) {
+            var term = $.trim(params.term);
+            if (term === '') {
+                return null;
+            }
+            return {
+                id: term,
+                text: term + ' (Input Subscription Baru)',
+                newTag: true
+            };
         }
     });
 
-    radios.change(function() {
-        let mode = $(this).val();
+    // Saat Nama Subscription dipilih atau diketik baru
+    namaSubsSelect.on('change', function() {
+        let selectedOpt = $(this).find(':selected');
+        let existingId = selectedOpt.attr('data-id');
+        let merk = selectedOpt.attr('data-merk');
 
-        if (mode === 'existing') {
-            sectionExisting.removeClass('d-none');
-            sectionNew.addClass('d-none');
-
-            $('#id_existing_subs').prop('required', true);
-            $('input[name="new_nama_subs"]').prop('required', false);
-            $('input[name="new_merk"]').prop('required', false);
+        if (existingId) {
+            // Jika memilih dari Subscription yang sudah terdaftar: isi Vendor otomatis & kunci
+            hiddenExistingId.val(existingId);
+            merkInput.val(merk || '-').prop('readonly', true).addClass('bg-light');
+        } else if ($(this).val()) {
+            // Jika mengetik Subscription baru: kosongkan ID existing & buka kolom Vendor untuk diketik
+            hiddenExistingId.val('');
+            if (merkInput.prop('readonly')) {
+                merkInput.val('');
+            }
+            merkInput.prop('readonly', false).removeClass('bg-light').attr('placeholder', '');
+            setTimeout(() => merkInput.focus(), 100);
         } else {
-            sectionExisting.addClass('d-none');
-            sectionNew.removeClass('d-none');
-
-            $('#id_existing_subs').prop('required', false);
-            $('input[name="new_nama_subs"]').prop('required', true);
-            $('input[name="new_merk"]').prop('required', true);
+            // Jika input dikosongkan (clear)
+            hiddenExistingId.val('');
+            merkInput.val('').prop('readonly', false).removeClass('bg-light').attr('placeholder', '');
         }
     });
 });

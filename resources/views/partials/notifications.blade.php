@@ -1904,7 +1904,7 @@
             @endif
 
             <p class="text-muted mb-3">
-                Pada {{ $notification->created_at->translatedFormat('d F Y H:i') }}
+                Pada {{ $notification->created_at->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') }} WIB
             </p>
 
             <div class="d-flex">
@@ -1929,26 +1929,39 @@
         'Pengajuan Pengadaan Lab ke Finance',
         'Menolak Pengajuan Lab/Subscription',
         'Menolak Permintaan Lab',
-        'Update Status Pencairan oleh Finance'
+        'Update Status Pencairan oleh Finance',
+        'Assign Akses Lab/Subscription',
+        'Unassign Akses Lab/Subscription',
+        'Peringatan Masa Aktif Lab/Subscription',
+        'Masa Aktif Lab/Subscription Habis'
     ]))
         <div class="notification mb-3 p-3 border rounded bg-light">
             <p>
-                <strong style="text-transform: capitalize;">
-                    {{ $notification->data['user'] ?? '-' }}
-                </strong>
-                @if (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menyetujui Permintaan Lab', 'Akses Lab Telah Diberikan', 'Pengajuan Pengadaan Lab ke Finance']))
-                    telah <strong>menyetujui / memproses</strong> pengajuan
-                @elseif (in_array($tipePesan, ['Menolak Pengajuan Lab/Subscription', 'Menolak Permintaan Lab']))
-                    telah <strong>menolak</strong> pengajuan
-                @elseif ($tipePesan == 'Update Status Pencairan oleh Finance')
-                    telah melakukan <strong>update status pencairan</strong> pada pengajuan
+                @if ($tipePesan == 'Peringatan Masa Aktif Lab/Subscription')
+                    <strong>Sistem Pengingat:</strong> Masa aktif <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong> segera berakhir.
+                @elseif ($tipePesan == 'Masa Aktif Lab/Subscription Habis')
+                    <strong>Sistem Pengingat:</strong> Masa aktif <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong> telah habis (Expired).
+                @else
+                    <strong style="text-transform: capitalize;">
+                        {{ $notification->data['user'] ?? '-' }}
+                    </strong>
+                    @if ($tipePesan == 'Assign Akses Lab/Subscription')
+                        telah <strong>memberikan (assign) akses Lab/Subscription</strong> kepada <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+                    @elseif ($tipePesan == 'Unassign Akses Lab/Subscription')
+                        telah <strong>mencabut (unassign) akses Lab/Subscription</strong> milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+                    @elseif (in_array($tipePesan, ['Menyetujui Pengajuan Lab/Subscription', 'Menyetujui Permintaan Lab', 'Akses Lab Telah Diberikan', 'Pengajuan Pengadaan Lab ke Finance']))
+                        telah <strong>menyetujui / memproses</strong> pengajuan milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+                    @elseif (in_array($tipePesan, ['Menolak Pengajuan Lab/Subscription', 'Menolak Permintaan Lab']))
+                        telah <strong>menolak</strong> pengajuan milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+                    @elseif ($tipePesan == 'Update Status Pencairan oleh Finance')
+                        telah melakukan <strong>update status pencairan</strong> pada pengajuan milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
+                    @endif
                 @endif
-                milik <strong>{{ $notification->data['message']['nama_lengkap'] ?? '-' }}</strong>.
             </p>
             <p>
                 <em>{{ $notification->data['message']['status'] ?? '-' }}</em><br>
                 <small>Pada
-                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->translatedFormat('d F Y H:i') }}</small>
+                    {{ \Carbon\Carbon::parse($notification->data['message']['tanggal'] ?? now())->timezone('Asia/Jakarta')->translatedFormat('d F Y H:i') }} WIB</small>
             </p>
 
             <div class="d-flex">
