@@ -331,7 +331,7 @@
                                                     Management</option>
                                             </select>
                                         @else
-                                            <input type="hidden" name="jabatan"
+                                            <input type="hidden" name="divisi"
                                                 value="{{ old('divisi', $users->divisi) }}">
                                             <select disabled class="form-select @error('divisi') is-invalid @enderror"
                                                 name="divisi" value="{{ old('divisi', $users->divisi) }}" required
