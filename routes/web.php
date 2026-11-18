@@ -207,7 +207,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
     Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
-
+    Route::post('/admin/layout-setting/reset', [DashboardLayoutController::class, 'reset'])->name('admin.layout-setting.reset');
+        
     // =========================================================================
     // 2. USER, KARYAWAN, ROLES & PERMISSIONS
     // =========================================================================
@@ -345,10 +346,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 
     // Management Kelas & Kelas Setting
-    Route::resource('management-kelas', managementKelasController::class);
+    // Route::resource('management-kelas', managementKelasController::class);
     Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
     Route::post('/management-kelas/{id}/batalkan', [managementKelasController::class, 'batalkan']);
-
+    Route::resource('management-kelas', managementKelasController::class)->except(['show']);
     Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
         Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
         Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
