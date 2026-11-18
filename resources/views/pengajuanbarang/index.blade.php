@@ -448,6 +448,9 @@ var USER_ROLE = @json(auth()->user()->jabatan);
 var USER_KARYAWAN_ID = {{ auth()->user()->karyawan_id }};
 var IS_FINANCE = USER_ROLE === 'Finance & Accounting';
 
+// Dibuat sekali saja, dipakai ulang di semua render kolom harga & footer
+var rupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' });
+
 var URL_STATE_DEFAULTS = {
     tahun: String(new Date().getFullYear()),
     bulan: String(new Date().getMonth() + 1),
@@ -652,6 +655,7 @@ function tableKaryawan() {
     var tabelKaryawan = $('#barangTable').DataTable({
         destroy: true,
         processing: true,
+        deferRender: true,
         pageLength: 10,
         displayStart: urlPageKaryawan * 10,
         language:{
@@ -714,10 +718,7 @@ function tableKaryawan() {
                     if (data && Array.isArray(data)) {
                         return data.map(item => {
                             let total = item.harga * item.qty;
-                            return new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR'
-                            }).format(total);
+                            return rupiah.format(total);
                         }).join('<hr style="margin:4px 0; border:1px solid black">');
                     }
                     return '-';
@@ -728,10 +729,7 @@ function tableKaryawan() {
                 render: function (data) {
                     if (data && Array.isArray(data)) {
                         const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                        return new Intl.NumberFormat('id-ID', {
-                            style: 'currency',
-                            currency: 'IDR'
-                        }).format(total);
+                        return rupiah.format(total);
                     }
                     return '-';
                 }
@@ -750,10 +748,10 @@ function tableKaryawan() {
                     function addButton(label, url, condition, icon) {
                         if (condition) {
                             actions += `<a href="${url}" class="dropdown-item">
-                                <img src="{{ asset('${icon}') }}"> ${label}</a>`;
+                                <img loading="lazy" src="{{ asset('${icon}') }}"> ${label}</a>`;
                         } else {
                             actions += `<button type="button" class="dropdown-item disabled">
-                                <img src="{{ asset('${icon}') }}"> ${label}</button>`;
+                                <img loading="lazy" src="{{ asset('${icon}') }}"> ${label}</button>`;
                         }
                     }
 
@@ -769,30 +767,30 @@ function tableKaryawan() {
                         ].includes(trackingStatus)) {
                             actions += `<button type="button" class="dropdown-item"
                                 onclick="openApproveModal(${row.id}, 'Manager')">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         } else if (USER_ROLE == 'Education Manager' &&
                             trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Education Manager') {
                             actions += `<button type="button" class="dropdown-item"
                                 onclick="openApproveModal(${row.id}, 'Manager')">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         } else if (USER_ROLE == 'Koordinator ITSM' &&
                             trackingStatus == 'Diajukan dan Sedang Ditinjau oleh Koordinator IT Service Management') {
                             actions += `<button type="button" class="dropdown-item"
                                 onclick="openApproveModal(${row.id}, 'Manager')">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         } else if (USER_ROLE == 'SPV Sales' &&
                             trackingStatus == 'Diajukan dan Sedang Ditinjau oleh SPV Sales') {
                             actions += `<button type="button" class="dropdown-item"
                                 onclick="openApproveModal(${row.id}, 'Manager')">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         } else if (USER_ROLE == 'Finance & Accounting' &&
                             (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses'))) {
                             actions += `<button type="button" class="dropdown-item"
                                 onclick="openApproveModal(${row.id}, 'Manager')">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         } else {
                             actions += `<button type="button" class="dropdown-item disabled">
-                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
+                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve</button>`;
                         }
                     }
 
@@ -810,7 +808,7 @@ function tableKaryawan() {
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="_method" value="DELETE">
                             <button type="submit" class="dropdown-item text-danger">
-                                <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
+                                <img loading="lazy" src="{{ asset('icon/trash-danger.svg') }}"> Hapus</button>
                         </form>`;
                     }
 
@@ -863,7 +861,6 @@ function tableFinance(){
     $('#loadingModal').modal('show');
     var tahun = $('#tahun').val();
     var bulan = $('#bulan').val();
-    var tahunDummy = $('#filter-tahun-dummy').length ? $('#filter-tahun-dummy').val() : tahun;
 
     var mode = $('#mode_tampilan').length ? ($('#mode_tampilan').val() || '') : '';
     var mingguIdxSelected = $('#minggu_pilihan').length ? parseInt($('#minggu_pilihan').val()) : NaN;
@@ -880,15 +877,20 @@ function tableFinance(){
     }
 
     var urlBulan = "{{ route('getPengajuanBarang', ['month' => ':month', 'year' => ':year'] ) }}".replace(':month', bulan).replace(':year',tahun);
-    var urlTahun = "{{ route('getPengajuanBarang', ['month' => 'Semua', 'year' => ':year'] ) }}".replace(':year',tahunDummy);
+    var urlTahunTpl = "{{ route('getPengajuanBarang', ['month' => 'Semua', 'year' => ':year'] ) }}";
 
-    $.when(
-        $.ajax({ url: urlBulan, type: "GET" }),
-        $.ajax({ url: urlTahun, type: "GET" })
-    ).done(function(res1, res2) {
+    // Hanya data bulanan yang diambil di awal. Data tahunan di-load lazy (lihat loadDummy).
+    window.dummyCache = {};
+    window.dummyReq = (window.dummyReq || 0) + 1;
+    if (window.dummyObserver) {
+        window.dummyObserver.disconnect();
+        window.dummyObserver = null;
+    }
+    $('#tabs-container').html('<div class="text-muted small py-3 text-center">Data tahunan akan dimuat saat bagian ini terlihat...</div>');
+
+    $.ajax({ url: urlBulan, type: "GET" }).done(function(res1) {
         $('#loadingModal').modal('hide');
-        let data = res1[0];
-        let dataSemua = res2[0];
+        let data = res1;
 
         var dataSelesai = data.data.filter(item =>
             item.tracking.tracking.includes("Selesai") ||
@@ -906,34 +908,11 @@ function tableFinance(){
             !item.invoice && item.tracking.tracking !== 'Selesai' && !item.tracking.tracking.includes("tolak")
         );
 
-        var dataDummy = dataSemua.data;
-
-        let uniqueTypes = [...new Set(dataSemua.data.map(item => item.tipe))].filter(t => t);
-        let tabsHtml = `<ul class="nav nav-tabs flex-nowrap" id="dynamicTabs" style="overflow-x: auto; overflow-y: hidden; white-space: nowrap;">`;
-        tabsHtml += `<li class="nav-item"><a class="nav-link active text-nowrap" href="#" data-tipe="Semua">Semua</a></li>`;
-        uniqueTypes.forEach(t => {
-            tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="${t}">${t}</a></li>`;
-        });
-        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Lab">Lab (Filter Nama)</a></li>`;
-        tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Dummy">Dummy (Filter Nama)</a></li>`;
-        tabsHtml += `</ul>`;
-        $('#tabs-container').html(tabsHtml);
-
         $.fn.dataTable.ext.search.length = 0;
         var st = getUrlState();
         window.activeFilterTipe = st.tipe;
         window.activeFilterStatusDummy = st.status;
 
-        $('#dynamicTabs .nav-link').removeClass('active');
-        var $activeTab = $('#dynamicTabs .nav-link').filter(function () {
-            return $(this).data('tipe') === window.activeFilterTipe;
-        });
-        if ($activeTab.length) {
-            $activeTab.addClass('active');
-        } else {
-            window.activeFilterTipe = 'Semua';
-            $('#dynamicTabs .nav-link').first().addClass('active');
-        }
         $('#filter-status-dummy').val(window.activeFilterStatusDummy);
 
         $.fn.dataTable.ext.search.push(function(settings, dataArr, dataIndex, rowData, counter) {
@@ -978,10 +957,6 @@ function tableFinance(){
             if ($.fn.DataTable.isDataTable('#datadummy')) $('#datadummy').DataTable().draw();
         });
 
-        $('#filter-tahun-dummy').off('change').on('change', function() {
-            setUrlState({ tahun2: $(this).val(), p: '0' });
-            tableFinance();
-        });
 
         $('#tabs-container').off('click', '#dynamicTabs .nav-link').on('click', '#dynamicTabs .nav-link', function(e) {
             e.preventDefault();
@@ -1019,6 +994,7 @@ function tableFinance(){
 
         var datasudahConfig = {
             data: dataSelesai,
+            deferRender: true,
             dom: 'Bfrtip',
             buttons: [
                 {
@@ -1063,10 +1039,7 @@ function tableFinance(){
                         if (data && Array.isArray(data)) {
                             return data.map(item => {
                                 let total = item.harga * item.qty;
-                                return new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(total);
+                                return rupiah.format(total);
                             }).join('<hr style="margin: 4px 0; border: 1px solid black">');
                         }
                         return '-';
@@ -1077,10 +1050,7 @@ function tableFinance(){
                     "render": function (data) {
                         if (data && Array.isArray(data)) {
                             const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                            return new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR'
-                            }).format(total);
+                            return rupiah.format(total);
                         }
                         return '-';
                     }
@@ -1138,13 +1108,13 @@ function tableFinance(){
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
                         if (USER_ROLE == 'Finance & Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) {
-                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img loading="lazy" src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                         } else {
-                            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            actions += '<button type="button" class="dropdown-item disabled"><img loading="lazy" src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                         }
 
-                        actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
-                        actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang/uploadinvoice') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Upload Invoice</a>';
+                        actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img loading="lazy" src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</a>';
+                        actions += '<a class="dropdown-item" disabled href="{{ url('/pengajuanbarang/uploadinvoice') }}/' + row.id + '" data-toggle="tooltip" data-placement="top" title="Detail User"><img loading="lazy" src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Upload Invoice</a>';
                         actions += '</div>';
                         actions += '</div>';
                         return actions;
@@ -1154,10 +1124,7 @@ function tableFinance(){
             "order": [[0, 'desc']],
             "columnDefs" : [{"targets":[0], "type":"date"}],
             "drawCallback": function(settings) {
-                var formattedHarga = new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR'
-                }).format(totalHargaSelesai);
+                var formattedHarga = rupiah.format(totalHargaSelesai);
                 var footerHtml = `
                     <tr>
                         <th colspan="6" style="text-align: left;">
@@ -1193,6 +1160,7 @@ function tableFinance(){
 
         var databelumConfig = {
             data: dataBelum,
+            deferRender: true,
             dom: 'Bfrtip',
             buttons: [
                 {
@@ -1237,10 +1205,7 @@ function tableFinance(){
                         if (data && Array.isArray(data)) {
                             return data.map(item => {
                                 let total = item.harga * item.qty;
-                                return new Intl.NumberFormat('id-ID', {
-                                    style: 'currency',
-                                    currency: 'IDR'
-                                }).format(total);
+                                return rupiah.format(total);
                             }).join('<hr style="margin: 4px 0; border: 1px solid black">');
                         }
                         return '-';
@@ -1251,10 +1216,7 @@ function tableFinance(){
                     "render": function (data) {
                         if (data && Array.isArray(data)) {
                             const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                            return new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR'
-                            }).format(total);
+                            return rupiah.format(total);
                         }
                         return '-';
                     }
@@ -1268,9 +1230,9 @@ function tableFinance(){
 
                         function addButton(label, url, condition, icon) {
                             if (condition) {
-                                actions += `<a href="${url}" class="dropdown-item"><img src="{{ asset('${icon}') }}" class=""> ${label}</a>`;
+                                actions += `<a href="${url}" class="dropdown-item"><img loading="lazy" src="{{ asset('${icon}') }}" class=""> ${label}</a>`;
                             } else {
-                                actions += `<button type="button" class="dropdown-item disabled"><img src="{{ asset('${icon}') }}" class=""> ${label}</button>`;
+                                actions += `<button type="button" class="dropdown-item disabled"><img loading="lazy" src="{{ asset('${icon}') }}" class=""> ${label}</button>`;
                             }
                         }
 
@@ -1279,9 +1241,9 @@ function tableFinance(){
                         actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
 
                         if (USER_ROLE == 'Finance & Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai'))) {
-                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(' + row.id + ', \'Manager\')"><img loading="lazy" src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                         } else {
-                            actions += '<button type="button" class="dropdown-item disabled"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
+                            actions += '<button type="button" class="dropdown-item disabled"><img loading="lazy" src="{{ asset('icon/check-circle.svg') }}" class=""> Approve</button>';
                         }
 
                         if (trackingStatus) {
@@ -1302,7 +1264,7 @@ function tableFinance(){
                         actions += '<form onsubmit="return confirm(\'Apakah Anda Yakin ?\');" action="{{ url('/pengajuanbarang') }}/' + row.id + '" method="POST">';
                         actions += '@csrf';
                         actions += '@method('DELETE')';
-                        actions += '<button type="submit" class="dropdown-item text-danger"><img src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
+                        actions += '<button type="submit" class="dropdown-item text-danger"><img loading="lazy" src="{{ asset('icon/trash-danger.svg') }}" class=""> Hapus</button>';
                         actions += '</form>';
                         actions += '</div>';
                         actions += '</div>';
@@ -1314,10 +1276,7 @@ function tableFinance(){
             "order": [[0, 'desc']],
             "columnDefs" : [{"targets":[0], "type":"date"}],
             "drawCallback": function(settings) {
-                var formattedHargaBelum = new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR'
-                }).format(totalHargaBelum);
+                var formattedHargaBelum = rupiah.format(totalHargaBelum);
                 var footerHtml = `
                     <tr>
                         <th colspan="6" style="text-align: left;">
@@ -1353,6 +1312,7 @@ function tableFinance(){
 
         var datasudahinvConfig = {
             data: dataHasInvoice,
+            deferRender: true,
             dom: 'Bfrtip',
             buttons: [
                 {
@@ -1404,10 +1364,7 @@ function tableFinance(){
                     "render": function (data) {
                         if (data && Array.isArray(data)) {
                             const total = data.reduce((sum, item) => sum + (item.harga * item.qty), 0);
-                            return new Intl.NumberFormat('id-ID', {
-                                style: 'currency',
-                                currency: 'IDR'
-                            }).format(total);
+                            return rupiah.format(total);
                         }
                         return '-';
                     }
@@ -1422,24 +1379,24 @@ function tableFinance(){
                                 <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown">Actions</button>
                                 <div class="dropdown-menu">
                                     <a class="dropdown-item" href="/pengajuanbarang/${row.id}">
-                                        <img src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
+                                        <img loading="lazy" src="{{ asset('icon/clipboard-primary.svg') }}"> Detail
                                     </a>
 
                                     ${row.invoice ? `
                                     <a class="dropdown-item" href="/storage/${row.invoice}" target="_blank">
-                                        <img src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
+                                        <img loading="lazy" src="{{ asset('icon/file-text.svg') }}"> Lihat Invoice
                                     </a>
                                     <a class="dropdown-item" href="/storage/${row.bukti}" target="_blank">
-                                        <img src="{{ asset('icon/file-text.svg') }}"> Lihat Bukti
+                                        <img loading="lazy" src="{{ asset('icon/file-text.svg') }}"> Lihat Bukti
                                     </a>
                                     ` : ''}
 
                                     ${(USER_ROLE == 'Finance & Accounting' && (trackingStatus.includes('Finance') || trackingStatus.includes('Permintaan') || trackingStatus.includes('proses') || trackingStatus.includes('Selesai')))
                                         ? `<button type="button" class="dropdown-item" onclick="openApproveModal(${row.id}, 'Manager')">
-                                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve
+                                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve
                                         </button>`
                                         : `<button type="button" class="dropdown-item disabled">
-                                                <img src="{{ asset('icon/check-circle.svg') }}"> Approve
+                                                <img loading="lazy" src="{{ asset('icon/check-circle.svg') }}"> Approve
                                         </button>`
                                     }
 
@@ -1449,7 +1406,7 @@ function tableFinance(){
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="dropdown-item text-danger">
-                                            <img src="{{ asset('icon/trash-danger.svg') }}"> Hapus
+                                            <img loading="lazy" src="{{ asset('icon/trash-danger.svg') }}"> Hapus
                                         </button>
                                     </form>
                                 </div>
@@ -1482,58 +1439,154 @@ function tableFinance(){
             setUrlState({ pi: String(datasudahinvTable.page()) });
         });
 
-        var datadummyConfig = Object.assign({}, datasudahConfig);
-        datadummyConfig.data = dataDummy;
-        datadummyConfig.buttons = [
-            {
-                extend: 'excelHtml5',
-                text: 'Export Excel',
-                className: 'btn btn-success btn-sm mb-3',
-                title: 'Data_Pengajuan_Dummy_' + bulan + '_' + tahun,
-                exportOptions: {
-                    columns: ':visible:not(:last-child)'
-                }
-            }
-        ];
-        datadummyConfig.drawCallback = function(settings) {
-            var api = this.api();
-            var currentData = api.rows({ search: 'applied' }).data().toArray();
-            var filteredItems = currentData.length;
-            var filteredHarga = 0;
-            currentData.forEach(item => {
-                if (item.detail && Array.isArray(item.detail)) {
-                    item.detail.forEach(detail => {
-                        filteredHarga += detail.qty * detail.harga;
-                    });
-                }
+        // ===== LAZY LOAD: data tahunan untuk tabel "Data Pengajuan Semua" =====
+        function renderDummy(dataDummy) {
+            let uniqueTypes = [...new Set(dataDummy.map(item => item.tipe))].filter(t => t);
+            let tabsHtml = `<ul class="nav nav-tabs flex-nowrap" id="dynamicTabs" style="overflow-x: auto; overflow-y: hidden; white-space: nowrap;">`;
+            tabsHtml += `<li class="nav-item"><a class="nav-link active text-nowrap" href="#" data-tipe="Semua">Semua</a></li>`;
+            uniqueTypes.forEach(t => {
+                tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="${t}">${t}</a></li>`;
             });
-            var formattedHargaDummy = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR'
-            }).format(filteredHarga);
-            var footerHtml = `
-                <tr>
-                    <th colspan="6" style="text-align: left;">
-                        Total Pengajuan: ${filteredItems}
-                    </th>
-                    <th colspan="4" style="text-align: left;">
-                        Total Harga Pengajuan: ${formattedHargaDummy}
-                    </th>
-                </tr>
-            `;
-            $('#datadummy tfoot').html(footerHtml);
-        };
-        if (mode === 'bulanminggu') {
-            datadummyConfig.rowGroup = buildRowGroupConfig(weeks);
-        }
-        var datadummyTable = $('#datadummy').DataTable(datadummyConfig);
+            tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Lab">Lab (Filter Nama)</a></li>`;
+            tabsHtml += `<li class="nav-item"><a class="nav-link text-nowrap" href="#" data-tipe="Dummy">Dummy (Filter Nama)</a></li>`;
+            tabsHtml += `</ul>`;
+            $('#tabs-container').html(tabsHtml);
 
-        if (currentPageDummy > 0) {
-            datadummyTable.page(currentPageDummy).draw('page');
+            $('#dynamicTabs .nav-link').removeClass('active');
+            var $activeTab = $('#dynamicTabs .nav-link').filter(function () {
+                return $(this).data('tipe') === window.activeFilterTipe;
+            });
+            if ($activeTab.length) {
+                $activeTab.addClass('active');
+            } else {
+                window.activeFilterTipe = 'Semua';
+                $('#dynamicTabs .nav-link').first().addClass('active');
+            }
+
+            if ($.fn.DataTable.isDataTable('#datadummy')) {
+                $('#datadummy').DataTable().clear().destroy();
+            }
+
+            // datadummyConfig meng-copy datasudahConfig, jadi deferRender: true ikut terbawa
+            var datadummyConfig = Object.assign({}, datasudahConfig);
+            datadummyConfig.data = dataDummy;
+            datadummyConfig.deferRender = true;
+            datadummyConfig.buttons = [
+                {
+                    extend: 'excelHtml5',
+                    text: 'Export Excel',
+                    className: 'btn btn-success btn-sm mb-3',
+                    title: 'Data_Pengajuan_Dummy_' + bulan + '_' + tahun,
+                    exportOptions: {
+                        columns: ':visible:not(:last-child)'
+                    }
+                }
+            ];
+            datadummyConfig.drawCallback = function(settings) {
+                var api = this.api();
+                var currentData = api.rows({ search: 'applied' }).data().toArray();
+                var filteredItems = currentData.length;
+                var filteredHarga = 0;
+                currentData.forEach(item => {
+                    if (item.detail && Array.isArray(item.detail)) {
+                        item.detail.forEach(detail => {
+                            filteredHarga += detail.qty * detail.harga;
+                        });
+                    }
+                });
+                var formattedHargaDummy = rupiah.format(filteredHarga);
+                var footerHtml = `
+                    <tr>
+                        <th colspan="6" style="text-align: left;">
+                            Total Pengajuan: ${filteredItems}
+                        </th>
+                        <th colspan="4" style="text-align: left;">
+                            Total Harga Pengajuan: ${formattedHargaDummy}
+                        </th>
+                    </tr>
+                `;
+                $('#datadummy tfoot').html(footerHtml);
+            };
+            if (mode === 'bulanminggu') {
+                datadummyConfig.rowGroup = buildRowGroupConfig(weeks);
+            }
+            var datadummyTable = $('#datadummy').DataTable(datadummyConfig);
+
+            if (currentPageDummy > 0) {
+                datadummyTable.page(currentPageDummy).draw('page');
+            }
+
+            datadummyTable.off('page.dt').on('page.dt', function () {
+                setUrlState({ p: String(datadummyTable.page()) });
+            });
         }
 
-        datadummyTable.off('page.dt').on('page.dt', function () {
-            setUrlState({ p: String(datadummyTable.page()) });
+        function loadDummy() {
+            if (window.dummyObserver) {
+                window.dummyObserver.disconnect();
+                window.dummyObserver = null;
+            }
+
+            var tahunDummy = $('#filter-tahun-dummy').length ? $('#filter-tahun-dummy').val() : tahun;
+            var key = String(tahunDummy);
+
+            // Sudah pernah diambil untuk tahun ini -> pakai cache, tanpa request
+            if (window.dummyCache[key]) {
+                renderDummy(window.dummyCache[key]);
+                return;
+            }
+
+            if ($.fn.DataTable.isDataTable('#datadummy')) {
+                $('#datadummy').DataTable().clear().destroy();
+            }
+            $('#tabs-container').html('<div class="text-muted small py-3 text-center">Memuat data tahun ' + key + '...</div>');
+
+            var reqId = ++window.dummyReq;
+            $.ajax({ url: urlTahunTpl.replace(':year', key), type: "GET" })
+                .done(function (res) {
+                    if (reqId !== window.dummyReq) return; // sudah ada request yang lebih baru
+                    window.dummyCache[key] = res.data;
+                    renderDummy(res.data);
+                })
+                .fail(function () {
+                    if (reqId !== window.dummyReq) return;
+                    $('#tabs-container').html('<div class="text-danger small py-3 text-center">Gagal memuat data tahunan. <a href="#" id="retry-dummy">Coba lagi</a></div>');
+                });
+        }
+
+        $('#tabs-container').off('click', '#retry-dummy').on('click', '#retry-dummy', function (e) {
+            e.preventDefault();
+            loadDummy();
+        });
+
+        // Ganti tahun pada filter tabel "Semua": cukup muat ulang tabel ini saja
+        $('#filter-tahun-dummy').off('change').on('change', function() {
+            setUrlState({ tahun2: $(this).val(), p: '0' });
+            currentPageDummy = 0;
+            loadDummy();
+        });
+
+        // Muat data tahunan hanya saat bagian "Semua" mendekati layar
+        var dummyTrigger = document.getElementById('tabs-container');
+        if ('IntersectionObserver' in window && dummyTrigger) {
+            var obs = new IntersectionObserver(function (entries) {
+                if (entries.some(function (en) { return en.isIntersecting; })) {
+                    obs.disconnect();
+                    window.dummyObserver = null;
+                    loadDummy();
+                }
+            }, { rootMargin: '300px' });
+            window.dummyObserver = obs;
+            obs.observe(dummyTrigger);
+        } else {
+            loadDummy();
+        }
+    }).fail(function () {
+        $('#loadingModal').modal('hide');
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Gagal memuat data pengajuan, silakan coba lagi.'
         });
     });
 }
