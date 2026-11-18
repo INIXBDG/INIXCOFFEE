@@ -149,7 +149,7 @@ class DashboardLayoutController extends Controller
         $rolePermissionsMap[$roleName] = [
             'karyawan'    => true,
             'peserta'     => in_array('Fitur Menu Peserta', $rolePerms),
-            'itsm'        => !empty(array_intersect(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature', 'View ITSM Only'], $rolePerms)),
+            'itsm'        => true,
             'rkm'         => in_array('Fitur Menu RKM', $rolePerms),
             'finance'     => in_array('Fitur Menu Finance', $rolePerms),
             'performance' => true,

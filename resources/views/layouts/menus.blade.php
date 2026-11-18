@@ -1244,15 +1244,7 @@
                         $sectionRules = [
                             'karyawan' => true,
                             'peserta' => $user ? $user->can('Fitur Menu Peserta') : false,
-                            'itsm' => $user
-                                ? $user->hasAnyPermission([
-                                    'Fitur Webinar',
-                                    'Fitur Content',
-                                    'Fitur Penilaian Exam',
-                                    'Fitur Registry Feature',
-                                    'View ITSM Only',
-                                ])
-                                : false,
+                            'itsm' => true,
                             'rkm' => $user ? $user->can('Fitur Menu RKM') : false,
                             'finance' => $user ? $user->can('Fitur Menu Finance') : false,
                             'performance' => true,
@@ -1708,13 +1700,11 @@
                                 </div>
                             @endcan
                         @elseif ($key == 'itsm')
-                            @canany(['Fitur Webinar', 'Fitur Content', 'Fitur Penilaian Exam', 'Fitur Registry Feature',
-                                'View ITSM Only'])
-                                <div class="masonry-item">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h5 class="text-center card-title">IT Service Management</h5>
-                                            <div class="row dashboard-section-row" data-section="itsm">
+                            <div class="masonry-item">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="text-center card-title">IT Service Management</h5>
+                                        <div class="row dashboard-section-row" data-section="itsm">
                                                 @can('Fitur Webinar')
                                                     <div class="col-sm-6 mt-2" data-card-id="timeline_webinar">
                                                         <div class="card" id="card-hover">
@@ -1895,6 +1885,22 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="col-sm-6 mt-2" data-card-id="pengajuan_subs">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2"><i class="fa-solid fa-receipt"
+                                                                    style="font-size: 30px;"></i></div>
+                                                            <div class="col-md-10" style="margin-left: 10px"><a
+                                                                    href="{{ route('pengajuansubs.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Pengajuan Subs</h5>
+                                                                </a>
+                                                                <p class="card-text">pengajuan dan manajemen
+                                                                    subscriptions</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                                 <div class="col-sm-6 mt-2" data-card-id="survey_kepuasan">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -1933,7 +1939,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endcanany
                         @elseif ($key == 'rkm')
                             @can('Fitur Menu RKM')
                                 <div class="masonry-item">
@@ -2482,24 +2487,6 @@
                                                         </div>
                                                     </div>
                                                 @endcan
-                                                @if (auth()->user()->karyawan && auth()->user()->karyawan->jabatan === 'Koordinator ITSM')
-                                                    <div class="col-sm-6 mt-2" data-card-id="pengajuan_subs">
-                                                        <div class="card" id="card-hover">
-                                                            <div class="card-body d-flex">
-                                                                <div class="col-md-2"><i class="fa-solid fa-receipt"
-                                                                        style="font-size: 30px;"></i></div>
-                                                                <div class="col-md-10" style="margin-left: 10px"><a
-                                                                        href="{{ route('pengajuansubs.index') }}"
-                                                                        class="link stretched-link text-decoration-none">
-                                                                        <h5 class="card-title">Pengajuan Subs</h5>
-                                                                    </a>
-                                                                    <p class="card-text">pengajuan dan manajemen
-                                                                        subscriptions</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endif
                                                 @can('Fitur cv instruktur')
                                                     <div class="col-sm-6 mt-2" data-card-id="cv_instruktur">
                                                         <div class="card" id="card-hover">
