@@ -33,4 +33,9 @@ class Subscription extends Model
     {
         return $this->belongsToMany(Materi::class, 'subscription_materi', 'subscription_id', 'materi_id');
     }
+
+    public function pengajuans()
+    {
+        return $this->hasMany(PengajuanSubs::class, 'id_subs');
+    }
 }

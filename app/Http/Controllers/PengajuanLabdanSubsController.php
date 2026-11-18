@@ -101,12 +101,15 @@ class PengajuanLabdanSubsController extends Controller
             ->get();
 
         $labs->transform(function ($lab) {
-            // PERBAIKAN: Tambahkan "use ($lab)" pada function ($p) di bawah ini
             $activeUsers = $lab->pengajuans->filter(function ($p) use ($lab) {
                 $tracks = $p->tracking->pluck('tracking')->implode(' ');
-                $hasAccess = str_contains(strtolower($tracks), 'lihat akses nya di detail') || str_contains(strtolower($tracks), 'akses lab telah diberikan');
+                $tracksLower = strtolower($tracks);
 
-                if (!$hasAccess) {
+                $hasAccess = str_contains($tracksLower, 'lihat akses nya di detail') || str_contains($tracksLower, 'akses lab telah diberikan');
+                $isUnassigned = str_contains($tracksLower, 'di-unassign') || str_contains($tracksLower, 'akses dicabut');
+
+                // Jika belum dapat akses atau sudah di-unassign, jangan tampilkan di pengguna aktif
+                if (!$hasAccess || $isUnassigned) {
                     return false;
                 }
 
@@ -249,6 +252,53 @@ class PengajuanLabdanSubsController extends Controller
         ]);
     }
 
+    public function unassignLabUser($pengajuanId)
+    {
+        $user         = auth()->user();
+        $itsmKaryawan = $user->karyawan;
+
+        if (!in_array($itsmKaryawan->jabatan, ['Technical Support', 'Koordinator ITSM'])) {
+            return response()->json(['success' => false, 'message' => 'Tidak memiliki akses.'], 403);
+        }
+
+        $pengajuan = PengajuanLabSubs::with('karyawan', 'lab')->findOrFail($pengajuanId);
+        $namaLab   = $pengajuan->lab->nama_labs ?? ($pengajuan->lab_snapshot['nama_labs'] ?? 'Lab');
+
+        $statusText = "Selesai - Akses dicabut (Di-unassign) oleh {$itsmKaryawan->nama_lengkap} ({$itsmKaryawan->jabatan})";
+
+        $track = TrackingPengajuanLabSubs::create([
+            'id_pengajuan_lab_subs' => $pengajuan->id,
+            'tracking'              => $statusText,
+            'tanggal'               => now(),
+        ]);
+
+        $pengajuan->update(['id_tracking' => $track->id]);
+
+        $notifData = [
+            'tanggal' => now(),
+            'status'  => "Selesai - Akses Lab ({$namaLab}) telah dicabut (Di-unassign) oleh {$itsmKaryawan->nama_lengkap} ({$itsmKaryawan->jabatan})",
+        ];
+
+        $targetUsers = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $pengajuan->kode_karyawan))->get();
+        foreach ($targetUsers as $u) {
+            NotificationFacade::send(
+                $u,
+                new ApprovalLabSubsNotification(
+                    $notifData,
+                    '/pengajuanlabsdansubs/' . $pengajuan->id,
+                    $pengajuan->karyawan->nama_lengkap ?? 'Pengguna',
+                    'Unassign Akses Lab/Subscription',
+                    $u->id
+                )
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Akses lab untuk ' . ($pengajuan->karyawan->nama_lengkap ?? 'pengguna') . ' berhasil di-unassign!'
+        ]);
+    }
+
     /**
      * Helper internal untuk mencatat assignment instruktur langsung sebagai Permintaan Akses yang Disetujui
      */
@@ -288,16 +338,21 @@ class PengajuanLabdanSubsController extends Controller
 
         $pengajuan->update(['id_tracking' => $finalTrack->id]);
 
+        $notifData = [
+            'tanggal' => now(),
+            'status'  => "Telah disetujui oleh Koordinator ITSM dan lihat akses nya di Detail (Lab: {$lab->nama_labs} - Di-assign oleh {$itsmKaryawan->nama_lengkap})",
+        ];
+
         // Kirim notifikasi ke Instruktur bahwa ia telah di-assign akses lab
         $targetUsers = User::whereHas('karyawan', fn($q) => $q->where('kode_karyawan', $instruktur->kode_karyawan))->get();
         foreach ($targetUsers as $u) {
             NotificationFacade::send(
                 $u,
                 new ApprovalLabSubsNotification(
-                    ['tanggal' => now(), 'status' => $statusText],
-                    '/pengajuanlabsdansubs',
+                    $notifData,
+                    '/pengajuanlabsdansubs/' . $pengajuan->id,
                     $instruktur->nama_lengkap,
-                    'Menyetujui Pengajuan Lab/Subscription',
+                    'Assign Akses Lab/Subscription',
                     $u->id
                 )
             );
@@ -634,13 +689,19 @@ class PengajuanLabdanSubsController extends Controller
                 $targetCodes[] = $financeKar->kode_karyawan;
             }
 
-            $notifUsers = User::whereHas('karyawan', fn($q) => $q->whereIn('kode_karyawan', array_unique($targetCodes)))->get();
+            $notifUsers = User::with('karyawan')
+                ->whereHas('karyawan', fn($q) => $q->whereIn('kode_karyawan', array_unique($targetCodes)))
+                ->get();
             foreach ($notifUsers as $u) {
+                $notifPath = ($u->karyawan?->jabatan === 'Finance & Accounting')
+                    ? '/pengajuanbarang'
+                    : '/pengajuanlabsdansubs';
+
                 NotificationFacade::send(
                     $u,
                     new ApprovalLabSubsNotification(
                         ['tanggal' => now(), 'status' => $statusFinance],
-                        '/pengajuanlabsdansubs',
+                        $notifPath,
                         $itsmKaryawan->nama_lengkap,
                         'Menyetujui Pengajuan Lab/Subscription',
                         $u->id

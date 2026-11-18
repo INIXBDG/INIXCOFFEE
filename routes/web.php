@@ -569,6 +569,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/get-master-labs', [PengajuanLabdanSubsController::class, 'getMasterLabs'])->name('api.master-labs');
     Route::post('/api/master-labs', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'storeMasterLab'])->name('api.master-labs.store');
     Route::post('/api/master-labs/{id}/assign', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'assignLabUser'])->name('api.master-labs.assign');
+    Route::post('/api/master-labs/unassign/{pengajuanId}', [App\Http\Controllers\PengajuanLabdanSubsController::class, 'unassignLabUser'])->name('api.master-labs.unassign');
 
     Route::get('getPengajuanSubs/{month}/{year}', [PengajuanSubsController::class, 'getPengajuanSubs'])->name('getPengajuanSubs');
     Route::put('pengajuansubs/updatesubs/{id}', [PengajuanSubsController::class, 'updateLabSubs'])->name('pengajuansubs.updatesubs');
@@ -576,8 +577,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/pengajuansubs/{id}/upload-invoice', [PengajuanSubsController::class, 'uploadInvoice'])->name('pengajuansubs.uploadInvoice');
     Route::get('pengajuansubs/export-pdf/{id}', [PengajuanSubsController::class, 'exportPDF'])->name('pengajuansubs.exportpdf');
     Route::post('/api/master-subs', [PengajuanSubsController::class, 'storeMasterSubs'])->name('api.master-subs.store');
-    Route::put('/api/master-subs/{id}', [PengajuanSubsController::class, 'updateMasterSubs']);
-    Route::post('/api/master-subs/{id}/renew', [PengajuanSubsController::class, 'renewSubs']);
+    Route::put('/api/master-subs/{id}', [PengajuanSubsController::class, 'updateMasterSubs'])->name('api.master-subs.update');
+    Route::post('/api/master-subs/{id}/renew', [PengajuanSubsController::class, 'renewSubs'])->name('api.master-subs.renew');
+    Route::post('/api/master-subs/{id}/assign', [PengajuanSubsController::class, 'assignSubsUser'])->name('api.master-subs.assign');
+    Route::post('/api/master-subs/unassign/{pengajuanId}', [PengajuanSubsController::class, 'unassignSubsUser'])->name('api.master-subs.unassign');
     Route::get('/api/get-subs-by-rkm/{id}', [PengajuanSubsController::class, 'getSubsByRkm']);
     Route::get('/api/get-master-subs', [PengajuanSubsController::class, 'getMasterSubs'])->name('api.master-subs');
 
