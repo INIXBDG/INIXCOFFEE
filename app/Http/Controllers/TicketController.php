@@ -6,6 +6,7 @@ use App\Models\karyawan;
 use App\Models\Tickets;
 use App\Models\User;
 use App\Notifications\TicketNotification;
+use Carbon\Carbon;
 use DateTime;
 use Google\Service\Sheets;
 use Google\Service\Sheets\ValueRange;
@@ -652,10 +653,216 @@ class TicketController extends Controller
 
         return response()->json($tickets);
     }
+
+    public function rekap()
+    {
+        return view('ticket.rekap');
+    }
+
+    public function rekapData(Request $request)
+    {
+        $request->validate([
+            'periode'  => 'nullable|in:harian,mingguan,bulanan,tahunan,custom',
+            'tanggal'  => 'nullable|date',
+            'tahun'    => 'nullable|integer|min:2000|max:2100',
+            'dari'     => 'nullable|date',
+            'sampai'   => 'nullable|date|after_or_equal:dari',
+            'divisi'   => 'nullable|string|max:100',
+            'kategori' => 'nullable|string|max:100',
+            'pic'      => 'nullable|string|max:100',
+        ]);
+
+        // ===== Konfigurasi (sesuaikan dengan aturan kantor) =====
+        $statusDone  = 'Selesai';           // nilai kolom status untuk tiket selesai
+        $nonIncident = ['Minor', 'Normal']; // selain ini masuk log insiden mingguan
+
+        // ===== Rentang tanggal =====
+        $periode = $request->input('periode', 'bulanan');
+        $anchor  = Carbon::parse($request->input('tanggal', now()->toDateString()));
+        $tahun   = (int) $request->input('tahun', now()->year);
+
+        [$start, $end] = match ($periode) {
+            'harian'   => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'mingguan' => [
+                $anchor->copy()->startOfWeek(Carbon::MONDAY)->startOfDay(),
+                $anchor->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay(),
+            ],
+            'tahunan'  => [
+                Carbon::create($tahun, 1, 1)->startOfYear(),
+                Carbon::create($tahun, 1, 1)->endOfYear(),
+            ],
+            'custom'   => [
+                Carbon::parse($request->input('dari', $anchor))->startOfDay(),
+                Carbon::parse($request->input('sampai', $anchor))->endOfDay(),
+            ],
+            default    => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+
+        // Filter global (divisi, kategori, pic) - hanya yang terisi
+        $filters = array_filter($request->only(['divisi', 'kategori', 'pic']), fn ($v) => $v !== null && $v !== '');
+
+        $tickets = Tickets::where($filters)
+            ->whereBetween('timestamp', [$start, $end])
+            ->get([
+                'ticket_id', 'timestamp', 'kategori', 'detail_kendala', 'pic', 'penanganan',
+                'status', 'keterangan', 'tingkat_kesulitan',
+                'tanggal_response', 'jam_response', 'tanggal_selesai', 'jam_selesai',
+            ]);
+
+        // ===== Satu kali loop untuk semua agregasi =====
+        $nowTs     = now()->getTimestamp();
+        $status    = [];
+        $kategori  = [];
+        $perPic    = [];
+        $daily     = [];
+        $open      = [];
+        $incidents = [];
+
+        foreach ($tickets as $t) {
+            $created = Carbon::parse($t->timestamp);
+            $resp    = ($t->tanggal_response && $t->jam_response)
+                ? Carbon::parse($t->tanggal_response . ' ' . $t->jam_response) : null;
+            $fin     = ($t->tanggal_selesai && $t->jam_selesai)
+                ? Carbon::parse($t->tanggal_selesai . ' ' . $t->jam_selesai) : null;
+            $done    = strcasecmp(trim((string) $t->status), $statusDone) === 0;
+
+            $respMin = $resp ? max(0, ($resp->getTimestamp() - $created->getTimestamp()) / 60) : null;
+            $resMin  = ($done && $fin) ? max(0, ($fin->getTimestamp() - $created->getTimestamp()) / 60) : null;
+
+            // status
+            $statusKey = $t->status ?: 'Tanpa status';
+            $status[$statusKey] = ($status[$statusKey] ?? 0) + 1;
+
+            // tren waktu: per hari, atau per bulan kalau periode tahunan
+            $bucket = $periode === 'tahunan' ? $created->format('Y-m') : $created->toDateString();
+            $daily[$bucket] ??= ['total' => 0, 'resp' => [], 'res' => []];
+            $daily[$bucket]['total']++;
+            if ($respMin !== null) {
+                $daily[$bucket]['resp'][] = $respMin;
+            }
+            if ($resMin !== null) {
+                $daily[$bucket]['res'][] = $resMin;
+            }
+
+            // kategori
+            $katKey = $t->kategori ?: 'Lainnya';
+            $kategori[$katKey] = ($kategori[$katKey] ?? 0) + 1;
+
+            // PIC
+            $picKey = $t->pic ?: 'Belum ada PIC';
+            $perPic[$picKey] ??= ['pic' => $picKey, 'total' => 0, 'selesai' => 0, 'res' => []];
+            $perPic[$picKey]['total']++;
+            if ($done) {
+                $perPic[$picKey]['selesai']++;
+            }
+            if ($resMin !== null) {
+                $perPic[$picKey]['res'][] = $resMin;
+            }
+
+            // tiket belum selesai
+            if (! $done) {
+                $open[] = [
+                    'ticket_id' => $t->ticket_id,
+                    'kategori'  => $t->kategori,
+                    'pic'       => $t->pic,
+                    'status'    => $t->status,
+                    'age_min'   => round(($nowTs - $created->getTimestamp()) / 60),
+                    'alasan'    => $t->keterangan ?: $t->penanganan,
+                ];
+            }
+
+            // log insiden (khusus mingguan)
+            if ($periode === 'mingguan' && $t->tingkat_kesulitan
+                && ! in_array($t->tingkat_kesulitan, $nonIncident, true)) {
+                $incidents[] = [
+                    'ticket_id'  => $t->ticket_id,
+                    'tanggal'    => $created->format('d/m/Y H:i'),
+                    'tingkat'    => $t->tingkat_kesulitan,
+                    'masalah'    => $t->detail_kendala,
+                    'tindakan'   => $t->penanganan,
+                    'keterangan' => $t->keterangan,
+                    'status'     => $t->status,
+                ];
+            }
+        }
+
+        // ===== Rapikan hasil agregasi =====
+        $statusOut = [];
+        foreach ($status as $label => $total) {
+            $statusOut[] = ['label' => $label, 'total' => $total];
+        }
+
+        usort($open, fn ($a, $b) => $b['age_min'] <=> $a['age_min']);
+
+        ksort($daily);
+        $dailyOut = [];
+        foreach ($daily as $key => $v) {
+            $dailyOut[] = [
+                'date'           => $key,
+                'total'          => $v['total'],
+                'avg_response'   => count($v['resp']) ? round(array_sum($v['resp']) / count($v['resp']), 1) : null,
+                'avg_resolution' => count($v['res']) ? round(array_sum($v['res']) / count($v['res']), 1) : null,
+            ];
+        }
+
+        arsort($kategori);
+        $kategoriOut = [];
+        foreach (array_slice($kategori, 0, 10, true) as $label => $total) {
+            $kategoriOut[] = ['label' => $label, 'total' => $total];
+        }
+
+        $picOut = [];
+        foreach ($perPic as $v) {
+            $picOut[] = [
+                'pic'            => $v['pic'],
+                'total'          => $v['total'],
+                'selesai'        => $v['selesai'],
+                'avg_resolution' => count($v['res']) ? round(array_sum($v['res']) / count($v['res']), 1) : null,
+            ];
+        }
+        usort($picOut, fn ($a, $b) => $b['total'] <=> $a['total']);
+
+        // ===== Volume per bulan: 12 bulan untuk tahunan, selain itu 6 bulan terakhir =====
+        // (ikut filter divisi/kategori/pic, bukan filter tanggal)
+        $lastMonth  = $end->copy()->startOfMonth();
+        $trendStart = $lastMonth->copy()->subMonths($periode === 'tahunan' ? 11 : 5);
+        $trendRaw   = Tickets::where($filters)
+            ->whereBetween('timestamp', [$trendStart, $end->copy()->endOfMonth()])
+            ->selectRaw("DATE_FORMAT(`timestamp`, '%Y-%m') as bulan, COUNT(*) as total, SUM(status = ?) as selesai", [$statusDone])
+            ->groupBy('bulan')
+            ->get()
+            ->keyBy('bulan');
+
+        $trend = [];
+        for ($m = $trendStart->copy(); $m <= $lastMonth; $m->addMonth()) {
+            $row = $trendRaw->get($m->format('Y-m'));
+            $trend[] = [
+                'label'   => $m->translatedFormat('M Y'),
+                'total'   => (int) ($row->total ?? 0),
+                'selesai' => (int) ($row->selesai ?? 0),
+            ];
+        }
+
+        return response()->json([
+            'range' => [
+                'periode' => $periode,
+                'label'   => $periode === 'tahunan'
+                    ? 'Tahun ' . $tahun
+                    : $start->translatedFormat('d M Y') . ' - ' . $end->translatedFormat('d M Y'),
+                'total'   => $tickets->count(),
+            ],
+            'filters' => [
+                'divisi'   => Tickets::whereNotNull('divisi')->distinct()->orderBy('divisi')->pluck('divisi'),
+                'kategori' => Tickets::whereNotNull('kategori')->distinct()->orderBy('kategori')->pluck('kategori'),
+                'pic'      => Tickets::whereNotNull('pic')->distinct()->orderBy('pic')->pluck('pic'),
+            ],
+            'status'       => $statusOut,
+            'open_tickets' => array_slice($open, 0, 20),
+            'daily'        => $dailyOut,
+            'per_kategori' => $kategoriOut,
+            'per_pic'      => $picOut,
+            'trend'        => $trend,
+            'incidents'    => $periode === 'mingguan' ? $incidents : null,
+        ]);
+    }
 }
-
-
-
-
-
-
