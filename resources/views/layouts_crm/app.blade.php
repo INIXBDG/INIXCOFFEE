@@ -38,8 +38,14 @@
     <link rel="preload" href="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}" as="script">
 
     <!-- 3. Pemanggilan Aset Hasil Kompilasi Produksi Vite -->
-    {{-- @vite(['resources/js/app.js']) --}}
+    @vite(['resources/js/app.js'])
+    @yield('css')
+    @stack('styles')
+    @stack('css')
 
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/js/helpers.js') }}" defer></script>
     <script src="{{ asset('assets/js/config.js') }}" defer></script>
 
@@ -242,16 +248,10 @@
     </div>
 
 
-    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
     <script src="{{ asset('assets/vendor/libs/sweetalert2/sweetalert2@11.js') }}" defer></script>
-    <script src="{{ asset('js/global-validator.js') }}" defer></script>
-
-    <script src="{{ asset('/js/compress_validator.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/moment/moment-with-locales.min.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}" defer></script>
@@ -371,6 +371,8 @@
     </script>
 
     @yield('scripts')
+    @stack('js')
+    @stack('scripts')
 </body>
 
 </html>

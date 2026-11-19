@@ -302,7 +302,6 @@
 @endsection
 
 @push('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     @if ($canEdit)
     $(document).ready(function () {

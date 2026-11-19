@@ -124,14 +124,14 @@ class OverviewDashboardService
                 $topPerformers[] = [
                     'kpi_title' => $target->judul,
                     'label' => $calculation['top_performer']['label'],
-                    'value' => $calculation['top_performer']['value'],
+                    'value' => $calculation['top_performer']['value'] ?? 0,
                 ];
             }
             if (!empty($calculation['lowest_performer']['label'])) {
                 $lowestPerformers[] = [
                     'kpi_title' => $target->judul,
                     'label' => $calculation['lowest_performer']['label'],
-                    'value' => $calculation['lowest_performer']['value'],
+                    'value' => $calculation['lowest_performer']['value'] ?? 0,
                 ];
             }
 
@@ -156,7 +156,7 @@ class OverviewDashboardService
                     'progress' => $progress,
                     'status' => $resolved['target_status'] ?? 'behind',
                     'trend' => $resolved['trend'] ?? 'stable',
-                    'trend_value' => round($calculation['trend_value'], 1) ?? 0,
+                    'trend_value' => round((float) ($calculation['trend_value'] ?? 0), 1),
                     'sparkline' => array_slice($mp, -6, 6, true),
                 ];
             }

@@ -219,7 +219,10 @@
             z-index: 999999 !important;
         }
     </style>
+    @vite(['resources/js/app.js'])
     @yield('css')
+    @stack('styles')
+    @stack('css')
 </head>
 
 <body>
@@ -316,9 +319,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-
-    <script src="{{ asset('js/compress_validator.js') }}" defer></script>
-    <script src="{{ asset('js/global-validator.js') }}" defer></script>
     <script src="{{ asset('assets/vendor/js/sweetalert2.min.js') }}" defer></script>
 
 
@@ -387,6 +387,8 @@
     </script>
 
     @yield('scripts')
+    @stack('js')
+    @stack('scripts')
     <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}" defer></script>
 
     @if($errors->any())

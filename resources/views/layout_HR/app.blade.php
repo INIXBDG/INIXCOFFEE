@@ -622,7 +622,11 @@
         }
     </style>
 
+    @vite(['resources/js/app.js'])
+    @yield('css')
     @stack('styles')
+    @stack('css')
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 </head>
 
 <body>
@@ -775,7 +779,6 @@
 
 
 
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script>
             $(function() {
                 $('#formHrUnlock').on('submit', function(e) {
@@ -905,12 +908,8 @@
             @csrf
         </form>
 
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-        <script src="{{ asset('assets/vendor/libs/popper/popper.js') }}"></script>
-        <script src="{{ asset('assets/vendor/js/bootstrap.js') }}"></script>
         <script src="{{ asset('assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js') }}"></script>
         <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 
@@ -922,8 +921,6 @@
 
         <script src="{{ asset('assets/vendor/js/menu.js') }}"></script>
         <script src="{{ asset('assets/js/main.js') }}"></script>
-
-        <script src="{{ asset('js/compress_validator.js') }}"></script>
 
         <script src="{{ asset('template_dashboard_HR/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
 
@@ -1096,8 +1093,10 @@
             });
         </script>
 
-        @stack('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        @yield('scripts')
+        @stack('js')
+        @stack('scripts')
         @if ($errors->any())
             @php
                 $swalType = 'error';

@@ -240,5 +240,7 @@
         window.allowedDoubleManualRoutes = []; 
     </script>
 
-    <script defer src="{{ asset('assets/js/kpi/kpiPersonal.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/kpi/kpiPersonal.js'])
+    @endpush
 @endsection

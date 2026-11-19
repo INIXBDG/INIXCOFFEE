@@ -1,7 +1,10 @@
 @extends('layouts_kpi.app')
 
+@push('styles')
+    @vite(['resources/css/pages/penilaian360.css'])
+@endpush
+
 @section('kpi_contents')
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <div class="container content-wrapper mt-4">
@@ -153,5 +156,7 @@
             csrfToken: "{{ csrf_token() }}"
         };
     </script>
-    <script src="{{ asset('assets/js/penilaian360/index.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/penilaian360/index.js'])
+    @endpush
 @endsection

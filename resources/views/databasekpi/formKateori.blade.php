@@ -1,7 +1,10 @@
 @extends('layouts_kpi.app')
 
+@push('styles')
+    @vite(['resources/css/pages/penilaian360.css'])
+@endpush
+
 @section('kpi_contents')
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
 
     @if (session('success'))
         <script>
@@ -255,5 +258,7 @@
         </div>
     </div>
 
-    <script src="{{ asset('assets/js/penilaian360/formkategori.js') }}" defer></script>
+    @push('scripts')
+        @vite(['resources/js/pages/penilaian360/formkategori.js'])
+    @endpush
 @endsection
