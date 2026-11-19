@@ -26,7 +26,7 @@
                                 {{-- <h5 class="text-center">{{ __('Login') }}</h5> --}}
                             </div>
                         </div>
-                        <form method="POST" action="{{ route('login') }}">
+                        <form method="POST" action="{{ route('login') }}" data-no-loading="true">
                             @csrf
                             <div class="row mb-3">
                                 <label for="username"

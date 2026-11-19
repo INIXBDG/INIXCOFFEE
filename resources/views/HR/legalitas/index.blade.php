@@ -324,13 +324,11 @@
         }
     </style>
 
-    {{-- Aset lokal --}}
-    <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/fontawesome/all.min.css') }}">
-
-    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/dataTables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/dataTables/dataTables.bootstrap5.min.js') }}"></script>
+    {{-- Aset lokal (jQuery & DataTables sudah dimuat oleh layout_HR.app) --}}
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('assets/vendor/css/dataTables.bootstrap5.min.css') }}">
+        <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/fontawesome/all.min.css') }}">
+    @endpush
 
     <script>
         function renderStatus(status) {

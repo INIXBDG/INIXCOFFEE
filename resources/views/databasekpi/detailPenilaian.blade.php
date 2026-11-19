@@ -5,7 +5,9 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
+    @push('styles')
+        @vite(['resources/css/pages/penilaian360.css'])
+    @endpush
     <style>
         .content-card, .card-body {
             overflow: visible !important;
@@ -243,7 +245,6 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -262,5 +263,7 @@
         };
     </script>
 
-    <script src="{{ asset('assets/js/penilaian360/detail.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/penilaian360/detail.js'])
+    @endpush
 @endsection

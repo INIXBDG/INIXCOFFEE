@@ -52,11 +52,14 @@
     <!-- Helpers -->
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/kpistyle.css') }}">
+    @vite(['resources/css/pages/kpi.css', 'resources/js/app.js'])
+    @yield('css')
+    @stack('styles')
+    @stack('css')
 </head>
 
 <body>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
 
     @if (app()->environment('staging'))
         <div aria-hidden="true" style="position: fixed; top: 50%; left: 50%; z-index: 999998; color: rgba(220, 38, 38, 0.18); font-size: clamp(4rem, 12vw, 10rem); font-weight: 800; letter-spacing: 0.2em; pointer-events: none; transform: translate(-50%, -50%) rotate(-25deg); user-select: none; white-space: nowrap;">STAGING</div>
@@ -184,8 +187,6 @@
     </div>
 
     <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- DataTables JS -->
     <script defer src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
@@ -214,8 +215,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script defer src="{{ asset('js/global-validator.js') }}"></script>
-    <script defer src="{{ asset('js/compress_validator.js') }}"></script>
 
     <!-- User Profile Ajax -->
     <script>
@@ -551,9 +550,14 @@
         });
     </script>
 
+    @yield('scripts')
+    @stack('js')
+    @stack('scripts')
     <script type="module">
         document.addEventListener('DOMContentLoaded', () => {
-            initializeTable();
+            if (typeof initializeTable === 'function') {
+                initializeTable();
+            }
         });
     </script>
 </body>

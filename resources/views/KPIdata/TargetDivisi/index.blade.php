@@ -540,5 +540,7 @@
     </script>
 
     {{-- ===== EXTERNAL JS FILE ===== --}}
-    <script src="{{ asset('assets/js/kpi/kpiIndex.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/kpi/kpiIndex.js'])
+    @endpush
 @endsection
