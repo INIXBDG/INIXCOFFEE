@@ -316,6 +316,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/registry', RegistryFeatureController::class)->parameters(['registry' => 'tugas'])->except(['show']);
     Route::resource('penambahansouvenir', PenambahanSouvenirController::class);
     Route::resource('penukaransouvenir', PenukaranSouvenirController::class);
+    Route::get('content-schedules/dashboard', [ContentScheduleController::class, 'dashboard'])->name('content-schedules.dashboard');
     Route::resource('content-schedules', ContentScheduleController::class);
     Route::resource('colaborator', colaboratorController::class)->except(['show']);
     Route::resource('ide-inovasi', IdeInovasiController::class)->only(['index', 'store', 'update', 'destroy']);

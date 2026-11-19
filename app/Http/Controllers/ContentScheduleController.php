@@ -8,10 +8,11 @@ use Illuminate\Support\Facades\Storage;
 
 class ContentScheduleController extends Controller
 {
-    public function index()
+    /**
+     * Kumpulan default talent.
+     */
+    private function getAllUniqueTalents()
     {
-        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
-
         $defaultTalents = [
             'Hera', 'Savanna', 'Reni', 'Rara', 'Alfi', 'Nabila', 'Fia', 'Ani', 'Yanuar',
             'Adit', 'Luki', 'Sabdhan', 'Rustan', 'Wahyu', 'Sahrul', 'Pani', 'Yayat',
@@ -35,7 +36,153 @@ class ContentScheduleController extends Controller
         $uniqueTalents = array_unique($allTalents);
         sort($uniqueTalents);
 
+        return $uniqueTalents;
+    }
+
+    /**
+     * Tampilan utama: Tabel Jadwal Konten Kreatif.
+     */
+    public function index()
+    {
+        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
+        $uniqueTalents = $this->getAllUniqueTalents();
+
         return view('schedules.index', compact('schedules', 'uniqueTalents'));
+    }
+
+    /**
+     * Halaman tersendiri untuk Dashboard & Analitik Konten Harian.
+     */
+    public function dashboard(Request $request)
+    {
+        $selectedYear = $request->input('year', date('Y'));
+
+        $schedules = ContentSchedule::orderByRaw('upload_date IS NULL DESC, upload_date DESC')->get();
+
+        $totalContent = $schedules->count();
+        $uploadedSchedules = $schedules->whereNotNull('upload_date');
+        $uploadedCount = $uploadedSchedules->count();
+        $pendingSchedules = $schedules->whereNull('upload_date');
+        $pendingCount = $pendingSchedules->count();
+        $completionRate = $totalContent > 0 ? round(($uploadedCount / $totalContent) * 100, 1) : 0;
+
+        $thisMonthCount = $uploadedSchedules->filter(function ($item) {
+            return $item->upload_date && $item->upload_date->format('Y-m') === now()->format('Y-m');
+        })->count();
+
+        $tiktokCount = $schedules->filter(function ($item) {
+            return $item->is_tiktok || strtolower($item->content_form) === 'tiktok';
+        })->count();
+
+        $tiktokPercentage = $totalContent > 0 ? round(($tiktokCount / $totalContent) * 100, 1) : 0;
+
+        // Tahun yang tersedia dari riwayat jadwal
+        $availableYears = $uploadedSchedules
+            ->map(fn($item) => $item->upload_date ? $item->upload_date->format('Y') : null)
+            ->filter()
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->toArray();
+
+        if (empty($availableYears)) {
+            $availableYears = [date('Y')];
+        }
+
+        if ($selectedYear !== 'all' && !in_array($selectedYear, $availableYears)) {
+            $selectedYear = $availableYears[0];
+        }
+
+        // Distribusi bentuk konten
+        $allForms = ['Feed', 'Reels', 'Tiktok', 'Story', 'Youtube'];
+        $formStats = [];
+        $formChartLabels = [];
+        $formChartData = [];
+        $formColors = [
+            'Feed' => '#198754',      // green
+            'Reels' => '#ffc107',     // warning/amber
+            'Tiktok' => '#212529',    // dark
+            'Story' => '#0dcaf0',     // cyan
+            'Youtube' => '#dc3545',   // red
+        ];
+
+        foreach ($allForms as $form) {
+            $count = $schedules->where('content_form', $form)->count();
+            $uploaded = $uploadedSchedules->where('content_form', $form)->count();
+            $formStats[$form] = [
+                'total' => $count,
+                'uploaded' => $uploaded,
+                'pending' => $count - $uploaded,
+                'color' => $formColors[$form] ?? '#6c757d',
+                'percentage' => $totalContent > 0 ? round(($count / $totalContent) * 100, 1) : 0,
+            ];
+            $formChartLabels[] = $form;
+            $formChartData[] = $count;
+        }
+
+        // Tren publikasi bulanan (Januari - Desember) untuk tahun yang dipilih
+        $monthlyTrend = [];
+        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        for ($m = 1; $m <= 12; $m++) {
+            $monthKey = str_pad($m, 2, '0', STR_PAD_LEFT);
+            $monthCount = $uploadedSchedules->filter(function ($item) use ($selectedYear, $monthKey) {
+                if (!$item->upload_date) return false;
+                if ($selectedYear === 'all') {
+                    return $item->upload_date->format('m') === $monthKey;
+                }
+                return $item->upload_date->format('Y') == $selectedYear && $item->upload_date->format('m') === $monthKey;
+            })->count();
+            $monthlyTrend[] = $monthCount;
+        }
+
+        // Analitik Talent (frekuensi kemunculan talent pada konten)
+        $talentCounts = [];
+        foreach ($schedules as $item) {
+            if (!empty($item->talents)) {
+                $talents = explode(',', $item->talents);
+                foreach ($talents as $t) {
+                    $name = trim($t);
+                    if (!empty($name)) {
+                        $talentCounts[$name] = ($talentCounts[$name] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+        arsort($talentCounts);
+        $topTalents = array_slice($talentCounts, 0, 8, true);
+        $totalActiveTalents = count($talentCounts);
+
+        $uniqueTalents = $this->getAllUniqueTalents();
+
+        // Antrean konten menunggu upload (Pending Queue)
+        $pendingQueue = $pendingSchedules->values()->take(6);
+
+        // Konten yang baru saja tayang / di-upload
+        $recentUploaded = $uploadedSchedules->sortByDesc('upload_date')->values()->take(5);
+
+        return view('schedules.dashboard', compact(
+            'schedules',
+            'uniqueTalents',
+            'totalContent',
+            'uploadedCount',
+            'pendingCount',
+            'completionRate',
+            'thisMonthCount',
+            'tiktokCount',
+            'tiktokPercentage',
+            'availableYears',
+            'selectedYear',
+            'allForms',
+            'formStats',
+            'formChartLabels',
+            'formChartData',
+            'monthlyTrend',
+            'monthNames',
+            'topTalents',
+            'totalActiveTalents',
+            'pendingQueue',
+            'recentUploaded'
+        ));
     }
 
     public function store(Request $request)
@@ -101,9 +248,9 @@ class ContentScheduleController extends Controller
         }
 
         if ($request->has('is_tiktok')) {
-             $validated['is_tiktok'] = $request->boolean('is_tiktok');
+            $validated['is_tiktok'] = $request->boolean('is_tiktok');
         } else {
-             $validated['is_tiktok'] = false;
+            $validated['is_tiktok'] = false;
         }
 
         $contentSchedule->update($validated);
