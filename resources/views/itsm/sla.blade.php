@@ -1,88 +1,12 @@
 @extends('layouts.app')
 
-@section('content')
+@push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+@vite(['resources/css/pages/itsm-sla.css'])
+@endpush
 
-<style>
-    .sla-section-card {
-        border-radius: 16px;
-        background-color: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border: none;
-        margin-bottom: 2rem;
-        display: flex !important;
-        flex-direction: row !important;
-        width: 100% !important;
-    }
-    .sla-section-header {
-        background-color: #182f51;
-        color: #ffffff;
-        font-weight: 700;
-        border-top-left-radius: 16px;
-        border-bottom-left-radius: 16px;
-        border-top-right-radius: 0px !important;
-        border-bottom-right-radius: 0px !important;
-        padding: 1.5rem 1rem;
-        width: 200px !important;
-        min-width: 200px !important;
-        max-width: 200px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: center !important;
-        text-align: center !important;
-    }
-    .kpi-card {
-        border-radius: 12px;
-        border: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100% !important;
-        height: auto !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
-        backdrop-filter: none !important;
-    }
-    .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    .summary-kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-    @media (max-width: 992px) {
-        .summary-kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-    @media (max-width: 576px) {
-        .summary-kpi-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    /* Reset card override for nested cards to behave as block/column layout stretching 100% */
-    .sla-section-card .card {
-        display: flex !important;
-        flex-direction: column !important;
-        width: 100% !important;
-        height: auto !important;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.05) !important;
-        background-color: #ffffff !important;
-        backdrop-filter: none !important;
-        border: 1px solid rgba(0, 0, 0, .125) !important;
-    }
-
-    .table-responsive {
-        width: 100% !important;
-    }
-</style>
+@section('content')
 
 <div class="container-fluid py-4" style="background-image: url('/css/background inix office-02.svg'); background-size: cover; min-height: calc(100vh - 56px); overflow-y: auto;">
 
@@ -706,8 +630,7 @@
 </div>
 @endsection
 
-@push('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{{ asset('js/sla-management.js') }}"></script>
+@vite(['resources/js/pages/itsm-sla.js'])
 @endpush

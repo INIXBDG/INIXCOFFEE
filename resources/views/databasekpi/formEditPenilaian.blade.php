@@ -9,7 +9,9 @@
             csrfToken: "{{ csrf_token() }}"
         };
     </script>
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
+    @push('styles')
+        @vite(['resources/css/pages/penilaian360.css'])
+    @endpush
 
     @if (session('success'))
         <script>
@@ -222,7 +224,9 @@
         </div>
     </div>
 
-    <script src="{{ asset('assets/js/penilaian360/editform-penilaian.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/penilaian360/editform-penilaian.js'])
+    @endpush
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {

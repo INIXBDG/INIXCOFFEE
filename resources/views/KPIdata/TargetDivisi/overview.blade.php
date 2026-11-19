@@ -349,5 +349,7 @@
         };
     </script>
 
-    <script defer src="{{ asset('assets/js/kpi/kpiOverview.js') }}"></script>
+    @push('scripts')
+        @vite(['resources/js/pages/kpi/kpiOverview.js'])
+    @endpush
 @endsection 

@@ -1,0 +1,431 @@
+/* Global Styles - INIXCOFFEE */
+.cube {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.cube_item {
+    height: 40px;
+    width: 40px;
+    border-radius: 10px;
+    transition: all 0.2s ease-in;
+}
+
+.cube_x {
+    background-color: #182f51;
+    animation: animateLoaders 1s infinite;
+}
+
+.cube_y {
+    background-color: #962D2D;
+    animation: animateLoaders 1s 0.5s infinite;
+}
+
+.cube_z {
+    background-color: #A5C7EF;
+    animation: animateLoaders 1s 0.5s infinite;
+}
+
+@keyframes animateLoaders {
+    0% {
+        transform: scale(0.8);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(0.8);
+    }
+}
+
+body,
+html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#bgsvg {
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+    padding: 20px;
+    background-image: url('/css/background inix office-02.svg');
+    background-size: cover;
+    background-attachment: scroll;
+}
+
+.notification p {
+    margin: 0;
+    padding: 0;
+}
+
+.notification {
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.link {
+    color: black;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.link:hover {
+    color: #182F51;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.link:active {
+    color: black;
+    background-color: transparent;
+    text-decoration: none;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    display: none;
+    float: left;
+    min-width: 10rem;
+    padding: .5rem 0;
+    margin: .125rem 0 0;
+    font-size: 1rem;
+    color: #212529;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, .15);
+    border-radius: .25rem;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.card {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: auto;
+    height: auto;
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(2px);
+}
+
+.card img {
+    height: 60%;
+}
+
+.circle {
+    background: #ffffff;
+    border-radius: 60%;
+    color: #fff;
+    height: 8.7em;
+    position: relative;
+    width: 8.7em;
+}
+
+.circle-content {
+    hyphens: auto;
+    margin: 0.75em;
+    text-align: center;
+}
+
+.click-primary {
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #ffffff;
+    display: inline-block;
+    font: normal bold 14px/1 "Open Sans", sans-serif;
+    text-align: center;
+    background: #182f51;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-primary:hover {
+    background: #A5C7EF;
+    color: #ffffff;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-warning {
+    background: #f8be00;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #000000;
+    display: inline-block;
+    font: normal bold 18px/1 "Open Sans", sans-serif;
+    text-align: center;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-warning:hover {
+    background: #A5C7EF;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-warning-icon {
+    background: #f8be00;
+    border-radius: 1000px;
+    width: 45px;
+    height: 45px;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+.click-warning-icon i {
+    line-height: 45px;
+}
+
+.click-danger {
+    background: #983A3A;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #ffffff;
+    display: inline-block;
+    font: normal bold 14px/1 "Open Sans", sans-serif;
+    text-align: center;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-danger:hover {
+    background: #e05555;
+    color: #ffffff;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-danger-icon {
+    background: #983A3A;
+    border-radius: 1000px;
+    width: 45px;
+    height: 45px;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+}
+
+.click-danger-icon i {
+    line-height: 45px;
+}
+
+.click-secondary-icon {
+    background: #355C7C;
+    border-radius: 5px;
+    padding: 10px 20px;
+    color: #ffffff;
+    display: inline-block;
+    font: normal bold 12px/1 "Open Sans", sans-serif;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+}
+
+.click-secondary-icon i {
+    line-height: 45px;
+}
+
+.click-secondary {
+    background: #355C7C;
+    border-radius: 5px;
+    padding: 5px 10px;
+    color: #ffffff;
+    display: inline-block;
+    font: normal bold 18px/1 "Open Sans", sans-serif;
+    text-align: center;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+.click-secondary:hover {
+    color: #A5C7EF;
+    transition: color 0.1s linear, background-color 0.2s linear;
+}
+
+#logoinix {
+    width: 400px;
+}
+
+.alert-custom {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    width: 100%;
+}
+
+.swal2-container {
+    z-index: 999999 !important;
+}
+
+@media (max-width: 576px) {
+    body {
+        overflow-y: auto;
+    }
+
+    #bgsvg {
+        background-image: url('/css/background inix office-02.svg') repeat-y;
+        overflow-y: scroll;
+    }
+
+    .navbar-nav {
+        flex-direction: row;
+        padding-top: 10px;
+    }
+
+    #auth {
+        display: none;
+    }
+
+    .nav-item {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand img {
+        margin-right: 0;
+    }
+
+    #logoinix {
+        width: 250px;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 991px) {
+    #bgsvg {
+        background-image: url('/css/background inix office-02.svg') repeat-y;
+    }
+
+    .navbar-nav {
+        flex-direction: column;
+        padding-top: 10px;
+    }
+
+    #auth {
+        display: none;
+    }
+
+    .nav-item {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand img {
+        margin-right: 0;
+    }
+
+    #logoinix {
+        width: 250px;
+    }
+}
+
+@media (max-width: 400px) {
+    body {
+        overflow-y: auto;
+    }
+
+    #bgsvg {
+        background-image: url('/css/background inix office-02.svg') repeat-y;
+        overflow-y: scroll;
+    }
+
+    .navbar-nav {
+        flex-direction: column;
+        padding-top: 5px;
+    }
+
+    #auth {
+        display: none;
+    }
+
+    .nav-item {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand {
+        text-align: center;
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    .navbar-brand img {
+        margin-right: 0;
+        max-width: 200px;
+    }
+
+    #logoinix {
+        width: 250px;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-size: smaller;
+    }
+
+    p {
+        font-size: 14px;
+    }
+
+    button {
+        font-size: 12px;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

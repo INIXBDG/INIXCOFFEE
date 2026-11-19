@@ -58,8 +58,17 @@ document.addEventListener('submit', function(e) {
     // 1. Abaikan jika peristiwa pengiriman telah dibatalkan
     if (e.defaultPrevented) return;
 
-    // 2. Identifikasi elemen formulir dan tombol pemicu
+    // 2. Identifikasi elemen formulir dan kecualikan halaman/form login
     const formElement = e.target;
+    const formAction = (formElement.getAttribute('action') || '').toLowerCase();
+    const isLoginForm =
+        formElement.hasAttribute('data-no-loading') ||
+        window.location.pathname.toLowerCase().includes('/login') ||
+        formAction.endsWith('/login') ||
+        Boolean(formElement.querySelector('input[name="username"]') && formElement.querySelector('input[name="password"]'));
+
+    if (isLoginForm) return;
+
     const submitButton = e.submitter || formElement.querySelector('button[type="submit"], input[type="submit"]');
 
     if (submitButton) {

@@ -1,7 +1,10 @@
 @extends('layouts_kpi.app')
 
+@push('styles')
+    @vite(['resources/css/pages/penilaian360.css'])
+@endpush
+
 @section('kpi_contents')
-    <link rel="stylesheet" href="{{ asset('assets/vendor/vendorStyle/penilaian360.css') }}">
     @php
         $userJabatan = auth()->user()->jabatan;
         $isExecutive = in_array($userJabatan, ['HRD', 'GM', 'Direktur Utama', 'Direktur']);
@@ -566,5 +569,7 @@
         window.isHRD = {{ $userJabatan === 'HRD' ? 'true' : 'false' }};
     </script>
 
-    <script src="{{ asset('assets/js/penilaian360/dashboard.js') }}" defer></script>
+    @push('scripts')
+        @vite(['resources/js/pages/penilaian360/dashboard.js'])
+    @endpush
 @endsection
