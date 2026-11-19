@@ -1,289 +1,702 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid" id="rekap-tiket">
-
-    {{-- Filter global --}}
-    <div class="card mb-3">
-        <div class="card-body">
-            <form id="filter-form" class="row g-2 align-items-end">
-                <div class="col-6 col-md-2">
-                    <label class="form-label mb-1" for="f-periode">Periode</label>
-                    <select class="form-select" name="periode" id="f-periode">
-                        <option value="harian">Harian</option>
-                        <option value="mingguan">Mingguan</option>
-                        <option value="bulanan" selected>Bulanan</option>
-                        <option value="tahunan">Tahunan</option>
-                        <option value="custom">Rentang tanggal</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-2" id="wrap-tanggal">
-                    <label class="form-label mb-1" for="f-tanggal">Tanggal</label>
-                    <input type="date" class="form-control" name="tanggal" id="f-tanggal" value="{{ now()->toDateString() }}">
-                </div>
-                <div class="col-6 col-md-2 d-none" id="wrap-tahun">
-                    <label class="form-label mb-1" for="f-tahun">Tahun</label>
-                    <select class="form-select" name="tahun" id="f-tahun">
-                        @for ($y = now()->year; $y >= 2025; $y--)
-                            <option value="{{ $y }}">{{ $y }}</option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="col-6 col-md-2 d-none" id="wrap-dari">
-                    <label class="form-label mb-1" for="f-dari">Dari</label>
-                    <input type="date" class="form-control" name="dari" id="f-dari" value="{{ now()->startOfMonth()->toDateString() }}">
-                </div>
-                <div class="col-6 col-md-2 d-none" id="wrap-sampai">
-                    <label class="form-label mb-1" for="f-sampai">Sampai</label>
-                    <input type="date" class="form-control" name="sampai" id="f-sampai" value="{{ now()->toDateString() }}">
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label mb-1" for="f-divisi">Divisi</label>
-                    <select class="form-select" name="divisi" id="f-divisi"><option value="">Semua</option></select>
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label mb-1" for="f-kategori">Kategori</label>
-                    <select class="form-select" name="kategori" id="f-kategori"><option value="">Semua</option></select>
-                </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label mb-1" for="f-pic">PIC</label>
-                    <select class="form-select" name="pic" id="f-pic"><option value="">Semua</option></select>
-                </div>
-                <div class="col-12 col-md-auto d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Terapkan</button>
-                    <button type="button" class="btn btn-outline-secondary" id="btn-reset">Reset</button>
-                </div>
-            </form>
-            <div class="text-muted small mt-2" id="range-label"></div>
+<div class="container-fluid">
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="spinnerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="cube">
+                <div class="cube_item cube_x"></div>
+                <div class="cube_item cube_y"></div>
+                <div class="cube_item cube_x"></div>
+                <div class="cube_item cube_z"></div>
+            </div>
         </div>
     </div>
 
-    <div id="rekap-body">
-
-        {{-- Status & tiket belum selesai --}}
-        <div class="row g-3 mb-3">
-            <div class="col-lg-4">
-                <div class="card h-100"><div class="card-body">
-                    <h6 class="card-title">Komposisi status</h6>
-                    <div style="height:260px"><canvas id="c-status"></canvas></div>
-                </div></div>
-            </div>
-            <div class="col-lg-8">
-                <div class="card h-100"><div class="card-body">
-                    <h6 class="card-title">Tiket belum selesai (terlama dulu)</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead><tr><th>Tiket</th><th>Kategori</th><th>PIC</th><th>Status</th><th>Umur</th><th>Alasan / keterangan</th></tr></thead>
-                            <tbody id="t-open"></tbody>
-                        </table>
-                    </div>
-                </div></div>
-            </div>
-        </div>
-
-        {{-- Tren waktu --}}
-        <div class="card mb-3"><div class="card-body">
-            <h6 class="card-title" id="daily-title">Tren waktu response dan resolusi per hari (menit)</h6>
-            <div style="height:280px"><canvas id="c-daily"></canvas></div>
-        </div></div>
-
-        {{-- Volume bulanan & kategori --}}
-        <div class="row g-3 mb-3">
-            <div class="col-lg-6">
-                <div class="card h-100"><div class="card-body">
-                    <h6 class="card-title" id="trend-title">Volume 6 bulan terakhir</h6>
-                    <div style="height:280px"><canvas id="c-trend"></canvas></div>
-                </div></div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card h-100"><div class="card-body">
-                    <h6 class="card-title">Tiket per kategori</h6>
-                    <div style="height:280px"><canvas id="c-kategori"></canvas></div>
-                </div></div>
+    {{-- ===== MODAL EDIT USER (Edit Tiket oleh Pengaju) ===== --}}
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel"><i class="bi bi-pencil-square me-2"></i>Edit Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditUser" action="" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Keperluan</label>
+                            <select name="keperluan" id="editKeperluan" class="form-select" required>
+                                <option value="Technical Support">Technical Support</option>
+                                <option value="Tim Digital">Tim Digital</option>
+                                <option value="Programming">Programming</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Kategori</label>
+                            <select name="kategori" id="editKategori" class="form-select" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Detail Kendala</label>
+                            <textarea name="detail_kendala" id="editDetailKendala" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-1"></i> Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
+    </div>
 
-        {{-- PIC --}}
-        <div class="card mb-3"><div class="card-body">
-            <h6 class="card-title">Beban kerja per PIC</h6>
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead><tr><th>PIC</th><th class="text-end">Total</th><th class="text-end">Selesai</th><th class="text-end">Rata-rata resolusi</th></tr></thead>
-                    <tbody id="t-pic"></tbody>
-                </table>
+    {{-- ===== MODAL EDIT ITSM (Edit Waktu Terima & Selesai oleh ITSM) ===== --}}
+    <div class="modal fade" id="editItsmModal" tabindex="-1" aria-labelledby="editItsmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editItsmModalLabel"><i class="bi bi-clock-history me-2"></i>Edit Waktu Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditItsm" action="" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <p class="text-muted small mb-3">ID Tiket: <strong id="itsmTicketIdLabel"></strong></p>
+                        <hr>
+                        <label class="form-label fw-semibold">Waktu Terima</label>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">Tanggal Terima</label>
+                                <input type="date" class="form-control" name="tanggal_response" id="editTanggalResponse">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">Jam Terima</label>
+                                <input type="time" class="form-control" name="jam_response" id="editJamResponse">
+                            </div>
+                        </div>
+                        <label class="form-label fw-semibold">Waktu Selesai</label>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label class="form-label small text-muted">Tanggal Selesai</label>
+                                <input type="date" class="form-control" name="tanggal_selesai" id="editTanggalSelesai">
+                            </div>
+                            <div class="col">
+                                <label class="form-label small text-muted">Jam Selesai</label>
+                                <input type="time" class="form-control" name="jam_selesai" id="editJamSelesai">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 text-white">
+                            <i class="bi bi-save me-1"></i> Simpan Perubahan Waktu
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div></div>
+        </div>
+    </div>
 
-        {{-- Log insiden (khusus mingguan) --}}
-        <div class="card mb-3 d-none" id="card-incidents">
-            <div class="card-body">
-                <h6 class="card-title">Log masalah teknis minggu ini</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm align-top mb-0">
-                        <thead><tr><th>Tiket</th><th>Tanggal</th><th>Tingkat</th><th>Masalah</th><th>Tindakan</th><th>Keterangan</th><th>Status</th></tr></thead>
-                        <tbody id="t-incidents"></tbody>
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="approveModalLabel">Kelola Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form Tolak Tiket -->
+                    <form id="formBlock" action="" method="POST"> {{-- action dikosongkan dulu, diisi via JS --}}
+                        @csrf
+                        @method("POST")
+                        <input type="hidden" name="pic" id="blockPic" value=""> {{-- Tambahkan id untuk target JS --}}
+                        <input type="hidden" name="row" id="blockRow" value=""> {{-- Tambahkan id untuk target JS --}}
+                        <div class="mb-3">
+                            <label for="keteranganBlock" class="form-label">Keterangan Tolak</label>
+                            <select name="kesulitan" id="kesulitanBlock" class="form-select"> Ubah ID agar unik
+                                <option value="" selected disabled>Pilih Tingkat Kesulitan</option>
+                                <option value="Major">Major</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Minor">Minor</option>
+                            </select>
+                            <textarea class="form-control" id="keteranganBlock" name="keterangan" rows="3" placeholder="Keterangan"></textarea>
+                            <textarea class="form-control" id="penangananFinish" name="penanganan" rows="3" placeholder="Update Penanganan"></textarea>
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_selesai" id="tanggal_selesai">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_selesai" id="jam_selesai">
+                        </div>
+                        <button type="submit" class="btn btn-danger mb-2 w-100">Tolak Tiket</button>
+                    </form>
+
+                    <!-- Form Selesaikan Tiket -->
+                    <form id="formFinish" action="" method="POST"> {{-- action dikosongkan dulu, diisi via JS --}}
+                        @csrf
+                        @method("POST") {{-- Pastikan method POST juga ada di sini jika Anda akan menggunakannya --}}
+                        <input type="hidden" name="pic" id="finishPic" value=""> {{-- Tambahkan id untuk target JS --}}
+                        <input type="hidden" name="row" id="finishRow" value=""> {{-- Tambahkan id untuk target JS --}}
+                        <div class="mb-3">
+                            <label for="keteranganFinish" class="form-label">Keterangan Selesai</label>
+                            {{-- <label for="kesulitanFinish" class="form-label">Tingkat Kesulitan</label> Ubah ID agar unik --}}
+                            <select name="kesulitan" id="kesulitanFinish" class="form-select"> {{-- Ubah ID agar unik --}}
+                                <option value="" selected disabled>Pilih Tingkat Kesulitan</option>
+                                <option value="Major">Major</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Minor">Minor</option>
+                            </select>
+                            <textarea class="form-control" id="keteranganFinish" name="keterangan" rows="3" placeholder="Keterangan"></textarea>
+                            <textarea class="form-control" id="penangananFinish" name="penanganan" rows="3" placeholder="Update Penanganan"></textarea>
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_selesai" id="tanggal_selesai">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_selesai" id="jam_selesai">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Selesaikan Tiket</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="terimatiketModal" tabindex="-1" aria-labelledby="terimatiketModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="terimatiketModalLabel">Terima Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Form Tolak Tiket -->
+                    <form id="formTerima" action="" method="POST">
+                        @csrf
+                        @method("POST")
+                        <input type="hidden" name="pic" id="terimaPic" value="">
+                        <input type="hidden" name="row" id="terimaRow" value="">
+                        <div class="mb-3">
+                            <input type="date" value="{{ now()->toDateString() }}" class="form-control" name="tanggal_response" id="tanggal_response">
+                            <input type="time" value="{{ now()->toTimeString() }}" class="form-control" name="jam_response" id="jam_response">
+                        </div>
+                        <button type="submit" class="btn btn-success mb-2 w-100">Terima Tiket</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailModalLabel">Detail Tiket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                   <div class="row" id="content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-end align-items-center">
+                @if (optional(auth()->user()->karyawan)->divisi === 'IT Service Management')
+                    <a href="{{ route('surveyKepuasan.indexTable') }}" class="btn btn-md btn-outline-primary me-2"><i class="fa-solid fa-square-poll-vertical me-1"></i> Hasil Survey Kepuasan</a>
+                    <a href="{{ route('tickets.rekap') }}" class="btn btn-md btn-outline-primary mx-4"><i class="fa-solid fa-clipboard-list me-1"></i> Rekap</a>
+                @endif
+                <a href="{{ route('tickets.create') }}" class="btn btn-md click-primary mx-4" data-toggle="tooltip" data-placement="top" title="Tambah User"><img src="{{ asset('icon/plus.svg') }}" class="" width="30px"> Buat Ticket</a>
+            </div>
+            <div class="card m-4">
+                <div class="card-body table-responsive">
+                    <h3 class="card-title text-center my-1">{{ __('Data Ticketing') }}</h3>
+                    <table class="table table-striped" id="jabatantable">
+                        <thead>
+                            <tr>
+                                <th scope="col">No</th>
+                                <th scope="col">Timestamp</th>
+                                <th scope="col">Ticket ID</th>
+                                <th scope="col">Nama Karyawan</th>
+                                <th scope="col">Divisi</th>
+                                <th scope="col">Kategori</th>
+                                <th scope="col">Keperluan</th>
+                                <th scope="col">Detail Kendala</th>
+                                <th scope="col">PIC</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<style>
+    .loader {
+    position: relative;
+    text-align: center;
+    margin: 15px auto 35px auto;
+    z-index: 9999;
+    display: block;
+    width: 80px;
+    height: 80px;
+    border: 10px solid rgba(0, 0, 0, .3);
+    border-radius: 50%;
+    border-top-color: #000;
+    animation: spin 1s ease-in-out infinite;
+    -webkit-animation: spin 1s ease-in-out infinite;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    @keyframes spin {
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+    }
+
+    @-webkit-keyframes spin {
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+    }
+    .modal-content {
+    border-radius: 0px;
+    box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-backdrop.show {
+    opacity: 0.75;
+    }
+
+    .loader-txt {
+    p {
+        font-size: 13px;
+        color: #666;
+        small {
+        font-size: 11.5px;
+        color: #999;
+        }
+    }
+    }
+</style>
+@push('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
+
 <script>
-(function () {
-    // Sesuaikan nama route dengan yang kamu daftarkan untuk rekapData
-    const DATA_URL = "{{ route('ticket.rekap.data') }}";
-
-    const $ = (id) => document.getElementById(id);
-    const charts = {};
-    let filtersFilled = false;
-
-    const esc = (s) => String(s === null || s === undefined ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-    const fmtMin = (m) => {
-        if (m === null || m === undefined) return '-';
-        m = Math.round(m);
-        if (m < 60) return m + ' mnt';
-        const h = Math.floor(m / 60);
-        if (h < 24) return h + ' j ' + (m % 60) + ' mnt';
-        return Math.floor(h / 24) + ' hr ' + (h % 24) + ' j';
+    // Mapping kategori per keperluan (sama dengan halaman create)
+    const kategoriOptions = {
+        'Technical Support': [
+            {value: 'Jaringan', text: 'Jaringan'},
+            {value: 'Hardware', text: 'Hardware'},
+            {value: 'Software', text: 'Software'},
+            {value: 'Exam', text: 'Exam'}
+        ],
+        'Tim Digital': [
+            {value: 'Flyer', text: 'Flyer'},
+            {value: 'Banner Cetak', text: 'Banner Cetak'},
+            {value: 'Konten (Video)', text: 'Konten (Video)'},
+            {value: 'Kerja Sama Mitra', text: 'Kerja Sama Mitra'}
+        ],
+        'Programming': [
+            {value: 'Request', text: 'Request'},
+            {value: 'Error (Aplikasi)', text: 'Error (Aplikasi)'}
+        ]
     };
-    const emptyRow = (cols, text) => '<tr><td colspan="' + cols + '" class="text-muted text-center">' + text + '</td></tr>';
 
-    function chart(id, config) {
-        if (charts[id]) charts[id].destroy();
-        config.options = Object.assign({ responsive: true, maintainAspectRatio: false }, config.options || {});
-        charts[id] = new Chart($(id), config);
-    }
-
-    function togglePeriode() {
-        const p = $('f-periode').value;
-        $('wrap-tanggal').classList.toggle('d-none', p === 'custom' || p === 'tahunan');
-        $('wrap-tahun').classList.toggle('d-none', p !== 'tahunan');
-        $('wrap-dari').classList.toggle('d-none', p !== 'custom');
-        $('wrap-sampai').classList.toggle('d-none', p !== 'custom');
-    }
-
-    function fillFilters(f) {
-        if (filtersFilled) return;
-        [['divisi', f.divisi], ['kategori', f.kategori], ['pic', f.pic]].forEach(function (pair) {
-            const sel = $('f-' + pair[0]);
-            pair[1].forEach(function (v) {
-                const o = document.createElement('option');
-                o.value = v; o.textContent = v;
-                sel.appendChild(o);
+    function updateEditKategori(selectedKeperluan, selectedKategori) {
+        var $kategori = $('#editKategori');
+        $kategori.html('<option value="" disabled>Pilih Kategori</option>');
+        if (selectedKeperluan && kategoriOptions[selectedKeperluan]) {
+            $.each(kategoriOptions[selectedKeperluan], function(i, opt) {
+                var selected = (opt.value === selectedKategori) ? ' selected' : '';
+                $kategori.append('<option value="' + opt.value + '"' + selected + '>' + opt.text + '</option>');
             });
-        });
-        filtersFilled = true;
-    }
-
-    function render(d) {
-        fillFilters(d.filters);
-        const yearly = d.range.periode === 'tahunan';
-        $('range-label').textContent = 'Menampilkan ' + d.range.label + ' - ' + d.range.total + ' tiket';
-        $('daily-title').textContent = 'Tren waktu response dan resolusi per ' + (yearly ? 'bulan' : 'hari') + ' (menit)';
-        $('trend-title').textContent = yearly ? 'Volume per bulan' : 'Volume 6 bulan terakhir';
-
-        // Status
-        chart('c-status', {
-            type: 'doughnut',
-            data: { labels: d.status.map((s) => s.label), datasets: [{ data: d.status.map((s) => s.total) }] },
-            options: { plugins: { legend: { position: 'bottom' } } }
-        });
-
-        // Tiket belum selesai
-        $('t-open').innerHTML = d.open_tickets.length ? d.open_tickets.map((t) =>
-            '<tr><td>' + esc(t.ticket_id) + '</td><td>' + esc(t.kategori) + '</td><td>' + esc(t.pic || '-') +
-            '</td><td>' + esc(t.status || '-') + '</td><td>' + fmtMin(t.age_min) +
-            '</td><td>' + esc(t.alasan || '-') + '</td></tr>').join('')
-            : emptyRow(6, 'Tidak ada tiket yang belum selesai');
-
-        // Tren waktu (key "YYYY-MM-DD" per hari, atau "YYYY-MM" per bulan)
-        chart('c-daily', {
-            type: 'line',
-            data: {
-                labels: d.daily.map((x) => x.date.length === 7
-                    ? x.date.slice(5, 7) + '/' + x.date.slice(0, 4)
-                    : x.date.slice(8, 10) + '/' + x.date.slice(5, 7)),
-                datasets: [
-                    { label: 'Response', data: d.daily.map((x) => x.avg_response), tension: 0.25, spanGaps: true },
-                    { label: 'Resolusi', data: d.daily.map((x) => x.avg_resolution), tension: 0.25, spanGaps: true }
-                ]
-            },
-            options: { scales: { y: { beginAtZero: true } } }
-        });
-
-        // Volume bulanan
-        chart('c-trend', {
-            type: 'bar',
-            data: {
-                labels: d.trend.map((x) => x.label),
-                datasets: [
-                    { label: 'Total', data: d.trend.map((x) => x.total) },
-                    { label: 'Selesai', data: d.trend.map((x) => x.selesai) }
-                ]
-            },
-            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-        });
-
-        // Kategori
-        chart('c-kategori', {
-            type: 'bar',
-            data: {
-                labels: d.per_kategori.map((x) => x.label),
-                datasets: [{ label: 'Tiket', data: d.per_kategori.map((x) => x.total) }]
-            },
-            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
-        });
-
-        // PIC
-        $('t-pic').innerHTML = d.per_pic.length ? d.per_pic.map((x) =>
-            '<tr><td>' + esc(x.pic) + '</td><td class="text-end">' + x.total + '</td><td class="text-end">' + x.selesai +
-            '</td><td class="text-end">' + fmtMin(x.avg_resolution) + '</td></tr>').join('')
-            : emptyRow(4, 'Belum ada data');
-
-        // Insiden (mingguan)
-        const showInc = d.incidents !== null;
-        $('card-incidents').classList.toggle('d-none', !showInc);
-        if (showInc) {
-            $('t-incidents').innerHTML = d.incidents.length ? d.incidents.map((t) =>
-                '<tr><td>' + esc(t.ticket_id) + '</td><td>' + esc(t.tanggal) + '</td><td>' + esc(t.tingkat) +
-                '</td><td style="white-space:pre-line">' + esc(t.masalah) + '</td><td>' + esc(t.tindakan || '-') +
-                '</td><td>' + esc(t.keterangan || '-') + '</td><td>' + esc(t.status || '-') + '</td></tr>').join('')
-                : emptyRow(7, 'Tidak ada insiden menonjol pada minggu ini');
         }
     }
 
-    function load() {
-        const params = new URLSearchParams();
-        new FormData($('filter-form')).forEach(function (v, key) { if (v !== '') params.append(key, v); });
+    $(document).ready(function(){
+        var userRole = '{{ auth()->user()->jabatan}}';
+        var authNama = '{{ auth()->user()->karyawan->nama_lengkap ?? "" }}';
+        var authDivisi = '{{ auth()->user()->karyawan->divisi ?? "" }}';
 
-        $('rekap-body').style.opacity = '0.5';
-        fetch(DATA_URL + '?' + params.toString(), {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-        })
-            .then(function (res) {
-                if (!res.ok) throw new Error('Gagal memuat data (' + res.status + ')');
-                return res.json();
-            })
-            .then(render)
-            .catch(function (err) { alert(err.message); })
-            .finally(function () { $('rekap-body').style.opacity = '1'; });
-    }
+        $('#jabatantable').DataTable({
+            "ajax": {
+                "url": "{{ route('getTickets') }}",
+                "type": "GET",
+                "beforeSend": function () {
+                    $('#loadingModal').modal('show');
+                    $('#loadingModal').on('show.bs.modal', function () {
+                        $('#loadingModal').removeAttr('inert');
+                    });
+                },
+                "complete": function () {
+                    setTimeout(() => {
+                        $('#loadingModal').modal('hide');
+                        $('#loadingModal').on('hidden.bs.modal', function () {
+                            $('#loadingModal').attr('inert', true);
+                        });
+                    }, 1000);
+                }
+            },
+            "columns": [
+                {
+                    "data": "created_at",
+                    "visible": false,
+                },
+                {
+                    "data": "timestamp",
+                    "render": function(data){
+                        moment.locale('id');
+                        return moment(data).format('DD MMMM YYYY H:mm:ss');
+                    }
+                },
+                {"data": "ticket_id"},
+                {"data": "nama_karyawan"},
+                {"data": "divisi"},
+                {"data": "kategori"},
+                {"data": "keperluan"},
+                {"data": "detail_kendala"},
+                {
+                    "data": "pic",
+                    "render": function(data) {
+                        return data ? data : '-';
+                    }
+                },
+               {
+                    "data": null,
+                    "render": function(data) {
+                        var authNama = "{{ optional(auth()->user()->karyawan)->nama_lengkap }}";
+                        var isTicketOwner = (data.nama_karyawan && authNama && data.nama_karyawan.trim().toLowerCase() === authNama.trim().toLowerCase());
 
-    $('f-periode').addEventListener('change', togglePeriode);
-    $('filter-form').addEventListener('submit', function (e) { e.preventDefault(); load(); });
-    $('btn-reset').addEventListener('click', function () {
-        $('filter-form').reset();
-        togglePeriode();
-        load();
+                        if (data.status == 'Di Proses') {
+                            return `
+                                <span class="badge rounded-pill bg-warning text-dark">
+                                    <i class="bi bi-hourglass-split me-1"></i> Di Proses
+                                </span>`;
+                        } else if (data.status == 'Selesai') {
+                            if (data.is_surveyed) {
+                                return `
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Selesai
+                                    </span>`;
+                            }
+
+                            // Jika pemilik tiket, tampilkan tombol Isi Survey
+                            if (isTicketOwner) {
+                                return `
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-1 text-nowrap">
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-check-circle me-1"></i> Selesai
+                                        </span>
+                                        <a href="/survey/kepuasan?ticket_id=${encodeURIComponent(data.ticket_id)}" class="btn btn-warning btn-sm py-0 px-2 rounded-pill fw-semibold text-dark text-decoration-none shadow-sm" style="font-size: 0.72rem; line-height: 1.6;" title="Klik untuk Mengisi Survey Kepuasan">
+                                            <i class="fas fa-star text-dark me-1"></i> Isi Survey
+                                        </a>
+                                    </div>`;
+                            }
+
+                            // Jika tim ITSM atau bukan pemilik tiket, hanya tampilkan info bahwa user belum survei (tanpa tombol isi)
+                            return `
+                                <div class="d-inline-flex align-items-center justify-content-center gap-1 text-nowrap">
+                                    <span class="badge rounded-pill bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Selesai
+                                    </span>
+                                    <span class="badge rounded-pill bg-light text-muted border border-secondary" style="font-size: 0.72rem;" title="User belum mengisi survey">
+                                        <i class="fas fa-clock text-warning me-1"></i> Belum Survei
+                                    </span>
+                                </div>`;
+                        } else if (data.status == 'Terkendala') {
+                            return `
+                                <span class="badge rounded-pill bg-danger">
+                                    <i class="bi bi-x-circle me-1"></i> Terkendala
+                                </span>`;
+                        } else{
+                            return '-';
+                        }
+                    }
+                },
+                {
+                    "data": null,
+                    "render": function(data, type, row) {
+                        var pic = "{{ auth()->user()->username }}";
+                        var divisi = "{{ auth()->user()->karyawan->divisi }}";
+                        var canDeleteTicket = @json(auth()->user()->jabatan === 'Koordinator ITSM' && optional(auth()->user()->karyawan)->divisi === 'IT Service Management');
+
+                        switch(pic.toLowerCase()) {
+                            case 'ardhan':
+                                pic = 'Ardhan';
+                                break;
+                            case 'naufal':
+                                pic = 'Naufal';
+                                break;
+                            case 'ferdi':
+                                pic = 'Ferdi';
+                                break;
+                            case 'donna':
+                                pic = 'Donna';
+                                break;
+                            case 'juliet':
+                                pic = 'Juli';
+                                break;
+                            case 'stepanusberkatsinaga':
+                                pic = 'Stefan';
+                                break;
+                            case 'sergiomosesriyanto':
+                                pic = 'Sergio';
+                                break;
+                            case 'vickyryandysaputra':
+                                pic = 'Vicky';
+                                break;
+                            case 'eggiherlambang':
+                                pic = 'Eggi';
+                                break;
+                            default:
+                                pic = '';
+                                break;
+                        }
+
+                        // Simpan data di global map agar aman dari karakter khusus / quote
+                        window.ticketDataMap = window.ticketDataMap || {};
+                        window.ticketDataMap[data.id] = data;
+
+                        var actions = "";
+                            actions += '<div class="dropdown">';
+                            actions += '<button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Actions</button>';
+                            actions += '<div class="dropdown-menu" aria-labelledby="dropdownMenuButton">';
+                            var divisi = "{{ auth()->user()->karyawan->divisi }}";
+                            console.log(divisi);
+                            if(data.status == 'Di Proses' && divisi == 'IT Service Management'){
+                                actions += '<button type="button" class="dropdown-item" onclick="openApproveModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Kelola Tiket</button>';
+                            }else if(data.status == 'Selesai' && divisi == 'IT Service Management' || data.status == 'Terkendala' && divisi == 'IT Service Management'){
+                                actions += '<button type="submit" disabled class="dropdown-item"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                            }else if(divisi == 'IT Service Management'){
+                                actions += '<button type="button" class="dropdown-item" onclick="terimatiketModal(\'' + data.id + '\', \'' + pic + '\', \'' + data.row + '\')"><img src="{{ asset('icon/check-circle.svg') }}" class=""> Terima</button>';
+                            }
+
+                            // Status belum diproses (Menunggu, null, kosong, atau selain Di Proses/Selesai/Terkendala)
+                            var statusBelumDiproses = (data.status !== 'Di Proses' && data.status !== 'Selesai' && data.status !== 'Terkendala');
+
+                            // Tombol Edit untuk Pengaju (hanya jika tiket belum diproses)
+                            // Jika user bukan ITSM, list tiket sudah otomatis milik sendiri
+                            var isOwner = (divisi !== 'IT Service Management') || (data.nama_karyawan && authNama && data.nama_karyawan.trim().toLowerCase() === authNama.trim().toLowerCase());
+                            if (statusBelumDiproses && (isOwner || divisi == 'IT Service Management')) {
+                                actions += '<button type="button" class="dropdown-item" onclick="openEditUserModal(' + data.id + ')"><img src="{{ asset('icon/edit-dark.svg') }}" class=""> Edit</button>';
+                            }
+
+                            // Tombol Edit Waktu untuk ITSM (jika tiket sudah diproses / selesai / terkendala)
+                            if (divisi == 'IT Service Management' && (data.status == 'Di Proses' || data.status == 'Selesai' || data.status == 'Terkendala')) {
+                                actions += '<button type="button" class="dropdown-item" onclick="openEditItsmModal(' + data.id + ')"><img src="{{ asset('icon/edit-dark.svg') }}" class=""> Edit</button>';
+                            }
+
+                            if (data.status == 'Selesai') {
+                                if (isOwner && !data.is_surveyed) {
+                                    actions += '<a class="dropdown-item text-primary fw-semibold" href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '"><i class="fas fa-star text-warning me-2"></i> Isi Survey</a>';
+                                } else if (isOwner && data.is_surveyed) {
+                                    actions += '<a class="dropdown-item text-muted" href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '"><i class="fas fa-check-circle text-success me-2"></i> Lihat Survey</a>';
+                                }
+                            }
+
+                            actions += '<button type="button" class="dropdown-item" onclick="openDetailModal(' + data.id + ')"><img src="{{ asset('icon/clipboard-primary.svg') }}" class=""> Detail</button>';
+                            if (canDeleteTicket) {
+                                actions += '<button type="button" class="dropdown-item text-danger" onclick="hapusTiket(' + data.id + ')"><i class="bi bi-trash me-2"></i>Hapus</button>';
+                            }
+                            actions += '</div>';
+                            actions += '</div>';
+                            return actions;
+
+                    }
+
+                }
+            ],
+            "order": [[0, 'desc']],
+            "columnDefs" : [{"targets":[0], "type":"date"}],
+
+        });
     });
 
-    togglePeriode();
-    load();
-})();
+    function hapusTiket(ticketId) {
+        if (!confirm('Hapus tiket ini? Data yang dihapus tidak dapat dikembalikan.')) {
+            return;
+        }
+
+        var form = $('<form>', {
+            method: 'POST',
+            action: "{{ url('/tickets') }}/" + ticketId
+        });
+        form.append('<input type="hidden" name="_token" value="{{ csrf_token() }}">');
+        form.append('<input type="hidden" name="_method" value="DELETE">');
+        $('body').append(form);
+        form.submit();
+    }
+    function formatRupiah(angka, prefix) {
+        var number_string = angka.toString().replace(/[^,\d]/g, ''),
+            split = number_string.split(','),
+            sisa = split[0].length % 3,
+            rupiah = split[0].substr(0, sisa),
+            ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return rupiah;
+    }
+    function openApproveModal(ticketId, picValue, rowValue) {
+        var blockUrl = "{{ url('/tickets') }}/" + ticketId + "/block";
+        $('#formBlock').attr('action', blockUrl);
+        $('#blockPic').val(picValue);
+        $('#blockRow').val(rowValue);
+
+        var finishUrl = "{{ url('/tickets') }}/" + ticketId + "/finish";
+        $('#formFinish').attr('action', finishUrl);
+        $('#finishPic').val(picValue);
+        $('#finishRow').val(rowValue);
+
+        $('#approveModal').modal('show');
+    }
+    function terimatiketModal(ticketId, picValue, rowValue) {
+        console.log(ticketId, picValue, rowValue);
+        var terimaUrl = "{{ url('/tickets') }}/" + ticketId + "/accept";
+        $('#formTerima').attr('action', terimaUrl);
+        $('#terimaPic').val(picValue);
+        $('#terimaRow').val(rowValue);
+        $('#terimatiketModal').modal('show');
+    }
+
+    // ===== OPEN MODAL EDIT USER =====
+    function openEditUserModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
+
+        var editUrl = "{{ url('/tickets') }}/" + data.id + "/edit-user";
+        $('#formEditUser').attr('action', editUrl);
+
+        // Set nilai keperluan
+        $('#editKeperluan').val(data.keperluan);
+
+        // Update kategori sesuai keperluan dan pilih kategori yang ada
+        updateEditKategori(data.keperluan, data.kategori);
+
+        // Set detail kendala
+        $('#editDetailKendala').val(data.detail_kendala);
+
+        $('#editUserModal').modal('show');
+    }
+
+    // Update kategori saat keperluan berubah di modal edit
+    $('#editKeperluan').on('change', function() {
+        updateEditKategori($(this).val(), '');
+    });
+
+    // ===== OPEN MODAL EDIT ITSM =====
+    function openEditItsmModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
+
+        var editUrl = "{{ url('/tickets') }}/" + data.id + "/edit-itsm";
+        $('#formEditItsm').attr('action', editUrl);
+        $('#itsmTicketIdLabel').text(data.ticket_id || '-');
+
+        // Isi nilai yang sudah ada
+        $('#editTanggalResponse').val(data.tanggal_response || '');
+        $('#editJamResponse').val(data.jam_response ? data.jam_response.substring(0, 5) : '');
+        $('#editTanggalSelesai').val(data.tanggal_selesai || '');
+        $('#editJamSelesai').val(data.jam_selesai ? data.jam_selesai.substring(0, 5) : '');
+
+        $('#editItsmModal').modal('show');
+    }
+
+    function openDetailModal(item) {
+        var data = (typeof item === 'object') ? item : (window.ticketDataMap ? window.ticketDataMap[item] : null);
+        if (!data) return;
+        console.log(data);
+        var html = '';
+            html += '<table class="table table-responsive table-borderless">';
+            html += '<tbody>';
+            html += '<tr>';
+            html += '<td>Nama Karyawan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.nama_karyawan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Divisi</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.divisi || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Kategori</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.kategori || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Detail Kendala</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.detail_kendala || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Keperluan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.keperluan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Waktu Response</td>';
+            html += '<td>:</td>';
+            html += '<td>' + ((data.tanggal_response || '-') + ' ' + (data.jam_response || '-')) + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Penanganan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.penanganan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>PIC</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.pic || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Status</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.status || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Waktu Selesai</td>';
+            html += '<td>:</td>';
+            html += '<td>' + ((data.tanggal_selesai || '-') + ' ' + (data.jam_selesai || '-')) + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Keterangan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.keterangan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Tingkat Kesulitan</td>';
+            html += '<td>:</td>';
+            html += '<td>' + (data.tingkat_kesulitan || '-') + '</td>';
+            html += '</tr>';
+            html += '<tr>';
+            html += '<td>Survey Kepuasan</td>';
+            html += '<td>:</td>';
+            var detailAuthNama = "{{ optional(auth()->user()->karyawan)->nama_lengkap }}";
+            var isDetailOwner = (data.nama_karyawan && detailAuthNama && data.nama_karyawan.trim().toLowerCase() === detailAuthNama.trim().toLowerCase());
+
+            if (data.status == 'Selesai') {
+                if (data.is_surveyed) {
+                    html += '<td><span class="badge bg-success me-2"><i class="fas fa-check-circle me-1"></i> Sudah Survei</span></td>';
+                } else if (isDetailOwner) {
+                    html += '<td><a href="/survey/kepuasan?ticket_id=' + encodeURIComponent(data.ticket_id) + '" class="btn btn-warning btn-sm"><i class="fas fa-star me-1"></i> Isi Survey Kepuasan</a></td>';
+                } else {
+                    html += '<td><span class="badge bg-light text-muted border"><i class="fas fa-clock text-warning me-1"></i> User Belum Mengisi Survey</span></td>';
+                }
+            } else {
+                html += '<td><span class="text-muted">Menunggu tiket selesai</span></td>';
+            }
+            html += '</tr>';
+            html += '</tbody>';
+            html += '</table>';
+            $('#content').html(html);
+
+
+        $('#detailModal').modal('show');
+    }
 </script>
+@endpush
 @endsection
