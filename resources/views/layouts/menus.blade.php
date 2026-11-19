@@ -826,6 +826,21 @@
                                                     </div>
                                                 @endcan
                                                 @can('Fitur Content')
+                                                    <!-- <div class="col-sm-6 mt-2" data-card-id="dashboard_content_harian">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2"><i class="fa-solid fa-chart-line"
+                                                                        style="font-size: 30px;"></i></div>
+                                                                <div class="col-md-10" style="margin-left: 10px"><a
+                                                                        href="{{ route('content-schedules.dashboard') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Dashboard Konten</h5>
+                                                                    </a>
+                                                                    <p class="card-text">monitoring performa dan analitik konten</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div> -->
                                                     <div class="col-sm-6 mt-2" data-card-id="content_harian">
                                                         <div class="card" id="card-hover">
                                                             <div class="card-body d-flex">

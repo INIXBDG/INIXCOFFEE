@@ -6,26 +6,40 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
 
+<style>
+    .card {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+</style>
+
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0">
+        <h4 class="fw-bold mb-0 text-dark">
             <i class="fas fa-video me-2 text-primary"></i> Jadwal Konten Kreatif
         </h4>
-        <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#createModal">
-            <i class="fas fa-plus-circle me-1"></i> Tambah Jadwal
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('content-schedules.dashboard') }}" class="btn btn-outline-primary btn-sm shadow-sm px-3">
+                <i class="fas fa-chart-line me-1"></i> Dashboard Konten
+            </a>
+            <button type="button" class="btn btn-primary btn-sm shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#createModal">
+                <i class="fas fa-plus-circle me-1"></i> Tambah Jadwal
+            </button>
+        </div>
     </div>
 
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <ul class="mb-0">
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i><strong>Terjadi kesalahan:</strong>
+            <ul class="mb-0 mt-1">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -34,8 +48,8 @@
         </div>
     @endif
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
             <table id="schedulesTable" class="table table-striped table-hover w-100 align-middle">
                 <thead class="table-light">
                     <tr>
@@ -57,13 +71,14 @@
                                 @php
                                     $badgeClass = match($item->content_form) {
                                         'Reels' => 'bg-warning text-dark',
-                                        'Youtube' => 'bg-danger',
+                                        'Youtube' => 'bg-danger text-white',
                                         'Story' => 'bg-info text-dark',
-                                        'Feed' => 'bg-success',
-                                        default => 'bg-secondary'
+                                        'Feed' => 'bg-success text-white',
+                                        'Tiktok' => 'bg-dark text-white',
+                                        default => 'bg-secondary text-white'
                                     };
                                 @endphp
-                                <span class="badge rounded-pill {{ $badgeClass }}">
+                                <span class="badge rounded-pill {{ $badgeClass }} px-2 py-1">
                                     {{ $item->content_form }}
                                 </span>
                             </td>
@@ -76,7 +91,7 @@
                                     <form action="{{ route('content-schedules.mark-uploaded', $item->id) }}" method="POST">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn btn-sm btn-outline-primary shadow-sm">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary shadow-sm rounded-pill px-2 py-1">
                                             <i class="fas fa-check me-1"></i> Tandai sebagai Upload
                                         </button>
                                     </form>
@@ -92,19 +107,20 @@
                                 @endif
                             </td>
                             <td>
-                                <span class="d-inline-block text-truncate" style="max-width: 150px;">
+                                <span class="d-inline-block text-truncate" style="max-width: 200px;" title="{{ $item->description }}">
                                     {{ $item->description ?? '-' }}
                                 </span>
                             </td>
                             <td class="text-center">
                                 @if($item->proof_image_path || $item->proof_script)
-                                    <button class="btn btn-sm btn-outline-info show-proof-btn"
+                                    <button class="btn btn-sm btn-outline-info show-proof-btn rounded-circle"
                                             data-script="{{ $item->proof_script }}"
-                                            data-image="{{ $item->proof_image_path ? Storage::url($item->proof_image_path) : '' }}">
+                                            data-image="{{ $item->proof_image_path ? Storage::url($item->proof_image_path) : '' }}"
+                                            title="Lihat Script & Bukti">
                                         <i class="fas fa-file-invoice"></i>
                                     </button>
                                 @else
-                                    -
+                                    <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td class="text-center">
@@ -112,7 +128,7 @@
                                     <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                         Actions
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                         <li>
                                             <button class="dropdown-item edit-btn"
                                                 data-id="{{ $item->id }}"
@@ -141,7 +157,7 @@
                             </td>
                             <td class="text-center">
                                 @if($item->is_tiktok)
-                                    <i class="fas fa-check-circle text-dark fa-lg"></i>
+                                    <i class="fas fa-check-circle text-dark fa-lg" title="Tayang di TikTok"></i>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -165,25 +181,27 @@
     <div class="modal-dialog modal-lg">
         <form action="{{ route('content-schedules.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Tambah Jadwal Baru</h5>
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>Tambah Jadwal Baru
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <label class="form-label">Bentuk Konten</label>
+                            <label class="form-label fw-semibold">Bentuk Konten</label>
                             <select name="content_form" class="form-select" required>
-                                <option value="Story">Story</option>
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
+                                <option value="Tiktok">Tiktok</option>
+                                <option value="Story">Story</option>
                                 <option value="Youtube">Youtube</option>
-                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Talent (Pilih Multiple atau Ketik Manual)</label>
+                            <label class="form-label fw-semibold">Talent (Pilih Multiple atau Ketik Manual)</label>
                             <select name="talents[]" id="create_talents" class="form-select" multiple style="width: 100%;">
                                 @foreach($uniqueTalents as $talent)
                                     <option value="{{ $talent }}">{{ $talent }}</option>
@@ -191,15 +209,15 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Deskripsi</label>
-                            <textarea name="description" class="form-control" rows="2"></textarea>
+                            <label class="form-label fw-semibold">Deskripsi</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Catatan atau deskripsi konten..."></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Script Konten</label>
-                            <textarea name="proof_script" class="form-control" rows="4"></textarea>
+                            <label class="form-label fw-semibold">Script Konten</label>
+                            <textarea name="proof_script" class="form-control" rows="4" placeholder="Naskah konten..."></textarea>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Bukti Screenshot</label>
+                            <label class="form-label fw-semibold">Bukti Screenshot</label>
                             <input type="file" name="proof_image" class="form-control" accept="image/*">
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
@@ -210,9 +228,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary">Simpan</button>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Simpan</button>
                 </div>
             </div>
         </form>
@@ -225,29 +243,31 @@
         <form id="editForm" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold">Edit Jadwal</h5>
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-edit text-warning me-2"></i>Edit Jadwal
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Bentuk Konten</label>
+                            <label class="form-label fw-semibold">Bentuk Konten</label>
                             <select name="content_form" id="edit_content_form" class="form-select" required>
-                                <option value="Story">Story</option>
                                 <option value="Feed">Feed</option>
                                 <option value="Reels">Reels</option>
+                                <option value="Tiktok">Tiktok</option>
+                                <option value="Story">Story</option>
                                 <option value="Youtube">Youtube</option>
-                                <option value="Tiktok">Tiktod</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Tanggal Upload</label>
+                            <label class="form-label fw-semibold">Tanggal Upload</label>
                             <input type="date" name="upload_date" id="edit_upload_date" class="form-control" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Talent (Pilih Multiple atau Ketik Manual)</label>
+                            <label class="form-label fw-semibold">Talent (Pilih Multiple atau Ketik Manual)</label>
                             <select name="talents[]" id="edit_talents" class="form-select" multiple style="width: 100%;">
                                 @foreach($uniqueTalents as $talent)
                                     <option value="{{ $talent }}">{{ $talent }}</option>
@@ -255,15 +275,15 @@
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Deskripsi</label>
+                            <label class="form-label fw-semibold">Deskripsi</label>
                             <textarea name="description" id="edit_description" class="form-control" rows="2"></textarea>
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Script Konten</label>
+                            <label class="form-label fw-semibold">Script Konten</label>
                             <textarea name="proof_script" id="edit_proof_script" class="form-control" rows="4"></textarea>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Ganti Screenshot (Opsional)</label>
+                            <label class="form-label fw-semibold">Ganti Screenshot (Opsional)</label>
                             <input type="file" name="proof_image" class="form-control" accept="image/*">
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
@@ -274,9 +294,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-warning">Update</button>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-warning rounded-pill px-4 shadow-sm">Update</button>
                 </div>
             </div>
         </form>
@@ -286,23 +306,31 @@
 {{-- MODAL VIEW PROOF --}}
 <div class="modal fade" id="proofModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold">Detail Bukti & Script</h5>
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-file-invoice text-info me-2"></i>Detail Bukti & Script
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-6 border-end">
-                        <h6 class="fw-bold mb-3">Script Konten</h6>
-                        <div class="p-3 bg-light rounded" style="min-height: 200px; white-space: pre-wrap;" id="viewScriptContent"></div>
+                        <h6 class="fw-bold mb-3 text-dark">
+                            <i class="fas fa-align-left text-muted me-1"></i> Script Konten
+                        </h6>
+                        <div class="p-3 bg-light rounded border" style="min-height: 200px; white-space: pre-wrap;" id="viewScriptContent"></div>
                     </div>
                     <div class="col-md-6 text-center">
-                        <h6 class="fw-bold mb-3">Screenshot Bukti</h6>
-                        <div id="viewImageContainer">
-                        </div>
+                        <h6 class="fw-bold mb-3 text-dark">
+                            <i class="fas fa-image text-muted me-1"></i> Screenshot Bukti
+                        </h6>
+                        <div id="viewImageContainer"></div>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
@@ -321,7 +349,7 @@
             columnDefs: [ { orderable: false, targets: [6, 7] } ]
         });
 
-        // Inisialisasi Select2 pada Modal Create saat dirender pertama kali atau saat modal terbuka
+        // Inisialisasi Select2 pada Modal Create
         $('#createModal').on('shown.bs.modal', function () {
             $('#create_talents').select2({
                 theme: 'bootstrap-5',
@@ -357,7 +385,6 @@
             let isTiktok = $(this).data('tiktok');
             $('#edit_is_tiktok').prop('checked', isTiktok == 1);
 
-            // Render array parsing untuk Select2
             let talentsRaw = $(this).data('talents');
             if(talentsRaw) {
                 let talentsArray = talentsRaw.toString().split(',').map(t => t.trim());
@@ -379,8 +406,8 @@
             imgContainer.empty();
 
             if (imageUrl) {
-                imgContainer.append(`<img src="${imageUrl}" class="img-fluid rounded shadow-sm" alt="Bukti">`);
-                imgContainer.append(`<br><a href="${imageUrl}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">Buka Ukuran Penuh</a>`);
+                imgContainer.append(`<img src="${imageUrl}" class="img-fluid rounded shadow-sm border" alt="Bukti">`);
+                imgContainer.append(`<br><a href="${imageUrl}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill mt-3"><i class="fas fa-external-link-alt me-1"></i> Buka Ukuran Penuh</a>`);
             } else {
                 imgContainer.append('<p class="text-muted fst-italic mt-5">Tidak ada gambar bukti.</p>');
             }
