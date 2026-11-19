@@ -2029,6 +2029,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/registry/{tugas}/start', [RegistryFeatureController::class, 'startTask'])->name('registry.start');
     Route::patch('/registry/{tugas}/finish', [RegistryFeatureController::class, 'finishTask'])->name('registry.finish');
     Route::get('/registry/data', [RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
+    Route::get('/registry/summary', [RegistryFeatureController::class, 'getSummary'])->name('registry.summary');
 
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');
