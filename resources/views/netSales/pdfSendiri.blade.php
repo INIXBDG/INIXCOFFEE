@@ -169,7 +169,8 @@
                         <tr>
                             <td class="label">Kategori/Lokasi</td>
                             <td>
-                                {{ $rkm->perusahaan->kategori_perusahaan ?? '-' }} / {{ $rkm->perusahaan->lokasi ?? '-' }}
+                                {{ $rkm->perusahaan->kategori_perusahaan ?? '-' }} /
+                                {{ $rkm->perusahaan->lokasi ?? '-' }}
                             </td>
                         </tr>
                         <tr>
@@ -181,70 +182,79 @@
             </tr>
         </table>
 
-    @php
-        $pa = collect($rkm->perhitunganNetSales)->first();
+        @php
+            $pa = collect($rkm->perhitunganNetSales)->first();
 
-        $totalAdvance = 0;
-        if ($pa) {
-            $totalAdvance =
-                ($pa['transportasi'] ?? 0) +
-                ($pa['akomodasi_peserta'] ?? 0) +
-                ($pa['akomodasi_tim'] ?? 0) +
-                ($pa['cashback'] ?? 0) +
-                ($pa['fresh_money'] ?? 0) +
-                ($pa['sewa_laptop'] ?? 0) +
-                ($pa['souvenir'] ?? 0) +
-                ($pa['entertaint'] ?? 0);
-        }
+            $totalAdvance = 0;
+            if ($pa) {
+                $totalAdvance = collect([
+                    'transportasi',
+                    'akomodasi_peserta',
+                    'akomodasi_tim',
+                    'cashback',
+                    'fresh_money',
+                    'sewa_laptop',
+                    'souvenir',
+                    'entertaint',
+                    'oleh_oleh',
+                    'biaya_lain_lain',
+                    'biaya_exam',
+                ])->sum(fn($k) => (float) ($pa[$k] ?? 0));
+            }
 
-        // Normalisasi level_status: romawi atau angka biasa -> selalu jadi '1' / '2' / '3'
-        $normalizeLevel = function ($raw) {
-            $map = [
-                '1' => '1', 'I'   => '1',
-                '2' => '2', 'II'  => '2',
-                '3' => '3', 'III' => '3',
+            // Normalisasi level_status: romawi atau angka biasa -> selalu jadi '1' / '2' / '3'
+            $normalizeLevel = function ($raw) {
+                $map = [
+                    '1' => '1',
+                    'I' => '1',
+                    '2' => '2',
+                    'II' => '2',
+                    '3' => '3',
+                    'III' => '3',
+                ];
+                return $map[strtoupper(trim($raw))] ?? $raw;
+            };
+
+            $allApprovals = collect($pa->approvedNetSales ?? [])
+                ->sortBy('created_at')
+                ->map(function ($item) use ($normalizeLevel) {
+                    $item->level_norm = $normalizeLevel($item->level_status);
+                    return $item;
+                })
+                ->values();
+
+            // Level 1 = SPV Sales, Level 2 = GM -> ambil entry terakhir per level
+            $approvalSpv = $allApprovals->where('level_norm', '1')->last();
+            $approvalGm = $allApprovals->where('level_norm', '2')->last();
+
+            // Director otomatis dianggap approve begitu GM sudah approve
+            $approvalDirut = null;
+            if ($approvalGm) {
+                $approvalDirut = new \stdClass();
+                $approvalDirut->level_norm = '3';
+                $approvalDirut->keterangan = 'Telah disetujui oleh Director';
+                $approvalDirut->tanggal = $approvalGm->tanggal;
+                $approvalDirut->status = 1;
+            }
+
+            $approvals = collect([$approvalSpv, $approvalGm, $approvalDirut])
+                ->filter()
+                ->values();
+
+            $approvalUsers = [
+                '1' => $spv ?? null,
+                '2' => $gm ?? null,
+                '3' => $dirut ?? null,
             ];
-            return $map[strtoupper(trim($raw))] ?? $raw;
-        };
 
-        $allApprovals = collect($pa->approvedNetSales ?? [])
-            ->sortBy('created_at')
-            ->map(function ($item) use ($normalizeLevel) {
-                $item->level_norm = $normalizeLevel($item->level_status);
-                return $item;
-            })
-            ->values();
+            $approvalLabels = [
+                '1' => 'Telah disetujui oleh SPV Sales',
+                '2' => 'Telah disetujui oleh General Manager',
+                '3' => 'Telah disetujui oleh Director',
+            ];
+        @endphp
 
-        // Level 1 = SPV Sales, Level 2 = GM -> ambil entry terakhir per level
-        $approvalSpv = $allApprovals->where('level_norm', '1')->last();
-        $approvalGm  = $allApprovals->where('level_norm', '2')->last();
-
-        // Director otomatis dianggap approve begitu GM sudah approve
-        $approvalDirut = null;
-        if ($approvalGm) {
-            $approvalDirut = new \stdClass();
-            $approvalDirut->level_norm = '3';
-            $approvalDirut->keterangan = 'Telah disetujui oleh Director';
-            $approvalDirut->tanggal    = $approvalGm->tanggal;
-            $approvalDirut->status     = 1;
-        }
-
-        $approvals = collect([$approvalSpv, $approvalGm, $approvalDirut])->filter()->values();
-        
-        $approvalUsers = [
-            '1' => $spv ?? null,
-            '2' => $gm ?? null,
-            '3' => $dirut ?? null,
-        ];
-
-        $approvalLabels = [
-            '1' => 'Telah disetujui oleh SPV Sales',
-            '2' => 'Telah disetujui oleh General Manager',
-            '3' => 'Telah disetujui oleh Director',
-        ];
-    @endphp
-
-    <div class="section-title">Biaya Operasional (Advance)</div>
+        <div class="section-title">Biaya Operasional (Advance)</div>
         @if ($pa)
             <table>
                 <tr>
@@ -271,6 +281,17 @@
                     <td class="label">Entertaint</td>
                     <td class="amount">Rp {{ number_format($pa['entertaint'] ?? 0, 0, ',', '.') }}</td>
                 </tr>
+                <tr>
+                    <td class="label">Oleh-Oleh</td>
+                    <td class="amount">Rp {{ number_format($pa['oleh_oleh'] ?? 0, 0, ',', '.') }}</td>
+                    <td class="label">Biaya Lain-Lain</td>
+                    <td class="amount">Rp {{ number_format($pa['biaya_lain_lain'] ?? 0, 0, ',', '.') }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Exam</td>
+                    <td class="amount">Rp {{ number_format($pa['biaya_exam'] ?? 0, 0, ',', '.') }}</td>
+                    <td colspan="2"></td>
+                </tr>
                 <tr style="background: #f1f5f9; font-weight: bold;">
                     <td class="label" colspan="3">Total Advance</td>
                     <td class="amount">Rp {{ number_format($totalAdvance, 0, ',', '.') }}</td>
@@ -279,9 +300,16 @@
 
             <div style="margin-top: 6px;">
                 <strong style="font-size: 9pt;">Keterangan / Catatan:</strong>
-                <p style="border: 1px solid #dee2e6; padding: 5px; background: #fff; font-size: 8.5pt; margin-top: 3px; margin-bottom: 0;">
+                <p
+                    style="border: 1px solid #dee2e6; padding: 5px; background: #fff; font-size: 8.5pt; margin-top: 3px; margin-bottom: 0;">
                     {{ $pa['deskripsi_tambahan'] ?? '-' }}
                 </p>
+
+                @if (!empty($pa['keterangan_biaya_lain']))
+                    <p style="font-size: 8.5pt; margin-top: 3px; margin-bottom: 0;">
+                        <strong>Biaya Lain-Lain:</strong> {{ $pa['keterangan_biaya_lain'] }}
+                    </p>
+                @endif
             </div>
 
             {{-- Riwayat Persetujuan --}}
@@ -303,10 +331,9 @@
                             {{ \Carbon\Carbon::parse($pa->tgl_pa)->translatedFormat('d M Y') }}
                         </td>
                         <td style="text-align:center;">
-                            @if($rkm->sales->ttd ?? false)
-                            <img src="{{ public_path('storage/ttd/' . $rkm->sales->ttd) }}"
-                            alt="Tanda Tangan"
-                            style="max-height:60px; max-width:120px;">
+                            @if ($rkm->sales->ttd ?? false)
+                                <img src="{{ public_path('storage/ttd/' . $rkm->sales->ttd) }}" alt="Tanda Tangan"
+                                    style="max-height:60px; max-width:120px;">
                             @else
                                 -
                             @endif
@@ -321,12 +348,12 @@
                                 {{ \Carbon\Carbon::parse($approval->tanggal)->translatedFormat('d M Y') }}
                             </td>
                             <td style="text-align:center;">
-                                @if($ttdUser && $ttdUser->ttd)
-                                    <img src="{{ public_path('storage/ttd/' . $ttdUser->ttd) }}"
-                                        alt="Tanda Tangan"
+                                @if ($ttdUser && $ttdUser->ttd)
+                                    <img src="{{ public_path('storage/ttd/' . $ttdUser->ttd) }}" alt="Tanda Tangan"
                                         style="max-height:60px; max-width:120px; margin-top:2px;">
                                 @else
-                                    <span class="status-badge {{ $approval->status == 1 ? 'status-hijau' : 'status-merah' }}">
+                                    <span
+                                        class="status-badge {{ $approval->status == 1 ? 'status-hijau' : 'status-merah' }}">
                                         {{ $approval->status == 1 ? 'Approved' : 'Ditolak' }}
                                     </span>
                                 @endif
@@ -349,7 +376,8 @@
                     <td class="no-border" style="width: 40%; padding: 0;">
                         <table style="border: 1px solid #2c3e50;">
                             <tr>
-                                <td class="no-border" style="text-align:center; font-weight:bold; padding: 4px 6px; border-bottom: 1px solid #2c3e50;">
+                                <td class="no-border"
+                                    style="text-align:center; font-weight:bold; padding: 4px 6px; border-bottom: 1px solid #2c3e50;">
                                     For Finance &amp; Administration only
                                 </td>
                             </tr>
@@ -360,7 +388,7 @@
                             </tr>
                             <tr>
                                 <td class="no-border" style="padding: 4px 6px;">
-                                    Verified by : 
+                                    Verified by :
                                 </td>
                             </tr>
                         </table>

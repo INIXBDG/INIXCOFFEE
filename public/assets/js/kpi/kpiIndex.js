@@ -1099,8 +1099,8 @@ $(document).ready(function() {
                     }).join('')}</div>`;
                 } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(condition)) {
                     contentStatisticChart = buildGapKompetensiForm(
-                        data, 
-                        window.KPI_CONFIG.isKoordinatorItsm, 
+                        data,
+                        data.can_edit === true,
                         window.KPI_CONFIG.csrfToken
                     );
                 } else {

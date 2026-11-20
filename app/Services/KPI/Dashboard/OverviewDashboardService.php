@@ -11,10 +11,28 @@ use App\Services\KPI\Jabatan\SPVSalesKPIService;
 use App\Traits\KPIResolverTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Support\KPI\GradeCalculator;
 
 class OverviewDashboardService
 {
     use KPIResolverTrait; // Membawa getCalculationByRoute dan resolveProgress
+
+    protected function normalizeToAchievement($rawValue, $tipeTarget, $nilaiTarget): float
+    {
+        $raw = (float) $rawValue;
+        $target = (float) $nilaiTarget;
+
+        if ($target > 0 && in_array($tipeTarget, ['rupiah', 'angka'], true)) {
+            $raw = ($raw / $target) * 100;
+        }
+
+        return round(max(0, min(100, $raw)), 1);
+    }
+
+    protected function clampSeries($value): float
+    {
+        return round(max(0, (float) $value), 1);
+    }
 
     public function getProgressDashboardData($currentUser, $idUser, $typeGet)
     {
@@ -89,20 +107,20 @@ class OverviewDashboardService
             $calculation = $this->getCalculationByRoute($target, $targetEmployeeId);
 
             $progress = $resolved['progress'];
-            $allProgressValues[] = $progress;
+            $allProgressValues[] = $resolved['achievement'];
 
             $tipeTarget = $detail->tipe_target ?? ($detail->dataTarget?->tipe_target ?? 'persen');
             $nilaiTarget = (float) ($detail->nilai_target ?? ($detail->dataTarget?->nilai_target ?? 0));
 
             if (!empty($calculation['monthly_progress'])) {
                 foreach ($calculation['monthly_progress'] as $month => $val) {
-                    $monthly_progress[$month][] = $this->normalizeToPercent($val, $tipeTarget, $nilaiTarget);
+                    $monthly_progress[$month][] = $this->clampSeries($val);
                 }
             }
             if (!empty($calculation['daily_progress_per_month'])) {
                 foreach ($calculation['daily_progress_per_month'] as $month => $days) {
                     foreach ($days as $day => $val) {
-                        $daily_progress_per_month[$month][$day][] = $this->normalizeToPercent($val, $tipeTarget, $nilaiTarget);
+                        $daily_progress_per_month[$month][$day][] = $this->clampSeries($val);
                     }
                 }
             }
@@ -204,6 +222,7 @@ class OverviewDashboardService
         $personalDashboard = [
             'nilai_kpi_anda' => $nilaiKpiAnda,
             'rata_rata_target_kpi' => $avgTargetYearly,
+            'grade_target_kpi' => count($allProgressValues) > 0 ? GradeCalculator::fromScore($avgTargetYearly) : null,
             'progress_kpi_perbulan' => $kpiPerbulan,
             'performance' => 0,
             'performance_title' => 'Stabil',
@@ -286,7 +305,7 @@ class OverviewDashboardService
             $raw = ($raw / $target) * 100;
         }
 
-        return round(max(0, min(100, $raw)), 1);
+        return round(max(0, $raw), 1);
     }
 
     protected function getRouteCalculators(): array
@@ -310,12 +329,14 @@ class OverviewDashboardService
         if ($calculator) {
             $rawValue = (float) $calculator($target, $personId);
             $progress = $this->normalizeToPercent($rawValue, $tipeTarget, $nilaiTarget);
+            $achievement = $this->normalizeToAchievement($rawValue, $tipeTarget, $nilaiTarget);
 
             return [
                 'progress' => $progress,
+                'achievement' => $achievement,
                 'raw_value' => $rawValue,
                 'target_value' => $nilaiTarget,
-                'target_status' => $progress >= 100 ? 'on_track' : ($progress >= 70 ? 'at_risk' : 'behind'),
+                'target_status' => $achievement >= 100 ? 'on_track' : ($achievement >= 70 ? 'at_risk' : 'behind'),
                 'trend' => 'stable',
                 'monthly_progress' => [],
                 'insight' => null,
@@ -325,9 +346,11 @@ class OverviewDashboardService
         $calc = $this->getCalculationByRoute($target, $personId);
         $rawValue = (float) ($calc['progress'] ?? 0);
         $progress = $this->normalizeToPercent($rawValue, $tipeTarget, $nilaiTarget);
+        $achievement = $this->normalizeToAchievement($rawValue, $tipeTarget, $nilaiTarget);
 
         return [
             'progress' => $progress,
+            'achievement' => $achievement,
             'raw_value' => $rawValue,
             'target_value' => $nilaiTarget,
             'target_status' => $calc['target_status'] ?? 'behind',
@@ -382,8 +405,8 @@ class OverviewDashboardService
 
                     $resolved = $this->resolveProgressByRoute($target, $detail, $k->id);
 
-                    $bucket['progresses'][] = $resolved['progress'];
-                    $bucket['predictions'][] = $resolved['prediction'] ?? $resolved['progress'];
+                    $bucket['progresses'][] = $resolved['achievement'];
+                    $bucket['predictions'][] = $resolved['prediction'] ?? $resolved['achievement'];
                     $bucket['total_achieved'] += $resolved['raw_value'];
                     $bucket['total_target'] += $resolved['target_value'];
 
@@ -474,7 +497,7 @@ class OverviewDashboardService
 
                     $resolved = $this->resolveProgressByRoute($target, $detail, $empId);
 
-                    $teamMap[$empId]['progresses'][] = $resolved['progress'];
+                    $teamMap[$empId]['progresses'][] = $resolved['achievement'];
                     $teamMap[$empId]['total_achieved'] += $resolved['raw_value'];
                     $teamMap[$empId]['total_target'] += $resolved['target_value'];
 
@@ -485,8 +508,7 @@ class OverviewDashboardService
 
                     if (!empty($resolved['monthly_progress'])) {
                         foreach ($resolved['monthly_progress'] as $month => $val) {
-                            $monthlyProgress[$month][] = $this->normalizeToPercent($val, $detail->tipe_target, $resolved['target_value']);
-                        }
+                            $monthlyProgress[$month][] = $this->clampSeries($val);}
                     }
 
                     if (!$insightAdded && !empty($resolved['insight'])) {
@@ -653,9 +675,10 @@ class OverviewDashboardService
             $tipeTarget  = $detail->tipe_target;
             $nilaiTarget = (float) $detail->nilai_target;
             $jabatan     = $detail->jabatan ?? 'Unknown';
-            $monthlyData = $calculationData['monthly_data'] ?? [];
+            $monthlyData = $calculationData['monthly_progress'] ?? [];
 
             $progressPercent = $this->normalizeToPercent($rawProgress, $tipeTarget, $nilaiTarget);
+            $achievementPercent = $this->normalizeToAchievement($rawProgress, $tipeTarget, $nilaiTarget);
 
             $rawGap       = (float) ($calculationData['gap'] ?? 0);
             $gapPercent   = ($nilaiTarget > 0 && in_array($tipeTarget, ['rupiah', 'angka']))
@@ -663,7 +686,7 @@ class OverviewDashboardService
                 : $rawGap;
 
             $stats['total_targets']++;
-            if ($progressPercent >= 100) {
+            if ($achievementPercent >= 100) {
                 $stats['completed_targets']++;
                 $stats['achieved_targets']++;
             } else {
@@ -682,7 +705,7 @@ class OverviewDashboardService
                 'tipe_target'    => $tipeTarget,                       
             ];
 
-            $jabatanAggregates[$jabatan][] = $progressPercent;
+            $jabatanAggregates[$jabatan][] = $achievementPercent;
 
             foreach ($monthlyData as $monthKey => $avgScore) {
                 if ($bulanFilter) {
@@ -690,7 +713,7 @@ class OverviewDashboardService
                     if ($monthPart !== (int) $bulanFilter) continue;
                 }
 
-                $monthlyScorePercent = $this->normalizeToPercent((float) $avgScore, $tipeTarget, $nilaiTarget);
+                $monthlyScorePercent = $this->clampSeries($avgScore);
 
                 $monthlyAggregates[$monthKey][]          = $monthlyScorePercent;
                 $jabatanMonthlyAggregates[$jabatan][$monthKey][] = $monthlyScorePercent;
@@ -861,9 +884,11 @@ class OverviewDashboardService
                 };
                 $percent = max(0, min(100, $percent));
 
+                $achievement = $this->normalizeToAchievement($rawProgress, $tipeTarget, $nilaiTarget);
+
                 // --- Status ---
                 $status = match (true) {
-                    $tahunFilter < $currentYear => $percent >= 100 ? 'Selesai' : 'Gagal',
+                    $tahunFilter < $currentYear => $achievement >= 100 ? 'Selesai' : 'Gagal',
                     $tahunFilter == $currentYear => 'Sedang Berjalan',
                     default => 'Belum Mulai',
                 };
@@ -891,6 +916,7 @@ class OverviewDashboardService
                     'progress' => round($rawProgress, 1),
                     'progress_display' => $progressDisplay,
                     'progress_percent' => round($percent, 1),
+                    'achievement_percent' => round($achievement, 1),
                     'status' => $status,
                     'status_badge' => $statusBadge,
                     'deskripsi' => $detail->deskripsi ?? '-',
@@ -899,7 +925,7 @@ class OverviewDashboardService
                     'data_detail' => $result['monthly_progress'] ?? ($result['monthly_data'] ?? []),
                 ]);
 
-                $progressPercentagesRaw->push($percent);
+                $progressPercentagesRaw->push($achievement);
             }
         }
 
@@ -923,6 +949,7 @@ class OverviewDashboardService
             ],
             'total_target' => $processedTargets->count(),
             'rata_rata_progress' => $rataRataProgress,
+            'grade' => $processedTargets->isNotEmpty() ? GradeCalculator::fromScore($rataRataProgress) : null,
             'kpi_aktif' => $processedTargets->where('status', 'Sedang Berjalan')->count(),
             'kpi_selesai' => $processedTargets->where('status', 'Selesai')->count(),
             'statistik_per_target' => $processedTargets
@@ -1091,9 +1118,11 @@ class OverviewDashboardService
                 $percent = max(0.0, min(100.0, $percent));
                 $roundedPercent = round($percent, 1);
 
+                $achievement = $this->normalizeToAchievement($rawProgress, $tipeTarget, $nilaiTarget);
+
                 // Tentukan status target
                 if ($tahunFilter < $currentYear) {
-                    $statusTarget = $roundedPercent >= 100 ? 'Selesai' : 'Gagal';
+                    $statusTarget = $achievement >= 100 ? 'Selesai' : 'Gagal';
                 } elseif ($tahunFilter == $currentYear) {
                     $statusTarget = 'Sedang Berjalan';
                 } else {
@@ -1101,7 +1130,7 @@ class OverviewDashboardService
                 }
 
                 $employeeTargetStatusMap[$personId][$statusTarget]++;
-                $employeeProgressMap[$personId][] = $percent;
+                $employeeProgressMap[$personId][] = $achievement;
 
                 $statusBadge = match ($statusTarget) {
                     'Selesai' => 'bg-success',
@@ -1128,7 +1157,7 @@ class OverviewDashboardService
                     'status_badge' => $statusBadge,
                 ];
 
-                $targetProgressPercentagesRaw[] = $percent;
+                $targetProgressPercentagesRaw[] = $achievement;
             }
 
             // Rata-rata progress target ini (across all assigned persons in this division)
@@ -1208,6 +1237,7 @@ class OverviewDashboardService
                 'total_target_belum_mulai' => $statusData['Belum Mulai'],
                 'jumlah_target' => count($rawProgressList),
                 'rata_rata_progress' => $rataRataProgressKaryawan,
+                'grade' => !empty($rawProgressList) ? GradeCalculator::fromScore($rataRataProgressKaryawan) : null,
                 'daftar_target_pribadi' => $employeeTargetsMap[$personId] ?? [],
             ];
         }

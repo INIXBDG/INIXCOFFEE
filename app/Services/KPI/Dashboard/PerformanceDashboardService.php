@@ -5,6 +5,7 @@ namespace App\Services\KPI\Dashboard;
 use App\Models\karyawan;
 use App\Models\nilaiKPI;
 use App\Models\targetKPI;
+use App\Support\KPI\GradeCalculator;
 use App\Traits\KPIFormatTrait;
 use App\Traits\KPIResolverTrait;
 use Illuminate\Support\Facades\Log;
@@ -20,16 +21,17 @@ class PerformanceDashboardService
         $jabatan = $filters['jabatan'] ?? null;
         $search = $filters['search'] ?? null;
 
-        $query = karyawan::where('status_aktif', '1')
-            ->whereNot('jabatan', 'Outsource')
-            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
-            ->whereNot('jabatan', 'Pilih Jabatan')
-            ->whereNotNull('nip')
-            ->whereNot('divisi', 'Direksi');
+        $query = karyawan::where('status_aktif', '1')->whereNot('jabatan', 'Outsource')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNot('jabatan', 'Pilih Jabatan')->whereNotNull('nip')->whereNot('divisi', 'Direksi');
 
-        if ($divisi) $query->where('divisi', $divisi);
-        if ($jabatan) $query->where('jabatan', $jabatan);
-        if ($search) $query->where('nama_lengkap', 'LIKE', "%{$search}%");
+        if ($divisi) {
+            $query->where('divisi', $divisi);
+        }
+        if ($jabatan) {
+            $query->where('jabatan', $jabatan);
+        }
+        if ($search) {
+            $query->where('nama_lengkap', 'LIKE', "%{$search}%");
+        }
 
         $karyawans = $query->orderBy('nama_lengkap')->get();
 
@@ -49,20 +51,21 @@ class PerformanceDashboardService
                 'kpi' => [
                     'score' => round($kpiScore, 1),
                     'grade' => $this->getGradeLabel($kpiScore),
-                    'details' => $kpiDetails
+                    'grade_detail' => empty($kpiDetails) ? null : GradeCalculator::fromScore($kpiScore),
+                    'details' => $kpiDetails,
                 ],
                 'assessment_360' => [
                     'score' => round($score360, 1),
                     'grade' => $this->getGradeLabel($score360),
-                    'details' => $assessment360Details
-                ]
+                    'details' => $assessment360Details,
+                ],
             ];
         }
 
         return [
             'success' => true,
             'total' => count($users),
-            'users' => $users
+            'users' => $users,
         ];
     }
 
@@ -76,26 +79,65 @@ class PerformanceDashboardService
             ->get();
 
         $generalRoutes = [
-            'pemasukan kotor', 'pemasukan bersih', 'target penjualan project tahunan', 'target penjualan tahunan',
-            'rasio biaya operasional terhadap revenue', 'meningkatkan revenue perusahaan', 'customer acquisition cost',
-            'biaya akuisisi perclient', 'performa kpi departemen', 'kepuasan pelanggan', 'peserta puas dengan pelayanan dan fasilitas training',
-            'penanganan komplain perseta', 'penanganan komplain peserta', 'outstanding', 'laporan analisis keuangan',
-            'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk', 'pelaksanaan kegiatan karyawan',
-            'pengeluaran biaya karyawan', 'perbaikan kendaraan', 'kontrol pengeluaran transportasi', 'report kondisi kendaraan',
-            'feedback kenyamanan berkendaran', 'feedback kebersihan dan kenyamanan', 'kepuasan client itsm', 'inovation adaption rate',
-            'availability sistem internal kritis', 'meningkatkan kepuasan dan loyalitas peserta/client', 'persentase gap kompetensi tim terhadap standar skill',
-            'ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
-            'efektifitas digital marketing', 'timeline webinar', 'keberhasilan support memenuhi sla', 'kualitas layanan exam', 'kepuasan peserta pelatihan',
-            'upseling lanjutan materi', 'presentase kinerja instruktur', 'pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing',
-            'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur', 'evaluasi kinerja sales', 'laporan mom',
-            'akurasi kelengkapan data penjualan', 'ketepatan waktu po', 'kualitas dokumentasi support dan proctor', 'pendapatan penjualan project',
+            'pemasukan kotor',
+            'pemasukan bersih',
+            'target penjualan project tahunan',
+            'target penjualan tahunan',
+            'rasio biaya operasional terhadap revenue',
+            'meningkatkan revenue perusahaan',
+            'customer acquisition cost',
+            'biaya akuisisi perclient',
+            'performa kpi departemen',
+            'kepuasan pelanggan',
+            'peserta puas dengan pelayanan dan fasilitas training',
+            'penanganan komplain perseta',
+            'penanganan komplain peserta',
+            'outstanding',
+            'laporan analisis keuangan',
+            'pencairan biaya operasional',
+            'penyelesaian tagihan perusahaan',
+            'akurasi pencatatan masuk',
+            'pelaksanaan kegiatan karyawan',
+            'pengeluaran biaya karyawan',
+            'perbaikan kendaraan',
+            'kontrol pengeluaran transportasi',
+            'report kondisi kendaraan',
+            'feedback kenyamanan berkendaran',
+            'feedback kebersihan dan kenyamanan',
+            'kepuasan client itsm',
+            'inovation adaption rate',
+            'availability sistem internal kritis',
+            'meningkatkan kepuasan dan loyalitas peserta/client',
+            'persentase gap kompetensi tim terhadap standar skill',
+            'ketepatan waktu penyelesaian fitur',
+            'mengukur kualitas aplikasi agar minim bug',
+            'konsistensi campaign digital',
+            'efektifitas digital marketing',
+            'timeline webinar',
+            'keberhasilan support memenuhi sla',
+            'kualitas layanan exam',
+            'kepuasan peserta pelatihan',
+            'upseling lanjutan materi',
+            'presentase kinerja instruktur',
+            'pengembangan kurikulum pelatihan',
+            'peningkatan knowledge sharing',
+            'peningkatan kontribusi pelatihan',
+            'evaluasi kinerja instruktur',
+            'evaluasi kinerja sales',
+            'laporan mom',
+            'akurasi kelengkapan data penjualan',
+            'ketepatan waktu po',
+            'kualitas dokumentasi support dan proctor',
+            'pendapatan penjualan project',
         ];
 
         $details = [];
         foreach ($targets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
                 $assignedPersons = $detail->detailPersonKPI->where('id_karyawan', $karyawanId);
-                if ($assignedPersons->isEmpty()) continue;
+                if ($assignedPersons->isEmpty()) {
+                    continue;
+                }
 
                 $targetForCalc = $this->prepareTargetForCalculation($target, $detail);
                 $asistantRoute = strtolower($detail->dataTarget?->asistant_route ?? '');
@@ -103,30 +145,34 @@ class PerformanceDashboardService
 
                 $rawProgress = $this->resolveProgress($targetForCalc, $personIdForCalc);
                 $nilaiTarget = $detail->dataTarget?->nilai_target ?? $detail->nilai_target;
-                $tipeTarget  = $detail->tipe_target;
+                $tipeTarget = $detail->tipe_target;
 
-                $percent = 0;
-                if ($rawProgress > 0 && $nilaiTarget > 0) {
-                    if ($tipeTarget === 'rupiah' || $tipeTarget === 'angka') {
-                        $percent = ($rawProgress / $nilaiTarget) * 100;
-                    } else {
-                        $percent = $rawProgress;
-                    }
-                }
-                $percent = max(0, min(100, round($percent, 1)));
+                $percent = $this->normalizeToAchievement($rawProgress, $tipeTarget, $nilaiTarget);
 
                 $details[] = [
-                    'judul'            => $target->judul,
-                    'asistant_route'   => $detail->dataTarget?->asistant_route ?? '-',
-                    'tipe_target'      => $tipeTarget,
-                    'nilai_target'     => $nilaiTarget,
-                    'progress'         => $percent,
+                    'judul' => $target->judul,
+                    'asistant_route' => $detail->dataTarget?->asistant_route ?? '-',
+                    'tipe_target' => $tipeTarget,
+                    'nilai_target' => $nilaiTarget,
+                    'progress' => $percent,
                     'progress_display' => $this->formatProgressDisplay($rawProgress, $tipeTarget),
-                    'status'           => $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai')
+                    'status' => $percent >= 100 ? 'Selesai' : ($percent > 0 ? 'Aktif' : 'Belum Mulai'),
                 ];
             }
         }
         return $details;
+    }
+
+    private function normalizeToAchievement($rawValue, $tipeTarget, $nilaiTarget): float
+    {
+        $raw = (float) $rawValue;
+        $target = (float) $nilaiTarget;
+
+        if ($target > 0 && in_array($tipeTarget, ['rupiah', 'angka'], true)) {
+            $raw = ($raw / $target) * 100;
+        }
+
+        return round(max(0, min(100, $raw)), 1);
     }
 
     private function prepareTargetForCalculation($target, $currentDetail)
@@ -154,10 +200,15 @@ class PerformanceDashboardService
 
     private function formatProgressDisplay($rawProgress, $tipeTarget)
     {
-        if ($rawProgress <= 0) return '-';
-        if ($tipeTarget === 'rupiah') return 'Rp ' . number_format((float)$rawProgress, 0, ',', '.');
-        elseif ($tipeTarget === 'persen') return number_format((float)$rawProgress, 1, '.', '') . '%';
-        return number_format((float)$rawProgress, 0, ',', '.');
+        if ($rawProgress <= 0) {
+            return '-';
+        }
+        if ($tipeTarget === 'rupiah') {
+            return 'Rp ' . number_format((float) $rawProgress, 0, ',', '.');
+        } elseif ($tipeTarget === 'persen') {
+            return number_format((float) $rawProgress, 1, '.', '') . '%';
+        }
+        return number_format((float) $rawProgress, 0, ',', '.');
     }
 
     private function getAssessment360Details($karyawanId, $tahun)
@@ -184,7 +235,7 @@ class PerformanceDashboardService
                     'bobot' => $bobot,
                     'rata_rata_nilai' => round($avgNilai, 1),
                     'score' => round($score, 1),
-                    'jumlah_evaluator' => $nilaiForJenis->count()
+                    'jumlah_evaluator' => $nilaiForJenis->count(),
                 ];
             }
         }
@@ -198,24 +249,63 @@ class PerformanceDashboardService
             ->whereYear('created_at', $tahun)
             ->whereHas('detailTargetKPI.detailPersonKPI', function ($q) use ($karyawanIds) {
                 $q->whereIn('id_karyawan', $karyawanIds);
-            })->get();
+            })
+            ->get();
 
-        if ($targets->isEmpty()) return 0;
+        if ($targets->isEmpty()) {
+            return 0;
+        }
 
         $generalRoutes = [
-            'pemasukan kotor', 'pemasukan bersih', 'target penjualan project tahunan', 'target penjualan tahunan',
-            'rasio biaya operasional terhadap revenue', 'meningkatkan revenue perusahaan', 'customer acquisition cost',
-            'biaya akuisisi perclient', 'performa kpi departemen', 'kepuasan pelanggan', 'peserta puas dengan pelayanan dan fasilitas training',
-            'penanganan komplain perseta', 'penanganan komplain peserta', 'outstanding', 'laporan analisis keuangan',
-            'pencairan biaya operasional', 'penyelesaian tagihan perusahaan', 'akurasi pencatatan masuk', 'pelaksanaan kegiatan karyawan',
-            'pengeluaran biaya karyawan', 'perbaikan kendaraan', 'kontrol pengeluaran transportasi', 'report kondisi kendaraan',
-            'feedback kenyamanan berkendaran', 'feedback kebersihan dan kenyamanan', 'kepuasan client itsm', 'inovation adaption rate',
-            'availability sistem internal kritis', 'meningkatkan kepuasan dan loyalitas peserta/client', 'persentase gap kompetensi tim terhadap standar skill',
-            'ketepatan waktu penyelesaian fitur', 'mengukur kualitas aplikasi agar minim bug', 'konsistensi campaign digital',
-            'efektifitas digital marketing', 'timeline webinar', 'keberhasilan support memenuhi sla', 'kualitas layanan exam', 'kepuasan peserta pelatihan',
-            'upseling lanjutan materi', 'presentase kinerja instruktur', 'pengembangan kurikulum pelatihan', 'peningkatan knowledge sharing',
-            'peningkatan kontribusi pelatihan', 'evaluasi kinerja instruktur', 'evaluasi kinerja sales', 'laporan mom',
-            'akurasi kelengkapan data penjualan', 'ketepatan waktu po', 'kualitas dokumentasi support dan proctor',
+            'pemasukan kotor',
+            'pemasukan bersih',
+            'target penjualan project tahunan',
+            'target penjualan tahunan',
+            'rasio biaya operasional terhadap revenue',
+            'meningkatkan revenue perusahaan',
+            'customer acquisition cost',
+            'biaya akuisisi perclient',
+            'performa kpi departemen',
+            'kepuasan pelanggan',
+            'peserta puas dengan pelayanan dan fasilitas training',
+            'penanganan komplain perseta',
+            'penanganan komplain peserta',
+            'outstanding',
+            'laporan analisis keuangan',
+            'pencairan biaya operasional',
+            'penyelesaian tagihan perusahaan',
+            'akurasi pencatatan masuk',
+            'pelaksanaan kegiatan karyawan',
+            'pengeluaran biaya karyawan',
+            'perbaikan kendaraan',
+            'kontrol pengeluaran transportasi',
+            'report kondisi kendaraan',
+            'feedback kenyamanan berkendaran',
+            'feedback kebersihan dan kenyamanan',
+            'kepuasan client itsm',
+            'inovation adaption rate',
+            'availability sistem internal kritis',
+            'meningkatkan kepuasan dan loyalitas peserta/client',
+            'persentase gap kompetensi tim terhadap standar skill',
+            'ketepatan waktu penyelesaian fitur',
+            'mengukur kualitas aplikasi agar minim bug',
+            'konsistensi campaign digital',
+            'efektifitas digital marketing',
+            'timeline webinar',
+            'keberhasilan support memenuhi sla',
+            'kualitas layanan exam',
+            'kepuasan peserta pelatihan',
+            'upseling lanjutan materi',
+            'presentase kinerja instruktur',
+            'pengembangan kurikulum pelatihan',
+            'peningkatan knowledge sharing',
+            'peningkatan kontribusi pelatihan',
+            'evaluasi kinerja instruktur',
+            'evaluasi kinerja sales',
+            'laporan mom',
+            'akurasi kelengkapan data penjualan',
+            'ketepatan waktu po',
+            'kualitas dokumentasi support dan proctor',
         ];
 
         $allProgressValues = [];
@@ -224,11 +314,15 @@ class PerformanceDashboardService
         foreach ($targets as $target) {
             foreach ($target->detailTargetKPI as $detail) {
                 $assignedIds = $detail->detailPersonKPI->whereIn('id_karyawan', $karyawanIds)->pluck('id_karyawan')->unique()->toArray();
-                if (empty($assignedIds)) continue;
+                if (empty($assignedIds)) {
+                    continue;
+                }
 
                 foreach ($assignedIds as $personId) {
                     $targetKey = $target->id . '_' . $detail->id . '_' . $personId;
-                    if (isset($processedTargets[$targetKey])) continue;
+                    if (isset($processedTargets[$targetKey])) {
+                        continue;
+                    }
                     $processedTargets[$targetKey] = true;
 
                     $targetForCalc = $this->prepareTargetForCalculation($target, $detail);
@@ -240,22 +334,15 @@ class PerformanceDashboardService
                     $nilaiTarget = (float) ($detail->dataTarget?->nilai_target ?? $detail->nilai_target);
                     $tipeTarget = $detail->tipe_target;
 
-                    $percent = 0;
-                    if ($rawProgress > 0 && $nilaiTarget > 0) {
-                        if ($tipeTarget === 'rupiah' || $tipeTarget === 'angka') {
-                            $percent = ($rawProgress / $nilaiTarget) * 100;
-                        } else {
-                            $percent = $rawProgress;
-                        }
-                    }
-
-                    $percent = max(0, min(100, round($percent, 1)));
+                    $percent = $this->normalizeToAchievement($rawProgress, $tipeTarget, $nilaiTarget);
                     $allProgressValues[] = $percent;
                 }
             }
         }
 
-        if (empty($allProgressValues)) return 0;
+        if (empty($allProgressValues)) {
+            return 0;
+        }
         return round(array_sum($allProgressValues) / count($allProgressValues), 1);
     }
 
@@ -270,7 +357,9 @@ class PerformanceDashboardService
         ];
 
         $allNilaiKPI = nilaiKPI::where('id_evaluated', $employeeId)->whereYear('created_at', $tahun)->get();
-        if ($allNilaiKPI->isEmpty()) return 0;
+        if ($allNilaiKPI->isEmpty()) {
+            return 0;
+        }
 
         $jenisTotalRaw = [];
         foreach ($persentaseJenis as $jenis => $bobot) {
