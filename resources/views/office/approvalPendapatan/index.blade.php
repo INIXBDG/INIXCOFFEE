@@ -298,9 +298,19 @@
 
             <div class="card shadow-sm mb-4 border-0 vlk-filter-card">
                 <div class="card-body">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-4 mx-1">
-                            <label class="form-label fw-semibold small text-muted">Tahun</label>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-2 col-md-3 col-sm-6">
+                            <label class="form-label fw-semibold small text-muted mb-1">Tipe Periode</label>
+                            <select id="filterTipePeriode" class="form-select">
+                                <option value="bulanan" selected>Per Bulan</option>
+                                <option value="mingguan">Per Minggu</option>
+                                <option value="quartal">Per Quartal</option>
+                                <option value="tahunan">Per Tahun</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-2 col-md-3 col-sm-6" id="filterYearCol">
+                            <label class="form-label fw-semibold small text-muted mb-1">Tahun</label>
                             <select id="year" class="form-select" aria-label="tahun">
                                 <option disabled>Pilih Tahun</option>
                                 @php
@@ -312,8 +322,9 @@
                                 @endphp
                             </select>
                         </div>
-                        <div class="col-md-4 mx-1">
-                            <label class="form-label fw-semibold small text-muted">Bulan</label>
+
+                        <div class="col-lg-2 col-md-3 col-sm-6" id="filterMonthCol">
+                            <label class="form-label fw-semibold small text-muted mb-1">Bulan</label>
                             <select id="month" class="form-select" aria-label="bulan">
                                 <option disabled>Pilih Bulan</option>
                                 @php
@@ -340,9 +351,33 @@
                                 @endphp
                             </select>
                         </div>
-                        <div class="col-md-3 mx-1">
-                            <button class="btn btn-primary" onclick="loadTable();"><i
-                                    class="bi bi-arrow-clockwise me-1"></i>Refresh</button>
+
+                        <div class="col-lg-2 col-md-3 col-sm-6 d-none" id="filterWeekCol">
+                            <label class="form-label fw-semibold small text-muted mb-1">Minggu</label>
+                            <select id="filterWeek" class="form-select">
+                                <option value="all" selected>Semua Minggu</option>
+                                <option value="1">Minggu 1</option>
+                                <option value="2">Minggu 2</option>
+                                <option value="3">Minggu 3</option>
+                                <option value="4">Minggu 4</option>
+                                <option value="5">Minggu 5</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-2 col-md-3 col-sm-6 d-none" id="filterQuartalCol">
+                            <label class="form-label fw-semibold small text-muted mb-1">Quartal</label>
+                            <select id="filterQuartal" class="form-select">
+                                <option value="1" selected>Q1 (Jan - Mar)</option>
+                                <option value="2">Q2 (Apr - Jun)</option>
+                                <option value="3">Q3 (Jul - Sep)</option>
+                                <option value="4">Q4 (Okt - Des)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-2 col-md-3 col-sm-6">
+                            <button class="btn btn-primary w-100" onclick="loadTable();">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -539,6 +574,8 @@
                     class="bi bi-check-lg me-2"></i>Selesai</button>
         </div>
     </div>
+
+
 
     <div class="modal fade" id="calculatorModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -2821,14 +2858,60 @@
             });
         }
 
+        $(document).on('change', '#filterTipePeriode', function() {
+            let tipe = $(this).val();
+            if (tipe === 'mingguan') {
+                $('#filterMonthCol').removeClass('d-none');
+                $('#filterWeekCol').removeClass('d-none');
+                $('#filterQuartalCol').addClass('d-none');
+            } else if (tipe === 'bulanan') {
+                $('#filterMonthCol').removeClass('d-none');
+                $('#filterWeekCol').addClass('d-none');
+                $('#filterQuartalCol').addClass('d-none');
+            } else if (tipe === 'quartal') {
+                $('#filterMonthCol').addClass('d-none');
+                $('#filterWeekCol').addClass('d-none');
+                $('#filterQuartalCol').removeClass('d-none');
+            } else if (tipe === 'tahunan') {
+                $('#filterMonthCol').addClass('d-none');
+                $('#filterWeekCol').addClass('d-none');
+                $('#filterQuartalCol').addClass('d-none');
+            }
+        });
+
         function loadTable() {
-            let bulan = $('#month').val();
+            let tipe = $('#filterTipePeriode').val() || 'bulanan';
             let tahun = $('#year').val();
-            if (!bulan || !tahun) {
+            let bulan = $('#month').val();
+            let minggu = $('#filterWeek').val() || 'all';
+            let quartal = $('#filterQuartal').val() || 1;
+
+            if (!tahun) {
                 $('#weekly-container').html(
-                    `<div class="alert alert-warning">Silakan pilih periode bulan dan tahun terlebih dahulu.</div>`);
+                    `<div class="alert alert-warning">Silakan pilih tahun terlebih dahulu.</div>`);
                 return;
             }
+            if ((tipe === 'bulanan' || tipe === 'mingguan') && !bulan) {
+                $('#weekly-container').html(
+                    `<div class="alert alert-warning">Silakan pilih bulan terlebih dahulu.</div>`);
+                return;
+            }
+
+            let namaBulan = $('#month option:selected').text();
+            let periodLabel = '';
+            if (tipe === 'mingguan') {
+                let txtMinggu = (minggu === 'all') ? 'Semua Minggu' : `Minggu ${minggu}`;
+                periodLabel = `Periode: ${txtMinggu} · ${namaBulan} ${tahun}`;
+            } else if (tipe === 'quartal') {
+                let qLabel = $('#filterQuartal option:selected').text();
+                periodLabel = `Periode: ${qLabel} · ${tahun}`;
+            } else if (tipe === 'tahunan') {
+                periodLabel = `Periode: Tahun ${tahun}`;
+            } else {
+                periodLabel = `Periode: ${namaBulan} ${tahun}`;
+            }
+            $('#current-period').text(periodLabel);
+
             $('#loading-spinner').removeClass('d-none');
             $('#weekly-container').html('');
             rawDataStore = [];
@@ -2838,8 +2921,13 @@
                 tahunan: {}
             };
             $.ajax({
-                url: `/office/approval-pendapatan/get/${tahun}/${bulan}`,
+                url: `/office/approval-pendapatan/get/${tahun}/${bulan || 1}`,
                 type: "GET",
+                data: {
+                    tipe_periode: tipe,
+                    minggu: minggu,
+                    quartal: quartal
+                },
                 success: function(response) {
                     $('#loading-spinner').addClass('d-none');
                     let monthDataList = response.data || [];
@@ -2852,22 +2940,32 @@
                         return;
                     }
                     moment.locale('id');
+                    let allWeeksCount = 0;
                     monthDataList.forEach(md => {
-                        md.weeksData.forEach(wd => {
+                        let weeks = md.weeksData || [];
+                        allWeeksCount += weeks.length;
+                        weeks.forEach((wd, wdIdx) => {
+                            let weekKey = 'week_' + wd.week_number + '_' + (wd.start || wdIdx);
                             rawWeeksStore.push({
-                                week_key: 'week_' + wd.week_number,
+                                week_key: weekKey,
                                 week_number: wd.week_number,
                                 start: wd.start,
                                 end: wd.end
                             });
-                            wd.data.forEach(item => {
-                                item.week_key = 'week_' + wd.week_number;
+                            (wd.data || []).forEach(item => {
+                                item.week_key = weekKey;
                                 item.week_start = wd.start;
                                 item.week_end = wd.end;
                                 rawDataStore.push(item);
                             });
                         });
                     });
+                    if (allWeeksCount === 0 || rawDataStore.length === 0) {
+                        $('#weekly-container').html(
+                            `<div class="card shadow-sm border-0 vlk-card"><div class="card-body text-center py-5"><i class="bi bi-inbox fs-1 text-muted mb-3"></i><p class="text-muted fs-5 mb-0">Tidak ada data pada periode ini</p></div></div>`
+                        );
+                        return;
+                    }
                     applyFiltersToTable();
                 },
                 error: function(xhr) {
@@ -3355,7 +3453,8 @@
                         let filterMonth = parseInt($('#month').val(), 10);
                         let filterYear  = parseInt($('#year').val(), 10);
                         let outOfPeriod = false;
-                        if (item.tanggal_mulai) {
+                        let curTipe = $('#filterTipePeriode').val() || 'bulanan';
+                        if ((curTipe === 'bulanan' || curTipe === 'mingguan') && item.tanggal_mulai) {
                             let d = moment(item.tanggal_mulai, 'YYYY-MM-DD');
                             if (d.isValid() && (d.month() + 1 !== filterMonth || d.year() !== filterYear)) {
                                 outOfPeriod = true;
@@ -3391,54 +3490,91 @@
                 let validCount = weekItems.filter(i => i.valid === 'valid').length;
                 let totalRows = weekItems.length;
                 let footerHtml = '';
+
+                const frontMergeCols = [
+                    'no_faktur', 'no_invoice', 'materi', 'tanggal_training',
+                    'perusahaan', 'nama_sales', 'instruktur'
+                ];
+
+                // Hanya hitung kolom depan yang consecutive dari awal
+                let visibleFrontCount = 0;
+                for (let i = 0; i < visibleCols.length; i++) {
+                    if (frontMergeCols.indexOf(visibleCols[i]) !== -1) {
+                        visibleFrontCount++;
+                    } else {
+                        break;
+                    }
+                }
+                let labelColspan = 1 + visibleFrontCount;
+
+                // dataProp → key SUM backend
+                const totalMapping = {
+                    'harga':                 'total_harga',
+                    'pax':                   'total_pax',
+                    'total_penjualan_kotor': 'total_penjualan',
+                    'diskon':                'total_diskon_pa',
+                    'total_diskon':          'total_diskon',
+                    'total_pa':              'total_pa',
+                    'total_cashback':        'total_cashback',
+                    'total_uang_saku':       'total_uang_saku',
+                    'total_akomodasi':       'total_akomodasi',
+                    'oleh_oleh':             'oleh_oleh',
+                    'biaya_lain_lain':       'biaya_lain_lain',
+                    'entertainment':         'entertainment',
+                    'biaya_transport':       'biaya_transport',
+                    'pengurangan_pph':       'pengurangan_pph',
+                    'exam':                  'total_exam',
+                    'total_penjualan_sales': 'total_penjualan_sales',
+                    'PPN':                   'total_ppn',
+                    'PPH':                   'total_pph',
+                    'jumlah_pembayaran':     'jumlah_pembayaran',
+                    'biaya_admin':           'biaya_admin',
+                    'total_piutang':         'total_piutang'
+                };
+
+                const noTotalCols = frontMergeCols.concat([
+                    'jenis_transport', 'tanggal_pembayaran', 'tanggal_mulai', 'tanggal_selesai'
+                ]);
+
+                // Hitung Subtotal Mingguan (Per Periode satu per satu)
+                let weekSubtotal = {};
+                weekItems.forEach(item => {
+                    Object.keys(totalMapping).forEach(prop => {
+                        let val = 0;
+                        if (prop === 'exam') {
+                            val = parseFloat(item.exam_value) || 0;
+                        } else {
+                            val = parseFloat(item[prop]) || 0;
+                        }
+                        weekSubtotal[prop] = (weekSubtotal[prop] || 0) + val;
+                    });
+                });
+
+                let mingguanCells = `<td class="fw-bold text-center" colspan="${labelColspan}">TOTAL MINGGU ${weekInfo.week_number}</td>`;
+                visibleCols.forEach(function (colKey, colIdx) {
+                    if (colIdx < visibleFrontCount) return;
+
+                    let colDef = COLUMN_DEFS[colKey];
+                    let dataProp = colDef ? colDef.dataProp : colKey;
+
+                    if (noTotalCols.indexOf(colKey) !== -1 || !totalMapping[dataProp]) {
+                        mingguanCells += '<td></td>';
+                        return;
+                    }
+
+                    let val = weekSubtotal[dataProp] || 0;
+                    if (dataProp === 'pax') {
+                        mingguanCells += `<td class="text-center fw-bold">${Number(val).toLocaleString('id-ID')}</td>`;
+                    } else {
+                        mingguanCells += `<td class="text-center fw-bold">${formatRupiah(val)}</td>`;
+                    }
+                });
+
+                let tfootRows = `<tr class="table-warning fw-bold" style="background-color: #fff3cd;">${mingguanCells}</tr>`;
+
                 if (isLastWeek && (filteredData.length > 0 || rawDataStore.length > 0)) {
                     let fb = footerDataStore.bulanan || {};
                     let ft = footerDataStore.tahunan || {};
-
-                    const frontMergeCols = [
-                        'no_faktur', 'no_invoice', 'materi', 'tanggal_training',
-                        'perusahaan', 'nama_sales', 'instruktur'
-                    ];
-
-                    // Hanya hitung kolom depan yang consecutive dari awal
-                    let visibleFrontCount = 0;
-                    for (let i = 0; i < visibleCols.length; i++) {
-                        if (frontMergeCols.indexOf(visibleCols[i]) !== -1) {
-                            visibleFrontCount++;
-                        } else {
-                            break;
-                        }
-                    }
-                    let labelColspan = 1 + visibleFrontCount;
-
-                    // dataProp → key SUM backend (sesuaikan setelah Anda tambah SUM di controller)
-                    const totalMapping = {
-                        'harga':                 'total_harga',
-                        'pax':                   'total_pax',
-                        'total_penjualan_kotor': 'total_penjualan',
-                        'diskon':                'total_diskon_pa',
-                        'total_diskon':          'total_diskon',
-                        'total_pa':              'total_pa',
-                        'total_cashback':        'total_cashback',
-                        'total_uang_saku':       'total_uang_saku',
-                        'total_akomodasi':       'total_akomodasi',
-                        'oleh_oleh':             'oleh_oleh',
-                        'biaya_lain_lain':       'biaya_lain_lain',
-                        'entertainment':         'entertainment',
-                        'biaya_transport':       'biaya_transport',
-                        'pengurangan_pph':       'pengurangan_pph',
-                        'exam':                  'total_exam',
-                        'total_penjualan_sales': 'total_penjualan_sales',
-                        'PPN':                   'total_ppn',
-                        'PPH':                   'total_pph',
-                        'jumlah_pembayaran':     'jumlah_pembayaran',
-                        'biaya_admin':           'biaya_admin',
-                        'total_piutang':         'total_piutang'
-                    };
-
-                    const noTotalCols = frontMergeCols.concat([
-                        'jenis_transport', 'tanggal_pembayaran', 'tanggal_mulai', 'tanggal_selesai'
-                    ]);
 
                     let bulananCells = `<td class="fw-bold text-center" colspan="${labelColspan}">TOTAL BULANAN</td>`;
                     let tahunanCells = `<td class="fw-bold text-center" colspan="${labelColspan}">TOTAL TAHUNAN</td>`;
@@ -3468,11 +3604,11 @@
                         }
                     });
 
-                    footerHtml = `<tfoot>
-                        <tr class="table-info fw-bold">${bulananCells}</tr>
-                        <tr class="table-dark fw-bold">${tahunanCells}</tr>
-                    </tfoot>`;
+                    tfootRows += `<tr class="table-info fw-bold">${bulananCells}</tr>`;
+                    tfootRows += `<tr class="table-dark fw-bold">${tahunanCells}</tr>`;
                 }
+
+                footerHtml = `<tfoot>${tfootRows}</tfoot>`;
                 container.append(`
                     <div class="card my-1 vlk-card">
                         <div class="card-body p-2">
@@ -3601,22 +3737,40 @@
         }
 
         $(document).on('click', '#btnExportExcel', function() {
-            let bulan = $('#month').val();
+            let tipe = $('#filterTipePeriode').val() || 'bulanan';
             let tahun = $('#year').val();
-            if (!bulan || !tahun) {
+            let bulan = $('#month').val();
+            let minggu = $('#filterWeek').val() || 'all';
+            let quartal = $('#filterQuartal').val() || '1';
+
+            if ((tipe === 'bulanan' || tipe === 'mingguan') && !bulan) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Peringatan',
-                    text: 'Pilih periode terlebih dahulu.'
+                    text: 'Pilih bulan terlebih dahulu pada filter.'
                 });
                 return;
             }
+
+            if (!tahun) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: 'Pilih tahun terlebih dahulu pada filter.'
+                });
+                return;
+            }
+
             let payload = {
+                tipe_periode: tipe,
                 tahun: tahun,
                 bulan: bulan,
-                filter: filterState,
+                minggu: minggu,
+                quartal: quartal,
+                filter: (typeof filterState !== 'undefined') ? filterState : {},
                 _token: '{{ csrf_token() }}'
             };
+
             let form = $('<form>', {
                 'method': 'POST',
                 'action': '/office/approval-pendapatan/export-excel',

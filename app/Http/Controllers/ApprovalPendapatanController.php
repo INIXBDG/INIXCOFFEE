@@ -25,6 +25,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class ApprovalPendapatanController extends Controller
 {
@@ -241,162 +242,103 @@ class ApprovalPendapatanController extends Controller
         ]);
     }
 
-    public function get($tahun, $bulan)
+    public function get(Request $request, $tahun = null, $bulan = null)
     {
-        $validate = Validator::make(
-            [
-                'tahun' => $tahun,
-                'bulan' => $bulan,
-            ],
-            [
-                'tahun' => 'required|integer|digits:4',
-                'bulan' => 'required|integer|between:1,12',
-            ],
-        );
+        $tahun = $tahun ?: $request->query('tahun', now()->year);
+        $bulan = $bulan ?: $request->query('bulan', now()->month);
+        $tipePeriode = $request->query('tipe_periode', 'bulanan');
+        $minggu = $request->query('minggu');
+        $quartal = (int) $request->query('quartal', 1);
 
-        if ($validate->fails()) {
-            return response()->json(['error' => 'Parameter tahun dan bulan tidak valid'], 400);
-        }
+        $tahun = (int) $tahun;
+        $bulan = (int) $bulan;
 
         $startDate = CarbonImmutable::create($tahun, $bulan, 1);
-        $endDate = CarbonImmutable::create($tahun, $bulan, 1)->endOfMonth();
-        $hariIni = now();
+        $allMonthRanges = [];
 
-        $startOfWeek = $startDate->copy()->startOfWeek();
-        $endOfMonth = $endDate->copy();
-
-        $weekNumber = 1;
-        $weekRanges = [];
-
-        while ($startOfWeek->lte($endOfMonth)) {
-            $endOfWeek = $startOfWeek->copy()->endOfWeek();
-            $start = $startOfWeek->format('Y-m-d');
-            $end = $endOfWeek->format('Y-m-d');
-
-            $rows = Invoice::with(['rkm', 'rkm.materi', 'rkm.perusahaan', 'rkm.sales', 'rkm.instruktur', 'rkm.outstanding', 'rkm.eksam', 'rkm.outstanding.tracking_outstanding'])
-                ->whereHas('rkm', function ($query) use ($start, $end, $hariIni) {
-                    $query->whereBetween('tanggal_awal', [$start, $end])
-                        ->whereDate('tanggal_awal', '<=', $hariIni);
-                })
-                ->get();
-
-            $dataValid = ApprovalPendapatan::with(['dataMateri', 'dataPerusahaan'])
-                ->whereIn('id_rkm', $rows->pluck('id_rkm'))
-                ->get()
-                ->keyBy('id_rkm');
-
-            $weekData = [];
-            foreach ($rows as $item) {
-                $rkm = $item->rkm;
-                if (!$rkm) continue;
-
-                $valid = $dataValid->get($item->id_rkm);
-                $hargaNet = (float) ($valid?->harga_net ?? ($item->harga_jual ?? 0));
-                $pax = (int) ($valid?->pax ?? ($item->pax ?? 0));
-                $total = (float) ($valid?->total_penjualan_kotor ?? $hargaNet * $pax);
-
-                $weekData[] = [
-                    'id_rkm' => $rkm->id,
-                    'no_faktur' => $valid?->no_faktur ?? 'belum ada',
-                    'no_invoice' => $valid?->no_invoice ?? 'belum ada',
-                    'materi' => $valid?->dataMateri?->nama_materi ?? ($rkm->materi?->nama_materi ?? 'materi kosong'),
-                    'tanggal_training' => Carbon::parse($rkm->tanggal_awal)->translatedFormat('d F Y') . ' s/d ' . Carbon::parse($rkm->tanggal_akhir)->translatedFormat('d F Y'),
-                    'perusahaan' => $valid?->dataPerusahaan?->nama_perusahaan ?? ($rkm->perusahaan?->nama_perusahaan ?? 'perusahaan kosong'),
-                    'nama_sales' => $rkm->sales?->nama_lengkap ?? 'sales kosong',
-                    'instruktur' => $rkm->instruktur?->nama_lengkap ?? 'instruktur kosong',
-                    'harga' => $hargaNet,
-                    'pax' => $pax,
-                    'total' => $total,
-                    'total_penjualan_kotor' => $total,
-                    'diskon' => (float) ($valid?->diskon ?? 0),
-                    'total_diskon' => (float) ($valid?->total_diskon ?? 0),
-                    'total_pa' => (float) ($valid?->total_pa ?? 0),
-                    'total_cashback' => (float) ($valid?->total_cashback ?? 0),
-                    'total_uang_saku' => (float) ($valid?->total_uang_saku ?? 0),
-                    'total_akomodasi' => (float) ($valid?->total_akomodasi ?? 0),
-                    'oleh_oleh' => (float) ($valid?->oleh_oleh ?? 0),
-                    'biaya_lain_lain' => (float) ($valid?->biaya_lain_lain ?? 0),
-                    'entertainment' => (float) ($valid?->entertainment ?? 0),
-                    'total_penjualan_sales' => (float) ($valid?->total_penjualan_bersih ?? 0),
-                    'PPN' => (float) ($valid?->PPN ?? 0),
-                    'PPH' => (float) ($valid?->PPH ?? 0),
-                    'pengurangan_pph' => (float) ($valid?->pengurangan_pph ?? 0),
-                    'jumlah_pembayaran' => (float) ($valid?->jumlah_pembayaran ?? 0),
-                    'tanggal_pembayaran' => $valid?->tanggal_pembayaran ?? null,
-                    'biaya_admin' => (float) ($valid?->biaya_admin ?? 0),
-                    'total_piutang' => (float) ($rkm->outstanding?->net_sales ?? 0),
-                    'jenis_transport' => $valid?->jenis_transport ?? '-',
-                    'biaya_transport' => (float) ($valid?->biaya_transport ?? 0),
-                    'valid' => $valid?->status ?? 'belum tervalidasi',
-                    'materi_id' => $valid?->materi ?? $rkm->materi_key,
-                    'tanggal_mulai' => $valid?->tanggal_mulai ? Carbon::parse($valid->tanggal_mulai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_awal)->format('Y-m-d'),
-                    'tanggal_selesai' => $valid?->tanggal_selesai ? Carbon::parse($valid->tanggal_selesai)->format('Y-m-d') : Carbon::parse($rkm->tanggal_akhir)->format('Y-m-d'),
-                    'perusahaan_id' => $valid?->perusahaan ?? $rkm->perusahaan_key,
-                    'exam' => ($valid?->exam ?? $rkm->eksam?->total) ? 'Rp ' . number_format((float) ($valid?->exam ?? $rkm->eksam?->total), 0, ',', '.') : '-',
-                    'exam_value' => (float) ($valid?->exam ?? $rkm->eksam?->total ?? 0),
-                    'pic' => $rkm->outstanding?->pic ?? null,
-                    'regist' => $rkm->outstanding?->no_regist ?? null,
-                    'tracking' => $rkm->outstanding?->tracking_outstanding ? [
-                        'invoice' => (bool)$rkm->outstanding->tracking_outstanding->invoice,
-                        'faktur_pajak' => (bool)$rkm->outstanding->tracking_outstanding->faktur_pajak,
-                        'dokumen_tambahan' => (bool)$rkm->outstanding->tracking_outstanding->dokumen_tambahan,
-                        'konfir_cs' => (bool)$rkm->outstanding->tracking_outstanding->konfir_cs,
-                        'tracking_dokumen' => (bool)$rkm->outstanding->tracking_outstanding->tracking_dokumen,
-                        'no_resi' => (bool)$rkm->outstanding->tracking_outstanding->no_resi,
-                        'konfir_pic' => (bool)$rkm->outstanding->tracking_outstanding->konfir_pic,
-                        'pembayaran' => (bool)$rkm->outstanding->tracking_outstanding->pembayaran,
-                        'status_resi' => $rkm->outstanding->tracking_outstanding->status_resi,
-                        'status_pic' => $rkm->outstanding->tracking_outstanding->status_pic ?? '-',
-                    ] : null,
-                ];
+        if ($tipePeriode === 'mingguan') {
+            $monthWeeks = $this->getFilteredDataByWeek($tahun, $bulan);
+            if ($minggu && $minggu !== 'all') {
+                $monthWeeks = array_values(array_filter($monthWeeks, fn($w) => ($w['week_number'] ?? null) == (int)$minggu));
             }
-
-            $weekRanges[] = [
-                'start' => $start,
-                'end' => $end,
-                'data' => $weekData,
-                'week_number' => $weekNumber,
+            $allMonthRanges[] = [
+                'month' => $startDate->translatedFormat('F-Y'),
+                'weeksData' => $monthWeeks,
             ];
-
-            $startOfWeek = $startOfWeek->addWeek();
-            $weekNumber++;
+        } elseif ($tipePeriode === 'quartal') {
+            $quartalMonths = [
+                1 => [1, 2, 3],
+                2 => [4, 5, 6],
+                3 => [7, 8, 9],
+                4 => [10, 11, 12],
+            ];
+            $months = $quartalMonths[$quartal] ?? [1, 2, 3];
+            $combinedWeeks = [];
+            foreach ($months as $m) {
+                $mWeeks = $this->getFilteredDataByWeek($tahun, $m);
+                $combinedWeeks = array_merge($combinedWeeks, $mWeeks);
+            }
+            $allMonthRanges[] = [
+                'month' => "Quartal {$quartal} - {$tahun}",
+                'weeksData' => $combinedWeeks,
+            ];
+        } elseif ($tipePeriode === 'tahunan') {
+            $combinedWeeks = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $mWeeks = $this->getFilteredDataByWeek($tahun, $m);
+                $combinedWeeks = array_merge($combinedWeeks, $mWeeks);
+            }
+            $allMonthRanges[] = [
+                'month' => "Tahun {$tahun}",
+                'weeksData' => $combinedWeeks,
+            ];
+        } else { // bulanan
+            $monthWeeks = $this->getFilteredDataByWeek($tahun, $bulan);
+            $allMonthRanges[] = [
+                'month' => $startDate->translatedFormat('F-Y'),
+                'weeksData' => $monthWeeks,
+            ];
         }
 
-        $monthRanges = [
-            'month' => $startDate->translatedFormat('F-Y'),
-            'weeksData' => $weekRanges,
-        ];
+        // Footer Bulanan / Periode
+        $footerBulananQuery = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)->where('status', 'valid');
+        if ($tipePeriode === 'quartal') {
+            $quartalMonths = [1 => [1,2,3], 2 => [4,5,6], 3 => [7,8,9], 4 => [10,11,12]];
+            $footerBulananQuery->whereIn(DB::raw('MONTH(tanggal_mulai)'), $quartalMonths[$quartal] ?? [1,2,3]);
+        } elseif ($tipePeriode !== 'tahunan') {
+            $footerBulananQuery->whereMonth('tanggal_mulai', $bulan);
+        }
 
-        // Footer Bulanan
-        $footerBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
-            ->whereMonth('tanggal_mulai', $bulan)
-            ->where('status', 'valid')
-            ->selectRaw("
-                SUM(CAST(total_penjualan_kotor AS UNSIGNED)) as total_penjualan,
-                SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
-                SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
-                SUM(CAST(total_cashback AS UNSIGNED)) as total_cashback,
-                SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
-                SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
-                SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
-                SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
-                SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
-                SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
-                SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
-                SUM(CAST(PPH AS UNSIGNED)) as total_pph,
-                SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
-                SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
-                SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
-                SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
-                SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
-                SUM(CAST(pax AS UNSIGNED)) as total_pax,
-                SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
-            ")->first();
+        $footerBulanan = $footerBulananQuery->selectRaw("
+            SUM(CAST(total_penjualan_kotor AS UNSIGNED)) as total_penjualan,
+            SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
+            SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
+            SUM(CAST(total_cashback AS UNSIGNED)) as total_cashback,
+            SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
+            SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
+            SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+            SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
+            SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
+            SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
+            SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
+            SUM(CAST(PPH AS UNSIGNED)) as total_pph,
+            SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
+            SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
+            SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
+            SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
+            SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
+            SUM(CAST(pax AS UNSIGNED)) as total_pax,
+            SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
+        ")->first();
 
-        $examBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
-            ->whereMonth('tanggal_mulai', $bulan)
-            ->where('status', 'valid')
-            ->sum('exam');
+        $examBulananQuery = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)->where('status', 'valid');
+        if ($tipePeriode === 'quartal') {
+            $quartalMonths = [1 => [1,2,3], 2 => [4,5,6], 3 => [7,8,9], 4 => [10,11,12]];
+            $examBulananQuery->whereIn(DB::raw('MONTH(tanggal_mulai)'), $quartalMonths[$quartal] ?? [1,2,3]);
+        } elseif ($tipePeriode !== 'tahunan') {
+            $examBulananQuery->whereMonth('tanggal_mulai', $bulan);
+        }
+        $examBulanan = $examBulananQuery->sum('exam');
 
         if ($footerBulanan) {
             $footerBulanan->total_exam = $examBulanan;
@@ -406,7 +348,7 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0, 'total_akomodasi' => 0, 'oleh_oleh' => 0, 'biaya_lain_lain' => 0,
                 'entertainment' => 0, 'total_penjualan_sales' => 0, 'total_ppn' => 0, 'total_pph' => 0,
                 'pengurangan_pph' => 0, 'jumlah_pembayaran' => 0, 'biaya_admin' => 0, 'biaya_transport' => 0,
-                'total_exam' => $examBulanan,'total_piutang' => 0,
+                'total_exam' => $examBulanan, 'total_piutang' => 0,
             ];
         }
 
@@ -447,12 +389,12 @@ class ApprovalPendapatanController extends Controller
                 'total_uang_saku' => 0, 'total_akomodasi' => 0, 'oleh_oleh' => 0, 'biaya_lain_lain' => 0,
                 'entertainment' => 0, 'total_penjualan_sales' => 0, 'total_ppn' => 0, 'total_pph' => 0,
                 'pengurangan_pph' => 0, 'jumlah_pembayaran' => 0, 'biaya_admin' => 0, 'biaya_transport' => 0,
-                'total_exam' => $examTahunan,'total_piutang' => 0,
+                'total_exam' => $examTahunan, 'total_piutang' => 0,
             ];
         }
 
         return response()->json([
-            'data' => [$monthRanges],
+            'data' => $allMonthRanges,
             'footer_bulanan' => $footerBulanan,
             'footer_tahunan' => $footerTahunan,
         ]);
@@ -598,20 +540,72 @@ class ApprovalPendapatanController extends Controller
         $rawPayload = $request->input('payload');
         $payload = $rawPayload ? json_decode($rawPayload, true) : $request->all();
 
+        $tipePeriode = $payload['tipe_periode'] ?? 'bulanan';
         $tahun = (int) ($payload['tahun'] ?? now()->year);
         $bulan = (int) ($payload['bulan'] ?? now()->month);
+        $mingguPilihan = !empty($payload['minggu']) && $payload['minggu'] !== 'all' ? (int) $payload['minggu'] : null;
+        $quartalPilihan = !empty($payload['quartal']) ? (int) $payload['quartal'] : 1;
         $filter = $payload['filter'] ?? [];
-
-        $weeks = $this->getFilteredDataByWeek($tahun, $bulan, $filter);
-
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Approval Penjualan');
 
         $bulanNama = [
             'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
             'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
         ];
+
+        $weeks = [];
+        $periodeLabelText = '';
+
+        if ($tipePeriode === 'mingguan') {
+            $monthWeeks = $this->getFilteredDataByWeek($tahun, $bulan, $filter);
+            if ($mingguPilihan) {
+                $weeks = array_values(array_filter($monthWeeks, function ($w) use ($mingguPilihan) {
+                    return ($w['week_number'] ?? null) == $mingguPilihan;
+                }));
+                $periodeLabelText = "Minggu {$mingguPilihan} · {$bulanNama[$bulan - 1]} {$tahun}";
+            } else {
+                $weeks = $monthWeeks;
+                $periodeLabelText = "Mingguan · {$bulanNama[$bulan - 1]} {$tahun}";
+            }
+        } elseif ($tipePeriode === 'quartal') {
+            $quartalMonths = [
+                1 => [1, 2, 3],
+                2 => [4, 5, 6],
+                3 => [7, 8, 9],
+                4 => [10, 11, 12],
+            ];
+            $months = $quartalMonths[$quartalPilihan] ?? [1, 2, 3];
+            $qLabels = [
+                1 => 'Q1 (Januari - Maret)',
+                2 => 'Q2 (April - Juni)',
+                3 => 'Q3 (Juli - September)',
+                4 => 'Q4 (Oktober - Desember)',
+            ];
+            $periodeLabelText = "Quartal " . ($qLabels[$quartalPilihan] ?? "Q{$quartalPilihan}") . " {$tahun}";
+
+            foreach ($months as $m) {
+                $mWeeks = $this->getFilteredDataByWeek($tahun, $m, $filter);
+                foreach ($mWeeks as $w) {
+                    $w['month_name'] = $bulanNama[$m - 1];
+                    $weeks[] = $w;
+                }
+            }
+        } elseif ($tipePeriode === 'tahunan') {
+            $periodeLabelText = "Tahunan {$tahun}";
+            for ($m = 1; $m <= 12; $m++) {
+                $mWeeks = $this->getFilteredDataByWeek($tahun, $m, $filter);
+                foreach ($mWeeks as $w) {
+                    $w['month_name'] = $bulanNama[$m - 1];
+                    $weeks[] = $w;
+                }
+            }
+        } else { // bulanan
+            $weeks = $this->getFilteredDataByWeek($tahun, $bulan, $filter);
+            $periodeLabelText = "Bulan {$bulanNama[$bulan - 1]} {$tahun}";
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Approval Penjualan');
 
         $lastCol = 'AH';
 
@@ -626,7 +620,7 @@ class ApprovalPendapatanController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells("A3:{$lastCol}3");
-        $sheet->setCellValue('A3', 'Periode: ' . $bulanNama[$bulan - 1] . ' ' . $tahun);
+        $sheet->setCellValue('A3', 'Periode: ' . $periodeLabelText);
         $sheet->getStyle('A3')->getFont()->setItalic(true)->setSize(10)->getColor()->setRGB('6B7C93');
         $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
@@ -669,6 +663,32 @@ class ApprovalPendapatanController extends Controller
 
         $currencyCols = ['I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AD', 'AE'];
 
+        $numericCols = [
+            'I' => 'harga',
+            'J' => 'pax',
+            'K' => 'total_penjualan_kotor',
+            'L' => 'diskon',
+            'M' => 'total_diskon',
+            'N' => 'total_pa',
+            'O' => 'total_cashback',
+            'P' => 'total_uang_saku',
+            'Q' => 'total_akomodasi',
+            'R' => 'oleh_oleh',
+            'S' => 'biaya_lain_lain',
+            'T' => 'entertainment',
+            'V' => 'biaya_transport',
+            'W' => 'pengurangan_pph',
+            'X' => 'exam_value',
+            'Y' => 'total_penjualan_sales',
+            'Z' => 'PPN',
+            'AA' => 'PPH',
+            'AB' => 'jumlah_pembayaran',
+            'AD' => 'biaya_admin',
+            'AE' => 'total_piutang'
+        ];
+
+        $grandSums = array_fill_keys(array_keys($numericCols), 0.0);
+
         $rowNum = 5;
         $grandTotalRows = 0;
         $grandValid = 0;
@@ -683,7 +703,8 @@ class ApprovalPendapatanController extends Controller
 
             // --- Judul minggu ---
             $sheet->mergeCells("A{$rowNum}:{$lastCol}{$rowNum}");
-            $titleWeek = "Minggu {$weekNumber}  ·  Periode: {$startLabel} – {$endLabel}";
+            $prefixMonth = !empty($week['month_name']) ? "{$week['month_name']} - " : "";
+            $titleWeek = "{$prefixMonth}Minggu {$weekNumber}  ·  Periode: {$startLabel} – {$endLabel}";
             if ($totalRows > 0) {
                 $titleWeek .= "  ·  {$validCount}/{$totalRows} tervalidasi";
             } else {
@@ -722,6 +743,7 @@ class ApprovalPendapatanController extends Controller
             $rowNum++;
 
             $dataStart = $rowNum;
+            $weekSums = array_fill_keys(array_keys($numericCols), 0.0);
 
             if ($totalRows === 0) {
                 $sheet->mergeCells("A{$rowNum}:{$lastCol}{$rowNum}");
@@ -777,6 +799,12 @@ class ApprovalPendapatanController extends Controller
                         $sheet->getStyle($c . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
                     }
 
+                    foreach ($numericCols as $c => $prop) {
+                        $val = (float) ($item[$prop] ?? 0);
+                        $weekSums[$c] += $val;
+                        $grandSums[$c] += $val;
+                    }
+
                     // Zebra
                     if ($no % 2 === 0) {
                         $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFill()
@@ -801,13 +829,199 @@ class ApprovalPendapatanController extends Controller
 
                 $grandTotalRows += $totalRows;
                 $grandValid += $validCount;
+
+                // ===== BARIS SUBTOTAL PERIODE (MINGGUAN) =====
+                $sheet->mergeCells("A{$rowNum}:H{$rowNum}");
+                $subtotalLabel = "TOTAL MINGGU {$weekNumber}";
+                if (!empty($week['month_name'])) {
+                    $subtotalLabel = "TOTAL {$week['month_name']} - MINGGU {$weekNumber}";
+                }
+                $sheet->setCellValue("A{$rowNum}", $subtotalLabel);
+                $sheet->getStyle("A{$rowNum}:H{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+                foreach ($numericCols as $c => $prop) {
+                    $sheet->setCellValue($c . $rowNum, $weekSums[$c]);
+                    $sheet->getStyle($c . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+                }
+
+                $subtotalRange = "A{$rowNum}:{$lastCol}{$rowNum}";
+                $sheet->getStyle($subtotalRange)->getFont()->setBold(true)->setSize(9);
+                $sheet->getStyle($subtotalRange)->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('FEF3D6'); // soft yellow / warning
+                $sheet->getStyle($subtotalRange)->getBorders()->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN)
+                    ->getColor()->setRGB('D6B656');
+                $sheet->getRowDimension($rowNum)->setRowHeight(20);
+                $rowNum++;
             }
 
             // Spasi antar minggu
             $rowNum++;
         }
 
-        // ===== Ringkasan bawah =====
+        // ===== GRAND TOTAL PERIODE KESELURUHAN =====
+        $sheet->mergeCells("A{$rowNum}:H{$rowNum}");
+        $sheet->setCellValue("A{$rowNum}", "TOTAL KESELURUHAN ({$periodeLabelText})");
+        $sheet->getStyle("A{$rowNum}:H{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        foreach ($numericCols as $c => $prop) {
+            $sheet->setCellValue($c . $rowNum, $grandSums[$c]);
+            $sheet->getStyle($c . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+        }
+
+        $grandRange = "A{$rowNum}:{$lastCol}{$rowNum}";
+        $sheet->getStyle($grandRange)->getFont()->setBold(true)->setSize(10)->getColor()->setRGB('1E3A8A');
+        $sheet->getStyle($grandRange)->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('DBEAFE'); // soft blue
+        $sheet->getStyle($grandRange)->getBorders()->getTop()
+            ->setBorderStyle(Border::BORDER_THIN)
+            ->getColor()->setRGB('3B82F6');
+        $sheet->getStyle($grandRange)->getBorders()->getBottom()
+            ->setBorderStyle(Border::BORDER_DOUBLE)
+            ->getColor()->setRGB('3B82F6');
+        $sheet->getRowDimension($rowNum)->setRowHeight(24);
+        $rowNum++;
+
+        // Jika mode bulanan, tampilkan juga ringkasan total bulanan & tahunan tervalidasi
+        if ($tipePeriode === 'bulanan') {
+            $footerBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+                ->whereMonth('tanggal_mulai', $bulan)
+                ->where('status', 'valid')
+                ->selectRaw("
+                    SUM(CAST(total_penjualan_kotor AS UNSIGNED)) as total_penjualan,
+                    SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
+                    SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
+                    SUM(CAST(total_cashback AS UNSIGNED)) as total_cashback,
+                    SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
+                    SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
+                    SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                    SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
+                    SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
+                    SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
+                    SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
+                    SUM(CAST(PPH AS UNSIGNED)) as total_pph,
+                    SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
+                    SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
+                    SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
+                    SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
+                    SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
+                    SUM(CAST(pax AS UNSIGNED)) as total_pax,
+                    SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
+                ")->first();
+
+            $examBulanan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+                ->whereMonth('tanggal_mulai', $bulan)
+                ->where('status', 'valid')
+                ->sum('exam');
+
+            $footerTahunan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+                ->where('status', 'valid')
+                ->selectRaw("
+                    SUM(CAST(total_penjualan_kotor AS UNSIGNED)) as total_penjualan,
+                    SUM(CAST(total_diskon AS UNSIGNED)) as total_diskon,
+                    SUM(CAST(total_pa AS UNSIGNED)) as total_pa,
+                    SUM(CAST(total_cashback AS UNSIGNED)) as total_cashback,
+                    SUM(CAST(total_uang_saku AS UNSIGNED)) as total_uang_saku,
+                    SUM(CAST(total_akomodasi AS UNSIGNED)) as total_akomodasi,
+                    SUM(CAST(oleh_oleh AS UNSIGNED)) as oleh_oleh,
+                    SUM(CAST(biaya_lain_lain AS UNSIGNED)) as biaya_lain_lain,
+                    SUM(CAST(entertainment AS UNSIGNED)) as entertainment,
+                    SUM(CAST(total_penjualan_bersih AS UNSIGNED)) as total_penjualan_sales,
+                    SUM(CAST(PPN AS UNSIGNED)) as total_ppn,
+                    SUM(CAST(PPH AS UNSIGNED)) as total_pph,
+                    SUM(CAST(pengurangan_pph AS UNSIGNED)) as pengurangan_pph,
+                    SUM(CAST(jumlah_pembayaran AS UNSIGNED)) as jumlah_pembayaran,
+                    SUM(CAST(biaya_admin AS UNSIGNED)) as biaya_admin,
+                    SUM(CAST(biaya_transport AS UNSIGNED)) as biaya_transport,
+                    SUM(CAST(harga_net AS UNSIGNED)) as total_harga,
+                    SUM(CAST(pax AS UNSIGNED)) as total_pax,
+                    SUM(CAST(diskon AS UNSIGNED)) as total_diskon_pa
+                ")->first();
+
+            $examTahunan = ApprovalPendapatan::whereYear('tanggal_mulai', $tahun)
+                ->where('status', 'valid')
+                ->sum('exam');
+
+            // Baris TOTAL BULANAN (TERVALIDASI)
+            $sheet->mergeCells("A{$rowNum}:H{$rowNum}");
+            $sheet->setCellValue("A{$rowNum}", "TOTAL BULANAN (TERVALIDASI)");
+            $sheet->getStyle("A{$rowNum}:H{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->setCellValue('I' . $rowNum, (float) ($footerBulanan?->total_harga ?? 0));
+            $sheet->setCellValue('J' . $rowNum, (int) ($footerBulanan?->total_pax ?? 0));
+            $sheet->setCellValue('K' . $rowNum, (float) ($footerBulanan?->total_penjualan ?? 0));
+            $sheet->setCellValue('L' . $rowNum, (float) ($footerBulanan?->total_diskon_pa ?? 0));
+            $sheet->setCellValue('M' . $rowNum, (float) ($footerBulanan?->total_diskon ?? 0));
+            $sheet->setCellValue('N' . $rowNum, (float) ($footerBulanan?->total_pa ?? 0));
+            $sheet->setCellValue('O' . $rowNum, (float) ($footerBulanan?->total_cashback ?? 0));
+            $sheet->setCellValue('P' . $rowNum, (float) ($footerBulanan?->total_uang_saku ?? 0));
+            $sheet->setCellValue('Q' . $rowNum, (float) ($footerBulanan?->total_akomodasi ?? 0));
+            $sheet->setCellValue('R' . $rowNum, (float) ($footerBulanan?->oleh_oleh ?? 0));
+            $sheet->setCellValue('S' . $rowNum, (float) ($footerBulanan?->biaya_lain_lain ?? 0));
+            $sheet->setCellValue('T' . $rowNum, (float) ($footerBulanan?->entertainment ?? 0));
+            $sheet->setCellValue('V' . $rowNum, (float) ($footerBulanan?->biaya_transport ?? 0));
+            $sheet->setCellValue('W' . $rowNum, (float) ($footerBulanan?->pengurangan_pph ?? 0));
+            $sheet->setCellValue('X' . $rowNum, (float) ($examBulanan ?? 0));
+            $sheet->setCellValue('Y' . $rowNum, (float) ($footerBulanan?->total_penjualan_sales ?? 0));
+            $sheet->setCellValue('Z' . $rowNum, (float) ($footerBulanan?->total_ppn ?? 0));
+            $sheet->setCellValue('AA' . $rowNum, (float) ($footerBulanan?->total_pph ?? 0));
+            $sheet->setCellValue('AB' . $rowNum, (float) ($footerBulanan?->jumlah_pembayaran ?? 0));
+            $sheet->setCellValue('AD' . $rowNum, (float) ($footerBulanan?->biaya_admin ?? 0));
+
+            foreach ($numericCols as $c => $prop) {
+                $sheet->getStyle($c . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+            }
+            $rangeBln = "A{$rowNum}:{$lastCol}{$rowNum}";
+            $sheet->getStyle($rangeBln)->getFont()->setBold(true)->setSize(9)->getColor()->setRGB('0369A1');
+            $sheet->getStyle($rangeBln)->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('E0F2FE'); // light cyan / info
+            $sheet->getStyle($rangeBln)->getBorders()->getAllBorders()
+                ->setBorderStyle(Border::BORDER_THIN)
+                ->getColor()->setRGB('BAE6FD');
+            $rowNum++;
+
+            // Baris TOTAL TAHUNAN (TERVALIDASI)
+            $sheet->mergeCells("A{$rowNum}:H{$rowNum}");
+            $sheet->setCellValue("A{$rowNum}", "TOTAL TAHUNAN {$tahun} (TERVALIDASI)");
+            $sheet->getStyle("A{$rowNum}:H{$rowNum}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->setCellValue('I' . $rowNum, (float) ($footerTahunan?->total_harga ?? 0));
+            $sheet->setCellValue('J' . $rowNum, (int) ($footerTahunan?->total_pax ?? 0));
+            $sheet->setCellValue('K' . $rowNum, (float) ($footerTahunan?->total_penjualan ?? 0));
+            $sheet->setCellValue('L' . $rowNum, (float) ($footerTahunan?->total_diskon_pa ?? 0));
+            $sheet->setCellValue('M' . $rowNum, (float) ($footerTahunan?->total_diskon ?? 0));
+            $sheet->setCellValue('N' . $rowNum, (float) ($footerTahunan?->total_pa ?? 0));
+            $sheet->setCellValue('O' . $rowNum, (float) ($footerTahunan?->total_cashback ?? 0));
+            $sheet->setCellValue('P' . $rowNum, (float) ($footerTahunan?->total_uang_saku ?? 0));
+            $sheet->setCellValue('Q' . $rowNum, (float) ($footerTahunan?->total_akomodasi ?? 0));
+            $sheet->setCellValue('R' . $rowNum, (float) ($footerTahunan?->oleh_oleh ?? 0));
+            $sheet->setCellValue('S' . $rowNum, (float) ($footerTahunan?->biaya_lain_lain ?? 0));
+            $sheet->setCellValue('T' . $rowNum, (float) ($footerTahunan?->entertainment ?? 0));
+            $sheet->setCellValue('V' . $rowNum, (float) ($footerTahunan?->biaya_transport ?? 0));
+            $sheet->setCellValue('W' . $rowNum, (float) ($footerTahunan?->pengurangan_pph ?? 0));
+            $sheet->setCellValue('X' . $rowNum, (float) ($examTahunan ?? 0));
+            $sheet->setCellValue('Y' . $rowNum, (float) ($footerTahunan?->total_penjualan_sales ?? 0));
+            $sheet->setCellValue('Z' . $rowNum, (float) ($footerTahunan?->total_ppn ?? 0));
+            $sheet->setCellValue('AA' . $rowNum, (float) ($footerTahunan?->total_pph ?? 0));
+            $sheet->setCellValue('AB' . $rowNum, (float) ($footerTahunan?->jumlah_pembayaran ?? 0));
+            $sheet->setCellValue('AD' . $rowNum, (float) ($footerTahunan?->biaya_admin ?? 0));
+
+            foreach ($numericCols as $c => $prop) {
+                $sheet->getStyle($c . $rowNum)->getNumberFormat()->setFormatCode('#,##0');
+            }
+            $rangeThn = "A{$rowNum}:{$lastCol}{$rowNum}";
+            $sheet->getStyle($rangeThn)->getFont()->setBold(true)->setSize(9)->getColor()->setRGB('334155');
+            $sheet->getStyle($rangeThn)->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('F1F5F9'); // soft light gray / netral tanpa garis gelap
+            $sheet->getStyle($rangeThn)->getBorders()->getAllBorders()
+                ->setBorderStyle(Border::BORDER_THIN)
+                ->getColor()->setRGB('CBD5E1');
+            $rowNum++;
+        }
+
+        // ===== Ringkasan baris =====
         $sheet->mergeCells("A{$rowNum}:{$lastCol}{$rowNum}");
         $sheet->setCellValue("A{$rowNum}", "Total keseluruhan: {$grandTotalRows} baris  |  Tervalidasi: {$grandValid}  |  Belum: " . ($grandTotalRows - $grandValid));
         $sheet->getStyle("A{$rowNum}:{$lastCol}{$rowNum}")->getFont()->setBold(true)->setSize(9)->getColor()->setRGB('2A3A4D');
@@ -826,7 +1040,8 @@ class ApprovalPendapatanController extends Controller
 
         $sheet->freezePane('A5');
 
-        $fileName = 'Approval_Penjualan_' . $bulanNama[$bulan - 1] . '_' . $tahun . '.xlsx';
+        $slugPeriode = Str::slug($periodeLabelText);
+        $fileName = 'Approval_Penjualan_' . $slugPeriode . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
