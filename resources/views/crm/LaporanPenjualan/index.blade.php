@@ -577,6 +577,10 @@
                                                     <th>Keterangan Entertaint</th>
                                                     <th>Souvenir</th>
                                                     <th>Cashback</th>
+                                                    <th>Oleh-Oleh</th>
+                                                    <th>Biaya Lain-Lain</th>
+                                                    <th>Keterangan Biaya Lain-Lain</th>
+                                                    <th>Biaya Exam</th>
                                                     <th>Sewa Laptop</th>
                                                     <th>Deskripsi Tambahan</th>
                                                     <th>Tanggal PA</th>
@@ -600,6 +604,10 @@
                                             <td>${item.keterangan_entertaint ?? '-'}</td>
                                             <td>${item.souvenir ? formatRupiah(item.souvenir) : '-'}</td>
                                             <td>${item.cashback ? formatRupiah(item.cashback) : '-'}</td>
+                                            <td>${item.oleh_oleh ? formatRupiah(item.oleh_oleh) : '-'}</td>
+                                            <td>${item.biaya_lain_lain ? formatRupiah(item.biaya_lain_lain) : '-'}</td>
+                                            <td>${item.keterangan_biaya_lain ?? '-'}</td>
+                                            <td>${item.biaya_exam ? formatRupiah(item.biaya_exam) : '-'}</td>
                                             <td>${item.sewa_laptop ? formatRupiah(item.sewa_laptop) : '-'}</td>
                                             <td>${item.deskripsi_tambahan ?? '-'}</td>
                                             <td>${item.tgl_pa ? moment(item.tgl_pa).format('DD MMMM YYYY') : '-'}</td>

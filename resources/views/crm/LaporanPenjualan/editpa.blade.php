@@ -47,6 +47,10 @@
                                     <th>Keterangan Entertainment</th>
                                     <th>Souvenir</th>
                                     <th>Cashback</th>
+                                    <th>Oleh-Oleh</th>
+                                    <th>Biaya Lain-Lain</th>
+                                    <th>Keterangan Biaya Lain-Lain</th>
+                                    <th>Exam</th>
                                     <th>Sewa Laptop</th>
                                     <th>Tgl. PA</th>
                                     <th>Pembayaran</th>
@@ -76,6 +80,13 @@
                                         </td>
                                         <td>{{ $item->cashback ? 'Rp ' . number_format($item->cashback, 0, ',', '.') : '-' }}
                                         </td>
+                                        <td>{{ $item->oleh_oleh ? 'Rp ' . number_format($item->oleh_oleh, 0, ',', '.') : '-' }}
+                                        </td>
+                                        <td>{{ $item->biaya_lain_lain ? 'Rp ' . number_format($item->biaya_lain_lain, 0, ',', '.') : '-' }}
+                                        </td>
+                                        <td>{{ $item->keterangan_biaya_lain ?? '-' }}</td>
+                                        <td>{{ $item->biaya_exam ? 'Rp ' . number_format($item->biaya_exam, 0, ',', '.') : '-' }}
+                                        </td>
                                         <td>{{ $item->sewa_laptop ? 'Rp ' . number_format($item->sewa_laptop, 0, ',', '.') : '-' }}
                                         </td>
                                         <td>{{ $item->tgl_pa ? \Carbon\Carbon::parse($item->tgl_pa)->translatedFormat('d/m/Y') : '-' }}
@@ -92,7 +103,8 @@
                                         </td>
                                         <td>
                                             @if ($item->bukti)
-                                                <a href="/storage/{{ $item->bukti }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <a href="/storage/{{ $item->bukti }}" target="_blank"
+                                                    class="btn btn-sm btn-outline-primary">
                                                     Lihat Bukti
                                                 </a>
                                             @else
@@ -114,6 +126,11 @@
                                                 data-keterangan_entertaint ="{{ $item->keterangan_entertaint }}"
                                                 data-souvenir="{{ $item->souvenir }}" data-tgl_pa="{{ $item->tgl_pa }}"
                                                 data-tipe_pembayaran="{{ $item->tipe_pembayaran }}"
+                                                data-oleh_oleh="{{ (int) $item->oleh_oleh }}"
+                                                data-biaya_lain_lain="{{ (int) $item->biaya_lain_lain }}"
+                                                data-keterangan_biaya_lain="{{ $item->keterangan_biaya_lain }}"
+                                                data-biaya_exam="{{ (int) $item->biaya_exam }}"
+                                                data-tipe_pembayaran="{{ strtolower($item->tipe_pembayaran ?? '') }}"
                                                 data-sewa_laptop="{{ $item->sewa_laptop }}"
                                                 data-deskripsi="{{ $item->deskripsi_tambahan }}"
                                                 {{ $canEdit ? '' : 'disabled' }}>
@@ -123,7 +140,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="19" class="text-center text-muted py-5">
+                                        <td colspan="21" class="text-center text-muted py-5">
                                             Belum ada data Payment Advance
                                         </td>
                                     </tr>
@@ -141,14 +158,19 @@
                                 <h5 class="mb-0 text-success">
                                     Rp
                                     {{ number_format(
-                                        $pa->sum('transportasi') +
-                                            $pa->sum('akomodasi_peserta') +
-                                            $pa->sum('akomodasi_tim') +
-                                            $pa->sum('sewa_laptop') +
-                                            $pa->sum('cashback') +
-                                            $pa->sum('fresh_money') +
-                                            $pa->sum('entertaint') +
-                                            $pa->sum('souvenir'),
+                                        collect([
+                                            'transportasi',
+                                            'akomodasi_peserta',
+                                            'akomodasi_tim',
+                                            'sewa_laptop',
+                                            'cashback',
+                                            'fresh_money',
+                                            'entertaint',
+                                            'souvenir',
+                                            'oleh_oleh',
+                                            'biaya_lain_lain',
+                                            'biaya_exam',
+                                        ])->sum(fn($k) => (float) $pa->sum($k)),
                                         0,
                                         ',',
                                         '.',
@@ -281,12 +303,16 @@
                                     'entertaint',
                                     'souvenir',
                                     'cashback',
-                                    'sewa_laptop'
+                                    'sewa_laptop',
+                                    'sewa_laptop',
+                                    'oleh_oleh',
+                                    'biaya_lain_lain',
+                                    'biaya_exam',
                                 ];
                             @endphp
 
                             @forelse ($historyNet as $history)
-                                @if(is_array($history->data))
+                                @if (is_array($history->data))
                                     @foreach ($history->data as $field => $value)
                                         @php
                                             $before = $value['before'];
@@ -297,7 +323,10 @@
                                             } elseif (in_array($field, $currencyFields) && is_numeric($before)) {
                                                 $displayBefore = 'Rp ' . number_format((float) $before, 0, ',', '.');
                                             } else {
-                                                $displayBefore = $before === '0' && !in_array($field, $currencyFields) ? '-' : $before;
+                                                $displayBefore =
+                                                    $before === '0' && !in_array($field, $currencyFields)
+                                                        ? '-'
+                                                        : $before;
                                             }
 
                                             if (is_null($after) || $after === '') {
@@ -305,21 +334,27 @@
                                             } elseif (in_array($field, $currencyFields) && is_numeric($after)) {
                                                 $displayAfter = 'Rp ' . number_format((float) $after, 0, ',', '.');
                                             } else {
-                                                $displayAfter = $after === '0' && !in_array($field, $currencyFields) ? '-' : $after;
+                                                $displayAfter =
+                                                    $after === '0' && !in_array($field, $currencyFields) ? '-' : $after;
                                             }
                                         @endphp
                                         <tr>
-                                            <td class="align-middle">{{ $history->user->karyawan->nama_lengkap ?? $history->user->username ?? '-' }}</td>
+                                            <td class="align-middle">
+                                                {{ $history->user->karyawan->nama_lengkap ?? ($history->user->username ?? '-') }}
+                                            </td>
                                             <td class="align-middle">{{ ucwords(str_replace('_', ' ', $field)) }}</td>
                                             <td class="text-danger align-middle text-end">{{ $displayBefore }}</td>
                                             <td class="text-success align-middle text-end">{{ $displayAfter }}</td>
-                                            <td class="align-middle text-center">{{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}</td>
+                                            <td class="align-middle text-center">
+                                                {{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}
+                                            </td>
                                         </tr>
                                     @endforeach
                                 @endif
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Belum ada histori perubahan data.</td>
+                                    <td colspan="5" class="text-center text-muted py-3">Belum ada histori perubahan
+                                        data.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -405,6 +440,24 @@
                                 <input type="text" class="form-control rupiah" id="editSewaLaptop" name="sewa_laptop"
                                     placeholder="Optional">
                             </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Oleh-Oleh</label>
+                                <input type="text" class="form-control rupiah" id="editOlehOleh" name="oleh_oleh"
+                                    placeholder="0">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Biaya Lain-Lain</label>
+                                <input type="text" class="form-control rupiah" id="editBiayaLain"
+                                    name="biaya_lain_lain" placeholder="0">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Exam</label>
+                                <input type="text" class="form-control rupiah" id="editBiayaExam" name="biaya_exam"
+                                    placeholder="0">
+                            </div>
                         </div>
 
                         <div class="row g-3 mt-2">
@@ -431,6 +484,12 @@
                         <div class="mt-2">
                             <label class="form-label">Keterangan Akomodasi Tim</label>
                             <textarea class="form-control" id="keteranganAkoTim" name="keterangan_akomodasi_tim" rows="2"></textarea>
+                        </div>
+
+                        <div class="mt-2">
+                            <label class="form-label">Keterangan Biaya Lain-Lain</label>
+                            <textarea class="form-control" id="keteranganBiayaLain" name="keterangan_biaya_lain" rows="2"
+                                placeholder="Jelaskan rincian biaya lain-lain"></textarea>
                         </div>
 
                         <div class="mt-3">
@@ -473,7 +532,7 @@
             </div>
         @endif
     @endforeach
-@endsection    
+@endsection
 @section('scripts')
     <script>
         $(document).ready(function() {
@@ -511,7 +570,10 @@
 
                 $('#editId').val(data.id);
                 $('#editTransportasi').val(formatRupiah(data.transportasi || 0));
-                $('#jenisTransportasi').val(data.jenis_transportasi || 0);
+                $('#editOlehOleh').val(formatRupiah(data.oleh_oleh || 0));
+                $('#editBiayaLain').val(formatRupiah(data.biaya_lain_lain || 0));
+                $('#editBiayaExam').val(formatRupiah(data.biaya_exam || 0));
+                $('#keteranganBiayaLain').val(data.keterangan_biaya_lain || '');
                 $('#editAkoPeserta').val(formatRupiah(data.akomodasi_peserta || 0));
                 $('#editAkoTim').val(formatRupiah(data.akomodasi_tim || 0));
                 $('#editCashback').val(formatRupiah(data.cashback || 0));
@@ -547,14 +609,9 @@
                 const serializedData = {};
 
                 const currencyFields = [
-                    'transportasi',
-                    'akomodasi_peserta',
-                    'akomodasi_tim',
-                    'cashback',
-                    'fresh_money',
-                    'entertaint',
-                    'souvenir',
-                    'sewa_laptop',
+                    'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'cashback',
+                    'fresh_money', 'entertaint', 'souvenir', 'sewa_laptop',
+                    'oleh_oleh', 'biaya_lain_lain', 'biaya_exam',
                 ];
 
                 for (let [key, value] of formData.entries()) {

@@ -415,7 +415,7 @@
 
         .mdk .filters {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
             gap: .75rem;
             padding: 1rem 1.4rem;
             border-bottom: 1px solid var(--gray-200);
@@ -1047,6 +1047,82 @@
             font-size: .72rem;
         }
 
+        .mdk .vw {
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .mdk .vw-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            padding: .7rem 1rem;
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .mdk .vw-title {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+        }
+
+        .mdk .vw-title strong {
+            display: block;
+            font-size: .88rem;
+            color: var(--gray-900);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mdk .vw-title small {
+            color: var(--gray-500);
+            font-size: .75rem;
+        }
+
+        .mdk .vw-body {
+            display: grid;
+            place-items: center;
+            min-height: 320px;
+            background: var(--gray-100);
+        }
+
+        .mdk .vw-frame {
+            width: 100%;
+            height: 480px;
+            border: 0;
+            background: #fff;
+        }
+
+        .mdk .vw-img {
+            display: block;
+            max-width: 100%;
+            max-height: 480px;
+            object-fit: contain;
+        }
+
+        .mdk .vw-foot {
+            display: flex;
+            justify-content: flex-end;
+            gap: .4rem;
+            padding: .6rem 1rem;
+            border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .mdk .vw-foot .btn {
+            padding: .3rem .65rem;
+            font-size: .78rem;
+        }
+
+        .mdk .vw-row {
+            cursor: pointer;
+        }
+
         .mdk .timeline {
             position: relative;
             margin: 0;
@@ -1195,8 +1271,7 @@
             max-height: calc(100vh - 220px);
         }
 
-        #modalReminder .modal-content,
-        #modalGaji .modal-content {
+        #modalReminder .modal-content {
             max-height: calc(100vh - 2rem);
             overflow-y: auto;
         }
@@ -1246,6 +1321,10 @@
 
             .mdk .reminder .btn {
                 grid-column: 1 / -1;
+            }
+
+            .mdk .vw-frame {
+                height: 360px;
             }
         }
 
@@ -1347,9 +1426,14 @@
                 <div class="panel">
                     <div class="panel-head">
                         <h2><i class="fa-solid fa-table-list"></i>Daftar karyawan</h2>
-                        <button type="button" class="btn btn-line btn-sm" id="btnResetFilter">
-                            <i class="fa-solid fa-rotate-left me-1"></i>Reset filter
-                        </button>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" class="btn btn-brand btn-sm" id="btnExport">
+                                <i class="fa-solid fa-file-export me-1"></i>Export
+                            </button>
+                            <button type="button" class="btn btn-line btn-sm" id="btnResetFilter">
+                                <i class="fa-solid fa-rotate-left me-1"></i>Reset filter
+                            </button>
+                        </div>
                     </div>
                     <div class="filters">
                         <div class="search-wrap">
@@ -1371,6 +1455,13 @@
                             <option value="lengkap">Lengkap</option>
                             <option value="belum">Belum lengkap</option>
                         </select>
+                        <select id="fPengembangan" class="form-select" aria-label="Filter sertifikasi dan pelatihan">
+                            <option value="">Sertifikasi / pelatihan</option>
+                            <option value="sertifikasi">Sertifikasi saja</option>
+                            <option value="pelatihan">Pelatihan saja</option>
+                            <option value="keduanya">Keduanya</option>
+                            <option value="tidak">Tidak keduanya</option>
+                        </select>
                     </div>
 
                     <div class="panel-body">
@@ -1387,6 +1478,7 @@
                                         <th>Masa kontrak</th>
                                         <th>Basic salary</th>
                                         <th>Kelengkapan dokumen</th>
+                                        <th>Sertifikasi / pelatihan</th>
                                         <th>Reminder</th>
                                         <th class="text-end">Aksi</th>
                                     </tr>
@@ -1464,6 +1556,12 @@
                             gaji</button></li>
                     <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabReminder"
                             type="button" role="tab"><i class="fa-regular fa-bell"></i>Reminder</button></li>
+                    <li class="nav-item d-none" id="navSertifikasi"><button class="nav-link" data-bs-toggle="tab"
+                            data-bs-target="#tabSertifikasi" type="button" role="tab"><i
+                                class="fa-solid fa-certificate"></i>Sertifikasi</button></li>
+                    <li class="nav-item d-none" id="navPelatihan"><button class="nav-link" data-bs-toggle="tab"
+                            data-bs-target="#tabPelatihan" type="button" role="tab"><i
+                                class="fa-solid fa-chalkboard-user"></i>Pelatihan</button></li>
                 </ul>
 
                 <div class="modal-body p-4">
@@ -1691,6 +1789,49 @@
                         <div class="tab-pane fade" id="tabReminder" role="tabpanel">
                             <div class="reminder-list p-0" id="dReminder"></div>
                         </div>
+
+                        <div class="tab-pane fade" id="tabSertifikasi" role="tabpanel">
+                            <div class="section-title"><i class="fa-solid fa-certificate"></i>Data sertifikasi</div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">No</th>
+                                            <th>Nama sertifikat</th>
+                                            <th>Vendor</th>
+                                            <th>Tanggal ujian</th>
+                                            <th>Masa berlaku</th>
+                                            <th>Harga</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sertBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="section-title"><i class="fa-regular fa-file-lines"></i>Dokumen sertifikasi</div>
+                            <div id="sertViewer"></div>
+                        </div>
+
+                        <div class="tab-pane fade" id="tabPelatihan" role="tabpanel">
+                            <div class="section-title"><i class="fa-solid fa-chalkboard-user"></i>Data pelatihan</div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">No</th>
+                                            <th>Nama pelatihan</th>
+                                            <th>Vendor</th>
+                                            <th>Periode</th>
+                                            <th>Harga</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="latihBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="section-title"><i class="fa-regular fa-file-lines"></i>Dokumen pelatihan</div>
+                            <div id="latihViewer"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1766,49 +1907,6 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-line" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-brand">Simpan status</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade mdk" id="modalGaji" tabindex="-1" aria-labelledby="gajiTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content" style="border-radius:12px">
-                <form id="formGaji">
-                    @csrf
-                    <input type="hidden" name="id" id="g_id">
-                    <div class="modal-header">
-                        <h2 id="gajiTitle"><i class="fa-solid fa-money-bill-trend-up"></i>Catat perubahan gaji
-                        </h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger d-none mdk-error" role="alert"></div>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <label class="form-label" for="tglGaji">Tanggal</label>
-                                <input id="tglGaji" name="tanggal" type="date" class="form-control" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label" for="gajiLama">Gaji terakhir</label>
-                                <input id="gajiLama" type="text" class="form-control" readonly>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label" for="gajiBaru">Gaji baru</label>
-                                <input id="gajiBaru" name="gaji" type="number" min="0" class="form-control"
-                                    placeholder="0" required>
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label" for="gajiTunjangan">Tunjangan jabatan</label>
-                                <input id="gajiTunjangan" name="tunjangan_jabatan" type="number" min="0"
-                                    class="form-control" placeholder="Sama seperti sebelumnya">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-line" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-brand">Simpan perubahan</button>
                     </div>
                 </form>
             </div>
@@ -1963,7 +2061,8 @@
             update: "{{ route('HR.master_karyawan.update') }}",
             reminderUpdate: "{{ route('HR.master_karyawan.reminder_update') }}",
             gajiStore: "{{ route('HR.master_karyawan.gaji_store') }}",
-            downloadDokumen: "{{ route('HR.master_karyawan.download_dokumen', ['id' => '__ID__']) }}"
+            downloadDokumen: "{{ route('HR.master_karyawan.download_dokumen', ['id' => '__ID__']) }}",
+            exportData: "{{ route('HR.master_karyawan.export') }}"
         };
 
         var filterReminder = @json(request()->only('jenis', 'status'));
@@ -1976,6 +2075,45 @@
             'Probation': 'tag-probation',
             'Kontrak': 'tag-kontrak',
             'Kartap': 'tag-kartap'
+        };
+
+        var PETA_PENGEMBANGAN = {
+            'Sertifikasi': 'tag-kontrak',
+            'Pelatihan': 'tag-konfirmasi',
+            'Keduanya': 'tag-kartap',
+            'Tidak ada': 'tag-muted'
+        };
+
+        var PETA_APPROVAL = {
+            'approved': ['tag-done', 'Disetujui'],
+            'pending': ['tag-pending', 'Menunggu'],
+            'rejected': ['tag-late', 'Ditolak']
+        };
+
+        var PENGEMBANGAN = {
+            sert: {
+                body: '#sertBody',
+                box: '#sertViewer',
+                cols: 7,
+                kosong: 'Belum ada data sertifikasi.'
+            },
+            latih: {
+                body: '#latihBody',
+                box: '#latihViewer',
+                cols: 6,
+                kosong: 'Belum ada data pelatihan.'
+            }
+        };
+
+        var viewer = {
+            sert: {
+                items: [],
+                idx: 0
+            },
+            latih: {
+                items: [],
+                idx: 0
+            }
         };
 
         var BULAN_NAMA = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
@@ -2031,6 +2169,17 @@
 
         function statusTag(s) {
             return '<span class="tag ' + (PETA_STATUS[s] || 'tag-muted') + '">' + esc(s || '-') + '</span>';
+        }
+
+        function pengembanganTag(s) {
+            if (!s) return '<span class="tag tag-muted">-</span>';
+            return '<span class="tag ' + (PETA_PENGEMBANGAN[s] || 'tag-muted') + '">' + esc(s) + '</span>';
+        }
+
+        function approvalTag(s) {
+            var x = PETA_APPROVAL[s];
+            return x ? '<span class="tag ' + x[0] + '">' + x[1] + '</span>' :
+                '<span class="tag tag-muted">' + esc(s || '-') + '</span>';
         }
 
         function avatar(b) {
@@ -2331,6 +2480,110 @@
             if (tahunList.indexOf(dipilih) !== -1) $('#fLogTahun').val(dipilih);
         }
 
+        function barisSertifikasi(r, i) {
+            return '<tr class="vw-row" data-key="sert" data-idx="' + i + '">' +
+                '<td class="text-center">' + (i + 1) + '</td>' +
+                '<td>' + esc(r.nama) + '</td>' +
+                '<td>' + esc(r.vendor || '-') + '</td>' +
+                '<td>' + esc(r.tanggal_ujian) + '</td>' +
+                '<td>' + esc(r.masa_berlaku) + '</td>' +
+                '<td>' + esc(r.harga_fmt) + '</td>' +
+                '<td class="text-center">' + approvalTag(r.status) + '</td></tr>';
+        }
+
+        function barisPelatihan(r, i) {
+            return '<tr class="vw-row" data-key="latih" data-idx="' + i + '">' +
+                '<td class="text-center">' + (i + 1) + '</td>' +
+                '<td>' + esc(r.nama) + '</td>' +
+                '<td>' + esc(r.vendor || '-') + '</td>' +
+                '<td>' + esc(r.periode) + '</td>' +
+                '<td>' + esc(r.harga_fmt) + '</td>' +
+                '<td class="text-center">' + approvalTag(r.status) + '</td></tr>';
+        }
+
+        function dokumenKosong() {
+            return '<div class="empty"><i class="fa-regular fa-file-circle-xmark big"></i>Tidak ada dokumen</div>';
+        }
+
+        function pratinjauDokumen(it) {
+            if (!it.url) return dokumenKosong();
+
+            var m = /\.([a-z0-9]+)$/i.exec(String(it.file || ''));
+            var ext = m ? m[1].toLowerCase() : '';
+
+            if (ext === 'pdf') {
+                return '<iframe class="vw-frame" src="' + esc(it.url) + '" title="' + esc(it.nama) + '"></iframe>';
+            }
+
+            if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
+                return '<img class="vw-img" src="' + esc(it.url) + '" alt="' + esc(it.nama) + '">';
+            }
+
+            return '<div class="empty"><i class="fa-solid ' + extInfo(it.file).icon +
+                ' big"></i>Pratinjau tidak tersedia untuk file ini.</div>';
+        }
+
+        function renderViewer(key) {
+            var v = viewer[key];
+            var cfg = PENGEMBANGAN[key];
+            var $box = $(cfg.box);
+            var n = v.items.length;
+
+            if (!n) {
+                $box.html('<div class="vw"><div class="vw-body">' + dokumenKosong() + '</div></div>');
+                return;
+            }
+
+            var it = v.items[v.idx];
+            var mati = n > 1 ? '' : ' disabled';
+            var kaki = it.url ?
+                '<div class="vw-foot">' +
+                '<a class="btn btn-sm btn-line" href="' + esc(it.url) +
+                '" target="_blank" rel="noopener"><i class="fa-solid fa-eye me-1"></i>Lihat</a>' +
+                '<a class="btn btn-sm btn-line" href="' + esc(it.url) +
+                '" download><i class="fa-solid fa-download me-1"></i>Unduh</a></div>' :
+                '';
+
+            $box.html('<div class="vw">' +
+                '<div class="vw-head">' +
+                '<button type="button" class="btn btn-sm btn-line vw-prev" data-key="' + key + '"' + mati +
+                ' aria-label="Dokumen sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>' +
+                '<div class="vw-title"><strong>' + esc(it.nama) + '</strong><small>Dokumen ' + (v.idx + 1) +
+                ' dari ' + n + '</small></div>' +
+                '<button type="button" class="btn btn-sm btn-line vw-next" data-key="' + key + '"' + mati +
+                ' aria-label="Dokumen berikutnya"><i class="fa-solid fa-chevron-right"></i></button>' +
+                '</div>' +
+                '<div class="vw-body">' + pratinjauDokumen(it) + '</div>' + kaki + '</div>');
+
+            $(cfg.body + ' tr').removeClass('table-active').eq(v.idx).addClass('table-active');
+        }
+
+        function isiPengembangan(p) {
+            var aktif = !!(p && p.aktif);
+
+            $('#navSertifikasi, #navPelatihan').toggleClass('d-none', !aktif);
+
+            viewer.sert = {
+                items: aktif ? p.sertifikasi : [],
+                idx: 0
+            };
+            viewer.latih = {
+                items: aktif ? p.pelatihan : [],
+                idx: 0
+            };
+
+            $.each(PENGEMBANGAN, function(key, cfg) {
+                var items = viewer[key].items;
+                var fn = key === 'sert' ? barisSertifikasi : barisPelatihan;
+
+                $(cfg.body).html(items.length ? $.map(items, fn).join('') :
+                    '<tr><td colspan="' + cfg.cols + '" class="text-center text-muted">' + cfg.kosong +
+                    '</td></tr>');
+
+                renderViewer(key);
+            });
+        }
+
         function isiDetail(d) {
             var b = d.baris;
             detailTerakhir = d;
@@ -2394,6 +2647,8 @@
             logGajiAktif = d.log_gaji;
             isiFilterTahunLog(logGajiAktif);
             terapkanFilterLog();
+
+            isiPengembangan(d.pengembangan);
         }
 
         function isiForm(raw, id) {
@@ -2415,41 +2670,56 @@
             if ($('#reminderList').length) muatReminder();
         }
 
-        function unduhSemua($link) {
-            if ($link.data('busy')) return;
-            $link.data('busy', true);
-            setLoading($link, true, 'Menyiapkan ZIP...');
+        function unduhBlob($el, url, params, namaDefault, teks, gagal) {
+            if ($el.data('busy')) return;
+            $el.data('busy', true);
+            setLoading($el, true, teks);
 
             $.ajax({
-                url: $link.attr('href'),
+                url: url,
                 method: 'GET',
+                data: params || {},
                 xhrFields: {
                     responseType: 'blob'
                 }
             }).done(function(blob, status, xhr) {
                 var cd = xhr.getResponseHeader('Content-Disposition') || '';
                 var m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(cd);
-                var nama = m ? decodeURIComponent(m[1]) : 'dokumen.zip';
-                var url = window.URL.createObjectURL(blob);
+                var nama = m ? decodeURIComponent(m[1]) : namaDefault;
+                var objUrl = window.URL.createObjectURL(blob);
                 var a = document.createElement('a');
-                a.href = url;
+                a.href = objUrl;
                 a.download = nama;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 setTimeout(function() {
-                    window.URL.revokeObjectURL(url);
+                    window.URL.revokeObjectURL(objUrl);
                 }, 1000);
-            }).fail(function() {
+            }).fail(gagal).always(function() {
+                setLoading($el, false);
+                $el.data('busy', false);
+            });
+        }
+
+        function unduhSemua($link) {
+            unduhBlob($link, $link.attr('href'), null, 'dokumen.zip', 'Menyiapkan ZIP...', function() {
                 tampilError('#modalDetail', {
                     responseJSON: {
                         message: 'Dokumen gagal diunduh.'
                     }
                 });
-            }).always(function() {
-                setLoading($link, false);
-                $link.data('busy', false);
             });
+        }
+
+        function paramFilter() {
+            return {
+                q: $('#fSearch').val(),
+                divisi: $('#fDivisi').val(),
+                status: $('#fStatus').val(),
+                dokumen: $('#fDokumen').val(),
+                pengembangan: $('#fPengembangan').val()
+            };
         }
 
         $(function() {
@@ -2477,10 +2747,7 @@
                         url: R.data,
                         type: 'GET',
                         data: function(d) {
-                            d.q = $('#fSearch').val();
-                            d.divisi = $('#fDivisi').val();
-                            d.status = $('#fStatus').val();
-                            d.dokumen = $('#fDokumen').val();
+                            $.extend(d, paramFilter());
                         }
                     },
                     searching: false,
@@ -2541,6 +2808,14 @@
                             }
                         },
                         {
+                            data: 'pengembangan',
+                            orderable: false,
+                            defaultContent: '',
+                            render: function(d, t) {
+                                return t === 'display' ? pengembanganTag(d) : (d || '');
+                            }
+                        },
+                        {
                             data: 'reminder.label',
                             orderable: false,
                             defaultContent: '',
@@ -2595,16 +2870,22 @@
                     }, 400);
                 });
 
-                $('#fDivisi, #fStatus, #fDokumen').on('change', function() {
+                $('#fDivisi, #fStatus, #fDokumen, #fPengembangan').on('change', function() {
                     tabel.ajax.reload();
                 });
 
                 $('#btnResetFilter').on('click', function() {
                     $('#fSearch').val('');
-                    $('#fDivisi, #fStatus, #fDokumen').val('');
+                    $('#fDivisi, #fStatus, #fDokumen, #fPengembangan').val('');
                     tabel.ajax.reload();
                 });
             }
+        });
+
+        $(document).on('click', '#btnExport', function() {
+            unduhBlob($(this), R.exportData, paramFilter(), 'master_karyawan.csv', 'Menyiapkan...', function(xhr) {
+                notifGagal(xhr && xhr.status === 423 ? 'Halaman terkunci.' : 'Export gagal diunduh.');
+            });
         });
 
         $(document).on('click', '.btn-detail', function() {
@@ -2661,6 +2942,23 @@
         $('#btnDownloadSemua').on('click', function(e) {
             e.preventDefault();
             unduhSemua($(this));
+        });
+
+        $(document).on('click', '.vw-prev, .vw-next', function() {
+            var key = $(this).attr('data-key');
+            var v = viewer[key];
+            var n = v.items.length;
+            if (n < 2) return;
+
+            var arah = $(this).hasClass('vw-next') ? 1 : -1;
+            v.idx = (v.idx + arah + n) % n;
+            renderViewer(key);
+        });
+
+        $(document).on('click', '.vw-row', function() {
+            var key = $(this).attr('data-key');
+            viewer[key].idx = parseInt($(this).attr('data-idx'), 10) || 0;
+            renderViewer(key);
         });
 
         $(document).on('click', '.btn-upload', function() {

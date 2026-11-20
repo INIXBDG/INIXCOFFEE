@@ -1873,6 +1873,22 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @can('View Kelengkapan Data Penjualan')
+                                                    <div class="col-sm-6 mt-2" data-card-id="rencana_pembelian">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2"><i class="fa-solid fa-clipboard-check" style="font-size: 30px;"></i></div>
+                                                                <div class="col-md-10" style="margin-left: 10px"><a
+                                                                        href="{{ route('kelengkapan-data.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Kelengkapan Data Penjualan</h5>
+                                                                    </a>
+                                                                    <p class="card-text">periksa kelengkapan data penjualan.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>

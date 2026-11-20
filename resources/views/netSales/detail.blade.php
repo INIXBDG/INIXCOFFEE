@@ -311,6 +311,10 @@
                                                     <tr><th>Entertaint</th><td>${formatRupiah(data.entertaint)}</td></tr>
                                                     <tr><th>Keterangan Entertaint</th><td>${data.keterangan_entertaint || '-'}</td></tr>
                                                     <tr><th>Souvenir</th><td>${formatRupiah(data.souvenir)}</td></tr>
+                                                    <tr><th>Oleh-Oleh</th><td>${formatRupiah(data.oleh_oleh)}</td></tr>
+                                                    <tr><th>Biaya Lain-Lain</th><td>${formatRupiah(data.biaya_lain_lain)}</td></tr>
+                                                    <tr><th>Keterangan Biaya Lain-Lain</th><td>${data.keterangan_biaya_lain || '-'}</td></tr>
+                                                    <tr><th>Exam</th><td>${formatRupiah(data.biaya_exam)}</td></tr>
                                                     <tr><th>Sewa Laptop</th><td>${formatRupiah(data.sewa_laptop)}</td></tr>
                                                     <tr><th>Total Payment Advance</th><td>${formatRupiah(data.totalPa)}</td></tr>
                                                     <tr><th>Cashback</th><td>${formatRupiah(data.cashback)}</td></tr>

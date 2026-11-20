@@ -19,6 +19,7 @@ use App\Models\Registrasi;
 use App\Models\eksam;
 use App\Models\outstanding;
 use App\Models\kelasanalisis;
+use App\Models\KelengkapanDataLog;
 use App\Models\trackingNetSales;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -1019,6 +1020,11 @@ class PeluangController extends Controller
             'souvenir' => 'nullable|numeric',
             'cashback' => 'nullable|numeric',
 
+            'oleh_oleh' => 'nullable|numeric',
+            'biaya_lain_lain' => 'nullable|numeric',
+            'keterangan_biaya_lain' => 'nullable|string',
+            'exam' => 'nullable|numeric',
+
             'sewa_laptop' => 'nullable|numeric',
             'tgl_pa' => 'required|date',
             'tipe_pembayaran' => 'required|string',
@@ -1062,6 +1068,9 @@ class PeluangController extends Controller
                     (float)($request->entertaint ?? 0) +
                     (float)($request->souvenir ?? 0) +
                     (float)($request->cashback ?? 0) +
+                    (float)($request->oleh_oleh ?? 0) +
+                    (float)($request->biaya_lain_lain ?? 0) +
+                    (float)($request->exam ?? 0) +
                     (float)($request->sewa_laptop ?? 0);
 
         // Save payment advance baru
@@ -1083,7 +1092,13 @@ class PeluangController extends Controller
         $netSales->souvenir = $request->souvenir ?: null;
         $netSales->cashback = $request->cashback ?: null;
 
+        $netSales->oleh_oleh = $request->oleh_oleh ?: null;
+        $netSales->biaya_lain_lain = $request->biaya_lain_lain ?: null;
+        $netSales->keterangan_biaya_lain = $request->keterangan_biaya_lain ?: null;
+        $netSales->exam = $request->exam ?: null;
+
         $netSales->sewa_laptop = $request->sewa_laptop ?: null;
+
         $netSales->tipe_pembayaran = $request->tipe_pembayaran;
         $netSales->tgl_pa = $request->tgl_pa;
         $netSales->deskripsi_tambahan = $request->deskripsi_tambahan;
