@@ -348,12 +348,18 @@
                         html += '<th scope="col">Tanggal Training</th>';
                         html += '<th scope="col">Perusahaan</th>';
                         html += '<th scope="col">Kode Sales</th>';
+                        if (jabatan == 'Adm Sales') {
+                            html += '<th scope="col">Status Pengajuan</th>';
+                        }
                         html += '<th scope="col">Instruktur</th>';
                         html += '<th scope="col">Exam</th>';
                         html += '<th scope="col">Metode Kelas</th>';
                         html += '<th scope="col">Event</th>';
                         html += '<th scope="col">Ruang</th>';
                         html += '<th scope="col">Pax</th>';
+                        if (jabatan == 'Adm Sales' || jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales') {
+                            html += '<th scope="col">Kelas</th>';
+                        }
                         if (jabatan == 'Finance & Accounting') {
                             html += '<th scope="col">Registrasi Form</th>';
                         }
@@ -380,7 +386,22 @@
                             html += '</tr>';
                         } else {
                             weekData.data.forEach(function(rkm, index) {
-                                const idList = rkm.id_all ? String(rkm.id_all).split(',').map(i => i.trim()) : [];
+                                // Cek apakah user adalah sales pemilik RKM ini
+                                var isOwnerSales = false;
+                                if (userKode && userKode.trim() !== '') {
+                                    var myKodeUpper = userKode.trim().toUpperCase();
+                                    if (rkm.sales && Array.isArray(rkm.sales)) {
+                                        isOwnerSales = rkm.sales.some(function(s) {
+                                            return s && s.kode_karyawan && s.kode_karyawan.trim().toUpperCase() === myKodeUpper;
+                                        });
+                                    }
+                                    if (!isOwnerSales && rkm.sales_all) {
+                                        var salesKeys = String(rkm.sales_all).split(',').map(function(k) { return k.trim().toUpperCase(); });
+                                        isOwnerSales = salesKeys.indexOf(myKodeUpper) !== -1;
+                                    }
+                                }
+                                // Hanya Adm Sales atau Sales yang bersangkutan yang dapat melihat status dan mengajukan exam
+                                var canSeeAndSubmitExam = (jabatan === 'Adm Sales') || isOwnerSales;
                                 var tanggal = moment(rkm.tanggal_awal).format('D');
                                 var lanbu = moment(rkm.tanggal_awal).format('M');
                                 var hunta = moment(rkm.tanggal_awal).format('Y');
@@ -414,6 +435,9 @@
                                     html += sales.kode_karyawan + ', ';
                                 });
                                 html += '</td>';
+                                if (jabatan == 'Adm Sales') {
+                                    html += '<td>' + (rkm.has_exam ? 'Sudah' : 'Belum') + '</td>';
+                                }
                                 html += '<td>';
                                 if (rkm.instruktur_all && rkm.instruktur_all.trim() !== '') {
                                     var instruktur_array = rkm.instruktur_all.split(', ');
@@ -443,6 +467,16 @@
                                     html += '<td>' + rkm.ruang + '</td>';
                                 }
                                 html += '<td>' + rkm.total_pax + '</td>';
+                                if (jabatan == 'Adm Sales' || jabatan == 'SPV Sales' || jabatan == 'GM' || jabatan == 'Sales') {
+                                    var kelasLabel = (rkm.authorize == '1' || rkm.authorize == 1)
+                                        ? 'Authorize'
+                                        : 'Regular';
+                                    // Untuk sales biasa pemilik kelas, tampilkan (Belum Exam) hanya jika kelas miliknya dan belum diajukan
+                                    if (jabatan === 'Sales' && isOwnerSales && !rkm.has_exam) {
+                                        kelasLabel += '<div class="text-nowrap" style="font-size: 11px; color: #fff; opacity: 0.85; margin-top: 2px;">(Belum Exam)</div>';
+                                    }
+                                    html += '<td>' + kelasLabel + '</td>';
+                                }
                                 if (jabatan == 'Finance & Accounting') {
                                     html += '<td>' + (rkm.registrasi_form ? 'Ada' : 'Tidak Ada') + '</td>';
                                 }
@@ -484,6 +518,12 @@
                                     const firstId = rkm.id_all ? String(rkm.id_all).split(', ')[0] : '';
                                     html += '<a class="dropdown-item" href="/rkm/' + rkm.materi_key + 'ixb' + tanggal + 'ie' + hunta + 'ie' + lanbu + 'ixb' + kelas + '" data-toggle="tooltip" data-placement="top" title="Detail RKM">';
                                     html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Detail RKM</a>';
+
+                                    // Menu Ajukan Exam jika belum diajukan (hanya Adm Sales atau Sales pemilik RKM)
+                                    if (!rkm.has_exam && canSeeAndSubmitExam) {
+                                        html += '<a class="dropdown-item" href="/pengajuanExam/' + firstId + '">';
+                                        html += '<img src="{{ asset("icon/clipboard-primary.svg") }}" class="me-1"> Ajukan Exam</a>';
+                                    }
 
                                     // 2. Menu Ajukan Rekomendasi
                                     var instrukturRKM = (rkm.instruktur_all || "").toUpperCase();

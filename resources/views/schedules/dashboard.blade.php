@@ -78,19 +78,76 @@
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
-            {{-- Filter Tahun --}}
-            <form method="GET" action="{{ route('content-schedules.dashboard') }}" class="d-flex align-items-center" id="yearFilterForm">
-                <div class="input-group input-group-sm shadow-sm">
+            <form method="GET" action="{{ route('content-schedules.dashboard') }}" id="filterForm" class="d-flex flex-wrap align-items-center gap-2">
+                {{-- Period Mode Toggle --}}
+                <div class="btn-group btn-group-sm shadow-sm" role="group">
+                    <input type="radio" class="btn-check" name="period" id="periodYearly" value="yearly" autocomplete="off"
+                        {{ ($periodMode ?? 'yearly') === 'yearly' ? 'checked' : '' }}
+                        onchange="document.getElementById('filterForm').submit()">
+                    <label class="btn btn-outline-secondary fw-semibold" for="periodYearly">
+                        <i class="fas fa-calendar me-1"></i>Tahunan
+                    </label>
+
+                    <input type="radio" class="btn-check" name="period" id="periodMonthly" value="monthly" autocomplete="off"
+                        {{ ($periodMode ?? '') === 'monthly' ? 'checked' : '' }}
+                        onchange="document.getElementById('filterForm').submit()">
+                    <label class="btn btn-outline-secondary fw-semibold" for="periodMonthly">
+                        <i class="fas fa-calendar-week me-1"></i>Bulanan
+                    </label>
+
+                    <input type="radio" class="btn-check" name="period" id="periodWeekly" value="weekly" autocomplete="off"
+                        {{ ($periodMode ?? '') === 'weekly' ? 'checked' : '' }}
+                        onchange="document.getElementById('filterForm').submit()">
+                    <label class="btn btn-outline-secondary fw-semibold" for="periodWeekly">
+                        <i class="fas fa-calendar-day me-1"></i>Mingguan
+                    </label>
+                </div>
+
+                {{-- Filter Tahun (selalu tampil) --}}
+                <div class="input-group input-group-sm shadow-sm" style="min-width: 150px; max-width: 160px;">
                     <span class="input-group-text bg-white border-end-0 text-muted">
                         <i class="fas fa-calendar-alt"></i>
                     </span>
-                    <select name="year" class="form-select form-select-sm border-start-0 fw-semibold" onchange="document.getElementById('yearFilterForm').submit();" style="min-width: 140px;">
+                    <select name="year" class="form-select form-select-sm border-start-0 fw-semibold"
+                        onchange="document.getElementById('filterForm').submit()">
                         <option value="all" {{ ($selectedYear ?? '') === 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach($availableYears as $yr)
                             <option value="{{ $yr }}" {{ ($selectedYear ?? '') == $yr ? 'selected' : '' }}>Tahun {{ $yr }}</option>
                         @endforeach
                     </select>
                 </div>
+
+                {{-- Filter Bulan (tampil jika tahun bukan 'all' dan mode monthly/weekly) --}}
+                @if(($selectedYear ?? 'all') !== 'all' && ($periodMode ?? 'yearly') !== 'yearly')
+                    <div class="input-group input-group-sm shadow-sm" style="min-width: 160px; max-width: 185px;">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="fas fa-calendar-week"></i>
+                        </span>
+                        <select name="month" class="form-select form-select-sm border-start-0 fw-semibold"
+                            onchange="document.getElementById('filterForm').submit()">
+                            <option value="all" {{ ($selectedMonth ?? 'all') === 'all' ? 'selected' : '' }}>Semua Bulan</option>
+                            @foreach($availableMonths as $mk => $mn)
+                                <option value="{{ $mk }}" {{ ($selectedMonth ?? '') === $mk ? 'selected' : '' }}>{{ $mn }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                {{-- Filter Minggu (tampil jika mode weekly dan bulan terpilih) --}}
+                @if(($periodMode ?? 'yearly') === 'weekly' && ($selectedMonth ?? 'all') !== 'all')
+                    <div class="input-group input-group-sm shadow-sm" style="min-width: 190px; max-width: 230px;">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="fas fa-calendar-day"></i>
+                        </span>
+                        <select name="week" class="form-select form-select-sm border-start-0 fw-semibold"
+                            onchange="document.getElementById('filterForm').submit()">
+                            <option value="all" {{ ($selectedWeek ?? 'all') === 'all' ? 'selected' : '' }}>Semua Minggu</option>
+                            @foreach($availableWeeks as $wk => $wl)
+                                <option value="{{ $wk }}" {{ ($selectedWeek ?? '') == $wk ? 'selected' : '' }}>{{ $wl }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
             </form>
 
             <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#createModal">
@@ -233,12 +290,20 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="fw-bold mb-1 text-dark">
-                                <i class="fas fa-chart-line text-primary me-2"></i> Tren Publikasi Konten
+                                <i class="fas fa-chart-line text-primary me-2"></i> {{ $trendTitle }}
                             </h5>
-                            <p class="text-muted small mb-0">Frekuensi upload konten per bulan ({{ $selectedYear === 'all' ? 'Seluruh Tahun' : 'Tahun ' . $selectedYear }})</p>
+                            <p class="text-muted small mb-0">
+                                @if($periodMode === 'weekly' && $selectedMonth !== 'all')
+                                    Data harian {{ $availableMonths[$selectedMonth] ?? $selectedMonth }} {{ $selectedYear !== 'all' ? $selectedYear : '' }}
+                                @elseif($periodMode === 'monthly' && $selectedYear !== 'all')
+                                    Frekuensi upload per bulan Tahun {{ $selectedYear }}
+                                @else
+                                    Frekuensi upload konten per bulan {{ $selectedYear === 'all' ? '(Seluruh Tahun)' : '(Tahun ' . $selectedYear . ')' }}
+                                @endif
+                            </p>
                         </div>
                         <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
-                            Total Upload: {{ array_sum($monthlyTrend) }} Konten
+                            Total Upload: {{ array_sum($trendData) }} Konten
                         </span>
                     </div>
                 </div>
@@ -604,7 +669,7 @@
             });
         });
 
-        // 1. Chart Tren Bulanan
+        // 1. Chart Tren Publikasi
         const monthlyCtx = document.getElementById('monthlyTrendChart');
         if (monthlyCtx) {
             const gradientBg = monthlyCtx.getContext('2d').createLinearGradient(0, 0, 0, 300);
@@ -614,10 +679,10 @@
             new Chart(monthlyCtx, {
                 type: 'line',
                 data: {
-                    labels: @json($monthNames),
+                    labels: @json($trendLabels),
                     datasets: [{
                         label: 'Konten Tayang',
-                        data: @json($monthlyTrend),
+                        data: @json($trendData),
                         borderColor: '#0d6efd',
                         backgroundColor: gradientBg,
                         borderWidth: 3,

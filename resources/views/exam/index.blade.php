@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('content')
     <div class="container-fluid">
@@ -157,6 +157,8 @@
                         </div>
                     </div>
                 @endif
+
+
 
                 <!-- 4. Tabel Data Histori Exam -->
                 <div class="card m-4">
@@ -659,6 +661,107 @@
                         "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json"
                     }
                 });
+
+                // =========================================================
+                // 5. TABEL SALES BELUM PENGAJUAN EXAM (Expandable - klik angka)
+                // =========================================================
+                @if (auth()->user()->jabatan == 'Adm Sales')
+                function formatChildRow(detail) {
+                    if (!detail || detail.length === 0) {
+                        return '<div class="p-3 text-muted">Tidak ada data kelas.</div>';
+                    }
+                    var rows = '';
+                    detail.forEach(function(d) {
+                        var btnAjukan = '<a href="/pengajuanExam/' + d.id + '" class="btn btn-sm btn-primary">Ajukan Exam</a>';
+                        rows += '<tr>' +
+                            '<td><strong>' + (d.nama_materi || '-') + '</strong></td>' +
+                            '<td>' + (d.perusahaan || '-') + '</td>' +
+                            '<td>' + (d.tanggal_awal || '-') + ' &ndash; ' + (d.tanggal_akhir || '-') + '</td>' +
+                            '<td class="text-center">' + (d.pax || '-') + '</td>' +
+                            '<td>' + (d.metode_kelas || '-') + '</td>' +
+                            '<td>' + (d.kelas || '-') + '</td>' +
+                            '<td class="text-center">' + btnAjukan + '</td>' +
+                        '</tr>';
+                    });
+                    return '<div class="p-2 bg-light ms-4">' +
+                        '<table class="table table-sm table-bordered mb-0" style="font-size:0.85rem">' +
+                            '<thead class="table-secondary">' +
+                                '<tr>' +
+                                    '<th>Materi</th>' +
+                                    '<th>Perusahaan</th>' +
+                                    '<th>Tanggal</th>' +
+                                    '<th class="text-center">Pax</th>' +
+                                    '<th>Metode</th>' +
+                                    '<th>Kelas</th>' +
+                                    '<th class="text-center">Aksi</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>' + rows + '</tbody>' +
+                        '</table>' +
+                    '</div>';
+                }
+
+                if ($('#salesBelumExamTable').length) {
+                    var belumExamTable = $('#salesBelumExamTable').DataTable({
+                        "processing": true,
+                        "autoWidth": false,
+                        "ajax": {
+                            "url": "{{ route('getSalesBelumPengajuanExam') }}",
+                            "type": "GET",
+                            "dataSrc": function(json) {
+                                var totalSales = json.data ? json.data.length : 0;
+                                var totalRkm   = 0;
+                                if (json.data) { json.data.forEach(function(d){ totalRkm += (d.total_pending || 0); }); }
+                                $('#statJumlahSales').text(totalSales);
+                                $('#statJumlahRkm').text(totalRkm);
+                                return json.data || [];
+                            },
+                            "beforeSend": showLoadingModal,
+                            "complete": hideLoadingModal,
+                            "error": function (xhr, error, thrown) {
+                                hideLoadingModal();
+                                console.error("Error memuat #salesBelumExamTable:", thrown);
+                            }
+                        },
+                        "columns": [
+                            { "data": null, "orderable": false, "render": renderRowNumber },
+                            { "data": "kode_sales", "defaultContent": "-" },
+                            { "data": "nama_sales", "defaultContent": "-" },
+                            { "data": "jabatan", "defaultContent": "-" },
+                            {
+                                "data": "total_pending",
+                                "defaultContent": "0",
+                                "className": "text-center",
+                                "render": function(data) {
+                                    var color = data >= 3 ? 'danger' : (data >= 2 ? 'warning' : 'secondary');
+                                    return '<span class="badge bg-' + color + ' fs-6" style="cursor:pointer" title="Klik untuk lihat detail kelas">' + data + ' kelas</span>';
+                                }
+                            },
+                        ],
+                        "language": {
+                            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json",
+                            "emptyTable": "Semua Sales sudah melakukan pengajuan exam.",
+                            "zeroRecords": "Semua Sales sudah melakukan pengajuan exam."
+                        },
+                        "order": [[4, 'desc']]
+                    });
+
+                    // Klik kolom RKM Pending (td ke-5) untuk expand/collapse detail kelas
+                    $('#salesBelumExamTable tbody').on('click', 'td:nth-child(5)', function () {
+                        var tr  = $(this).closest('tr');
+                        var row = belumExamTable.row(tr);
+                        if (!row.data()) return;
+                        if (row.child.isShown()) {
+                            row.child.hide();
+                            tr.removeClass('shown');
+                            $(this).find('.badge').css('cursor','pointer');
+                        } else {
+                            row.child(formatChildRow(row.data().detail_kelas)).show();
+                            tr.addClass('shown');
+                        }
+                    });
+                }
+                @endif
             });
 
             function openUploadModal(id) {
