@@ -208,7 +208,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
     Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
-
+    Route::post('/admin/layout-setting/reset', [DashboardLayoutController::class, 'reset'])->name('admin.layout-setting.reset');
+        
     // =========================================================================
     // 2. USER, KARYAWAN, ROLES & PERMISSIONS
     // =========================================================================
@@ -357,10 +358,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 
     // Management Kelas & Kelas Setting
-    Route::resource('management-kelas', managementKelasController::class);
+    // Route::resource('management-kelas', managementKelasController::class);
     Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
     Route::post('/management-kelas/{id}/batalkan', [managementKelasController::class, 'batalkan']);
-
+    Route::resource('management-kelas', managementKelasController::class)->except(['show']);
     Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
         Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
         Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
@@ -412,6 +413,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
     Route::put('/exam/update/status', [examController::class, 'updateStatus'])->name('exam.updateStatus');
     Route::get('getHistoriExam', [examController::class, 'getHistoriExam'])->name('getHistoriExam');
+    Route::get('getSalesBelumPengajuanExam', [examController::class, 'getSalesBelumPengajuanExam'])->name('getSalesBelumPengajuanExam');
     Route::get('/create-only', [examController::class, 'createOnly'])->name('exam.createOnly');
     Route::post('/store-only', [examController::class, 'storeOnly'])->name('exam.storeOnly');
     Route::get('/hargaExam', [examController::class, 'hargaExam']);
@@ -1513,6 +1515,8 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================================
     Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function () {
         Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+        Route::get('/export/pdf', [RencanaPembelianHrController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel', [RencanaPembelianHrController::class, 'exportExcel'])->name('export.excel');
         Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
         Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
         Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
@@ -2045,6 +2049,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/registry/{tugas}/start', [RegistryFeatureController::class, 'startTask'])->name('registry.start');
     Route::patch('/registry/{tugas}/finish', [RegistryFeatureController::class, 'finishTask'])->name('registry.finish');
     Route::get('/registry/data', [RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
+    Route::get('/registry/summary', [RegistryFeatureController::class, 'getSummary'])->name('registry.summary');
 
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');

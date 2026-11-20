@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\HR;
 
+use App\Exports\RencanaPembelianHrExport;
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\PembelianHr;
 use App\Models\TrackingPembelianHr;
@@ -15,11 +17,12 @@ use App\Models\Kegiatan;
 use App\Models\karyawan;
 use App\Models\JurnalAkuntansi;
 use App\Models\PengajuanBarang;
+use Maatwebsite\Excel\Facades\Excel;
 
 class RencanaPembelianHrController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
         $kegiatan = Kegiatan::all();
         $karyawans = karyawan::all();
@@ -30,53 +33,193 @@ class RencanaPembelianHrController extends Controller
                 });
             })
             ->get();
-        
-        $dibatalkan = PembelianHr::with('tracking', 'tracking.karyawan', 'details')->where('status_pembelian', 'Dibatalkan')->paginate(10);
+
+        $filtered = $this->getFilteredData($request, true);
+        $rencanas = $filtered['rencanas'];
+        $pembelian = $filtered['pembelian'];
+        $dibatalkan = $filtered['dibatalkan'];
+
+        $tahunOptions = $this->opsiTahun();
+        $filterMode = $this->resolveFilterMode($request);
+        $filterBulan = $request->input('bulan');
+        $filterTahun = $request->input('tahun');
+        $filterTanggalAwal = $request->input('tanggal_awal');
+        $filterTanggalAkhir = $request->input('tanggal_akhir');
+
+        $extends = 'layouts.app';
+        $section = 'content';
+
+        return view('office.rab.index', compact(
+            'kegiatan',
+            'drivers',
+            'pembelian',
+            'rencanas',
+            'dibatalkan',
+            'extends',
+            'section',
+            'karyawans',
+            'tahunOptions',
+            'filterMode',
+            'filterBulan',
+            'filterTahun',
+            'filterTanggalAwal',
+            'filterTanggalAkhir'
+        ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $this->validateExportRequest($request);
+
+        $sections = $this->buildExportSections($request);
+        $judul = 'Laporan Rencana Pembelian HR';
+        $periodeLabel = $this->labelPeriode($request);
+        $file = 'rencana-pembelian-hr-' . now()->format('Ymd-His') . '.pdf';
+
+        return Pdf::loadView('HR.rencana_pembelian.export-pdf', compact('judul', 'periodeLabel', 'sections'))
+            ->setPaper('a4', 'landscape')
+            ->download($file);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $this->validateExportRequest($request);
+
+        $sections = $this->buildExportSections($request);
+        $judul = 'Laporan Rencana Pembelian HR';
+        $periodeLabel = $this->labelPeriode($request);
+        $file = 'rencana-pembelian-hr-' . now()->format('Ymd-His') . '.xlsx';
+
+        return Excel::download(
+            new RencanaPembelianHrExport($judul, $periodeLabel, $sections),
+            $file
+        );
+    }
+
+    private function validateExportRequest(Request $request): void
+    {
+        $request->validate([
+            'filter_mode'   => ['nullable', 'in:semua,bulan_tahun,rentang'],
+            'bulan'         => ['nullable', 'integer', 'between:1,12'],
+            'tahun'         => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'tanggal_awal'  => ['nullable', 'date'],
+            'tanggal_akhir' => ['nullable', 'date'],
+            'status'        => ['nullable', 'in:semua,Rencana,Terlaksana,Dibatalkan'],
+        ]);
+    }
+
+    private function resolveFilterMode(Request $request): string
+    {
+        $mode = $request->input('filter_mode');
+        if (in_array($mode, ['semua', 'bulan_tahun', 'rentang'], true)) {
+            return $mode;
+        }
+        if ($request->filled('tanggal_awal') || $request->filled('tanggal_akhir')) {
+            return 'rentang';
+        }
+        if ($request->filled('bulan') || $request->filled('tahun')) {
+            return 'bulan_tahun';
+        }
+        return 'semua';
+    }
+
+    private function applyDateFilter($query, Request $request, string $column = 'created_at', bool $isKegiatan = false)
+    {
+        $mode = $this->resolveFilterMode($request);
+
+        if ($mode === 'bulan_tahun') {
+            $bulan = (int) $request->input('bulan', 0);
+            $tahun = (int) $request->input('tahun', 0);
+
+            if ($isKegiatan) {
+                if ($tahun) {
+                    $query->whereRaw('YEAR(COALESCE(waktu_kegiatan, created_at)) = ?', [$tahun]);
+                }
+                if ($bulan) {
+                    $query->whereRaw('MONTH(COALESCE(waktu_kegiatan, created_at)) = ?', [$bulan]);
+                }
+            } else {
+                if ($tahun) {
+                    $query->whereYear($column, $tahun);
+                }
+                if ($bulan) {
+                    $query->whereMonth($column, $bulan);
+                }
+            }
+        } elseif ($mode === 'rentang') {
+            $awal = $request->input('tanggal_awal');
+            $akhir = $request->input('tanggal_akhir');
+
+            if ($isKegiatan) {
+                if ($awal) {
+                    $query->whereRaw('DATE(COALESCE(waktu_kegiatan, created_at)) >= ?', [$awal]);
+                }
+                if ($akhir) {
+                    $query->whereRaw('DATE(COALESCE(waktu_kegiatan, created_at)) <= ?', [$akhir]);
+                }
+            } else {
+                if ($awal) {
+                    $query->whereDate($column, '>=', $awal);
+                }
+                if ($akhir) {
+                    $query->whereDate($column, '<=', $akhir);
+                }
+            }
+        }
+
+        return $query;
+    }
+
+    private function getFilteredData(Request $request, bool $paginateDibatalkan = true): array
+    {
         $user = auth()->user();
 
-        $rencanasRaw = PembelianHr::with([
+        $dibatalkanQuery = PembelianHr::with('tracking', 'tracking.karyawan', 'details')
+            ->where('status_pembelian', 'Dibatalkan')
+            ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+                $query->where('id_karyawan', $user->id);
+            });
+        $this->applyDateFilter($dibatalkanQuery, $request, 'created_at');
+        $dibatalkan = $paginateDibatalkan
+            ? $dibatalkanQuery->latest()->paginate(10)->withQueryString()
+            : $dibatalkanQuery->latest()->get();
+
+        $rencanasQuery = PembelianHr::with([
             'details',
             'tracking.karyawan'
         ])
-        ->where('status_pembelian', 'Rencana')
-        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
-            $query->where('id_karyawan', $user->id);
-        })
-        ->get()
-        ->map(function ($item) {
+            ->where('status_pembelian', 'Rencana')
+            ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+                $query->where('id_karyawan', $user->id);
+            });
+        $this->applyDateFilter($rencanasQuery, $request, 'created_at');
+
+        $rencanasRaw = $rencanasQuery->get()->map(function ($item) {
             $item->source = 'pembelian_hr';
             $item->status = $item->status_pembelian;
             return $item;
         });
 
-        $pembelianRaw = PembelianHr::with([
+        $pembelianQuery = PembelianHr::with([
             'details',
             'tracking.karyawan'
         ])
-        ->where('status_pembelian', 'Terlaksana')
-        ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
-            $query->where('id_karyawan', $user->id);
-        })
-        ->get()
-        ->map(function ($item) {
+            ->where('status_pembelian', 'Terlaksana')
+            ->when(!in_array($user->jabatan, ['HRD', 'GM']), function ($query) use ($user) {
+                $query->where('id_karyawan', $user->id);
+            });
+        $this->applyDateFilter($pembelianQuery, $request, 'created_at');
+
+        $pembelianRaw = $pembelianQuery->get()->map(function ($item) {
             $item->source = 'pembelian_hr';
             $item->status = $item->status_pembelian;
             return $item;
         });
 
-        $kegiatanRencanaRaw = Kegiatan::with([
-            'pengajuan_barang.detail',
-            'rincian'
-        ])
-        ->where('tipe', 'pembelian')
-        ->where('status','!=','selesai')
-        ->get()
-        ->map(function($item){
-
+        $mapKegiatan = function ($item) {
             $details = collect();
 
             foreach ($item->rincian as $rincian) {
-
                 $details->push((object)[
                     'jenis' => 'rincian',
                     'nama_barang' => $rincian->hal,
@@ -89,9 +232,7 @@ class RencanaPembelianHrController extends Controller
             }
 
             foreach ($item->pengajuan_barang as $pengajuan) {
-
                 foreach ($pengajuan->detail as $barang) {
-
                     $details->push((object)[
                         'jenis' => 'barang',
                         'nama_barang' => $barang->nama_barang,
@@ -107,12 +248,14 @@ class RencanaPembelianHrController extends Controller
             return (object)[
                 'id' => $item->id,
                 'source' => 'kegiatan',
-                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
+                'periode' => $item->waktu_kegiatan
+                    ? Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y')
+                    : '-',
                 'details' => $details,
                 'tracking' => collect(),
                 'kategori' => 'Kegiatan',
                 'status_pembelian' => $item->status,
-                'created_at' => $item->created_at,
+                'created_at' => $item->waktu_kegiatan ?? $item->created_at,
                 'menunggu' => $item->menunggu,
                 'approved' => $item->approved,
                 'pencairan' => $item->pencairan,
@@ -120,72 +263,26 @@ class RencanaPembelianHrController extends Controller
                 'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
                 'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
             ];
-        });
+        };
 
-        $kegiatanPembelianRaw = Kegiatan::with([
-            'pengajuan_barang.detail',
-            'rincian'
-        ])
-        ->where('tipe', 'pembelian')
-        ->where('status','selesai')
-        ->get()
-        ->map(function($item){
+        $kegiatanRencanaQuery = Kegiatan::with(['pengajuan_barang.detail', 'rincian'])
+            ->where('tipe', 'pembelian')
+            ->where('status', '!=', 'selesai');
+        $this->applyDateFilter($kegiatanRencanaQuery, $request, 'waktu_kegiatan', true);
+        $kegiatanRencanaRaw = $kegiatanRencanaQuery->get()->map($mapKegiatan);
 
-            $details = collect();
-
-            foreach ($item->rincian as $rincian) {
-
-                $details->push((object)[
-                    'jenis' => 'rincian',
-                    'nama_barang' => $rincian->hal,
-                    'qty' => $rincian->qty,
-                    'harga' => $rincian->harga_satuan,
-                    'url' => null,
-                    'keterangan' => $rincian->rincian,
-                    'tanggal' => $rincian->tanggal
-                ]);
-            }
-
-            foreach ($item->pengajuan_barang as $pengajuan) {
-
-                foreach ($pengajuan->detail as $barang) {
-
-                    $details->push((object)[
-                        'jenis' => 'barang',
-                        'nama_barang' => $barang->nama_barang,
-                        'qty' => $barang->qty,
-                        'harga' => $barang->harga,
-                        'url' => null,
-                        'keterangan' => $barang->keterangan,
-                        'tanggal' => $pengajuan->tanggal_pencairan,
-                    ]);
-                }
-            }
-
-            return (object)[
-                'id' => $item->id,
-                'source' => 'kegiatan',
-                'periode' => Carbon::parse($item->waktu_kegiatan)->translatedFormat('F Y'),
-                'details' => $details,
-                'tracking' => collect(),
-                'kategori' => 'Kegiatan',
-                'status_pembelian' => $item->status,
-                'created_at' => $item->created_at,
-                'menunggu' => $item->menunggu,
-                'approved' => $item->approved,
-                'pencairan' => $item->pencairan,
-                'selesai' => $item->selesai,
-                'invoice' => $item->pengajuan_barang->pluck('invoice')->filter()->implode(', '),
-                'no_kk' => $item->pengajuan_barang->pluck('no_kk')->filter()->implode(', '),
-            ];
-        });
+        $kegiatanPembelianQuery = Kegiatan::with(['pengajuan_barang.detail', 'rincian'])
+            ->where('tipe', 'pembelian')
+            ->where('status', 'selesai');
+        $this->applyDateFilter($kegiatanPembelianQuery, $request, 'waktu_kegiatan', true);
+        $kegiatanPembelianRaw = $kegiatanPembelianQuery->get()->map($mapKegiatan);
 
         if (in_array($user->jabatan, ['HRD', 'GM'])) {
             $rencanas = $rencanasRaw
                 ->concat($kegiatanRencanaRaw)
                 ->sortBy('periode')
                 ->values();
-    
+
             $pembelian = $pembelianRaw
                 ->concat($kegiatanPembelianRaw)
                 ->sortBy('periode')
@@ -194,16 +291,243 @@ class RencanaPembelianHrController extends Controller
             $rencanas = $rencanasRaw
                 ->sortBy('periode')
                 ->values();
-    
+
             $pembelian = $pembelianRaw
                 ->sortBy('periode')
                 ->values();
         }
 
-        $extends = 'layouts.app';
-        $section = 'content';
+        return compact('rencanas', 'pembelian', 'dibatalkan');
+    }
 
-        return view('office.rab.index', compact('kegiatan', 'drivers', 'pembelian', 'rencanas', 'dibatalkan', 'extends', 'section', 'karyawans'));
+    private function buildExportSections(Request $request): array
+    {
+        $data = $this->getFilteredData($request, false);
+        $statusFilter = $request->input('status', 'semua');
+        $sections = [];
+
+        if ($statusFilter === 'semua' || $statusFilter === 'Rencana') {
+            $rows = [];
+            $no = 1;
+            $total = 0;
+
+            foreach ($data['rencanas'] as $row) {
+                $tgl = $row->created_at ? Carbon::parse($row->created_at)->format('d-m-Y') : '-';
+                if ($row->details->isEmpty()) {
+                    $rows[] = [
+                        $no++,
+                        $tgl,
+                        $row->periode ?? '-',
+                        $row->kategori ?? '-',
+                        '-',
+                        0,
+                        $this->fmtRupiah(0),
+                        $this->fmtRupiah(0),
+                        '-',
+                        $row->status_pembelian ?? 'Rencana',
+                    ];
+                } else {
+                    foreach ($row->details as $item) {
+                        $qty = (int) ($item->qty ?? 0);
+                        $harga = (int) ($item->harga ?? 0);
+                        $sub = $qty * $harga;
+                        $total += $sub;
+
+                        $rows[] = [
+                            $no++,
+                            $tgl,
+                            $row->periode ?? '-',
+                            $row->kategori ?? '-',
+                            $item->nama_barang ?? '-',
+                            $qty,
+                            $this->fmtRupiah($harga),
+                            $this->fmtRupiah($sub),
+                            $item->keterangan ?: '-',
+                            $row->status_pembelian ?? 'Rencana',
+                        ];
+                    }
+                }
+            }
+
+            $sections[] = [
+                'judul'    => 'Rencana Pembelian',
+                'headings' => ['No', 'Tanggal', 'Tenggat', 'Kategori', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal', 'Keterangan', 'Status'],
+                'rows'     => $rows,
+                'footer'   => 'Total Estimasi Rencana: ' . $this->fmtRupiah($total),
+            ];
+        }
+
+        if ($statusFilter === 'semua' || $statusFilter === 'Terlaksana') {
+            $rows = [];
+            $no = 1;
+            $total = 0;
+
+            foreach ($data['pembelian'] as $row) {
+                $tgl = $row->created_at ? Carbon::parse($row->created_at)->format('d-m-Y') : '-';
+                if ($row->details->isEmpty()) {
+                    $rows[] = [
+                        $no++,
+                        $tgl,
+                        $row->no_kk ?: '-',
+                        $row->periode ?? '-',
+                        $row->kategori ?? '-',
+                        '-',
+                        0,
+                        $this->fmtRupiah(0),
+                        $this->fmtRupiah(0),
+                        '-',
+                        $row->status_pembelian ?? 'Terlaksana',
+                    ];
+                } else {
+                    foreach ($row->details as $item) {
+                        $qty = (int) ($item->qty ?? 0);
+                        $harga = (int) ($item->harga ?? 0);
+                        $sub = $qty * $harga;
+                        $total += $sub;
+
+                        $rows[] = [
+                            $no++,
+                            $tgl,
+                            $row->no_kk ?: '-',
+                            $row->periode ?? '-',
+                            $row->kategori ?? '-',
+                            $item->nama_barang ?? '-',
+                            $qty,
+                            $this->fmtRupiah($harga),
+                            $this->fmtRupiah($sub),
+                            $item->keterangan ?: '-',
+                            $row->status_pembelian ?? 'Terlaksana',
+                        ];
+                    }
+                }
+            }
+
+            $sections[] = [
+                'judul'    => 'Pembelian Terlaksana',
+                'headings' => ['No', 'Tanggal', 'No. KK', 'Tenggat', 'Kategori', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal', 'Keterangan', 'Status'],
+                'rows'     => $rows,
+                'footer'   => 'Total Terlaksana: ' . $this->fmtRupiah($total),
+            ];
+        }
+
+        if ($statusFilter === 'semua' || $statusFilter === 'Dibatalkan') {
+            $rows = [];
+            $no = 1;
+            $total = 0;
+
+            foreach ($data['dibatalkan'] as $row) {
+                $tgl = $row->created_at ? Carbon::parse($row->created_at)->format('d-m-Y') : '-';
+                if ($row->details->isEmpty()) {
+                    $rows[] = [
+                        $no++,
+                        $tgl,
+                        $row->periode ?? '-',
+                        $row->kategori ?? '-',
+                        '-',
+                        0,
+                        $this->fmtRupiah(0),
+                        $this->fmtRupiah(0),
+                        $row->alasan_dibatalkan ?: '-',
+                        $row->status_pembelian ?? 'Dibatalkan',
+                    ];
+                } else {
+                    foreach ($row->details as $item) {
+                        $qty = (int) ($item->qty ?? 0);
+                        $harga = (int) ($item->harga ?? 0);
+                        $sub = $qty * $harga;
+                        $total += $sub;
+
+                        $rows[] = [
+                            $no++,
+                            $tgl,
+                            $row->periode ?? '-',
+                            $row->kategori ?? '-',
+                            $item->nama_barang ?? '-',
+                            $qty,
+                            $this->fmtRupiah($harga),
+                            $this->fmtRupiah($sub),
+                            $row->alasan_dibatalkan ?: '-',
+                            $row->status_pembelian ?? 'Dibatalkan',
+                        ];
+                    }
+                }
+            }
+
+            $sections[] = [
+                'judul'    => 'Pembelian Dibatalkan',
+                'headings' => ['No', 'Tanggal', 'Tenggat', 'Kategori', 'Nama Barang', 'Qty', 'Harga Satuan', 'Subtotal', 'Alasan Dibatalkan', 'Status'],
+                'rows'     => $rows,
+                'footer'   => 'Total Dibatalkan: ' . $this->fmtRupiah($total),
+            ];
+        }
+
+        return $sections;
+    }
+
+    private function opsiTahun(): array
+    {
+        $tahunHr = PembelianHr::query()
+            ->whereNotNull('created_at')
+            ->selectRaw('YEAR(created_at) as y')
+            ->distinct()
+            ->pluck('y')
+            ->all();
+
+        $tahunKeg = Kegiatan::query()
+            ->where('tipe', 'pembelian')
+            ->selectRaw('YEAR(COALESCE(waktu_kegiatan, created_at)) as y')
+            ->distinct()
+            ->pluck('y')
+            ->all();
+
+        $all = array_unique(array_filter(array_map('intval', array_merge($tahunHr, $tahunKeg, [(int) now()->year]))));
+        rsort($all);
+
+        return array_values($all);
+    }
+
+    private function labelPeriode(Request $request): string
+    {
+        $mode = $this->resolveFilterMode($request);
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        if ($mode === 'bulan_tahun') {
+            $bulan = (int) $request->input('bulan', 0);
+            $tahun = (int) $request->input('tahun', 0);
+            $parts = [];
+            if ($bulan && isset($namaBulan[$bulan])) {
+                $parts[] = $namaBulan[$bulan];
+            }
+            if ($tahun) {
+                $parts[] = (string) $tahun;
+            }
+            return $parts ? implode(' ', $parts) : 'Semua Periode';
+        }
+
+        if ($mode === 'rentang') {
+            $awal = $request->input('tanggal_awal');
+            $akhir = $request->input('tanggal_akhir');
+            if ($awal && $akhir) {
+                return Carbon::parse($awal)->format('d-m-Y') . ' s/d ' . Carbon::parse($akhir)->format('d-m-Y');
+            }
+            if ($awal) {
+                return 'Sejak ' . Carbon::parse($awal)->format('d-m-Y');
+            }
+            if ($akhir) {
+                return 'Sampai ' . Carbon::parse($akhir)->format('d-m-Y');
+            }
+        }
+
+        return 'Semua Periode';
+    }
+
+    private function fmtRupiah($nominal): string
+    {
+        return 'Rp ' . number_format((int) $nominal, 0, ',', '.');
     }
 
     public function store(Request $request)

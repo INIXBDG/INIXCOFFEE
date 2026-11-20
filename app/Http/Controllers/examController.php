@@ -44,6 +44,70 @@ class examController extends Controller
         return view('exam.index');
     }
 
+    /**
+     * API: Daftar Sales yang belum mengajukan pengajuan exam
+     * Mengelompokkan RKM yang belum diajukan exam berdasarkan Sales bersangkutan.
+     * Digunakan oleh role Adm Sales
+     */
+    public function getSalesBelumPengajuanExam()
+    {
+        $unsubmittedRkm = RKM::with([
+                'materi:id,nama_materi',
+                'perusahaan:id,nama_perusahaan',
+                'sales:id,kode_karyawan,nama_lengkap,jabatan',
+            ])
+            ->where('status', '0')
+            ->whereNull('deleted_at')
+            ->whereHas('peluang', function ($query) {
+                $query->where('tentatif', 0)->where('tahap', '!=', 'lost');
+            })
+            ->whereNotIn('id', eksam::select('id_rkm')->whereNotNull('id_rkm'))
+            ->get();
+
+        $grouped = $unsubmittedRkm->groupBy('sales_key');
+
+        $result = [];
+        foreach ($grouped as $salesKey => $items) {
+            $salesModel = $items->first()->sales;
+            $namaSales  = $salesModel ? $salesModel->nama_lengkap : ($salesKey ?: 'Tidak Ada Sales');
+            $jabatan    = $salesModel ? $salesModel->jabatan : '-';
+
+            // Detail setiap RKM untuk child row expandable
+            $detailKelas = $items->map(function ($rkm) {
+                return [
+                    'id'           => $rkm->id,
+                    'nama_materi'  => $rkm->materi  ? $rkm->materi->nama_materi       : '-',
+                    'perusahaan'   => $rkm->perusahaan ? $rkm->perusahaan->nama_perusahaan : '-',
+                    'tanggal_awal' => $rkm->tanggal_awal  ? \Carbon\Carbon::parse($rkm->tanggal_awal)->format('d/m/Y')  : '-',
+                    'tanggal_akhir'=> $rkm->tanggal_akhir ? \Carbon\Carbon::parse($rkm->tanggal_akhir)->format('d/m/Y') : '-',
+                    'pax'          => $rkm->pax ?? '-',
+                    'metode_kelas' => $rkm->metode_kelas ?? '-',
+                    'kelas'        => $rkm->authorize == 1 ? 'Authorize' : 'Regular',
+                ];
+            })->values()->toArray();
+
+            $materiList = collect($detailKelas)->pluck('nama_materi')->unique()->values()->implode(', ');
+
+            $result[] = [
+                'kode_sales'    => $salesKey ?: '-',
+                'nama_sales'    => $namaSales,
+                'jabatan'       => $jabatan,
+                'total_pending' => $items->count(),
+                'materi_list'   => $materiList,
+                'detail_kelas'  => $detailKelas,
+            ];
+        }
+
+        usort($result, function ($a, $b) {
+            return $b['total_pending'] <=> $a['total_pending'];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sales belum pengajuan exam',
+            'data'    => $result,
+        ]);
+    }
     public function createOnly()
     {
         $kode_exam = listexam::all();
@@ -439,6 +503,18 @@ class examController extends Controller
     public function create($id)
     {
         $rkm = RKM::with('perusahaan', 'materi')->findOrFail($id);
+
+        $currentUser = auth()->user();
+        $currentJabatan = $currentUser->jabatan ?? '';
+        $userKode = $currentUser->karyawan->kode_karyawan ?? '';
+
+        // Jika user adalah Sales, pastikan hanya sales pemilik RKM yang berhak mengajukan
+        if ($currentJabatan === 'Sales' && $userKode) {
+            if ($rkm->sales_key !== $userKode) {
+                return redirect()->back()->with('error', 'Anda hanya dapat mengajukan exam untuk kelas milik Anda sendiri.');
+            }
+        }
+
         $sertifa = PoExamSertifa::where('id_rkm', $rkm->id)->first();
         $kode_exam = listexam::all();
 
