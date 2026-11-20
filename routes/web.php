@@ -413,6 +413,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
     Route::put('/exam/update/status', [examController::class, 'updateStatus'])->name('exam.updateStatus');
     Route::get('getHistoriExam', [examController::class, 'getHistoriExam'])->name('getHistoriExam');
+    Route::get('getSalesBelumPengajuanExam', [examController::class, 'getSalesBelumPengajuanExam'])->name('getSalesBelumPengajuanExam');
     Route::get('/create-only', [examController::class, 'createOnly'])->name('exam.createOnly');
     Route::post('/store-only', [examController::class, 'storeOnly'])->name('exam.storeOnly');
     Route::get('/hargaExam', [examController::class, 'hargaExam']);
