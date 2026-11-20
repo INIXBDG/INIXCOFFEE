@@ -653,6 +653,9 @@ class TargetKPIController extends Controller
         $userJabatan = strtolower($user->jabatan ?? '');
         $isUserKoordinatorItsm = str_contains($userJabatan, 'koordinator itsm') || str_contains($userJabatan, 'koordinator');
 
+        $rolesLihatGap = ['gm', 'hrd', 'direktur utama', 'direktur'];
+        $canViewGap = $isUserKoordinatorItsm || in_array($userJabatan, $rolesLihatGap, true);
+
         $target = targetKPI::find($idTarget);
         $detailTarget = $target?->detailTargetKPI->first();
         $routeName = $detailTarget?->dataTarget?->asistant_route ?? '';
@@ -664,7 +667,7 @@ class TargetKPIController extends Controller
             'detailTargetKPI.dataTarget'
         ])->where('id', $idTarget);
 
-        $shouldFilterByPerson = !($isUserKoordinatorItsm && $isGapKompetensiTarget);
+        $shouldFilterByPerson = !($canViewGap && $isGapKompetensiTarget);
 
         if ($personId !== null && $shouldFilterByPerson) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $personId));
@@ -673,13 +676,13 @@ class TargetKPIController extends Controller
         $detailList = $query->get();
 
         $data = [
-            'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $isGapKompetensiTarget) {
+            'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $canViewGap, $isGapKompetensiTarget) {
                 $detail = $itemDetail->detailTargetKPI->first();
                 if (!$detail) {
                     return null;
                 }
 
-                if ($isUserKoordinatorItsm && $isGapKompetensiTarget) {
+                if ($canViewGap && $isGapKompetensiTarget) {
                     $divisi = $detail->divisi;
 
                     $karyawanDiDivisi = karyawan::where('divisi', $divisi)
@@ -756,7 +759,7 @@ class TargetKPIController extends Controller
                     ),
                     'data_detail'    => $this->getCalculationByRoute(
                         $itemDetail,
-                        ($isUserKoordinatorItsm && $isGapKompetensiTarget) ? null : $personId
+                        ($canViewGap && $isGapKompetensiTarget) ? null : $personId
                     ),
                     'can_edit'       => $isUserKoordinatorItsm,
                 ];

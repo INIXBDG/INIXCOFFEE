@@ -1091,7 +1091,7 @@ class GMKPIService
     {
         $raw = (float) $rawValue;
         $target = (float) $nilaiTarget;
-        if (in_array($tipeTarget, ['rupiah', 'angka']) && $target > 0) {
+        if (in_array($tipeTarget, ['rupiah', 'angka', 'persen']) && $target > 0) {
             $raw = ($raw / $target) * 100;
         }
 
