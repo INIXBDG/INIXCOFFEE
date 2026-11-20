@@ -1940,7 +1940,7 @@
     </div>
 
     <div class="modal fade mdk" id="modalExport" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2><i class="fa-solid fa-file-export"></i><span id="exportTitle">Export data</span></h2>
@@ -1948,22 +1948,124 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="alert alert-danger d-none" id="exportError">Pilih minimal 1 kolom untuk diexport.</div>
-                    <div class="mb-4">
-                        <label class="form-label d-block">Format file</label>
-                        <div class="seg">
-                            <label><input type="radio" name="exportFormat" id="fmtPdf" value="pdf"
-                                    checked><span><i class="fa-regular fa-file-pdf"></i>PDF</span></label>
-                            <label><input type="radio" name="exportFormat" id="fmtXlsx" value="xlsx"><span><i
-                                        class="fa-regular fa-file-excel"></i>Excel</span></label>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            <label class="form-label d-block">Format file</label>
+                            <div class="seg">
+                                <label><input type="radio" name="exportFormat" id="fmtPdf" value="pdf"
+                                        checked><span><i class="fa-regular fa-file-pdf"></i>PDF</span></label>
+                                <label><input type="radio" name="exportFormat" id="fmtXlsx" value="xlsx"><span><i
+                                            class="fa-regular fa-file-excel"></i>Excel</span></label>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label d-block">Opsi tambahan</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <label class="switch-chip form-switch" for="expWithPembayaran">
+                                    <input type="checkbox" class="form-check-input" id="expWithPembayaran" role="switch">
+                                    Sertakan riwayat pembayaran (opsional)
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="form-label mb-0">Kolom yang diexport</label>
-                        <button type="button" class="kp-link" id="exportToggleAll"
-                            style="border:0;background:none;color:var(--pri);font-weight:700;font-size:.8rem">Pilih atau
-                            kosongkan semua</button>
+
+                    <div class="mb-4" id="exportInstrukturWrap">
+                        <label class="form-label">Pilih instruktur yang diexport</label>
+                        <div class="kp">
+                            <div class="kp-bar">
+                                <div class="search-wrap">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="search" id="expInstSearch" class="form-control"
+                                        placeholder="Cari nama, kode, atau core instruktur" aria-label="Cari instruktur">
+                                </div>
+                                <button type="button" class="kp-link" id="expInstAll">Pilih semua</button>
+                                <button type="button" class="kp-link" id="expInstClear">Kosongkan</button>
+                                <span class="sub ms-auto"><b id="expInstCount">0</b> dipilih</span>
+                            </div>
+                            <div class="kp-grid" id="expInstGrid" style="max-height:190px"></div>
+                        </div>
                     </div>
-                    <div class="xgrid" id="exportColumns"></div>
+
+                    <div class="mb-4">
+                        <label class="form-label d-block">Filter periode (Riwayat Mengajar &amp; Pembayaran)</label>
+                        <div class="seg mb-3" id="expPeriodeMode">
+                            <button type="button" class="active" data-mode="semua">Semua periode</button>
+                            <button type="button" data-mode="bulan_tahun">Bulan &amp; Tahun</button>
+                            <button type="button" data-mode="rentang">Rentang tanggal</button>
+                        </div>
+
+                        <div class="row g-2 d-none" id="expBulanTahunBox">
+                            <div class="col-md-6">
+                                <label class="form-label">Bulan</label>
+                                <select id="expBulan" class="form-select">
+                                    <option value="">Semua bulan</option>
+                                    <option value="1">Januari</option>
+                                    <option value="2">Februari</option>
+                                    <option value="3">Maret</option>
+                                    <option value="4">April</option>
+                                    <option value="5">Mei</option>
+                                    <option value="6">Juni</option>
+                                    <option value="7">Juli</option>
+                                    <option value="8">Agustus</option>
+                                    <option value="9">September</option>
+                                    <option value="10">Oktober</option>
+                                    <option value="11">November</option>
+                                    <option value="12">Desember</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tahun</label>
+                                <select id="expTahun" class="form-select">
+                                    <option value="">Semua tahun</option>
+                                    @foreach ($tahunOptions ?? [] as $th)
+                                        <option value="{{ $th }}">{{ $th }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 d-none" id="expRentangBox">
+                            <div class="col-md-6">
+                                <label class="form-label">Dari tanggal</label>
+                                <input type="date" id="expTglAwal" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sampai tanggal</label>
+                                <input type="date" id="expTglAkhir" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0" id="exportMainColLabel">Kolom yang diexport</label>
+                            <button type="button" class="kp-link" id="exportToggleAll"
+                                style="border:0;background:none;color:var(--pri);font-weight:700;font-size:.8rem">Pilih atau
+                                kosongkan semua</button>
+                        </div>
+                        <div class="xgrid" id="exportColumns"></div>
+                    </div>
+
+                    <div class="mb-3" id="exportRiwayatColWrap">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Kolom riwayat mengajar</label>
+                            <button type="button" class="kp-link" id="exportToggleRiwayatAll"
+                                style="border:0;background:none;color:var(--pri);font-weight:700;font-size:.8rem">Pilih atau
+                                kosongkan semua</button>
+                        </div>
+                        <div class="xgrid" id="exportColumnsRiwayat"></div>
+                    </div>
+
+                    <div class="mb-1 d-none" id="exportPembayaranColWrap">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Kolom riwayat pembayaran</label>
+                            <button type="button" class="kp-link" id="exportTogglePembayaranAll"
+                                style="border:0;background:none;color:var(--pri);font-weight:700;font-size:.8rem">Pilih atau
+                                kosongkan semua</button>
+                        </div>
+                        <div class="xgrid" id="exportColumnsPembayaran"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-line" data-bs-dismiss="modal">Batal</button>
@@ -1979,8 +2081,10 @@
         $(function() {
             const KOLOM = {
                 list: @json($kolomList),
-                riwayat: @json($kolomRiwayat)
+                riwayat: @json($kolomRiwayat),
+                pembayaran: @json($kolomPembayaran ?? [])
             };
+            let ALL_INSTRUKTUR = @json($allInstrukturs ?? []);
             const ROUTES = {
                 data: "{{ route('HR.instruktur-ol.data') }}",
                 store: "{{ route('HR.instruktur-ol.store') }}",
@@ -2217,6 +2321,9 @@
                     if (!res.data.length && res.current_page > 1) {
                         loadTable(res.current_page - 1);
                         return;
+                    }
+                    if (res.all_instrukturs) {
+                        ALL_INSTRUKTUR = res.all_instrukturs;
                     }
                     renderSummary(res.summary);
                     renderTable(res);
@@ -3248,15 +3355,135 @@
             });
 
             let exportCtx = null;
+            let expInstSel = new Set();
+            let expInstQuery = '';
+            let expPeriodeMode = 'semua';
+
+            function paintExpInst() {
+                $('#expInstCount').text(expInstSel.size);
+
+                if (!ALL_INSTRUKTUR.length) {
+                    $('#expInstGrid').html('<div class="kp-none">Belum ada data instruktur.</div>');
+                    return;
+                }
+
+                const q = expInstQuery.toLowerCase();
+                const list = ALL_INSTRUKTUR.filter(i => !q || (
+                    (i.nama || '') + ' ' + (i.kode_karyawan || '') + ' ' + (i.core || '')
+                ).toLowerCase().includes(q));
+
+                if (!list.length) {
+                    $('#expInstGrid').html('<div class="kp-none">Tidak ada instruktur yang cocok.</div>');
+                    return;
+                }
+
+                $('#expInstGrid').html(list.map(i => {
+                    const id = String(i.id);
+                    const on = expInstSel.has(id);
+                    return `<div class="kp-card exp-inst-card ${on ? 'is-on' : ''}" data-id="${esc(id)}" role="checkbox" aria-checked="${on}" tabindex="0">
+                        <span class="kp-check"><i class="fa-solid fa-check"></i></span>
+                        <div class="kp-body">
+                            <div class="kp-t">${esc(i.nama)}</div>
+                            <div class="kp-c">${i.kode_karyawan ? 'Kode ' + esc(i.kode_karyawan) : 'Tanpa kode'} &middot; ${esc(i.core || '-')}</div>
+                        </div>
+                    </div>`;
+                }).join(''));
+            }
+
+            function toggleExpInst(id) {
+                id = String(id);
+                if (expInstSel.has(id)) expInstSel.delete(id);
+                else expInstSel.add(id);
+                paintExpInst();
+            }
+
+            $(document).on('click', '.exp-inst-card', function() {
+                toggleExpInst($(this).attr('data-id'));
+            });
+
+            $(document).on('keydown', '.exp-inst-card', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    toggleExpInst($(this).attr('data-id'));
+                }
+            });
+
+            $('#expInstSearch').on('input', function() {
+                expInstQuery = $.trim($(this).val());
+                paintExpInst();
+            });
+
+            $('#expInstAll').on('click', function() {
+                const q = expInstQuery.toLowerCase();
+                ALL_INSTRUKTUR.filter(i => !q || (
+                    (i.nama || '') + ' ' + (i.kode_karyawan || '') + ' ' + (i.core || '')
+                ).toLowerCase().includes(q)).forEach(i => expInstSel.add(String(i.id)));
+                paintExpInst();
+            });
+
+            $('#expInstClear').on('click', function() {
+                expInstSel.clear();
+                paintExpInst();
+            });
+
+            function setExpPeriodeMode(mode) {
+                expPeriodeMode = mode;
+                $('#expPeriodeMode button').each(function() {
+                    $(this).toggleClass('active', $(this).attr('data-mode') === mode);
+                });
+                $('#expBulanTahunBox').toggleClass('d-none', mode !== 'bulan_tahun');
+                $('#expRentangBox').toggleClass('d-none', mode !== 'rentang');
+            }
+
+            $('#expPeriodeMode').on('click', 'button', function() {
+                setExpPeriodeMode($(this).attr('data-mode'));
+            });
+
+            $('#expWithPembayaran').on('change', function() {
+                $('#exportPembayaranColWrap').toggleClass('d-none', !$(this).is(':checked'));
+            });
+
+            function renderColChips(catalog, cls) {
+                return Object.entries(catalog || {}).map(([k, label]) =>
+                    `<label class="xchip"><input class="${cls}" type="checkbox" value="${esc(k)}" checked><span>${esc(label)}</span></label>`
+                ).join('');
+            }
 
             function openExport(ctx) {
                 exportCtx = ctx;
                 $('#exportTitle').text(ctx.title);
-                $('#exportError').addClass('d-none');
+                $('#exportError').addClass('d-none').text('Pilih minimal 1 kolom untuk diexport.');
                 $('#fmtPdf').prop('checked', true);
-                $('#exportColumns').html(Object.entries(KOLOM[ctx.scope]).map(([k, label]) =>
-                    `<label class="xchip"><input class="exp-col" type="checkbox" value="${esc(k)}" checked><span>${esc(label)}</span></label>`
-                    ).join(''));
+
+                $('#expWithPembayaran').prop('checked', false);
+                $('#exportPembayaranColWrap').addClass('d-none');
+
+                setExpPeriodeMode('semua');
+                $('#expBulan').val('');
+                $('#expTahun').val('');
+                $('#expTglAwal').val('');
+                $('#expTglAkhir').val('');
+
+                const isList = ctx.scope === 'list';
+                $('#exportInstrukturWrap').toggleClass('d-none', !isList);
+                $('#exportRiwayatColWrap').toggleClass('d-none', !isList);
+                $('#exportMainColLabel').text(isList ? 'Kolom data instruktur' : 'Kolom riwayat mengajar');
+
+                if (isList) {
+                    expInstQuery = '';
+                    $('#expInstSearch').val('');
+                    const q = (currentQ || '').toLowerCase();
+                    const initial = ALL_INSTRUKTUR.filter(i => !q || (
+                        (i.nama || '') + ' ' + (i.kode_karyawan || '') + ' ' + (i.core || '')
+                    ).toLowerCase().includes(q));
+                    expInstSel = new Set((initial.length ? initial : ALL_INSTRUKTUR).map(i => String(i.id)));
+                    paintExpInst();
+                }
+
+                $('#exportColumns').html(renderColChips(KOLOM[ctx.scope], 'exp-col'));
+                $('#exportColumnsRiwayat').html(renderColChips(KOLOM.riwayat, 'exp-col-riwayat'));
+                $('#exportColumnsPembayaran').html(renderColChips(KOLOM.pembayaran, 'exp-col-pembayaran'));
+
                 bukaModal('modalExport');
             }
 
@@ -3287,16 +3514,65 @@
                 $all.prop('checked', $all.filter(':checked').length !== $all.length);
             });
 
+            $('#exportToggleRiwayatAll').on('click', function() {
+                const $all = $('#exportColumnsRiwayat .exp-col-riwayat');
+                $all.prop('checked', $all.filter(':checked').length !== $all.length);
+            });
+
+            $('#exportTogglePembayaranAll').on('click', function() {
+                const $all = $('#exportColumnsPembayaran .exp-col-pembayaran');
+                $all.prop('checked', $all.filter(':checked').length !== $all.length);
+            });
+
             $('#btnDoExport').on('click', function() {
+                const isList = exportCtx.scope === 'list';
                 const cols = $('#exportColumns .exp-col:checked').map((_, e) => e.value).get();
-                if (!cols.length) {
-                    $('#exportError').removeClass('d-none');
+                const colsRiwayat = $('#exportColumnsRiwayat .exp-col-riwayat:checked').map((_, e) => e.value).get();
+                const withBayar = $('#expWithPembayaran').is(':checked');
+                const colsBayar = $('#exportColumnsPembayaran .exp-col-pembayaran:checked').map((_, e) => e.value).get();
+
+                if (isList && !expInstSel.size) {
+                    $('#exportError').removeClass('d-none').text('Pilih minimal 1 instruktur untuk diexport.');
                     return;
                 }
+                if (!cols.length) {
+                    $('#exportError').removeClass('d-none').text('Pilih minimal 1 kolom utama untuk diexport.');
+                    return;
+                }
+                if (isList && !colsRiwayat.length) {
+                    $('#exportError').removeClass('d-none').text('Pilih minimal 1 kolom riwayat mengajar.');
+                    return;
+                }
+                if (withBayar && !colsBayar.length) {
+                    $('#exportError').removeClass('d-none').text('Pilih minimal 1 kolom riwayat pembayaran.');
+                    return;
+                }
+
                 const params = $.extend({}, exportCtx.params, {
                     format: $('input[name=exportFormat]:checked').val(),
-                    columns: cols
+                    columns: cols,
+                    with_riwayat: 1,
+                    with_pembayaran: withBayar ? 1 : 0,
+                    filter_periode: expPeriodeMode
                 });
+
+                if (isList) {
+                    params.instruktur_ids = [...expInstSel];
+                    params.columns_riwayat = colsRiwayat;
+                }
+
+                if (withBayar) {
+                    params.columns_pembayaran = colsBayar;
+                }
+
+                if (expPeriodeMode === 'bulan_tahun') {
+                    if ($('#expBulan').val()) params.bulan = $('#expBulan').val();
+                    if ($('#expTahun').val()) params.tahun = $('#expTahun').val();
+                } else if (expPeriodeMode === 'rentang') {
+                    if ($('#expTglAwal').val()) params.tanggal_awal = $('#expTglAwal').val();
+                    if ($('#expTglAkhir').val()) params.tanggal_akhir = $('#expTglAkhir').val();
+                }
+
                 window.location.href = exportCtx.url + '?' + $.param(params);
                 modal('modalExport').hide();
             });

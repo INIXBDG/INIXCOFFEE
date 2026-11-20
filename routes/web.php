@@ -1513,6 +1513,8 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================================
     Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function () {
         Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+        Route::get('/export/pdf', [RencanaPembelianHrController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel', [RencanaPembelianHrController::class, 'exportExcel'])->name('export.excel');
         Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
         Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
         Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');

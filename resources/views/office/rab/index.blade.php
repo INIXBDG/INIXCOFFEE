@@ -214,6 +214,92 @@
             </div>
 
             <div class="tab-pane fade @if($section === 'content') show active @endif" id="pembelian-page" role="tabpanel">
+                @php
+                    $rpFilterMode = $filterMode ?? request('filter_mode', 'semua');
+                    $rpBulan = $filterBulan ?? request('bulan');
+                    $rpTahun = $filterTahun ?? request('tahun');
+                    $rpTglAwal = $filterTanggalAwal ?? request('tanggal_awal');
+                    $rpTglAkhir = $filterTanggalAkhir ?? request('tanggal_akhir');
+                    $rpTahunOptions = $tahunOptions ?? [now()->year];
+                    $rpBulanList = [
+                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+                    ];
+                @endphp
+
+                <div class="card border-0 shadow-sm rounded-4 mb-3">
+                    <div class="card-body py-3">
+                        <form id="formFilterPembelian" method="GET" action="{{ url()->current() }}" class="row g-2 align-items-end">
+                            <div class="col-md-2 col-sm-6">
+                                <label class="form-label small fw-semibold mb-1">Filter Periode</label>
+                                <select name="filter_mode" id="rpFilterMode" class="form-select form-select-sm">
+                                    <option value="semua" {{ $rpFilterMode === 'semua' ? 'selected' : '' }}>Semua Periode</option>
+                                    <option value="bulan_tahun" {{ $rpFilterMode === 'bulan_tahun' ? 'selected' : '' }}>Bulan &amp; Tahun</option>
+                                    <option value="rentang" {{ $rpFilterMode === 'rentang' ? 'selected' : '' }}>Rentang Tanggal</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 col-sm-6 rp-filter-bt {{ $rpFilterMode === 'bulan_tahun' ? '' : 'd-none' }}">
+                                <label class="form-label small fw-semibold mb-1">Bulan</label>
+                                <select name="bulan" id="rpFilterBulan" class="form-select form-select-sm">
+                                    <option value="">Semua Bulan</option>
+                                    @foreach ($rpBulanList as $num => $namaBulan)
+                                        <option value="{{ $num }}" {{ (string) $rpBulan === (string) $num ? 'selected' : '' }}>{{ $namaBulan }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 col-sm-6 rp-filter-bt {{ $rpFilterMode === 'bulan_tahun' ? '' : 'd-none' }}">
+                                <label class="form-label small fw-semibold mb-1">Tahun</label>
+                                <select name="tahun" id="rpFilterTahun" class="form-select form-select-sm">
+                                    <option value="">Semua Tahun</option>
+                                    @foreach ($rpTahunOptions as $th)
+                                        <option value="{{ $th }}" {{ (string) $rpTahun === (string) $th ? 'selected' : '' }}>{{ $th }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-2 col-sm-6 rp-filter-range {{ $rpFilterMode === 'rentang' ? '' : 'd-none' }}">
+                                <label class="form-label small fw-semibold mb-1">Dari Tanggal</label>
+                                <input type="date" name="tanggal_awal" id="rpTglAwal" class="form-control form-control-sm" value="{{ $rpTglAwal }}">
+                            </div>
+
+                            <div class="col-md-2 col-sm-6 rp-filter-range {{ $rpFilterMode === 'rentang' ? '' : 'd-none' }}">
+                                <label class="form-label small fw-semibold mb-1">Sampai Tanggal</label>
+                                <input type="date" name="tanggal_akhir" id="rpTglAkhir" class="form-control form-control-sm" value="{{ $rpTglAkhir }}">
+                            </div>
+
+                            <div class="col-auto d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm px-3">
+                                    <i class="bi bi-funnel me-1"></i> Terapkan
+                                </button>
+                                <a href="{{ url()->current() }}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                                </a>
+                            </div>
+
+                            <div class="col-md-auto ms-md-auto d-flex flex-wrap align-items-end gap-2">
+                                <div>
+                                    <label class="form-label small fw-semibold mb-1">Status Export</label>
+                                    <select id="rpExportStatus" class="form-select form-select-sm">
+                                        <option value="semua">Semua Status</option>
+                                        <option value="Rencana">Rencana</option>
+                                        <option value="Terlaksana">Terlaksana</option>
+                                        <option value="Dibatalkan">Dibatalkan</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="btnRpExportPdf" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-file-pdf me-1"></i> Export PDF
+                                </button>
+                                <button type="button" id="btnRpExportExcel" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-file-excel me-1"></i> Export Excel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <ul class="nav nav-tabs" id="pembelianTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="rencana-tab" data-bs-toggle="tab" data-bs-target="#rencana" type="button">Rencana</button>
@@ -1952,6 +2038,45 @@
                     alert('ID Karyawan wajib diisi!');
                     return false;
                 }
+            });
+
+            function syncRpFilterMode() {
+                const mode = $('#rpFilterMode').val();
+                $('.rp-filter-bt').toggleClass('d-none', mode !== 'bulan_tahun');
+                $('.rp-filter-range').toggleClass('d-none', mode !== 'rentang');
+            }
+
+            $('#rpFilterMode').on('change', syncRpFilterMode);
+            syncRpFilterMode();
+
+            function buildRpExportUrl(baseUrl) {
+                const mode = $('#rpFilterMode').val() || 'semua';
+                const params = {
+                    filter_mode: mode,
+                    status: $('#rpExportStatus').val() || 'semua'
+                };
+
+                if (mode === 'bulan_tahun') {
+                    const bulan = $('#rpFilterBulan').val();
+                    const tahun = $('#rpFilterTahun').val();
+                    if (bulan) params.bulan = bulan;
+                    if (tahun) params.tahun = tahun;
+                } else if (mode === 'rentang') {
+                    const awal = $('#rpTglAwal').val();
+                    const akhir = $('#rpTglAkhir').val();
+                    if (awal) params.tanggal_awal = awal;
+                    if (akhir) params.tanggal_akhir = akhir;
+                }
+
+                return baseUrl + '?' + $.param(params);
+            }
+
+            $('#btnRpExportPdf').on('click', function() {
+                window.location.href = buildRpExportUrl("{{ route('rencanaPembelian.export.pdf') }}");
+            });
+
+            $('#btnRpExportExcel').on('click', function() {
+                window.location.href = buildRpExportUrl("{{ route('rencanaPembelian.export.excel') }}");
             });
         });
         // Rencana pembelian script
