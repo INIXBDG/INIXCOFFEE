@@ -348,7 +348,7 @@
                         html += '<th scope="col">Perusahaan</th>';
                         html += '<th scope="col">Kode Sales</th>';
                         if (jabatan == 'Adm Sales') {
-                            html += '<th scope="col">Status Pengajuan</th>';
+                            html += '<th scope="col">Status Pengajuan (Exam)</th>';
                         }
                         html += '<th scope="col">Instruktur</th>';
                         html += '<th scope="col">Exam</th>';
