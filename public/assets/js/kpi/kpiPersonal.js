@@ -26,6 +26,41 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
         return String(value).replace(/[^0-9]/g, '');
     }
 
+    function toPercent(t) {
+        const p = parseFloat(t.progress) || 0;
+        const tg = parseFloat(t.target) || 0;
+        const v = (['rupiah', 'angka'].includes(t.tipe_target) && tg > 0) ? (p / tg) * 100 : p;
+        return Math.max(0, Math.min(100, v));
+    }
+
+    const GRADE_SCALE = [
+        { min: 100, grade: 'A', label: 'Sangat Baik',   level: null,       badge: 'success' },
+        { min: 95,  grade: 'B', label: 'Baik',          level: 'High',     badge: 'primary' },
+        { min: 90,  grade: 'B', label: 'Baik',          level: 'Mid',      badge: 'primary' },
+        { min: 85,  grade: 'B', label: 'Baik',          level: 'Standard', badge: 'primary' },
+        { min: 80,  grade: 'B', label: 'Baik',          level: 'Low',      badge: 'primary' },
+        { min: 70,  grade: 'C', label: 'Cukup',         level: null,       badge: 'warning text-dark' },
+        { min: 60,  grade: 'D', label: 'Kurang',        level: null,       badge: 'danger' },
+        { min: 0,   grade: 'E', label: 'Sangat Kurang', level: null,       badge: 'dark' }
+    ];
+
+    function hitungGrade(score) {
+        const value = Number(fmt1(Math.max(0, Math.min(100, Number(score) || 0))));
+        const row = GRADE_SCALE.find(r => value >= r.min) || GRADE_SCALE[GRADE_SCALE.length - 1];
+        return {
+            grade: row.grade,
+            label: row.label,
+            level: row.level,
+            badge: row.badge,
+            display: row.grade + ' (' + row.label + (row.level ? ' - ' + row.level : '') + ')',
+            score: value
+        };
+    }
+
+    function renderGradeBadge(g) {
+        return g ? ` <span class="badge bg-${g.badge} ms-2" title="Grade KPI">${g.display}</span>` : '';
+    }
+
     function initInputFormatting() {
         $('#manual_value_display').off('input.formatting').on('input.formatting', function() {
             const raw = getRawNumber($(this).val());
@@ -153,10 +188,12 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                         ''
                     ).toLowerCase().trim();
 
+                    const rolesLihatGap = ['gm', 'hrd', 'direktur utama', 'direktur'];
                     const isKoordinator =
                         jabatanUser.includes('koordinator itsm') ||
                         jabatanUser === 'koordinator itsm' ||
-                        jabatanUser.includes('koordinator');
+                        jabatanUser.includes('koordinator') ||
+                        rolesLihatGap.includes(jabatanUser);
 
                     let daftarTarget = response.daftar_target_pribadi || [];
                     let statistik = response.statistik_per_target || [];
@@ -188,9 +225,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                         response.kpi_selesai = daftarTarget.filter(t =>
                             ['Selesai', 'Mencapai Target'].includes(t.status)
                         ).length;
-                        response.rata_rata_progress = daftarTarget.length
-                            ? daftarTarget.reduce((a, t) => a + (parseFloat(t.progress_percent) || 0), 0) / daftarTarget.length
-                            : 0;
+                        response.grade = daftarTarget.length ? KpiGrade.calc(response.rata_rata_progress) : null;
                     }
 
                     // Debug sementara — hapus setelah berhasil
@@ -222,7 +257,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
 
     function updateStats(data) {
         $('#stat0').text(data.total_target + ' Target');
-        $('#stat1').text(fmt1(data.rata_rata_progress) + '%');
+        $('#stat1').html(fmt1(data.rata_rata_progress) + '%' + KpiGrade.badge(data.grade, { nama: data.user_info?.nama, total: data.total_target }));
         $('#stat2').text(data.kpi_aktif);
         $('#stat3').text(data.kpi_selesai);
     }
@@ -270,7 +305,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => 'Progress: ' + fmt1(c.parsed.y) + '%' } } },
-                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => v + '%' } } }
                 }
             });
         }
@@ -385,7 +420,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
             currentFilter = filter;
             let filteredTargets = allTargetsData;
             
-            if (filter === 'active') filteredTargets = allTargetsData.filter(t => t.status === 'Aktif');
+            if (filter === 'active') filteredTargets = allTargetsData.filter(t => ['Aktif', 'Sedang Berjalan'].includes(t.status));
             else if (filter === 'completed') filteredTargets = allTargetsData.filter(t => t.status === 'Selesai');
             
             updateTargetCards(filteredTargets);
@@ -1305,7 +1340,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                 const skala = item.skala_kemampuan ?? null; // 1-10, null = belum dinilai
                 const badge = skala === null
                     ? '<span class="badge bg-secondary">Belum dinilai</span>'
-                    : `<span class="badge bg-info text-dark${fmt1(skala * 10)}%</span>`;
+                    : `<span class="badge bg-info text-dark">${fmt1(skala * 10)}%</span>`;
 
                 return `
                     <div class="row mb-2 align-items-center p-2 rounded">

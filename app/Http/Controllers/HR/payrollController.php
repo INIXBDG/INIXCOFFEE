@@ -24,6 +24,9 @@ use PhpOffice\PhpSpreadsheet\Style\Color;
 use App\Models\Pph21Bulanan;
 use App\Models\Pph21Laporan;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use App\Models\ThrPeriod;
+use App\Models\ThrItem;
 
 class payrollController extends Controller
 {
@@ -782,11 +785,11 @@ class payrollController extends Controller
         $employeeLogs = LogGaji::where('id_karyawan', $karyawan->id)->get();
         $gajiDasar = (int) $this->getGajiPokokFromLogs($employeeLogs, $bulan, $tahun);
 
+        $gaji = (int) round($this->getSalaryComponentsFromLogs($employeeLogs, $bulan, $tahun)['gaji']);
         $pph21Setup = 0;
         if ($pph21Data && $pph21Data->ptkp) {
-            $pph21Setup = $this->hitungPph21Bulanan($gajiDasar, $pph21Data->ptkp);
+            $pph21Setup = $this->hitungPph21Bulanan($gaji, $pph21Data->ptkp);
         }
-
         $existing = $this->latestPayrollOf($karyawan->id, $bulan, $tahun);
 
         $tunjanganRows = $this->latestTunjanganByKaryawan([$karyawan->id], $bulan, $tahun)->get($karyawan->id, collect());
@@ -1515,39 +1518,185 @@ class payrollController extends Controller
 
     private function hitungPph21Bulanan($gajiDasar, $ptkpCode)
     {
-        $ptkpBulanan = [
-            'TK/0' => 4500000, 'TK/1' => 4875000, 'TK/2' => 5250000, 'TK/3' => 5625000,
-            'K/0' => 4875000, 'K/1' => 5250000, 'K/2' => 5625000, 'K/3' => 6000000,
-        ];
+        return $this->hitungPph21((int) $gajiDasar, $ptkpCode)['bulanan'];
+    }
 
-        if (!isset($ptkpBulanan[$ptkpCode]) || !$gajiDasar) {
-            return 0;
+    public function getPphAnalysis(Request $request)
+    {
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $awalPeriode = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $prevDate = $awalPeriode->copy()->subMonth();
+ 
+        $list = $this->pphKaryawanPeriode($bulan, $tahun);
+        $ids = $list->pluck('id')->all();
+        $ctx = $this->pphContext($bulan, $tahun, $ids);
+        $laporan = Pph21Laporan::where('bulan', $bulan)->where('tahun', $tahun)->first();
+ 
+        $anomali = [];
+        $tambah = function (string $tipe, string $level, $k, string $pesan) use (&$anomali) {
+            $anomali[] = [
+                'tipe' => $tipe,
+                'level' => $level,
+                'karyawan_id' => $k->id,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'pesan' => $pesan,
+            ];
+        };
+        $rp = fn($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+ 
+        $rows = [];
+        foreach ($list as $k) {
+            $ptkp = $k->pph21->ptkp ?? null;
+            $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
+            $res = $this->resolvePph($k, $ctx);
+            $awal = $ctx['awal'][$k->id] ?? null;
+            $rec = $ctx['records']->get($k->id);
+ 
+            $rows[] = [
+                'id' => $k->id,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'divisi' => $this->divisiName($k),
+                'ptkp' => $ptkp,
+                'kategori' => $hit['kategori'],
+                'nilai' => $res ? (int) $res['nilai'] : null,
+                'tersimpan' => (bool) ($res['tersimpan'] ?? false),
+            ];
+ 
+            // Nilai tersimpan tidak lagi sama dengan hasil hitung saat ini (PTKP / penghasilan berubah)
+            if ($rec && $ptkp && ($rec->sumber ?? '') !== 'tunjangan' && abs((int) $rec->total_pph - $hit['nilai']) > 1000) {
+                $ptkpDiubah = $k->pph21 && $k->pph21->updated_at && $rec->updated_at
+                    && $k->pph21->updated_at->gt($rec->updated_at->copy()->addMinute());
+                $tambah(
+                    $ptkpDiubah ? 'ptkp_berubah' : 'nilai_tidak_sesuai',
+                    'sedang',
+                    $k,
+                    ($ptkpDiubah ? 'Status PTKP diubah setelah nilai disimpan. ' : 'Gaji/penghasilan berubah setelah nilai disimpan. ')
+                    . 'Tersimpan ' . $rp($rec->total_pph) . ', hasil hitung sekarang ' . $rp($hit['nilai']) . '.'
+                );
+            }
+ 
+            // Nilai dari Tunjangan vs hasil hitung (TER / tahunan)
+            if ($awal && $ptkp) {
+                $selisih = abs((int) $awal['total'] - $hit['nilai']);
+                $dasar = max((int) $awal['total'], $hit['nilai'], 1);
+                if ($selisih >= 50000 && ($selisih / $dasar) >= 0.10) {
+                    $tambah('selisih_tunjangan', 'sedang', $k,
+                        'Nilai dari Tunjangan ' . $rp($awal['total']) . ' berbeda ' . $rp($selisih)
+                        . ' dari hasil hitung ' . ($hit['masa_terakhir'] ? 'tahunan' : 'TER') . ' ' . $rp($hit['nilai']) . '.');
+                }
+            }
+ 
+            foreach ($hit['peringatan'] as $p) {
+                $tambah('masa_terakhir', 'sedang', $k, $p);
+            }
         }
-
-        $gajiTahunan = $gajiDasar * 12;
-        $ptkpTahunan = $ptkpBulanan[$ptkpCode] * 12;
-        $pkp = max(0, $gajiTahunan - $ptkpTahunan);
-
-        $layers = [
-            ['limit' => 60000000, 'rate' => 0.05],
-            ['limit' => 250000000, 'rate' => 0.15],
-            ['limit' => 500000000, 'rate' => 0.25],
-            ['limit' => 5000000000, 'rate' => 0.30],
-            ['limit' => PHP_INT_MAX, 'rate' => 0.35],
-        ];
-
-        $pphTahunan = 0;
-        $prevLimit = 0;
-
-        foreach ($layers as $layer) {
-            if ($pkp <= 0) break;
-            $taxable = min($pkp, $layer['limit'] - $prevLimit);
-            $pphTahunan += $taxable * $layer['rate'];
-            $pkp -= $taxable;
-            $prevLimit = $layer['limit'];
+ 
+        // Karyawan resign tetapi status masih aktif (tidak ikut periode ini)
+        $resign = $this->pphKaryawanQuery()
+            ->whereNotNull('resigned_at')
+            ->where('resigned_at', '<', $awalPeriode)
+            ->get();
+        foreach ($resign as $k) {
+            $tambah('resign_masih_aktif', 'tinggi', $k,
+                'Resign ' . Carbon::parse($k->resigned_at)->format('d/m/Y') . ' tetapi status karyawan masih aktif. Perbarui status aktif di data karyawan.');
         }
-
-        return (int) round($pphTahunan / 12);
+ 
+        // Ada nilai tersimpan untuk karyawan yang tidak eligible periode ini
+        $yatim = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->whereNotIn('karyawan_id', $ids)->get();
+        if ($yatim->isNotEmpty()) {
+            $namaKaryawan = karyawan::whereIn('id', $yatim->pluck('karyawan_id'))->get()->keyBy('id');
+            foreach ($yatim as $y) {
+                $k = $namaKaryawan->get($y->karyawan_id);
+                if (!$k) continue;
+                $tambah('resign_masih_muncul', 'tinggi', $k,
+                    'Ada nilai PPH 21 tersimpan (' . $rp($y->total_pph) . ') padahal karyawan tidak eligible pada periode ini (sudah resign / belum bergabung / dikecualikan).');
+            }
+        }
+ 
+        $urut = ['tinggi' => 0, 'sedang' => 1, 'rendah' => 2];
+        usort($anomali, fn($a, $b) => $urut[$a['level']] <=> $urut[$b['level']]);
+        $jumlahTinggi = count(array_filter($anomali, fn($a) => $a['level'] === 'tinggi'));
+ 
+        $koleksi = collect($rows);
+        $total = $koleksi->count();
+        $punyaPtkp = $koleksi->whereNotNull('ptkp')->count();
+        $tersimpan = $koleksi->where('tersimpan', true)->count();
+        $totalPph = (int) $koleksi->sum(fn($r) => $r['nilai'] ?? 0);
+        $totalPrev = (int) Pph21Bulanan::where('bulan', $prevDate->month)->where('tahun', $prevDate->year)
+            ->whereIn('karyawan_id', $ids)->sum('total_pph');
+ 
+        $kesehatan = [
+            'total_eligible' => $total,
+            'punya_ptkp' => $punyaPtkp,
+            'belum_ptkp' => $total - $punyaPtkp,
+            'sudah_diisi' => $tersimpan,
+            'belum_diisi' => $total - $tersimpan,
+            'total_pph' => $totalPph,
+            'total_pph_bulan_lalu' => $totalPrev,
+            'selisih' => $totalPph - $totalPrev,
+            'persen' => $totalPrev > 0 ? round((($totalPph - $totalPrev) / $totalPrev) * 100, 1) : null,
+            'bulan_lalu_label' => str_pad((string) $prevDate->month, 2, '0', STR_PAD_LEFT) . '/' . $prevDate->year,
+        ];
+ 
+        $isiLengkap = $total > 0 && $tersimpan === $total;
+        $steps = [
+            ['kode' => 'ptkp', 'judul' => 'Setup PTKP', 'selesai' => $total > 0 && $punyaPtkp === $total, 'detail' => "{$punyaPtkp}/{$total} karyawan"],
+            ['kode' => 'isi', 'judul' => 'Isi nilai bulan ini', 'selesai' => $isiLengkap, 'detail' => "{$tersimpan}/{$total} tersimpan"],
+            ['kode' => 'review', 'judul' => 'Review', 'selesai' => $isiLengkap && $jumlahTinggi === 0, 'detail' => $isiLengkap ? ($jumlahTinggi ? "{$jumlahTinggi} anomali tinggi" : 'Tidak ada anomali tinggi') : 'Menunggu pengisian'],
+            ['kode' => 'kortex', 'judul' => 'Lapor Kortex', 'selesai' => (bool) ($laporan && $laporan->lapor_kortex_at), 'detail' => $laporan && $laporan->lapor_kortex_at ? $laporan->lapor_kortex_at->format('d/m/Y H:i') : 'Belum'],
+            ['kode' => 'billing', 'judul' => 'Kode Billing', 'selesai' => (bool) ($laporan && $laporan->kode_billing_at), 'detail' => $laporan && $laporan->kode_billing_at ? $laporan->kode_billing_at->format('d/m/Y H:i') : 'Belum'],
+            ['kode' => 'bukti', 'judul' => 'Bukti Bayar', 'selesai' => (bool) ($laporan && $laporan->bukti_bayar_at), 'detail' => $laporan && $laporan->bukti_bayar_at ? $laporan->bukti_bayar_at->format('d/m/Y H:i') : 'Belum'],
+        ];
+        $aktif = collect($steps)->search(fn($s) => !$s['selesai']);
+        $aktif = $aktif === false ? count($steps) : $aktif;
+ 
+        $perKategori = ['A' => ['jumlah' => 0, 'total' => 0], 'B' => ['jumlah' => 0, 'total' => 0], 'C' => ['jumlah' => 0, 'total' => 0], 'Belum PTKP' => ['jumlah' => 0, 'total' => 0]];
+        foreach ($rows as $r) {
+            $key = $r['kategori'] ?? 'Belum PTKP';
+            $perKategori[$key]['jumlah']++;
+            $perKategori[$key]['total'] += (int) ($r['nilai'] ?? 0);
+        }
+ 
+        $rentang = [
+            ['label' => 'Rp 0', 'min' => 0, 'max' => 0],
+            ['label' => '1 - 500 rb', 'min' => 1, 'max' => 500000],
+            ['label' => '500 rb - 1 jt', 'min' => 500001, 'max' => 1000000],
+            ['label' => '1 - 2,5 jt', 'min' => 1000001, 'max' => 2500000],
+            ['label' => '2,5 - 5 jt', 'min' => 2500001, 'max' => 5000000],
+            ['label' => '5 - 10 jt', 'min' => 5000001, 'max' => 10000000],
+            ['label' => '> 10 jt', 'min' => 10000001, 'max' => PHP_INT_MAX],
+        ];
+        foreach ($rentang as &$rg) {
+            $rg['jumlah'] = $koleksi->filter(fn($r) => $r['nilai'] !== null && $r['nilai'] >= $rg['min'] && $r['nilai'] <= $rg['max'])->count();
+        }
+        unset($rg);
+ 
+        $top = $koleksi->whereNotNull('nilai')->sortByDesc('nilai')->take(10)->values()
+            ->map(fn($r) => ['nip' => $r['nip'], 'nama' => $r['nama'], 'divisi' => $r['divisi'], 'ptkp' => $r['ptkp'], 'nilai' => $r['nilai']]);
+ 
+        $perDivisi = $koleksi->groupBy('divisi')->map(fn($g, $d) => [
+            'divisi' => $d,
+            'jumlah' => $g->count(),
+            'total' => (int) $g->sum(fn($r) => $r['nilai'] ?? 0),
+            'rata_rata' => $g->count() ? (int) round($g->sum(fn($r) => $r['nilai'] ?? 0) / $g->count()) : 0,
+        ])->sortByDesc('total')->values();
+ 
+        return response()->json([
+            'success' => true,
+            'meta' => ['bulan' => $bulan, 'tahun' => $tahun, 'terkunci' => (bool) ($laporan && $laporan->lapor_kortex_at)],
+            'kesehatan' => $kesehatan,
+            'workflow' => ['steps' => $steps, 'aktif' => $aktif],
+            'distribusi' => [
+                'kategori' => $perKategori,
+                'rentang' => $rentang,
+                'top' => $top,
+                'divisi' => $perDivisi,
+            ],
+            'anomali' => array_slice($anomali, 0, 200),
+            'anomali_total' => count($anomali),
+        ]);
     }
 
     private function respondError($message, $code = 422)
@@ -1839,15 +1988,32 @@ class payrollController extends Controller
         }
     }
 
+    private const PTKP_DESEMBER = [
+        'TK/0' => 54000000,
+        'TK/1' => 58500000,
+        'TK/2' => 63000000,
+        'TK/3' => 67500000,
+        'K/0'  => 58500000,
+        'K/1'  => 63000000,
+        'K/2'  => 67500000,
+        'K/3'  => 72000000,
+    ];
+
     public function indexPph()
     {
         return view('HR.payroll.indexPPH');
     }
 
-    private function pphKaryawanQuery()
+    private function pphKaryawanQuery(?int $bulan = null, ?int $tahun = null)
     {
         return karyawan::with('pph21')
-            ->where('status_aktif', '1')
+            ->where(function ($w) use ($bulan, $tahun) {
+                $w->where('status_aktif', '1');
+                if ($bulan && $tahun) {
+                    $awal = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+                    $w->orWhereBetween('resigned_at', [$awal, $awal->copy()->endOfMonth()]);
+                }
+            })
             ->whereNot('jabatan', 'Pilih Jabatan')
             ->whereNot('jabatan', 'Outsource')
             ->whereNot('divisi', 'Pilih Divisi')
@@ -1862,71 +2028,143 @@ class payrollController extends Controller
             ->whereNotNull('lapor_kortex_at')
             ->exists();
     }
-
-    private function pphContext(int $bulan, int $tahun): array
+    private function pphKaryawanPeriode(int $bulan, int $tahun)
     {
-        $key = ($tahun * 12) + $bulan;
+        $awal = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
+        $akhir = $awal->copy()->endOfMonth();
+ 
+        return $this->pphKaryawanQuery($bulan, $tahun)->get()
+            ->filter(fn($k) => $this->isEmployeeEligibleForPeriod($k, $awal, $akhir))
+            ->values();
+    }
 
-        $records = Pph21Bulanan::where('bulan', $bulan)
-            ->where('tahun', $tahun)
-            ->get()
-            ->keyBy('karyawan_id');
+    private function p2(int $n): string
+    {
+        return str_pad((string) $n, 2, '0', STR_PAD_LEFT);
+    }
 
-        $previous = Pph21Bulanan::whereRaw('(tahun * 12 + bulan) < ?', [$key])
-            ->orderByDesc('tahun')
-            ->orderByDesc('bulan')
-            ->get()
-            ->unique('karyawan_id')
-            ->keyBy('karyawan_id');
+    private function ringkasBulan(array $bulan): string
+    {
+        sort($bulan);
+        $out = [];
+        $start = $prev = null;
+
+        foreach ($bulan as $b) {
+            if ($start === null) {
+                $start = $prev = $b;
+                continue;
+            }
+            if ($b === $prev + 1) {
+                $prev = $b;
+                continue;
+            }
+            $out[] = $start === $prev ? $this->p2($start) : $this->p2($start) . '-' . $this->p2($prev);
+            $start = $prev = $b;
+        }
+
+        if ($start !== null) {
+            $out[] = $start === $prev ? $this->p2($start) : $this->p2($start) . '-' . $this->p2($prev);
+        }
+
+        return implode(', ', $out);
+    }
+
+    private function periodeThrDesember(int $tahun): array
+    {
+        $p = ThrPeriod::where('tahun', $tahun)->orderByDesc('id')->first();
+        $fallback = false;
+
+        if (!$p) {
+            $p = ThrPeriod::orderByDesc('id')->first();
+            $fallback = (bool) $p;
+        }
 
         return [
+            'period' => $p,
+            'info' => $p ? [
+                'id' => $p->id,
+                'nama' => $p->nama_periode,
+                'tahun' => (int) $p->tahun,
+                'fallback' => $fallback,
+            ] : null,
+        ];
+    }
+ 
+    private function pphContext(int $bulan, int $tahun, ?array $ids = null): array
+    {
+        $key = ($tahun * 12) + $bulan;
+        $scope = fn($q, string $kolom = 'karyawan_id') => $ids !== null ? $q->whereIn($kolom, $ids) : $q;
+ 
+        $records = $scope(Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun))
+            ->get()->keyBy('karyawan_id');
+ 
+        $previous = $scope(Pph21Bulanan::whereRaw('(tahun * 12 + bulan) < ?', [$key]))
+            ->orderByDesc('tahun')->orderByDesc('bulan')
+            ->get()->unique('karyawan_id')->keyBy('karyawan_id');
+ 
+        $tahunIni = $scope(Pph21Bulanan::where('tahun', $tahun)->where('bulan', '<', $bulan))
+            ->get()->groupBy('karyawan_id');
+ 
+        $iuran = $scope(PerhitunganTunjanganHR::where('tahun', $tahun)->where('bulan', '<=', $bulan))
+            ->get()->groupBy('karyawan_id');
+ 
+        $logs = $scope(LogGaji::where('tahun', '<=', $tahun), 'id_karyawan')
+            ->get()->groupBy('id_karyawan');
+ 
+        return [
+            'bulan' => $bulan,
+            'tahun' => $tahun,
             'records' => $records,
             'previous' => $previous,
-            'awal' => $this->tunjanganPph21Awal($bulan, $tahun),
+            'tahun_ini' => $tahunIni,
+            'iuran' => $iuran,
+            'logs' => $logs,
+            'awal' => $this->tunjanganPph21Awal($bulan, $tahun, null),
         ];
     }
 
     private function resolvePph($k, array $ctx): ?array
     {
+        $ptkp = $k->pph21->ptkp ?? null;
+        $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
+ 
+        $base = [
+            'dari' => null,
+            'tersimpan' => false,
+            'masa_terakhir' => $hit['masa_terakhir'],
+            'peringatan' => $hit['peringatan'],
+        ];
+ 
         $record = $ctx['records']->get($k->id);
         if ($record) {
-            return [
-                'nilai' => (int) $record->total_pph,
-                'sumber' => 'tersimpan',
-                'dari' => null,
-                'tersimpan' => true,
-            ];
+            return array_merge($base, ['nilai' => (int) $record->total_pph, 'sumber' => 'tersimpan', 'tersimpan' => true]);
         }
-
+ 
         $awal = $ctx['awal'][$k->id] ?? null;
         if ($awal) {
-            return [
-                'nilai' => (int) $awal['total'],
-                'sumber' => 'tunjangan',
-                'dari' => null,
-                'tersimpan' => false,
-            ];
+            return array_merge($base, ['nilai' => (int) $awal['total'], 'sumber' => 'tunjangan']);
         }
-
+ 
         $prev = $ctx['previous']->get($k->id);
-        if ($prev) {
+        if (
+            $prev && !$hit['masa_terakhir']
+            && (int) $prev->tahun === $ctx['tahun'] && (int) $prev->bulan < 12
+            && $this->brutoBulan($k, (int) $prev->bulan, (int) $prev->tahun, $ctx) === $hit['bruto']
+        ) {
             return [
                 'nilai' => (int) $prev->total_pph,
                 'sumber' => 'bulan_lalu',
                 'dari' => str_pad((string) $prev->bulan, 2, '0', STR_PAD_LEFT) . '/' . $prev->tahun,
                 'tersimpan' => false,
+                'masa_terakhir' => false,
+                'peringatan' => [],
             ];
         }
-
-        if ($k->pph21 && $k->pph21->ptkp) {
-            return [
-                'nilai' => $this->hitungPph21((int) ($k->gaji ?? 0), $k->pph21->ptkp)['bulanan'],
-                'sumber' => 'hitung',
-                'dari' => null,
-                'tersimpan' => false,
-            ];
+ 
+        if ($ptkp) {
+            return array_merge($base, ['nilai' => $hit['nilai'], 'sumber' => 'hitung']);
         }
-
+ 
         return null;
     }
 
@@ -1979,36 +2217,43 @@ class payrollController extends Controller
     public function getPphData(Request $request)
     {
         [$bulan, $tahun] = $this->currentPeriod($request);
-        $ctx = $this->pphContext($bulan, $tahun);
-
-        $data = $this->pphKaryawanQuery()
-            ->get()
-            ->map(function ($k) use ($ctx) {
-                $awal = $ctx['awal'][$k->id] ?? null;
-
-                return [
-                    'id' => $k->id,
-                    'nip' => $k->nip ?? '-',
-                    'nama' => $k->nama_lengkap ?? '-',
-                    'jabatan' => $k->jabatan ?? '-',
-                    'divisi' => $this->divisiName($k),
-                    'gaji' => (int) ($k->gaji ?? 0),
-                    'tunjangan_jabatan' => (int) ($k->tunjangan_jabatan ?? 0),
-                    'pph_tunjangan' => $awal ? (int) $awal['total'] : null,
-                    'pph_bulan' => $this->resolvePph($k, $ctx),
-                    'pph21' => $k->pph21 ? [
-                        'id' => $k->pph21->id,
-                        'ptkp' => $k->pph21->ptkp,
-                        'menikah' => (int) $k->pph21->status_menikah,
-                        'anak' => $this->decodeAnak($k->pph21->anak),
-                        'total_pph' => (int) $k->pph21->total_pph,
-                    ] : null,
-                ];
-            })
-            ->values();
-
+        $list = $this->pphKaryawanPeriode($bulan, $tahun);
+        $ctx = $this->pphContext($bulan, $tahun, $list->pluck('id')->all());
+ 
+        $data = $list->map(function ($k) use ($ctx, $bulan, $tahun) {
+            $awal = $ctx['awal'][$k->id] ?? null;
+            $ptkp = $k->pph21->ptkp ?? null;
+            $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
+ 
+            return [
+                'id' => $k->id,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'jabatan' => $k->jabatan ?? '-',
+                'divisi' => $this->divisiName($k),
+                'gaji' => (int) ($k->gaji ?? 0),
+                'tunjangan_jabatan' => (int) ($k->tunjangan_jabatan ?? 0),
+                'bruto' => $hit['bruto'],
+                'ter' => [
+                    'kategori' => $hit['kategori'],
+                    'tarif' => $hit['tarif'],
+                    'nilai' => $hit['ter'],
+                ],
+                'masa_terakhir' => $hit['masa_terakhir'],
+                'pph_tunjangan' => $awal ? (int) $awal['total'] : null,
+                'pph_bulan' => $this->resolvePph($k, $ctx),
+                'pph21' => $k->pph21 ? [
+                    'id' => $k->pph21->id,
+                    'ptkp' => $k->pph21->ptkp,
+                    'menikah' => (int) $k->pph21->status_menikah,
+                    'anak' => $this->decodeAnak($k->pph21->anak),
+                    'total_pph' => (int) $k->pph21->total_pph,
+                ] : null,
+            ];
+        })->values();
+ 
         $laporan = Pph21Laporan::where('bulan', $bulan)->where('tahun', $tahun)->first();
-
+ 
         return response()->json([
             'success' => true,
             'data' => $data,
@@ -2017,79 +2262,728 @@ class payrollController extends Controller
                 'bulan' => $bulan,
                 'tahun' => $tahun,
                 'terkunci' => (bool) ($laporan && $laporan->lapor_kortex_at),
+                'masa_terakhir' => $data->contains('masa_terakhir', true),
             ],
         ]);
     }
 
+    private function pasal17Lapisan(int $pkp): array
+    {
+        $layers = [
+            [0, 60000000, 0.05],
+            [60000000, 250000000, 0.15],
+            [250000000, 500000000, 0.25],
+            [500000000, 5000000000, 0.30],
+            [5000000000, INF, 0.35],
+        ];
+
+        $out = [];
+        foreach ($layers as [$dari, $sampai, $rate]) {
+            $kena = max(0, min($pkp, $sampai) - $dari);
+            if ($kena <= 0) {
+                break;
+            }
+            $out[] = [
+                'dari' => $dari,
+                'sampai' => is_infinite($sampai) ? null : $sampai,
+                'tarif' => $rate * 100,
+                'dasar' => (int) $kena,
+                'pajak' => (int) round($kena * $rate),
+            ];
+        }
+
+        return $out;
+    }
+
+    private function filterPphDesember(array $rows, ?string $search, ?string $status, ?string $divisi): array
+    {
+        $search = strtolower(trim((string) $search));
+
+        $hasil = array_values(array_filter($rows, function ($r) use ($search, $status, $divisi) {
+            if ($divisi && $r['divisi'] !== $divisi) {
+                return false;
+            }
+
+            if ($search !== ''
+                && !str_contains(strtolower($r['nama']), $search)
+                && !str_contains(strtolower((string) $r['nip']), $search)) {
+                return false;
+            }
+
+            switch ($status) {
+                case 'kena':           return $r['pajak_setahun'] > 0;
+                case 'tidak_kena':     return $r['pajak_setahun'] <= 0;
+                case 'kurang_bayar':   return $r['terhutang'] > 0;
+                case 'lebih_bayar':    return $r['terhutang'] < 0;
+                case 'belum_ptkp':     return empty($r['ptkp_kode']);
+                case 'ada_peringatan': return !empty($r['peringatan']);
+                default:               return true;
+            }
+        }));
+
+        foreach ($hasil as $i => &$r) {
+            $r['no'] = $i + 1;
+        }
+        unset($r);
+
+        return $hasil;
+    }
+
+    private function totalPphDesember(array $rows): array
+    {
+        $k = collect($rows);
+
+        return [
+            'total_gaji' => (int) $k->sum('total_gaji'),
+            'thr' => (int) $k->sum('thr'),
+            'bruto' => (int) $k->sum('bruto'),
+            'biaya_jabatan' => (int) $k->sum('biaya_jabatan'),
+            'neto' => (int) $k->sum('neto'),
+            'pkp' => (int) $k->sum('pkp'),
+            'pajak_setahun' => (int) $k->sum('pajak_setahun'),
+            'sudah_dipotong' => (int) $k->sum('sudah_dipotong'),
+            'terhutang' => (int) $k->sum('terhutang'),
+        ];
+    }
+
+    private function labelStatusDesember(?string $status): string
+    {
+        return [
+            'kena' => 'Kena PPh',
+            'tidak_kena' => 'Tidak kena PPh',
+            'kurang_bayar' => 'Kurang bayar',
+            'lebih_bayar' => 'Lebih bayar (kelebihan potong)',
+            'belum_ptkp' => 'Belum ada PTKP',
+            'ada_peringatan' => 'Ada peringatan data',
+        ][$status] ?? 'Semua';
+    }
+
+    /** Dipakai bersama oleh tabel, export Excel, dan export PDF agar filternya identik. */
+    private function dataDesember(Request $request): array
+    {
+        $tahun = (int) ($request->input('tahun') ?: now()->year);
+        $semua = $this->buildPphDesember($tahun);
+        $rows = $this->filterPphDesember(
+            $semua,
+            $request->input('search'),
+            $request->input('status'),
+            $request->input('divisi')
+        );
+
+        $filterLabel = [];
+        if ($request->filled('status')) {
+            $filterLabel[] = 'Status: ' . $this->labelStatusDesember($request->input('status'));
+        }
+        if ($request->filled('divisi')) {
+            $filterLabel[] = 'Divisi: ' . $request->input('divisi');
+        }
+        if ($request->filled('search')) {
+            $filterLabel[] = 'Pencarian: "' . $request->input('search') . '"';
+        }
+
+        $thrInfo = $this->periodeThrDesember($tahun)['info'];
+        $thrLabel = $thrInfo
+            ? 'THR dari fitur THR: ' . $thrInfo['nama'] . ' (' . $thrInfo['tahun'] . ')'
+                . ($thrInfo['fallback'] ? ' - periode tahun lain karena belum ada THR tahun ini' : '')
+            : 'THR: belum ada periode THR (dihitung Rp 0)';
+
+        return [
+            'tahun' => $tahun,
+            'semua' => $semua,
+            'rows' => $rows,
+            'total' => $this->totalPphDesember($rows),
+            'filter_label' => $filterLabel ? implode(' | ', $filterLabel) : 'Semua data',
+            'thr_info' => $thrInfo,
+            'thr_label' => $thrLabel,
+        ];
+    }
+
+    public function getPphDesember(Request $request)
+    {
+        $d = $this->dataDesember($request);
+
+        return response()->json([
+            'success' => true,
+            'tahun' => $d['tahun'],
+            'data' => $d['rows'],
+            'total' => $d['total'],
+            'jumlah' => count($d['rows']),
+            'jumlah_semua' => count($d['semua']),
+            'thr_info' => $d['thr_info'],
+            'divisi_list' => collect($d['semua'])->pluck('divisi')->unique()->filter(fn($x) => $x && $x !== '-')->sort()->values(),
+        ]);
+    }
+
+    private function buildPphDesember(int $tahun): array
+    {
+        $awalTahun = Carbon::createFromDate($tahun, 1, 1)->startOfDay();
+        $akhirTahun = Carbon::createFromDate($tahun, 12, 31)->endOfDay();
+
+        $list = karyawan::with('pph21')
+            ->where(function ($w) use ($tahun) {
+                $w->where('status_aktif', '1')->orWhereYear('resigned_at', $tahun);
+            })
+            ->whereNot('jabatan', 'Pilih Jabatan')
+            ->whereNot('jabatan', 'Outsource')
+            ->whereNot('divisi', 'Pilih Divisi')
+            ->where('kode_karyawan', 'NOT LIKE', 'OL%')
+            ->whereNotNull('nip')
+            ->orderBy('nama_lengkap')
+            ->get()
+            ->filter(fn($k) => $this->isEmployeeEligibleForPeriod($k, $awalTahun, $akhirTahun))
+            ->values();
+
+        $ids = $list->pluck('id')->all();
+
+        $ctx = [
+            'logs' => LogGaji::where('tahun', '<=', $tahun)
+                ->whereIn('id_karyawan', $ids)
+                ->get()
+                ->groupBy('id_karyawan'),
+        ];
+
+        $pphBulanan = Pph21Bulanan::where('tahun', $tahun)
+            ->whereIn('karyawan_id', $ids)
+            ->get()
+            ->groupBy('karyawan_id')
+            ->map(fn($g) => $g->keyBy('bulan'));
+
+        // THR dari fitur THR (periode terbaru), hanya yang ikut dihitung
+        $periodeThr = $this->periodeThrDesember($tahun)['period'];
+        $thrData = $periodeThr
+            ? ThrItem::where('thr_period_id', $periodeThr->id)
+                ->whereIn('karyawan_id', $ids)
+                ->where('is_excluded', false)
+                ->get()
+                ->keyBy('karyawan_id')
+            : collect();
+
+        $rows = [];
+        $no = 1;
+
+        foreach ($list as $k) {
+            $ptkpCode = $k->pph21->ptkp ?? null;
+            $mulai = $this->bulanMulaiKerja($k, $tahun);
+            $akhir = 12;
+            if (!empty($k->resigned_at)) {
+                $r = Carbon::parse($k->resigned_at);
+                if ($r->year === $tahun) {
+                    $akhir = $r->month;
+                }
+            }
+
+            // 1) Data PPh yang benar-benar tersimpan pada rentang bulan kerja
+            $asli = [];
+            for ($m = $mulai; $m <= $akhir; $m++) {
+                $rec = $pphBulanan->get($k->id)?->get($m);
+                if ($rec) {
+                    $asli[$m] = (int) $rec->total_pph;
+                }
+            }
+            $bulanAsli = array_keys($asli);
+
+            // 2) Susun Jan-Des: bulan kosong memakai data tersimpan terdekat sebelumnya,
+            //    bulan sebelum data pertama memakai data pertama
+            $gajiBulan = [];
+            $pphBulan = [];
+            $pphSumber = [];
+            $totalGaji = 0;
+            $sudahDipotong = 0;
+
+            for ($m = 1; $m <= 12; $m++) {
+                if ($m < $mulai || $m > $akhir) {
+                    $gajiBulan[$m] = 0;
+                    $pphBulan[$m] = 0;
+                    $pphSumber[$m] = 0;
+                    continue;
+                }
+
+                $gajiBulan[$m] = $this->brutoBulan($k, $m, $tahun, $ctx);
+
+                if (isset($asli[$m])) {
+                    $pphBulan[$m] = $asli[$m];
+                    $pphSumber[$m] = 0;
+                } elseif ($bulanAsli) {
+                    $sebelum = array_filter($bulanAsli, fn($x) => $x < $m);
+                    $src = $sebelum ? max($sebelum) : min($bulanAsli);
+                    $pphBulan[$m] = $asli[$src];
+                    $pphSumber[$m] = $src;
+                } else {
+                    $pphBulan[$m] = 0;
+                    $pphSumber[$m] = 0;
+                }
+
+                $totalGaji += $gajiBulan[$m];
+                $sudahDipotong += $pphBulan[$m];
+            }
+
+            $catatanPph = [];
+            $grup = [];
+            foreach ($pphSumber as $m => $src) {
+                if ($src > 0) {
+                    $grup[$src][] = $m;
+                }
+            }
+            ksort($grup);
+            foreach ($grup as $src => $bulanList) {
+                $catatanPph[] = 'PPh bulan ' . $this->ringkasBulan($bulanList) . ' memakai data bulan ' . $this->p2($src) . '.';
+            }
+
+            $thr = (int) round((float) ($thrData->get($k->id)->nilai_thr_final ?? 0));
+            $bruto = $totalGaji + $thr;
+            $jumlahBulan = max(1, $akhir - $mulai + 1);
+
+            // 5% dari bruto, maksimal Rp6.000.000 setahun (Rp500.000 x jumlah bulan bekerja)
+            $maksBiayaJabatan = 500000 * $jumlahBulan;
+            $biayaJabatan = (int) min(round($bruto * 0.05), $maksBiayaJabatan);
+
+            $neto = $bruto - $biayaJabatan;
+            $ptkp = self::PTKP_DESEMBER[$ptkpCode] ?? 0;
+            $pkp = max(0, $neto - $ptkp);
+            $pkp = intdiv($pkp, 1000) * 1000;
+
+            $lapisan = $this->pasal17Lapisan($pkp);
+            $pajakSetahun = (int) array_sum(array_column($lapisan, 'pajak'));
+            $terhutang = $pajakSetahun - $sudahDipotong;
+
+            $peringatan = [];
+            if (!$ptkpCode) {
+                $peringatan[] = 'Status PTKP belum diisi, PTKP dihitung Rp 0.';
+            }
+            if (!$bulanAsli) {
+                $peringatan[] = 'Belum ada data PPh 21 yang tersimpan pada tahun ini, PPh dihitung Rp 0.';
+            }
+            if ($terhutang < 0) {
+                $peringatan[] = 'Kelebihan potong, harus dikembalikan ke karyawan.';
+            }
+
+            $rows[] = [
+                'no' => $no++,
+                'id' => $k->id,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'divisi' => $this->divisiName($k),
+                'gaji_pokok' => (int) round((float) ($k->gaji ?? 0)),
+                'gaji_bulan' => array_values($gajiBulan),
+                'pph_bulan' => array_values($pphBulan),
+                'pph_sumber' => array_values($pphSumber),
+                'catatan_pph' => $catatanPph,
+                'total_gaji' => $totalGaji,
+                'thr' => $thr,
+                'bruto' => $bruto,
+                'biaya_jabatan' => $biayaJabatan,
+                'maks_biaya_jabatan' => $maksBiayaJabatan,
+                'neto' => $neto,
+                'ptkp_kode' => $ptkpCode,
+                'ptkp' => $ptkp,
+                'pkp' => $pkp,
+                'lapisan' => $lapisan,
+                'pajak_setahun' => $pajakSetahun,
+                'sudah_dipotong' => $sudahDipotong,
+                'terhutang' => $terhutang,
+                'peringatan' => $peringatan,
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function labelSumberPph(?array $res): string
+    {
+        if (!$res) {
+            return 'Belum ada';
+        }
+
+        return match ($res['sumber']) {
+            'tersimpan' => 'Tersimpan',
+            'tunjangan' => 'Dari tunjangan (belum disimpan)',
+            'bulan_lalu' => 'Dari bulan ' . ($res['dari'] ?? '-') . ' (belum disimpan)',
+            default => !empty($res['masa_terakhir']) ? 'Hitung tahunan (belum disimpan)' : 'Hitung TER (belum disimpan)',
+        };
+    }
+
+    private function dataPphBulanan(Request $request): array
+    {
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $namaBulan = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        $list = $this->pphKaryawanPeriode($bulan, $tahun);
+        $ctx = $this->pphContext($bulan, $tahun, $list->pluck('id')->all());
+
+        $search = strtolower(trim((string) $request->input('search')));
+        $divisi = $request->input('divisi');
+        $ptkpFilter = $request->input('ptkp');
+
+        $rows = [];
+        foreach ($list as $k) {
+            $ptkp = $k->pph21->ptkp ?? null;
+            $divisiNama = $this->divisiName($k);
+
+            if ($divisi && $divisiNama !== $divisi) {
+                continue;
+            }
+            if ($ptkpFilter && $ptkp !== $ptkpFilter) {
+                continue;
+            }
+            if ($search !== ''
+                && !str_contains(strtolower($k->nama_lengkap ?? ''), $search)
+                && !str_contains(strtolower((string) $k->nip), $search)) {
+                continue;
+            }
+
+            $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
+            $res = $this->resolvePph($k, $ctx);
+
+            $rows[] = [
+                'no' => count($rows) + 1,
+                'nip' => $k->nip ?? '-',
+                'nama' => $k->nama_lengkap ?? '-',
+                'jabatan' => $k->jabatan ?? '-',
+                'divisi' => $divisiNama,
+                'gaji_dasar' => (int) $hit['bruto'],
+                'ptkp' => $ptkp ?? '-',
+                'kategori' => $hit['kategori'] ?? '-',
+                'menikah' => $k->pph21 ? ((int) $k->pph21->status_menikah ? 'Menikah' : 'Belum') : '-',
+                'anak' => $k->pph21 ? count($this->decodeAnak($k->pph21->anak)) : 0,
+                'pph' => $res ? (int) $res['nilai'] : 0,
+                'sumber' => $this->labelSumberPph($res),
+            ];
+        }
+
+        $laporan = Pph21Laporan::where('bulan', $bulan)->where('tahun', $tahun)->first();
+
+        $filter = [];
+        if ($divisi) $filter[] = 'Divisi: ' . $divisi;
+        if ($ptkpFilter) $filter[] = 'PTKP: ' . $ptkpFilter;
+        if ($search !== '') $filter[] = 'Pencarian: "' . $request->input('search') . '"';
+
+        return [
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'periode_label' => $namaBulan[$bulan] . ' ' . $tahun,
+            'rows' => $rows,
+            'total_pph' => (int) array_sum(array_column($rows, 'pph')),
+            'filter_label' => $filter ? implode(' | ', $filter) : 'Semua data',
+            'status_laporan' => [
+                'Lapor Kortex' => (bool) ($laporan && $laporan->lapor_kortex_at),
+                'Bukti Bayar' => (bool) ($laporan && $laporan->bukti_bayar_at),
+                'Kode Billing' => (bool) ($laporan && $laporan->kode_billing_at),
+            ],
+        ];
+    }
+
+    public function exportPphDataExcel(Request $request)
+    {
+        $d = $this->dataPphBulanan($request);
+
+        $headers = ['No', 'NIP', 'Nama', 'Jabatan', 'Divisi', 'Gaji Dasar', 'Status PTKP', 'Kategori TER',
+                    'Menikah', 'Jml Anak', 'PPh 21/Bulan', 'Sumber Nilai'];
+        $lastLetter = Coordinate::stringFromColumnIndex(count($headers));
+
+        $ss = new Spreadsheet();
+        $sheet = $ss->getActiveSheet();
+        $sheet->setTitle('PPh21 Bulanan');
+
+        $sheet->mergeCells("A1:{$lastLetter}1");
+        $sheet->setCellValue('A1', 'LAPORAN PPH 21 KARYAWAN');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells("A2:{$lastLetter}2");
+        $sheet->setCellValue('A2', 'Periode: ' . $d['periode_label'] . '  |  Filter: ' . $d['filter_label']);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $status = [];
+        foreach ($d['status_laporan'] as $nama => $sudah) {
+            $status[] = $nama . ': ' . ($sudah ? 'Sudah' : 'Belum');
+        }
+        $sheet->mergeCells("A3:{$lastLetter}3");
+        $sheet->setCellValue('A3', implode('  |  ', $status));
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A3')->getFont()->setItalic(true);
+
+        $h = 5;
+        $sheet->fromArray($headers, null, "A{$h}");
+        $sheet->getStyle("A{$h}:{$lastLetter}{$h}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E79']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+
+        $r = $h + 1;
+        foreach ($d['rows'] as $row) {
+            $sheet->fromArray([
+                $row['no'], $row['nip'], $row['nama'], $row['jabatan'], $row['divisi'], $row['gaji_dasar'],
+                $row['ptkp'], $row['kategori'], $row['menikah'], $row['anak'], $row['pph'], $row['sumber'],
+            ], null, "A{$r}");
+            $r++;
+        }
+
+        $sheet->setCellValue("A{$r}", 'TOTAL');
+        $sheet->mergeCells("A{$r}:J{$r}");
+        $sheet->setCellValue("K{$r}", $d['total_pph']);
+        $sheet->getStyle("A{$r}:{$lastLetter}{$r}")->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E7E6E6']],
+        ]);
+
+        $sheet->getStyle("A{$h}:{$lastLetter}{$r}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle("F" . ($h + 1) . ":F{$r}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle("K" . ($h + 1) . ":K{$r}")->getNumberFormat()->setFormatCode('#,##0');
+
+        for ($c = 1; $c <= count($headers); $c++) {
+            $sheet->getColumnDimensionByColumn($c)->setAutoSize(true);
+        }
+        $sheet->freezePane('D' . ($h + 1));
+
+        $filename = "PPh21_{$d['tahun']}_" . str_pad((string) $d['bulan'], 2, '0', STR_PAD_LEFT) . '_' . date('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($ss) {
+            (new Xlsx($ss))->save('php://output');
+        }, $filename, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']);
+    }
+
+    public function exportPphDataPdf(Request $request)
+    {
+        $d = $this->dataPphBulanan($request);
+
+        $pdf = Pdf::loadView('HR.payroll.export.pph_bulanan_pdf', $d + [
+            'generated_at' => now()->format('d M Y H:i'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("PPh21_{$d['tahun']}_" . str_pad((string) $d['bulan'], 2, '0', STR_PAD_LEFT) . '_' . date('Ymd_His') . '.pdf');
+    }
+
+    public function exportPphDesemberExcel(Request $request)
+    {
+        $d = $this->dataDesember($request);
+        $bln = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        $headers = array_merge(
+            ['No', 'NIP', 'Nama', 'Divisi', 'Gaji Pokok'],
+            array_map(fn($b) => "Gaji {$b}", $bln),
+            array_map(fn($b) => "PPh {$b}", $bln),
+            ['THR', 'Total Setahun (Gaji + THR)', 'Biaya Jabatan', 'Neto', 'Status PTKP', 'PTKP', 'PKP',
+            'Pajak Setahun', 'PPh Sudah Dipotong', 'PPh Terhutang']
+        );
+        $lastCol = count($headers);
+        $lastLetter = Coordinate::stringFromColumnIndex($lastCol);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('PPh21 Desember');
+
+        $sheet->mergeCells("A1:{$lastLetter}1");
+        $sheet->setCellValue('A1', 'LAPORAN PERHITUNGAN PPH 21 TAHUNAN');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells("A2:{$lastLetter}2");
+        $sheet->setCellValue('A2', 'Tahun Pajak: ' . $d['tahun']);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->mergeCells("A3:{$lastLetter}3");
+        $sheet->setCellValue('A3', 'Filter: ' . $d['filter_label'] . '  |  Dicetak: ' . now()->format('d M Y H:i'));
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A3')->getFont()->setItalic(true);
+
+        $sheet->mergeCells("A4:{$lastLetter}4");
+        $sheet->setCellValue('A4', $d['thr_label']);
+        $sheet->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A4')->getFont()->setItalic(true);
+
+        $headerRow = 5;
+        $sheet->fromArray($headers, null, "A{$headerRow}");
+        $sheet->getStyle("A{$headerRow}:{$lastLetter}{$headerRow}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E79']],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+        ]);
+
+        $r = $headerRow + 1;
+        foreach ($d['rows'] as $row) {
+            $line = array_merge(
+                [$row['no'], $row['nip'], $row['nama'], $row['divisi'], $row['gaji_pokok']],
+                $row['gaji_bulan'],
+                $row['pph_bulan'],
+                [$row['thr'], $row['bruto'], $row['biaya_jabatan'], $row['neto'], $row['ptkp_kode'] ?? '-',
+                $row['ptkp'], $row['pkp'], $row['pajak_setahun'], $row['sudah_dipotong'], $row['terhutang']]
+            );
+            $sheet->fromArray($line, null, "A{$r}");
+            $r++;
+        }
+
+        $lastData = $r - 1;
+        $t = $d['total'];
+        $sheet->setCellValue("A{$r}", 'TOTAL');
+        $sheet->mergeCells("A{$r}:D{$r}");
+
+        // kolom: E = gaji pokok, F-Q gaji, R-AC pph, AD..AM sisanya
+        $kolThr = 5 + 24 + 1;
+        $totalMap = [
+            $kolThr => $t['thr'],
+            $kolThr + 1 => $t['bruto'],
+            $kolThr + 2 => $t['biaya_jabatan'],
+            $kolThr + 3 => $t['neto'],
+            $kolThr + 6 => $t['pkp'],
+            $kolThr + 7 => $t['pajak_setahun'],
+            $kolThr + 8 => $t['sudah_dipotong'],
+            $kolThr + 9 => $t['terhutang'],
+        ];
+        foreach ($totalMap as $col => $val) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . $r, $val);
+        }
+        $sheet->getStyle("A{$r}:{$lastLetter}{$r}")->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E7E6E6']],
+        ]);
+
+        $sheet->getStyle("A{$headerRow}:{$lastLetter}{$r}")
+            ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+
+        // format angka: semua kolom nominal kecuali Status PTKP
+        $kolPtkpKode = $kolThr + 4;
+        $sheet->getStyle('E' . ($headerRow + 1) . ":{$lastLetter}{$r}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle(Coordinate::stringFromColumnIndex($kolPtkpKode) . ($headerRow + 1) . ':' .
+            Coordinate::stringFromColumnIndex($kolPtkpKode) . $r)
+            ->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        for ($c = 1; $c <= $lastCol; $c++) {
+            $sheet->getColumnDimensionByColumn($c)->setAutoSize(true);
+        }
+        $sheet->freezePane('E' . ($headerRow + 1));
+
+        $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+        $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A3);
+
+        $filename = "PPh21_Desember_{$d['tahun']}_" . date('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function exportPphDesemberPdf(Request $request)
+    {
+        $d = $this->dataDesember($request);
+
+        $pdf = Pdf::loadView('HR.payroll.export.pph_pdf', [
+            'rows' => $d['rows'],
+            'total' => $d['total'],
+            'tahun' => $d['tahun'],
+            'filter_label' => $d['filter_label'],
+            'thr_label' => $d['thr_label'],
+            'generated_at' => now()->format('d M Y H:i'),
+        ])->setPaper('a3', 'landscape');
+
+        return $pdf->download("PPh21_Desember_{$d['tahun']}_" . date('Ymd_His') . '.pdf');
+    }
+    public function previewPph(Request $request)
+    {
+        $request->validate([
+            'karyawan_id' => 'required|exists:karyawans,id',
+            'ptkp' => 'required|in:TK/0,TK/1,TK/2,TK/3,K/0,K/1,K/2,K/3',
+            'bulan' => 'nullable|integer|between:1,12',
+            'tahun' => 'nullable|integer|min:2000|max:2100',
+        ]);
+ 
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $k = karyawan::findOrFail($request->karyawan_id);
+        $ctx = $this->pphContext($bulan, $tahun, [(int) $k->id]);
+        $hit = $this->hitungPphKaryawan($k, $ctx, $request->ptkp);
+ 
+        return response()->json(['success' => true, 'hasil' => $hit]);
+    }
+ 
     public function storePph(Request $request)
     {
         $request->validate([
             'karyawan_id' => 'required|exists:karyawans,id',
             'ptkp' => 'required|in:TK/0,TK/1,TK/2,TK/3,K/0,K/1,K/2,K/3',
             'status_menikah' => 'required|in:0,1',
+            'pakai_data' => 'nullable|boolean',
             'bulan' => 'nullable|integer|between:1,12',
             'tahun' => 'nullable|integer|min:2000|max:2100',
         ]);
-
+ 
         [$bulan, $tahun] = $this->currentPeriod($request);
-
+ 
         if ($this->pphTerkunci($bulan, $tahun)) {
-            return $this->respondError('Periode ini sudah dilaporkan ke Kortex. Batalkan lapor Kortex terlebih dahulu untuk mengubah data.');
+            return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu untuk mengubah data.');
         }
-
+ 
         $anak = collect($request->anak ?? [])
             ->filter(fn($a) => !empty(trim($a['nama'] ?? '')))
             ->values()
             ->map(fn($a) => ['nama' => trim($a['nama'])])
             ->toArray();
-
+ 
         $karyawan = karyawan::findOrFail($request->karyawan_id);
-        $awal = $this->tunjanganPph21Awal($bulan, $tahun, (int) $karyawan->id)[$karyawan->id] ?? null;
-
-        $total = $awal
-            ? (int) $awal['total']
-            : $this->hitungPph21((int) ($karyawan->gaji ?? 0), $request->ptkp)['bulanan'];
-
+        $pphLama = Pph21Karyawan::where('karyawan_id', $karyawan->id)->first();
+        $ptkpBerubah = !$pphLama || $pphLama->ptkp !== $request->ptkp;
+ 
+        // Tentukan nilai dengan urutan prioritas yang sama seperti tampilan.
+        // Nilai "tersimpan" diabaikan (kita sedang menyimpan ulang); "bulan_lalu" hanya
+        // dipakai untuk tombol "simpan" (pakai_data) dan hanya jika PTKP tidak berubah.
+        $ctx = $this->pphContext($bulan, $tahun, [(int) $karyawan->id]);
+        $ctx['records'] = collect();
+        if (!$request->boolean('pakai_data') || $ptkpBerubah) {
+            $ctx['previous'] = collect();
+        }
+        $karyawan->setRelation('pph21', new Pph21Karyawan(['ptkp' => $request->ptkp]));
+        $resolved = $this->resolvePph($karyawan, $ctx);
+ 
+        $total = (int) $resolved['nilai'];
+        $sumber = $resolved['sumber'];
+ 
         DB::beginTransaction();
         try {
-            $pph = Pph21Karyawan::where('karyawan_id', $karyawan->id)->first();
-            $mode = $pph ? 'update' : 'create';
-
+            $mode = $pphLama ? 'update' : 'create';
+ 
             $payload = [
                 'ptkp' => $request->ptkp,
                 'status_menikah' => (int) $request->status_menikah,
                 'anak' => $anak,
                 'total_pph' => $total,
             ];
-
-            if ($pph) {
-                $pph->update($payload);
+ 
+            if ($pphLama) {
+                $pphLama->update($payload);
+                $pph = $pphLama;
             } else {
                 $pph = Pph21Karyawan::create(array_merge(['karyawan_id' => $karyawan->id], $payload));
             }
-
+ 
             Pph21Bulanan::updateOrCreate(
                 ['karyawan_id' => $karyawan->id, 'bulan' => $bulan, 'tahun' => $tahun],
                 [
                     'total_pph' => $total,
-                    'sumber' => $awal ? 'tunjangan' : 'hitung',
+                    'sumber' => $sumber,
                     'created_by' => Auth::id(),
                 ]
             );
-
+ 
             $this->syncPphProfileTotal((int) $karyawan->id);
-
+ 
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->respondError('Gagal menyimpan: ' . $e->getMessage(), 500);
         }
-
+ 
         $pph->refresh();
-
+ 
         return response()->json([
             'success' => true,
             'mode' => $mode,
+            'sumber' => $sumber,
+            'peringatan' => $resolved['peringatan'] ?? [],
             'message' => $mode === 'create'
                 ? 'Data PPH 21 berhasil disimpan. Bulan berikutnya cukup memakai data ini.'
                 : 'Data PPH 21 periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' berhasil disimpan.',
@@ -2102,41 +2996,43 @@ class payrollController extends Controller
             ],
         ]);
     }
-
+ 
     public function isiOtomatisPph(Request $request)
     {
         $request->validate([
             'bulan' => 'required|integer|between:1,12',
             'tahun' => 'required|integer|min:2000|max:2100',
         ]);
-
+ 
         [$bulan, $tahun] = $this->currentPeriod($request);
-
+ 
         if ($this->pphTerkunci($bulan, $tahun)) {
-            return $this->respondError('Periode ini sudah dilaporkan ke Kortex. Batalkan lapor Kortex terlebih dahulu untuk mengubah data.');
+            return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu.');
         }
-
-        $ctx = $this->pphContext($bulan, $tahun);
+ 
+        $list = $this->pphKaryawanPeriode($bulan, $tahun);
+        $ctx = $this->pphContext($bulan, $tahun, $list->pluck('id')->all());
         $dibuat = 0;
         $tanpaPtkp = 0;
-
+        $peringatan = [];
+ 
         DB::beginTransaction();
         try {
-            foreach ($this->pphKaryawanQuery()->get() as $k) {
+            foreach ($list as $k) {
                 if ($ctx['records']->has($k->id)) {
                     continue;
                 }
-
+ 
                 if (!$k->pph21) {
                     $tanpaPtkp++;
                     continue;
                 }
-
+ 
                 $r = $this->resolvePph($k, $ctx);
                 if (!$r) {
                     continue;
                 }
-
+ 
                 Pph21Bulanan::create([
                     'karyawan_id' => $k->id,
                     'bulan' => $bulan,
@@ -2145,25 +3041,31 @@ class payrollController extends Controller
                     'sumber' => $r['sumber'],
                     'created_by' => Auth::id(),
                 ]);
-
+ 
+                foreach ($r['peringatan'] ?? [] as $p) {
+                    $peringatan[] = ($k->nama_lengkap ?? $k->nip) . ': ' . $p;
+                }
+ 
                 $this->syncPphProfileTotal((int) $k->id);
                 $dibuat++;
             }
-
+ 
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->respondError('Gagal mengisi otomatis: ' . $e->getMessage(), 500);
         }
-
+ 
         if ($dibuat === 0) {
             return $this->respondError('Tidak ada data yang perlu diisi. Semua karyawan yang punya status PTKP sudah terisi' . ($tanpaPtkp ? ", dan {$tanpaPtkp} karyawan belum punya status PTKP." : '.'));
         }
-
+ 
         return response()->json([
             'success' => true,
-            'message' => "{$dibuat} karyawan berhasil diisi otomatis." . ($tanpaPtkp ? " {$tanpaPtkp} karyawan dilewati karena belum punya status PTKP." : ''),
+            'message' => "{$dibuat} karyawan berhasil diisi otomatis." . ($tanpaPtkp ? " {$tanpaPtkp} karyawan dilewati karena belum punya status PTKP." : '')
+                . ($peringatan ? "\n\nPerhatian:\n- " . implode("\n- ", array_slice($peringatan, 0, 8)) : ''),
             'dibuat' => $dibuat,
+            'peringatan' => $peringatan,
         ]);
     }
 
@@ -2181,19 +3083,23 @@ class payrollController extends Controller
             'bulan' => 'required|integer|between:1,12',
             'tahun' => 'required|integer|min:2000|max:2100',
         ]);
-
+ 
         [$bulan, $tahun] = $this->currentPeriod($request);
-
+ 
+        if ($this->pphTerkunci($bulan, $tahun)) {
+            return $this->respondError('Periode ini sudah dilaporkan ke Kortex.');
+        }
+ 
         if (!Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->exists()) {
             return $this->respondError('Belum ada data PPH 21 yang tersimpan pada periode ini.');
         }
-
+ 
         $laporan = Pph21Laporan::firstOrCreate(['bulan' => $bulan, 'tahun' => $tahun]);
         $laporan->update([
             'lapor_kortex_at' => now(),
             'lapor_kortex_by' => Auth::id(),
         ]);
-
+ 
         return response()->json([
             'success' => true,
             'message' => 'Lapor Kortex berhasil dicatat untuk seluruh karyawan.',
@@ -2489,23 +3395,31 @@ class payrollController extends Controller
 
     public function deleteAllPph(Request $request)
     {
+        $request->validate([
+            'bulan' => 'required|integer|between:1,12',
+            'tahun' => 'required|integer|min:2000|max:2100',
+        ]);
+ 
+        [$bulan, $tahun] = $this->currentPeriod($request);
+ 
+        if ($this->pphTerkunci($bulan, $tahun)) {
+            return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu.');
+        }
+ 
         try {
             DB::beginTransaction();
-
-            $deletedBulanan = Pph21Bulanan::query()->delete();
-
-            $deletedKaryawan = Pph21Karyawan::query()->delete();
-
-            $deletedLaporan = Pph21Laporan::query()->delete();
-
+ 
+            $ids = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->pluck('karyawan_id')->all();
+            $deleted = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->delete();
+            foreach ($ids as $id) {
+                $this->syncPphProfileTotal((int) $id);
+            }
+ 
             DB::commit();
-
+ 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil menghapus semua data PPH 21 "
-                    . "({$deletedBulanan} data bulanan, "
-                    . "{$deletedKaryawan} data PTKP karyawan, "
-                    . "{$deletedLaporan} laporan).",
+                'message' => "Berhasil menghapus {$deleted} data PPH 21 periode " . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . "/{$tahun}. Status PTKP karyawan tidak dihapus.",
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -2567,41 +3481,228 @@ class payrollController extends Controller
             ->all();
     }
 
-    private const PTKP_BULANAN = [
-        'TK/0' => 4500000, 'TK/1' => 4875000, 'TK/2' => 5250000, 'TK/3' => 5625000,
-        'K/0' => 4875000, 'K/1' => 5250000, 'K/2' => 5625000, 'K/3' => 6000000,
+    private const PTKP_TAHUNAN = [
+        'TK/0' => 54000000, 'TK/1' => 58500000, 'TK/2' => 63000000, 'TK/3' => 67500000,
+        'K/0'  => 58500000, 'K/1'  => 63000000, 'K/2'  => 67500000, 'K/3'  => 72000000,
     ];
 
-    private function hitungPph21(int $gajiBulanan, ?string $ptkpCode): array
+    private const TER_KATEGORI = [
+        'TK/0' => 'A', 'TK/1' => 'A', 'K/0' => 'A',
+        'TK/2' => 'B', 'TK/3' => 'B', 'K/1' => 'B', 'K/2' => 'B',
+        'K/3'  => 'C',
+    ];
+
+    private const TER_TABEL = [
+        'A' => [
+            [5400000, 0], [5650000, 0.25], [5950000, 0.5], [6300000, 0.75], [6750000, 1],
+            [7500000, 1.25], [8550000, 1.5], [9650000, 1.75], [10050000, 2], [10350000, 2.25],
+            [10700000, 2.5], [11050000, 3], [11600000, 3.5], [12500000, 4], [13750000, 5],
+            [15100000, 6], [16950000, 7], [19750000, 8], [24150000, 9], [26450000, 10],
+            [28000000, 11], [30050000, 12], [32400000, 13], [35400000, 14], [39100000, 15],
+            [43850000, 16], [47800000, 17], [51400000, 18], [56300000, 19], [62200000, 20],
+            [68600000, 21], [77500000, 22], [89000000, 23], [103000000, 24], [125000000, 25],
+            [157000000, 26], [206000000, 27], [337000000, 28], [454000000, 29], [550000000, 30],
+            [695000000, 31], [910000000, 32], [1400000000, 33], [PHP_INT_MAX, 34],
+        ],
+        'B' => [
+            [6200000, 0], [6500000, 0.25], [6850000, 0.5], [7300000, 0.75], [9200000, 1],
+            [10750000, 1.5], [11250000, 2], [11600000, 2.5], [12600000, 3], [13600000, 4],
+            [14950000, 5], [16400000, 6], [18450000, 7], [21850000, 8], [26000000, 9],
+            [27700000, 10], [29350000, 11], [31450000, 12], [33950000, 13], [37100000, 14],
+            [41100000, 15], [45800000, 16], [49500000, 17], [53800000, 18], [58500000, 19],
+            [64000000, 20], [71000000, 21], [80000000, 22], [93000000, 23], [109000000, 24],
+            [129000000, 25], [163000000, 26], [211000000, 27], [374000000, 28], [459000000, 29],
+            [555000000, 30], [704000000, 31], [957000000, 32], [1405000000, 33],
+            [PHP_INT_MAX, 34],
+        ],
+        'C' => [
+            [6600000, 0], [6950000, 0.25], [7350000, 0.5], [7800000, 0.75], [8850000, 1],
+            [9800000, 1.25], [10950000, 1.5], [11200000, 1.75], [12050000, 2], [12950000, 3],
+            [14150000, 4], [15550000, 5], [17050000, 6], [19500000, 7], [22700000, 8],
+            [26600000, 9], [28100000, 10], [30100000, 11], [32600000, 12], [35400000, 13],
+            [38900000, 14], [43000000, 15], [47400000, 16], [51200000, 17], [55800000, 18],
+            [60400000, 19], [66700000, 20], [74500000, 21], [83200000, 22], [95600000, 23],
+            [110000000, 24], [134000000, 25], [169000000, 26], [221000000, 27], [390000000, 28],
+            [463000000, 29], [561000000, 30], [709000000, 31], [965000000, 32], [1419000000, 33],
+            [PHP_INT_MAX, 34],
+        ],
+    ];
+
+    private function terKategori(?string $ptkp): ?string
     {
-        $gajiTahunan = $gajiBulanan * 12;
-        $ptkp = (self::PTKP_BULANAN[$ptkpCode] ?? 0) * 12;
-        $pkp = max(0, $gajiTahunan - $ptkp);
-
+        return self::TER_KATEGORI[$ptkp] ?? null;
+    }
+ 
+    private function terTarif(int $bruto, string $kategori): float
+    {
+        foreach (self::TER_TABEL[$kategori] as [$batas, $tarif]) {
+            if ($bruto <= $batas) {
+                return (float) $tarif;
+            }
+        }
+        return 34.0;
+    }
+ 
+    /** Tarif Pasal 17 ayat (1) huruf a UU PPh. */
+    private function pasal17(int $pkp): int
+    {
         $layers = [
-            [60000000, 0.05],
-            [250000000, 0.15],
-            [500000000, 0.25],
-            [5000000000, 0.30],
-            [INF, 0.35],
+            [60000000, 0.05], [250000000, 0.15], [500000000, 0.25],
+            [5000000000, 0.30], [INF, 0.35],
         ];
-
+ 
         $sisa = $pkp;
         $prev = 0;
-        $pphTahunan = 0;
-
+        $pph = 0.0;
         foreach ($layers as [$limit, $rate]) {
             if ($sisa <= 0) break;
             $kena = min($sisa, $limit - $prev);
-            $pphTahunan += $kena * $rate;
+            $pph += $kena * $rate;
             $sisa -= $kena;
             $prev = $limit;
         }
+ 
+        return (int) round($pph);
+    }
 
+    private function hitungPph21(int $brutoBulanan, ?string $ptkpCode): array
+    {
+        $kategori = $this->terKategori($ptkpCode);
+        if (!$kategori || $brutoBulanan <= 0) {
+            return ['kategori' => $kategori, 'tarif' => 0.0, 'bulanan' => 0, 'tahunan' => 0, 'metode' => 'ter'];
+        }
+ 
+        $tarif = $this->terTarif($brutoBulanan, $kategori);
+        $bulanan = (int) round($brutoBulanan * $tarif / 100);
+ 
         return [
-            'tahunan' => (int) round($pphTahunan),
-            'bulanan' => (int) round($pphTahunan / 12),
+            'kategori' => $kategori,
+            'tarif' => $tarif,
+            'bulanan' => $bulanan,
+            'tahunan' => $bulanan * 12,
+            'metode' => 'ter',
         ];
+    }
+
+    private function hitungPph21MasaTerakhir(int $brutoSetahun, int $jumlahBulan, int $iuranPengurang, ?string $ptkpCode, int $sudahDipotong): array
+    {
+        $biayaJabatan = (int) min(round($brutoSetahun * 0.05), 500000 * max(1, $jumlahBulan));
+        $neto = $brutoSetahun - $biayaJabatan - $iuranPengurang;
+        $ptkp = self::PTKP_TAHUNAN[$ptkpCode] ?? 0;
+        $pkp = max(0, $neto - $ptkp);
+        $pkp = intdiv($pkp, 1000) * 1000; // PKP dibulatkan ke bawah ribuan penuh
+        $terutang = $this->pasal17($pkp);
+ 
+        return [
+            'bruto_setahun' => $brutoSetahun,
+            'jumlah_bulan' => $jumlahBulan,
+            'biaya_jabatan' => $biayaJabatan,
+            'iuran_pengurang' => $iuranPengurang,
+            'neto_setahun' => $neto,
+            'ptkp_setahun' => $ptkp,
+            'pkp' => $pkp,
+            'pph_setahun' => $terutang,
+            'sudah_dipotong' => $sudahDipotong,
+            'selisih' => $terutang - $sudahDipotong,
+        ];
+    }
+ 
+    private function masaTerakhir($k, int $bulan, int $tahun): bool
+    {
+        if ($bulan === 12) {
+            return true;
+        }
+        if (!empty($k->resigned_at)) {
+            $r = Carbon::parse($k->resigned_at);
+            return $r->year === $tahun && $r->month === $bulan;
+        }
+        return false;
+    }
+ 
+    /** Bulan pertama bekerja dalam tahun pajak (karyawan baru di tengah tahun). */
+    private function bulanMulaiKerja($k, int $tahun): int
+    {
+        $raw = $k->awal_probation ?? $k->awal_kontrak;
+        if ($raw) {
+            $d = Carbon::parse($raw);
+            if ($d->year === $tahun) {
+                return $d->month;
+            }
+        }
+        return 1;
+    }
+
+    private function brutoBulan($k, int $bulan, int $tahun, array $ctx): int
+    {
+        $logs = $ctx['logs']->get($k->id, collect());
+        if ($logs->isEmpty()) {
+            return (int) round((float) ($k->gaji ?? 0));
+        }
+        $komponen = $this->getSalaryComponentsFromLogs($logs, $bulan, $tahun);
+        return (int) round($komponen['gaji']);
+    }
+
+    private function hitungPphKaryawan($k, array $ctx, ?string $ptkp): array
+    {
+        $bulan = $ctx['bulan'];
+        $tahun = $ctx['tahun'];
+        $bruto = $this->brutoBulan($k, $bulan, $tahun, $ctx);
+        $ter = $this->hitungPph21($bruto, $ptkp);
+ 
+        $out = [
+            'bruto' => $bruto,
+            'kategori' => $ter['kategori'],
+            'tarif' => $ter['tarif'],
+            'ter' => $ter['bulanan'],
+            'nilai' => $ter['bulanan'],
+            'masa_terakhir' => false,
+            'rincian' => null,
+            'peringatan' => [],
+        ];
+ 
+        if (!$ptkp || !$this->masaTerakhir($k, $bulan, $tahun)) {
+            return $out;
+        }
+ 
+        $mulai = $this->bulanMulaiKerja($k, $tahun);
+        $jumlah = max(1, $bulan - $mulai + 1);
+ 
+        $brutoSetahun = 0;
+        for ($m = $mulai; $m <= $bulan; $m++) {
+            $brutoSetahun += $this->brutoBulan($k, $m, $tahun, $ctx);
+        }
+ 
+        // JHT + JP porsi karyawan = pengurang penghasilan bruto (Tabel 8.1 buku PPh 21).
+        $iuran = (int) $ctx['iuran']->get($k->id, collect())
+            ->where('bulan', '>=', $mulai)
+            ->sum(fn($p) => (int) ($p->jht_karyawan ?? 0) + (int) ($p->jp_karyawan ?? 0));
+ 
+        $sebelumnya = $ctx['tahun_ini']->get($k->id, collect())->where('bulan', '>=', $mulai);
+        $sudah = (int) $sebelumnya->sum('total_pph');
+ 
+        $kosong = [];
+        for ($m = $mulai; $m < $bulan; $m++) {
+            if (!$sebelumnya->contains('bulan', $m)) {
+                $kosong[] = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+            }
+        }
+ 
+        $r = $this->hitungPph21MasaTerakhir($brutoSetahun, $jumlah, $iuran, $ptkp, $sudah);
+ 
+        $out['masa_terakhir'] = true;
+        $out['rincian'] = $r;
+        $out['nilai'] = max(0, $r['selisih']);
+ 
+        if ($r['selisih'] < 0) {
+            $out['peringatan'][] = 'Kelebihan potong Rp ' . number_format(abs($r['selisih']), 0, ',', '.')
+                . ' pada masa pajak terakhir. Nilai yang disimpan Rp 0; kelebihan harus dikembalikan ke karyawan.';
+        }
+        if ($kosong) {
+            $out['peringatan'][] = 'PPh 21 bulan ' . implode(', ', $kosong) . '/' . $tahun
+                . ' belum tersimpan, sehingga "sudah dipotong" mungkin terlalu kecil dan selisih terlalu besar.';
+        }
+ 
+        return $out;
     }
 
     private function decodeAnak($anak)
@@ -2786,5 +3887,117 @@ class payrollController extends Controller
             'thp_bersih' => $thpBersih,
             'total_biaya_perusahaan' => $totalBiayaPerusahaan,
         ];
+    }
+
+    public function exportPphAnalisisExcel(Request $request)
+    {
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $a = $this->getPphAnalysis($request)->getData(true);
+
+        $ss = new Spreadsheet();
+        $sheet = $ss->getActiveSheet();
+        $sheet->setTitle('Analisis PPh21');
+        $r = 1;
+
+        $judul = function (string $teks) use (&$r, $sheet) {
+            $sheet->setCellValue("A{$r}", $teks);
+            $sheet->getStyle("A{$r}")->getFont()->setBold(true)->setSize(12);
+            $r++;
+        };
+
+        $tabel = function (array $head, array $baris) use (&$r, $sheet) {
+            $akhir = Coordinate::stringFromColumnIndex(count($head));
+            $sheet->fromArray($head, null, "A{$r}");
+            $sheet->getStyle("A{$r}:{$akhir}{$r}")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E79']],
+            ]);
+            $r++;
+            foreach ($baris as $b) {
+                $sheet->fromArray($b, null, "A{$r}");
+                $r++;
+            }
+            $r++;
+        };
+
+        $judul("ANALISIS PPH 21 - {$bulan}/{$tahun}");
+        $r++;
+
+        $h = $a['kesehatan'];
+        $judul('Ringkasan');
+        $tabel(['Keterangan', 'Nilai'], [
+            ['Karyawan eligible', $h['total_eligible']],
+            ['Sudah punya PTKP', $h['punya_ptkp']],
+            ['Belum punya PTKP', $h['belum_ptkp']],
+            ['Nilai bulan ini tersimpan', $h['sudah_diisi']],
+            ['Belum tersimpan', $h['belum_diisi']],
+            ['Total PPh 21', $h['total_pph']],
+            ['Total PPh 21 bulan lalu (' . $h['bulan_lalu_label'] . ')', $h['total_pph_bulan_lalu']],
+            ['Selisih', $h['selisih']],
+        ]);
+
+        $judul('Status Alur Kerja');
+        $tabel(['Langkah', 'Status', 'Detail'], array_map(
+            fn($s) => [$s['judul'], $s['selesai'] ? 'Selesai' : 'Belum', $s['detail']],
+            $a['workflow']['steps']
+        ));
+
+        $judul('Kategori TER');
+        $baris = [];
+        foreach ($a['distribusi']['kategori'] as $k => $v) {
+            $baris[] = [$k, $v['jumlah'], $v['total']];
+        }
+        $tabel(['Kategori', 'Jumlah', 'Total PPh 21'], $baris);
+
+        $judul('Distribusi Nominal PPh 21');
+        $tabel(['Rentang', 'Jumlah Karyawan'], array_map(
+            fn($x) => [$x['label'], $x['jumlah']],
+            $a['distribusi']['rentang']
+        ));
+
+        $judul('Total PPh 21 per Divisi');
+        $tabel(['Divisi', 'Jumlah', 'Total', 'Rata-rata'], array_map(
+            fn($x) => [$x['divisi'], $x['jumlah'], $x['total'], $x['rata_rata']],
+            $a['distribusi']['divisi']->all ?? $a['distribusi']['divisi']
+        ));
+
+        $judul('10 PPh 21 Tertinggi');
+        $tabel(['NIP', 'Nama', 'Divisi', 'PTKP', 'Nilai'], array_map(
+            fn($x) => [$x['nip'], $x['nama'], $x['divisi'], $x['ptkp'] ?? '-', $x['nilai']],
+            $a['distribusi']['top']
+        ));
+
+        $judul('Deteksi Anomali (' . $a['anomali_total'] . ')');
+        $tabel(['Level', 'NIP', 'Nama', 'Pesan'], array_map(
+            fn($x) => [ucfirst($x['level']), $x['nip'], $x['nama'], $x['pesan']],
+            $a['anomali']
+        ));
+
+        foreach (range('A', 'E') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $filename = "Analisis_PPh21_{$tahun}_" . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '_' . date('Ymd_His') . '.xlsx';
+
+        return response()->streamDownload(function () use ($ss) {
+            (new Xlsx($ss))->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function exportPphAnalisisPdf(Request $request)
+    {
+        [$bulan, $tahun] = $this->currentPeriod($request);
+        $a = $this->getPphAnalysis($request)->getData(true);
+
+        $pdf = Pdf::loadView('HR.payroll.export.pph_analisis_pdf', [
+            'a' => $a,
+            'bulan' => $bulan,
+            'tahun' => $tahun,
+            'generated_at' => now()->format('d M Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download("Analisis_PPh21_{$tahun}_" . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '_' . date('Ymd_His') . '.pdf');
     }
 }

@@ -136,7 +136,7 @@ trait KPIFormatTrait
         if ($tipe === 'rupiah') {
             return 'Rp ' . number_format((float) $nilaiTarget, 0, ',', '.');
         }
-        if ($tipe === 'persen' || $tipe === 'angka') {
+        if ($tipe === 'persen') {
             return number_format((float) $nilaiTarget, 0, ',', '.') . '%';
         }
         return number_format((float) $nilaiTarget, 0, ',', '.');

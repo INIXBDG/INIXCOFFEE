@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <title>Laporan RKM Detail - {{ $month }} {{ $year }}</title>
@@ -8,6 +9,7 @@
             margin: 15mm;
             size: A4 portrait;
         }
+
         body {
             font-family: 'Helvetica', Arial, sans-serif;
             font-size: 10pt;
@@ -16,23 +18,28 @@
             margin: 0;
             padding: 0;
         }
+
         .page {
             page-break-after: always;
         }
+
         .page:last-child {
             page-break-after: auto;
         }
+
         .header {
             border-bottom: 2px solid #2c3e50;
             padding-bottom: 10px;
             margin-bottom: 15px;
             text-align: center;
         }
+
         .title {
             font-size: 14pt;
             font-weight: bold;
             text-transform: uppercase;
         }
+
         .section-title {
             background: #f1f5f9;
             padding: 6px 10px;
@@ -41,33 +48,48 @@
             border-left: 4px solid #2c3e50;
             font-size: 10.5pt;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 8px;
         }
-        table td, table th {
+
+        table td,
+        table th {
             padding: 6px 8px;
             border: 1px solid #dee2e6;
             vertical-align: top;
         }
+
         .label {
             background: #f8f9fa;
             font-weight: 600;
             width: 30%;
         }
+
         .amount {
             text-align: right;
             font-family: 'Courier New', Courier, monospace;
         }
+
         .status-badge {
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 9pt;
             font-weight: bold;
         }
-        .status-hijau { background: #e8f5e9; color: #2e7d32; }
-        .status-merah { background: #ffebee; color: #c62828; }
+
+        .status-hijau {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-merah {
+            background: #ffebee;
+            color: #c62828;
+        }
+
         .footer {
             position: fixed;
             bottom: 0;
@@ -76,6 +98,7 @@
             font-size: 8pt;
             color: #94a3b8;
         }
+
         .table-netsales th {
             background: #f8f9fa;
             font-size: 9pt;
@@ -83,6 +106,7 @@
         }
     </style>
 </head>
+
 <body>
 
     @php $pageCount = 1; @endphp
@@ -91,8 +115,9 @@
             @foreach ($week['data'] as $rkm)
                 <div class="page">
                     <div class="header">
-                        <div class="title">Laporan Payment Advance  {{$monthData['bulan']}} </div>
-                        <div>ID: {{ $rkm['id'] }} | Minggu {{ $week['minggu'] }} ({{ $week['tanggal_awal_minggu'] }})</div>
+                        <div class="title">Laporan Payment Advance {{ $monthData['bulan'] }} </div>
+                        <div>ID: {{ $rkm['id'] }} | Minggu {{ $week['minggu'] }} ({{ $week['tanggal_awal_minggu'] }})
+                        </div>
                     </div>
 
                     <div class="section-title">Informasi Utama</div>
@@ -103,7 +128,8 @@
                         </tr>
                         <tr>
                             <td class="label">Jadwal Pelaksanaan</td>
-                            <td>{{ $rkm['tanggal_awal'] }} s/d {{ $rkm['tanggal_akhir'] }} ({{ $rkm['durasi'] }} Hari)</td>
+                            <td>{{ $rkm['tanggal_awal'] }} s/d {{ $rkm['tanggal_akhir'] }} ({{ $rkm['durasi'] }} Hari)
+                            </td>
                         </tr>
                         <tr>
                             <td class="label">Pax</td>
@@ -131,7 +157,8 @@
                         </tr>
                         <tr>
                             <td class="label">Kategori / Lokasi</td>
-                            <td>{{ $rkm['perusahaan']['kategori_perusahaan'] ?? '-' }} / {{ $rkm['perusahaan']['lokasi'] ?? '-' }}</td>
+                            <td>{{ $rkm['perusahaan']['kategori_perusahaan'] ?? '-' }} /
+                                {{ $rkm['perusahaan']['lokasi'] ?? '-' }}</td>
                         </tr>
                         <tr>
                             <td class="label">Email</td>
@@ -170,12 +197,29 @@
                             <td class="amount">Rp {{ number_format($rkm['souvenir'], 0, ',', '.') }}</td>
                         </tr>
                         <tr>
+                            <td class="label">Oleh-Oleh</td>
+                            <td class="amount">Rp {{ number_format($rkm['oleh_oleh'] ?? 0, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Biaya Lain-Lain</td>
+                            <td class="amount">Rp {{ number_format($rkm['biaya_lain_lain'] ?? 0, 0, ',', '.') }}</td>
+                        </tr>
+                        @if (!empty($rkm['keterangan_biaya_lain']))
+                            <tr>
+                                <td class="label">Ket. Biaya Lain-Lain</td>
+                                <td>{{ $rkm['keterangan_biaya_lain'] }}</td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="label">Exam</td>
+                            <td class="amount">Rp {{ number_format($rkm['biaya_exam'] ?? 0, 0, ',', '.') }}</td>
+                        </tr>
+                        <tr>
                             <td class="label">Entertaint</td>
                             <td class="amount">Rp {{ number_format($rkm['entertaint'], 0, ',', '.') }}</td>
                         </tr>
                         <tr>
-                            <td class="label">Total</td>
-                            <td class="amount">Rp {{ number_format($rkm['entertaint'] + $rkm['transportasi'] + $rkm['akomodasi_peserta'] + $rkm['akomodasi_tim'] + $rkm['cashback'] + $rkm['fresh_money'] + $rkm['sewa_laptop'] + $rkm['souvenir'], 0, ',', '.') }}</td>
+                            <td class="amount">Rp {{ number_format($totalAdvance, 0, ',', '.') }}</td>
                         </tr>
                     </table>
 
@@ -191,8 +235,24 @@
                     </div>
                 </div>
             @endforeach
+            @php
+                $totalAdvance = collect([
+                    'transportasi',
+                    'akomodasi_peserta',
+                    'akomodasi_tim',
+                    'cashback',
+                    'fresh_money',
+                    'sewa_laptop',
+                    'souvenir',
+                    'entertaint',
+                    'oleh_oleh',
+                    'biaya_lain_lain',
+                    'biaya_exam',
+                ])->sum(fn($k) => (float) ($rkm[$k] ?? 0));
+            @endphp
         @endforeach
     @endforeach
 
 </body>
+
 </html>

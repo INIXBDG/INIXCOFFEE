@@ -121,6 +121,7 @@ use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\AnalysisFinanceController;
+use App\Http\Controllers\Office\KelengkapanDataController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\PenambahanSouvenirController;
@@ -1102,6 +1103,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
         Route::get('/approval-pendapatan-sales/rkm-search', [ApprovalPendapatanSalesController::class, 'searchRkm']);
         Route::post('/approval-pendapatan-sales/store', [ApprovalPendapatanSalesController::class, 'store']);
+        Route::post('/approval-pendapatan-sales/validasi-all', [ApprovalPendapatanSalesController::class, 'validasiAll']);
+        Route::post('/approval-pendapatan-sales/validasi/{id}', [ApprovalPendapatanSalesController::class, 'validasi']);
     });
 
     // =========================================================================
@@ -1296,6 +1299,21 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/index', [MateriController::class, 'indexAlias'])->name('index');
             Route::get('/index/json', [MateriController::class, 'indexJsonAlias'])->name('index.json');
             Route::put('/update/{id}', [MateriController::class, 'updateAlias'])->name('update');
+        });
+
+        //kelengkapan dat penjualan
+        Route::prefix('kelengkapan-data')->name('kelengkapan-data.')->group(function () {
+            Route::get('/', [KelengkapanDataController::class, 'index'])->name('index');
+            Route::get('/pa/data', [KelengkapanDataController::class, 'paData'])->name('pa.data');
+            Route::get('/pa/template', [KelengkapanDataController::class, 'downloadTemplate'])->name('pa.template');
+            Route::post('/pa/preview', [KelengkapanDataController::class, 'preview'])->name('pa.preview');
+            Route::post('/pa/commit', [KelengkapanDataController::class, 'commit'])->name('pa.commit');
+
+            Route::get('/sinkron/data', [KelengkapanDataController::class, 'sinkronData'])->name('sinkron.data');
+            Route::post('/sinkron/konfirmasi', [KelengkapanDataController::class, 'sinkronKonfirmasi'])->name('sinkron.konfirmasi');
+            Route::post('/sinkron/batal', [KelengkapanDataController::class, 'sinkronBatal'])->name('sinkron.batal');
+            Route::post('/sinkron/simpan', [KelengkapanDataController::class, 'sinkronSimpan'])->name('sinkron.simpan');
+            Route::post('/sinkron/catatan', [KelengkapanDataController::class, 'sinkronCatatan'])->name('sinkron.catatan');
         });
     });
 
@@ -1636,6 +1654,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/setup', [MasterKaryawanController::class, 'storeMaster'])->name('setup.store');
             Route::post('/unlock', [MasterKaryawanController::class, 'unlock'])->name('unlock');
             Route::post('/lock', [MasterKaryawanController::class, 'lock'])->name('lock');
+            Route::get('/export', [MasterKaryawanController::class, 'export'])->name('export');
         });
 
         Route::prefix('legalitas')->name('legalitas.')->group(function () {
@@ -1954,6 +1973,15 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/upload-kode-billing', [payrollController::class, 'uploadKodeBillingPph']);
             Route::get('/file/{jenis}', [payrollController::class, 'downloadBerkasPph']);
             Route::delete('/delete-all', [payrollController::class, 'deleteAllPph'])->name('delete-all');
+            Route::get('/analisis', [payrollController::class, 'getPphAnalysis']);
+            Route::get('/preview',  [payrollController::class, 'previewPph']);
+            Route::get('/desember', [payrollController::class, 'getPphDesember'])->name('desember');
+            Route::get('/desember/export-excel', [payrollController::class, 'exportPphDesemberExcel'])->name('desember.excel');
+            Route::get('/desember/export-pdf', [payrollController::class, 'exportPphDesemberPdf'])->name('desember.pdf');
+            Route::get('/export-data-excel', [payrollController::class, 'exportPphDataExcel']);
+            Route::get('/export-data-pdf', [payrollController::class, 'exportPphDataPdf']);
+            Route::get('/export-analisis-excel', [payrollController::class, 'exportPphAnalisisExcel']);
+            Route::get('/export-analisis-pdf', [payrollController::class, 'exportPphAnalisisPdf']);
         });
 
         Route::prefix('rekapan-penjualan')->name('rekap-penjualan.')->group(function () {

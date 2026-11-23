@@ -241,6 +241,7 @@
     </script>
 
     @push('scripts')
+        @vite(['resources/js/pages/kpi/kpiGrade.js'])
         @vite(['resources/js/pages/kpi/kpiPersonal.js'])
     @endpush
 @endsection

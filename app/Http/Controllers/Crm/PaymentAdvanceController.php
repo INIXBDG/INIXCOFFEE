@@ -109,6 +109,9 @@ class PaymentAdvanceController extends Controller
             'entertaint'        => 'Entertaint',
             'souvenir'          => 'Souvenir',
             'cashback'          => 'Cashback',
+            'oleh_oleh'         => 'Oleh-Oleh',
+            'biaya_lain_lain'   => 'Biaya Lain-Lain',
+            'biaya_exam'        => 'Exam',
             'sewa_laptop'       => 'Sewa Laptop',
         ];
 
@@ -119,10 +122,11 @@ class PaymentAdvanceController extends Controller
                 if ($nilai <= 0) continue;
 
                 $ket = match ($field) {
-                    'transportasi'  => $pa->jenis_transportasi,
-                    'akomodasi_tim' => $pa->keterangan_akomodasi_tim,
-                    'entertaint'    => $pa->keterangan_entertaint,
-                    default         => null,
+                    'transportasi'    => $pa->jenis_transportasi,
+                    'akomodasi_tim'   => $pa->keterangan_akomodasi_tim,
+                    'entertaint'      => $pa->keterangan_entertaint,
+                    'biaya_lain_lain' => $pa->keterangan_biaya_lain,
+                    default           => null,
                 };
 
                 $items[] = [

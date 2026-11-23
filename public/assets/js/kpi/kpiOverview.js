@@ -77,6 +77,10 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
         return (nama || '?').split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     }
 
+    function renderGradeBadge(g) {
+        return g ? ` <span class="badge bg-${g.badge} ms-1" title="Grade KPI">${g.display}</span>` : '';
+    }
+
     function classifyEmployee(progress, currentMonth) {
         const isYearEnd = currentMonth === 12;
         if (isYearEnd) {
@@ -196,7 +200,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                         <div class="emp-jabatan">${emp.jabatan}</div>
                         <div class="emp-progress-wrapper">
                             <div class="emp-progress-val ${info.val}">${progressDisplay}%</div>
-                            <div class="emp-badge">${info.badge}</div>
+                            <div class="emp-badge">${info.badge}${emp.grade && progressNumber > 0 ? KpiGrade.badge(emp.grade, { nama: emp.nama, total: emp.jumlah_target }) : ''}</div>
                         </div>
                     </div>
                     <div class="emp-actions">
@@ -293,7 +297,7 @@ const fmt1 = (v) => (Number(v) || 0).toFixed(1);
                         }
                     },
                     scales: {
-                        y: { type: 'linear', position: 'left', min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Progress (%)', font: { weight: '600' } } },
+                        y: { type: 'linear', position: 'left', min: 0, ticks: { callback: v => v + '%' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Progress (%)', font: { weight: '600' } } },
                         y1: { type: 'linear', position: 'right', min: 0, grid: { drawOnChartArea: false }, title: { display: true, text: 'Total Target', font: { weight: '600' } } },
                         x: { grid: { display: false }, title: { display: true, text: 'Karyawan', font: { weight: '600' } } }
                     }

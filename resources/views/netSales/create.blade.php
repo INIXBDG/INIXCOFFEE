@@ -140,6 +140,37 @@
                                             <textarea name="keterangan_akomodasi_tim" class="form-control" rows="1" placeholder="Opsional"></textarea>
                                         </div>
                                     </div>
+
+                                    <div class="mb-3 row">
+                                        <label for="biaya_lain_lain"
+                                            class="col-md-4 col-form-label">{{ __('Biaya Lain-Lain') }}</label>
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input id="biaya_lain_lain" type="text" class="form-control rupiah"
+                                                    name="biaya_lain_lain" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label for="keterangan_biaya_lain"
+                                            class="col-md-4 col-form-label">{{ __('Ket. Biaya Lain') }}</label>
+                                        <div class="col-md-8">
+                                            <textarea name="keterangan_biaya_lain" class="form-control" rows="1"
+                                                placeholder="Jelaskan rincian biaya lain-lain"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3 row">
+                                        <label for="biaya_exam"
+                                            class="col-md-4 col-form-label">{{ __('Exam') }}</label>
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input id="biaya_exam" type="text" class="form-control rupiah"
+                                                    name="biaya_exam" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {{-- KOLOM KANAN --}}
@@ -203,6 +234,18 @@
                                     </div>
 
                                     <div class="mb-3 row">
+                                        <label for="oleh_oleh"
+                                            class="col-md-4 col-form-label">{{ __('Oleh-Oleh') }}</label>
+                                        <div class="col-md-8">
+                                            <div class="input-group">
+                                                <span class="input-group-text">Rp</span>
+                                                <input id="oleh_oleh" type="text" class="form-control rupiah"
+                                                    name="oleh_oleh" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 row">
                                         <label for="sewa_laptop"
                                             class="col-md-4 col-form-label">{{ __('Sewa Laptop') }}</label>
                                         <div class="col-md-8">
@@ -261,6 +304,11 @@
                                 </div>
                             </div>
 
+                            <div class="d-flex justify-content-between border-top pt-3 mt-3">
+                                <strong>Total Pengajuan</strong>
+                                <strong id="total_pengajuan">Rp 0</strong>
+                            </div>
+
                             {{-- SUBMIT --}}
                             <div class="row mt-4">
                                 <div class="col-md-12 text-end">
@@ -311,7 +359,11 @@
                 '#entertaint',
                 '#souvenir',
                 '#cashback',
-                '#sewa_laptop'
+                '#sewa_laptop',
+                '#sewa_laptop',
+                '#oleh_oleh',
+                '#biaya_lain_lain',
+                '#biaya_exam'
             ];
 
             // 2. Event Listener untuk Input (Format Rupiah & Hitung Total)
@@ -320,6 +372,12 @@
                 $(this).val(formatRupiah(val));
                 calculateTotal();
             });
+
+            function calculateTotal() {
+                let total = 0;
+                costFields.forEach(sel => { total += parseRupiah($(sel).val()); });
+                $('#total_pengajuan').text('Rp ' + new Intl.NumberFormat('id-ID').format(total));
+            }
 
             // 3. Fungsi Format Rupiah (Visual dengan titik)
             function formatRupiah(angka, prefix) {

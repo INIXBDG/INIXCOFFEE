@@ -30,7 +30,7 @@ class ExecutiveAnalyticsService
 
         $targets = $query->get();
         $allProgressData = $this->extractAllProgressData($targets, $filters);
-        $trendData = $this->calculateTrendMetrics($allProgressData, $filters['granularity']);
+        $trendData = $this->calculateTrendMetrics($allProgressData, $filters['granularity'] ?? 'monthly');
         $comparisonData = $this->calculatePeriodComparison($filters, $allProgressData);
 
         $overallAverage = $allProgressData->isNotEmpty() ? round($allProgressData->avg('progress'), 1) : 0;
@@ -162,7 +162,7 @@ class ExecutiveAnalyticsService
                         if (!$result || !isset($result['progress'])) continue;
 
                         $rawProgress = $this->normalizeNumber($result['progress']);
-                        $percent = max(0, min(100, round($rawProgress, 1)));
+                        $percent = $this->normalizeToAchievement($rawProgress, $detail->tipe_target, $detail->nilai_target);
                         $progressValues[] = $percent;
                     }
                 }
@@ -317,7 +317,7 @@ class ExecutiveAnalyticsService
                     if (!$result || !isset($result['progress'])) continue;
 
                     $rawProgress = $this->normalizeNumber($result['progress']);
-                    $percent = max(0, min(100, round($rawProgress, 2)));
+                    $percent = $this->normalizeToAchievement($rawProgress, $detail->tipe_target, $detail->nilai_target);
 
                     $monthlyProgress = $result['monthly_progress'] ?? [];
 
@@ -330,7 +330,7 @@ class ExecutiveAnalyticsService
                                 'jabatan' => $detail->jabatan ?? null,
                                 'period' => $month,
                                 'period_type' => 'monthly',
-                                'progress' => (float) $percent,
+                                'progress' => max(0, (float) $mp),
                                 'created_at' => $target->created_at
                             ];
                         }
@@ -345,6 +345,18 @@ class ExecutiveAnalyticsService
     {
         if ($value === null || $value === '') return 0;
         return (float) str_replace(',', '', $value);
+    }
+
+    private function normalizeToAchievement($rawValue, $tipeTarget, $nilaiTarget): float
+    {
+        $raw = (float) $rawValue;
+        $target = (float) $nilaiTarget;
+
+        if ($target > 0 && in_array($tipeTarget, ['rupiah', 'angka'], true)) {
+            $raw = ($raw / $target) * 100;
+        }
+
+        return round(max(0, min(100, $raw)), 2);
     }
 
     private function calculateTrendMetrics($progressData, $granularity)
