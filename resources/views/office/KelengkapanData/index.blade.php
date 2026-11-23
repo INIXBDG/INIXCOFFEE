@@ -353,11 +353,11 @@
                                                         <li>Jika ada prospect kembar, ID Sales atau Nama Lengkap Sales
                                                             dipakai
                                                             untuk membedakan.</li>
-                                                        <li>Maksimal 500 baris per file. File bukti (foto/PDF) diunggah
-                                                            manual
-                                                            di halaman detail prospect.</li>
+                                                        <li>File bukti (foto/PDF) diunggah manual di halaman detail prospect.</li>
                                                         <li>Jika ada kesalahan saat menyimpan, semua data batal tersimpan.
                                                         </li>
+                                                        <li>ID Sales dari file tidak pernah mengubah data prospect. Jika berbeda, pilih
+                                                            <strong>Gunakan data dari prospect</strong> agar ID Sales mengikuti prospect.</li>
                                                     </ul>
                                                 </div>
                                             </div>
@@ -2007,16 +2007,16 @@
                                 <option value="tambah">Tetap simpan sebagai data baru</option></select>`;
                         }
                         if (b.status === 'tinjau') {
-                            return `<select class="form-select form-select-sm k-tinjau mb-1">
+                            return `<select class="form-select form-select-sm k-tinjau mb-1" data-lain="${b.ada_alasan_lain ? 1 : 0}">
                                     <option value="">Pilih keputusan...</option>
                                     <option value="pakai">Pakai data ini</option>
+                                    ${b.beda_sales ? `<option value="prospek">Gunakan data dari prospect (ID Sales ${esc(b.id_sales_prospek || '-')})</option>` : ''}
                                     <option value="lewati">Jangan pakai</option></select>
                                 <div class="opsi-pakai d-none">
                                     <select class="form-select form-select-sm k-perlakuan mb-1">
                                         <option value="potong">Simpan dan kurangi net sales</option>
                                         <option value="catat">Simpan sebagai catatan saja (net sales tidak dikurangi)</option></select>
-                                    <input type="text" class="form-control form-control-sm k-alasan"
-                                        maxlength="200" placeholder="Alasan memakai data ini (wajib)"></div>`;
+                                    <input type="text" class="form-control form-control-sm k-alasan" maxlength="200" placeholder="Alasan memakai data ini (opsional)">`;
                         }
                         return '';
                     }
@@ -2100,7 +2100,9 @@
                     }
 
                     $(document).on('change', '.k-tinjau', function() {
-                        $(this).closest('td').find('.opsi-pakai').toggleClass('d-none', $(this).val() !== 'pakai');
+                        const v = $(this).val();
+                        const tampil = v === 'pakai' || (v === 'prospek' && Number($(this).data('lain')) === 1);
+                        $(this).closest('td').find('.opsi-pakai').toggleClass('d-none', !tampil);
                         hitungKesiapan();
                     });
                     $(document).on('change input', '.k-impor, .k-dup, .k-perlakuan, .k-alasan', hitungKesiapan);
@@ -2157,12 +2159,10 @@
                             }
                             if (b.status === 'tinjau') {
                                 if (!x.aksi) belum++;
-                                else if (x.aksi === 'pakai') {
-                                    if ((x.alasan || '').trim().length < 5) belum++;
-                                    else {
-                                        simpan++;
-                                        if (x.perlakuan === 'potong') potongan += b.total;
-                                    }
+                                else if (x.aksi === 'pakai' || x.aksi === 'prospek') {
+                                    const perluPerlakuan = x.aksi === 'pakai' || b.ada_alasan_lain;
+                                    simpan++;
+                                    if (!perluPerlakuan || x.perlakuan === 'potong') potongan += b.total;
                                 }
                             }
                         });
