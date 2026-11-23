@@ -226,6 +226,15 @@
                 </li>
             @endcan
 
+            @can('edit-timeline-webinar')
+                <li class="menu-item {{ request()->routeIs('crm.timeline-webinar.index') ? 'active open' : '' }}">
+                    <a href="{{ route('crm.timeline-webinar.index') }}" class="menu-link">
+                        <i class='menu-icon tf-icons bx bx-task'></i>
+                        <div class="text-truncate" data-i18n="aktivitas">Timeline Webinar</div>
+                    </a>
+                </li>
+            @endcan
+
             @can('View PIC CRM')
                 <li class="menu-item {{ request()->routeIs('index.pic') ? 'active open' : '' }}">
                     <a href="{{ route('index.pic') }}" class="menu-link">

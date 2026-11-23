@@ -57,14 +57,19 @@
                             <div class="row mb-3">
                                 <label for="kode_exam" class="col-md-4 col-form-label text-md-start">{{ __('Kode Exam') }}</label>
                                 <div class="col-md-6">
-                                    <select name="kode_exam" id="kode_exam" class="form-select">
+                                    <select name="kode_exam" id="kode_exam" class="form-select @error('kode_exam') is-invalid @enderror">
                                         <option value="" selected>Pilih Kode Exam</option>
                                         @foreach ($kode_exam as $list)
-                                        <option value="{{ $list->kode_exam }}">{{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}</option>
+                                            <option value="{{ $list->kode_exam }}"
+                                                data-harga="{{ $list->harga_exam }}"
+                                                data-mata-uang="{{ $list->mata_uang }}"
+                                                data-valid-until="{{ $list->valid_until }}">
+                                                {{ $list->kode_exam }} - {{ $list->nama_exam }} - {{ $list->provider }} - {{ $list->vendor }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @error('kode_exam')
-                                        <span class="invalid-feedback" role="alert">
+                                        <span class="invalid-feedback d-block" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
                                     @enderror
@@ -94,7 +99,7 @@
                         <div class="row mb-3" id="harga_div">
                             <label for="harga" class="col-md-4 col-form-label text-md-start">{{ __('Harga') }}</label>
                             <div class="col-md-6">
-                                <div class="input-group mb-3">
+                                <div class="input-group mb-1">
                                     <span class="input-group-text" id="currency-symbol">$</span>
                                     <input type="text" step="0.01" class="form-control @error('harga') is-invalid @enderror" name="harga" id="harga" required>
                                 </div>
@@ -103,6 +108,7 @@
                                         <strong>{{ $message }}</strong>
                                     </span>
                                 @enderror
+                                <span id="harga_validity" class="small d-none mb-3"></span>
                             </div>
                         </div>
 
@@ -211,6 +217,11 @@
 </div>
 
 @push('js')
+    {{-- Select2 lokal: harus setelah jQuery dan sebelum script di bawah --}}
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/vendor/css/select2-bootstrap-5-theme.min.css') }}">
+    <script src="{{ asset('assets/vendor/libs/select2/select2.min.js') }}"></script>
+
     <script>
     $(document).ready(function() {
         // 1. Inisialisasi Tanggal
@@ -301,6 +312,80 @@
 
             // Pembaruan UI Field Total
             $('#total').val(formatRupiah(totalRupiah.toString()));
+        }
+
+        // 5b. Select2 + Autofill Harga & Mata Uang dari Kode Exam
+        if ($('#kode_exam').length) {
+            $('#kode_exam').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Pilih Kode Exam',
+                allowClear: true
+            });
+
+            // Info masa berlaku harga (valid_until)
+            function showHargaValidity(validUntil) {
+                const $el = $('#harga_validity');
+                $el.removeClass('text-danger text-warning text-success d-block d-none fw-semibold');
+
+                if (!validUntil) {
+                    $el.addClass('d-none').text('');
+                    return;
+                }
+
+                const parts = String(validUntil).split('-');
+                const until = new Date(parts[0], parts[1] - 1, parts[2]);
+                const now = new Date();
+                const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const diff = Math.round((until - todayDate) / 86400000);
+                const tglIndo = until.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+                if (diff < 0) {
+                    $el.addClass('d-block text-danger fw-semibold')
+                       .text('⚠ Harga exam sudah EXPIRED sejak ' + tglIndo + ' (' + Math.abs(diff) + ' hari yang lalu). Mohon konfirmasi harga terbaru.');
+                } else if (diff === 0) {
+                    $el.addClass('d-block text-warning fw-semibold')
+                       .text('⚠ Harga exam berlaku sampai hari ini (' + tglIndo + ').');
+                } else if (diff <= 7) {
+                    $el.addClass('d-block text-warning fw-semibold')
+                       .text('⚠ Harga exam hampir expired: berlaku sampai ' + tglIndo + ' (sisa ' + diff + ' hari).');
+                } else {
+                    $el.addClass('d-block text-success')
+                       .text('Harga berlaku sampai ' + tglIndo + ' (sisa ' + diff + ' hari).');
+                }
+            }
+
+            $('#kode_exam').on('change', function () {
+                const selected = $(this).find('option:selected');
+                const harga = selected.data('harga');
+                const mataUang = selected.data('mata-uang');
+                const validUntil = selected.data('valid-until');
+
+                showHargaValidity(validUntil);
+
+                // Reset jika dikosongkan
+                if (!$(this).val()) {
+                    $('#harga').val('');
+                    $('#mata_uang').val('');
+                    $('#mata_uang').trigger('input');
+                    return;
+                }
+
+                // Mata uang dari exam (harus sama dengan value option: Rupiah/Dollar/Poundsterling/Euro/Franc Swiss)
+                if (mataUang) {
+                    $('#mata_uang').val(mataUang);
+                }
+
+                // Harga dari harga_exam
+                if (harga !== undefined && harga !== null && harga !== '') {
+                    $('#harga').val(harga);
+                } else {
+                    $('#harga').val('');
+                }
+
+                // Trigger listener yang sudah ada: toggle field kurs + hitung ulang
+                $('#mata_uang').trigger('input');
+            });
         }
 
         // 6. Global Event Listener untuk Real-Time Input

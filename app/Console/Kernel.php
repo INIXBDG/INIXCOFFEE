@@ -236,6 +236,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('tasks:fallback-shift2')->dailyAt('16:00')->timezone('Asia/Jakarta');
         $schedule->command('notifications:clear-old')->dailyAt('21:00');
         $schedule->command('app:legalitas-reminder')->dailyAt('08:00');
+        $schedule->command('webinar:notify-adm-sales')->dailyAt('08:00');
         $schedule->command('labsubs:check-expiry')->dailyAt('08:00')->timezone('Asia/Jakarta')->description('Cek Masa Aktif Lab & Subscription (H-7, H-3, H-1 & Expired)');
         $schedule->call(function () {
             $expired = karyawan::query()

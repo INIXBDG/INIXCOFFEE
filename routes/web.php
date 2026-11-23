@@ -136,6 +136,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PerpindahanDBController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\PesertaController;
+use App\Http\Controllers\PesertaWebinarSalesController;
 use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
@@ -991,6 +992,18 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/{id}/checklist', [checklistRKMController::class, 'updateChecklist'])->name('checklist.update');
             Route::patch('/detail/{id}', [checklistRKMController::class, 'updateDetailChecklist'])->name('detail.update');
             Route::patch('/{id}/checklists', [checklistRKMController::class, 'updateMultiple'])->name('checklist.update-multiple');
+        });
+
+        // Timeline Webinar Admin Sales
+        Route::prefix('/timeline-webinar')->name('crm.timeline-webinar.')->group(function () {
+            Route::get('/', [CalendarController::class, 'indexAdmSales'])->name('index');
+
+            Route::get('/peserta', [PesertaWebinarSalesController::class, 'index'])->name('peserta.index');
+            Route::get('/peserta/meta', [PesertaWebinarSalesController::class, 'meta'])->name('peserta.meta');
+            Route::get('/peserta/perusahaan', [PesertaWebinarSalesController::class, 'perusahaan'])->name('peserta.perusahaan');
+            Route::post('/peserta', [PesertaWebinarSalesController::class, 'store'])->name('peserta.store');
+            Route::put('/peserta/{id}', [PesertaWebinarSalesController::class, 'update'])->name('peserta.update');
+            Route::delete('/peserta/{id}', [PesertaWebinarSalesController::class, 'destroy'])->name('peserta.destroy');
         });
 
         // Peluang CRM & Closed Win/Lost
