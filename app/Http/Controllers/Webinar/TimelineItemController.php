@@ -19,19 +19,31 @@ class TimelineItemController extends Controller
             return response()->json(['message' => 'Akses Ditolak: Anda tidak memiliki izin untuk mengubah timeline.'], 403);
         }
 
+        $karyawanId = $user->karyawan->id ?? null;
+
+        if (!$karyawanId) {
+            return response()->json(['message' => 'Data karyawan untuk akun ini tidak ditemukan.'], 422);
+        }
+
         $request->validate([
             'item_date' => 'required|date',
             'content' => 'nullable|string',
             'year_mapping_id' => 'required|exists:year_mappings,id'
         ]);
 
+        // Kunci item: tanggal + karyawan, supaya tiap karyawan punya item sendiri
+        $key = [
+            'item_date'   => $request->item_date,
+            'id_karyawan' => $karyawanId,
+        ];
+
         if (empty($request->content)) {
-            TimelineItem::where('item_date', $request->item_date)->delete();
+            TimelineItem::where($key)->delete();
             return response()->json(['status' => 'deleted']);
         }
 
         $item = TimelineItem::updateOrCreate(
-            ['item_date' => $request->item_date],
+            $key,
             [
                 'year_mapping_id' => $request->year_mapping_id,
                 'content' => $request->content,
