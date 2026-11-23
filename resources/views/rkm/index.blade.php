@@ -434,8 +434,10 @@
                                     html += sales.kode_karyawan + ', ';
                                 });
                                 html += '</td>';
+                                const examArray = rkm.exam ? String(rkm.exam).split(',').map(item => item.trim()) : [];
+                                const exam = examArray.length > 0 ? Number(examArray[0]) : 0;
                                 if (jabatan == 'Adm Sales') {
-                                    html += '<td>' + (rkm.has_exam ? 'Sudah' : 'Belum') + '</td>';
+                                    html += '<td>' + (exam ? (rkm.has_exam ? 'Sudah' : 'Belum') : '-') + '</td>';
                                 }
                                 html += '<td>';
                                 if (rkm.instruktur_all && rkm.instruktur_all.trim() !== '') {
@@ -446,8 +448,6 @@
                                 }
                                 html += '</td>';
                                 html += '<td>';
-                                const examArray = rkm.exam ? String(rkm.exam).split(',').map(item => item.trim()) : [];
-                                const exam = examArray.length > 0 ? Number(examArray[0]) : 0;
                                 if (exam == 0 || exam == '0') {
                                     html += 'Tidak';
                                 } else {
