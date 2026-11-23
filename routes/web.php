@@ -1250,7 +1250,7 @@ Route::middleware(['auth'])->group(function () {
         // Approval Pendapatan & Komisi Sales
         Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
             Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
-            Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
+            Route::get('/get/{tahun?}/{bulan?}', [ApprovalPendapatanController::class, 'get'])->name('get');
             Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
             Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
             Route::get('/lock-status', [ApprovalPendapatanController::class, 'checkLockStatus']);
