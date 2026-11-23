@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Office;
+namespace App\Http\Controllers\office;
 
 use App\Http\Controllers\Controller;
 use App\Models\Materi;
@@ -32,7 +32,6 @@ class KelengkapanDataController extends Controller
 {
     private const JABATAN_AKSES = 'Adm Sales';
     private const BARIS_DATA_PERTAMA = 4;
-    private const MAKS_BARIS = 500;
     private const CACHE_MENIT = 60;
     private const BATAS_HARI_SETELAH_KELAS = 90;
     private const TAHAP_WAJIB_PA = ['merah'];
@@ -41,6 +40,10 @@ class KelengkapanDataController extends Controller
         'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money',
         'entertaint', 'souvenir', 'cashback', 'oleh_oleh', 'biaya_lain_lain',
         'biaya_exam', 'sewa_laptop',
+    ];
+
+    private const KOLOM_DB = [
+        'biaya_exam' => 'exam',
     ];
 
     private const JABATAN_FINANCE = 'Finance & Accounting';
@@ -195,7 +198,7 @@ class KelengkapanDataController extends Controller
                 'Cashback'          => (float) $r->cashback,
                 'Oleh-oleh'         => (float) $r->oleh_oleh,
                 'Biaya lain-lain'   => (float) $r->biaya_lain_lain,
-                'Exam'              => (float) $r->biaya_exam,
+                'Exam'              => (float) ($r->{$this->kolomDb('biaya_exam')} ?? 0),
                 'Sewa laptop'       => (float) $r->sewa_laptop,
             ],
             'jenis_transportasi'       => $r->jenis_transportasi,
@@ -218,11 +221,10 @@ class KelengkapanDataController extends Controller
     public function preview(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx|max:5120',
+            'file' => 'required|file|mimes:xlsx',
         ], [
             'file.required' => 'Pilih file Excel terlebih dahulu.',
             'file.mimes'    => 'File harus berformat .xlsx.',
-            'file.max'      => 'Ukuran file maksimal 5 MB.',
         ]);
 
         try {
@@ -239,11 +241,6 @@ class KelengkapanDataController extends Controller
         }
 
         $barisTerakhir = $sheet->getHighestDataRow();
-        if ($barisTerakhir - self::BARIS_DATA_PERTAMA + 1 > self::MAKS_BARIS) {
-            return response()->json([
-                'message' => 'Jumlah baris melebihi batas ' . self::MAKS_BARIS . '. Pecah menjadi beberapa file.',
-            ], 422);
-        }
 
         $petaPerusahaan = Perusahaan::select('id', 'nama_perusahaan')->get()
             ->groupBy(fn ($x) => $this->norm($x->nama_perusahaan))
@@ -285,6 +282,7 @@ class KelengkapanDataController extends Controller
     {
         $gagal = [];
         $tinjau = [];
+        $bedaSales = false;
 
         $namaPerusahaan = trim((string) $c[0]);
         $namaMateri     = trim((string) $c[1]);
@@ -292,7 +290,9 @@ class KelengkapanDataController extends Controller
         $selesai        = $this->parseTanggal($c[3]);
         $idSales        = trim((string) $c[4]);
         $namaSales      = trim((string) $c[5]);
-        $tglPa          = $this->parseTanggal($c[6]);
+        $tglPaIsi       = trim((string) $c[6]) !== '';
+        $tglPaTerbaca   = $this->parseTanggal($c[6]);
+        $tglPa          = $tglPaTerbaca ?? now()->format('Y-m-d');
         $tipe           = trim((string) $c[7]);
 
         $baris = [
@@ -301,6 +301,7 @@ class KelengkapanDataController extends Controller
             'periode' => ($mulai ?? '?') . ' s/d ' . ($selesai ?? '?'),
             'sales' => $idSales !== '' ? $idSales : $namaSales,
             'tgl_pa' => $tglPa, 'total' => 0, 'peluang_id' => null,
+            'beda_sales' => false, 'ada_alasan_lain' => false, 'id_sales_prospek' => null,
             'data' => null,
         ];
 
@@ -308,8 +309,7 @@ class KelengkapanDataController extends Controller
         if ($namaMateri === '')     $gagal[] = 'Nama Materi / Kelas kosong.';
         if (!$mulai)                $gagal[] = 'Tanggal Mulai Kelas kosong atau formatnya salah.';
         if (!$selesai)              $gagal[] = 'Tanggal Selesai Kelas kosong atau formatnya salah.';
-        if (!$tglPa)                $gagal[] = 'Tanggal Pengajuan PA kosong atau formatnya salah.';
-        if ($tipe === '')           $gagal[] = 'Tipe Pembayaran kosong.';
+        if ($tglPaIsi && !$tglPaTerbaca) $gagal[] = 'Tanggal Pengajuan PA formatnya salah.';
 
         $biaya = [];
         $peta = ['transportasi' => 8, 'akomodasi_peserta' => 10, 'akomodasi_tim' => 11, 'fresh_money' => 13,
@@ -318,12 +318,13 @@ class KelengkapanDataController extends Controller
         foreach ($peta as $nama => $idx) {
             $v = $c[$idx];
             if ($v === null || trim((string) $v) === '') { $biaya[$nama] = null; continue; }
-            if (!is_numeric($v) || (float) $v < 0) {
-                $gagal[] = "Kolom biaya \"{$nama}\" harus berupa angka 0 atau lebih.";
+            $angka = $this->parseUang($v);
+            if ($angka === null || $angka < 0) {
+                $gagal[] = "Kolom biaya \"{$nama}\" harus berupa angka 0 atau lebih (contoh: 400000 atau Rp 400.000).";
                 $biaya[$nama] = null;
                 continue;
             }
-            $biaya[$nama] = (float) $v;
+            $biaya[$nama] = $angka;
         }
         $total = array_sum(array_map(fn ($v) => (float) $v, $biaya));
         $baris['total'] = $total;
@@ -375,7 +376,8 @@ class KelengkapanDataController extends Controller
             if (empty($gagal)) $peluang = $kandidat->first();
 
             if ($peluang && !$disaring && $idSales !== '' && $this->norm($peluang->id_sales) !== $this->norm($idSales)) {
-                $tinjau[] = "ID Sales di file ({$idSales}) berbeda dengan sales pada peluang ({$peluang->id_sales}).";
+                $tinjau[] = "ID Sales di file ({$idSales}) berbeda dengan sales pada prospect ({$peluang->id_sales}). ID Sales tidak akan diubah dari file.";
+                $bedaSales = true;
             }
         }
 
@@ -390,10 +392,10 @@ class KelengkapanDataController extends Controller
         if ($peluang->tahap !== 'merah') {
             $tinjau[] = "Peluang belum berstatus closed win (tahap saat ini: {$peluang->tahap}).";
         }
-        if (Carbon::parse($tglPa)->isFuture()) {
+        if ($tglPaIsi && Carbon::parse($tglPa)->isFuture()) {
             $tinjau[] = 'Tanggal pengajuan PA berada di masa depan.';
         }
-        if (Carbon::parse($tglPa)->gt(Carbon::parse($selesai)->addDays(self::BATAS_HARI_SETELAH_KELAS))) {
+        if ($tglPaIsi && Carbon::parse($tglPa)->gt(Carbon::parse($selesai)->addDays(self::BATAS_HARI_SETELAH_KELAS))) {
             $tinjau[] = 'Tanggal pengajuan PA lebih dari ' . self::BATAS_HARI_SETELAH_KELAS . ' hari setelah kelas selesai.';
         }
 
@@ -418,6 +420,10 @@ class KelengkapanDataController extends Controller
         }
         $terlihat[$kunci] = $terlihat[$kunci] ?? $no;
 
+        $baris['beda_sales'] = $bedaSales;
+        $baris['ada_alasan_lain'] = count($tinjau) > ($bedaSales ? 1 : 0);
+        $baris['id_sales_prospek'] = $peluang->id_sales;
+
         $baris['alasan'] = array_merge($duplikat, $tinjau);
         $baris['status'] = !empty($duplikat) ? 'duplikat' : (!empty($tinjau) ? 'tinjau' : 'siap');
 
@@ -427,7 +433,9 @@ class KelengkapanDataController extends Controller
             'id_rkm'                   => $peluang->id_rkm,
             'id_peluang'               => $peluang->id,
             'tgl_pa'                   => $tglPa,
-            'tipe_pembayaran'          => $tipe,
+            'tipe_pembayaran'          => $tipe !== '' ? $tipe : null,
+            'id_sales_prospek'         => $peluang->id_sales,
+            'id_sales_file'            => $idSales !== '' ? $idSales : null,
             'jenis_transportasi'       => trim((string) $c[9]) ?: null,
             'keterangan_akomodasi_tim' => trim((string) $c[12]) ?: null,
             'keterangan_entertaint'    => trim((string) $c[15]) ?: null,
@@ -468,23 +476,26 @@ class KelengkapanDataController extends Controller
 
                 switch ($b['status']) {
                     case 'siap':
-                        $aksi === 'impor' ? $rencana[] = [$b, true, null] : $dilewati++;
+                        $aksi === 'impor' ? $rencana[] = [$b, true, null, false] : $dilewati++;
                         break;
 
                     case 'duplikat':
-                        $aksi === 'tambah' ? $rencana[] = [$b, true, null] : $dilewati++;
+                        $aksi === 'tambah' ? $rencana[] = [$b, true, null, false] : $dilewati++;
                         break;
 
                     case 'tinjau':
-                        if ($aksi === 'pakai') {
-                            $perlakuan = $k['perlakuan'] ?? null;
+                        $dariProspek = $aksi === 'prospek';
+                        if ($dariProspek && empty($b['beda_sales'])) {
+                            $galat[] = "Baris {$b['no']}: pilihan data dari prospect hanya berlaku jika ID Sales berbeda.";
+                        } elseif ($aksi === 'pakai' || $dariProspek) {
+                            $perluPerlakuan = !$dariProspek || !empty($b['ada_alasan_lain']);
+                            $perlakuan = $perluPerlakuan ? ($k['perlakuan'] ?? null) : 'potong';
                             $alasan = trim((string) ($k['alasan'] ?? ''));
+                            $alasan = $alasan !== '' ? $alasan : null;
                             if (!in_array($perlakuan, ['potong', 'catat'], true)) {
                                 $galat[] = "Baris {$b['no']}: pilih perlakuan data.";
-                            } elseif (mb_strlen($alasan) < 5) {
-                                $galat[] = "Baris {$b['no']}: alasan wajib diisi (minimal 5 karakter).";
                             } else {
-                                $rencana[] = [$b, $perlakuan === 'potong', $alasan];
+                                $rencana[] = [$b, $perlakuan === 'potong', $alasan, $dariProspek];
                             }
                         } elseif ($aksi === 'lewati') {
                             $dilewati++;
@@ -509,9 +520,9 @@ class KelengkapanDataController extends Controller
             $totalDipotong = 0.0;
             try {
                 DB::transaction(function () use ($rencana, &$diimpor, &$totalDipotong) {
-                    foreach ($rencana as [$b, $potong, $alasan]) {
+                    foreach ($rencana as [$b, $potong, $alasan, $dariProspek]) {
                         try {
-                            $this->simpanPA($b['data'], $potong, $alasan);
+                            $this->simpanPA($b['data'], $potong, $alasan, $dariProspek);
                         } catch (\Throwable $e) {
                             throw new \RuntimeException("Baris {$b['no']}: " . $e->getMessage(), 0, $e);
                         }
@@ -537,7 +548,7 @@ class KelengkapanDataController extends Controller
         }
     }
 
-    private function simpanPA(array $d, bool $potong, ?string $alasan): void
+    private function simpanPA(array $d, bool $potong, ?string $alasan, bool $dariProspek = false): void
     {
         $existing = $this->punyaKolomFinal()
             ? perhitunganNetSales::where('id_rkm', $d['id_rkm'])->first()
@@ -552,12 +563,13 @@ class KelengkapanDataController extends Controller
 
         $jejak = '[Import ' . now()->format('d/m/Y H:i') . ' oleh ' . (Auth::user()->username ?? Auth::id()) . ']'
             . ($alasan ? " Dipakai karena: {$alasan}" : '')
-            . ($potong ? '' : ' (net sales tidak dikurangi)');
+            . ($potong ? '' : ' (net sales tidak dikurangi)')
+            . ($dariProspek ? ' Data dari prospect: ID Sales ' . ($d['id_sales_prospek'] ?? '-') . ' dipakai, ID Sales file (' . ($d['id_sales_file'] ?? '-') . ') tidak dipakai.' : '');
 
         $n = new perhitunganNetSales();
         $n->id_rkm = $d['id_rkm'];
         foreach (self::KOLOM_BIAYA as $k) {
-            $n->{$k} = $d[$k] ?: null;
+            $n->{$this->kolomDb($k)} = ($d[$k] ?? null) ?: null;
         }
         $n->jenis_transportasi = $d['jenis_transportasi'];
         $n->keterangan_akomodasi_tim = $d['keterangan_akomodasi_tim'];
@@ -569,7 +581,7 @@ class KelengkapanDataController extends Controller
         $n->id_tracking = $tracking->id;
         $n->save();
 
-        KelengkapanDataLog::catatTeks('pa', $d['id_rkm'], 'Dibuat (import) | tgl_pa: ' . $d['tgl_pa'] . '; total: ' . (int) $d['total'] . '; ' . ($potong ? 'net sales dikurangi' : 'net sales tidak dikurangi') . ($alasan ? '; alasan: ' . $alasan : ''));
+        KelengkapanDataLog::catatTeks('pa', $d['id_rkm'], 'Dibuat (import) | tgl_pa: ' . $d['tgl_pa'] . '; total: ' . (int) $d['total'] . '; ' . ($potong ? 'net sales dikurangi' : 'net sales tidak dikurangi') . ($alasan ? '; alasan: ' . $alasan : '') . ($dariProspek ? '; ID Sales dari prospect: ' . ($d['id_sales_prospek'] ?? '-') : ''));
 
         if ($potong) {
             if ($existing) {
@@ -1226,7 +1238,12 @@ class KelengkapanDataController extends Controller
 
     private function hitungTotal($r): float
     {
-        return array_sum(array_map(fn ($k) => (float) ($r->{$k} ?? 0), self::KOLOM_BIAYA));
+        return array_sum(array_map(fn ($k) => (float) ($r->{$this->kolomDb($k)} ?? 0), self::KOLOM_BIAYA));
+    }
+
+    private function kolomDb(string $k): string
+    {
+        return self::KOLOM_DB[$k] ?? $k;
     }
 
     private function norm($v): string
@@ -1244,6 +1261,53 @@ class KelengkapanDataController extends Controller
         return User::whereHas('karyawan', function ($q) use ($nama) {
             $q->whereRaw('LOWER(TRIM(nama_lengkap)) = ?', [$this->norm($nama)]);
         })->pluck('id_sales')->map(fn ($v) => $this->norm($v))->all();
+    }
+
+    private function parseUang($v): ?float
+    {
+        if (is_int($v) || is_float($v)) {
+            return (float) $v;
+        }
+
+        $s = trim((string) $v);
+        if ($s === '') {
+            return null;
+        }
+
+        $negatif = str_starts_with($s, '-') || (str_starts_with($s, '(') && str_ends_with($s, ')'));
+        $s = preg_replace('/[^0-9.,]/', '', preg_replace('/rp\.?/iu', '', $s));
+        if ($s === '' || !preg_match('/\d/', $s)) {
+            return null;
+        }
+
+        $titik = substr_count($s, '.');
+        $koma = substr_count($s, ',');
+
+        if ($titik > 0 && $koma > 0) {
+            $desimal = strrpos($s, '.') > strrpos($s, ',') ? '.' : ',';
+            $ribuan = $desimal === '.' ? ',' : '.';
+            $s = str_replace($ribuan, '', $s);
+            $s = str_replace($desimal, '.', $s);
+        } elseif ($titik > 0 || $koma > 0) {
+            $pemisah = $titik > 0 ? '.' : ',';
+            $jumlah = max($titik, $koma);
+            $bagian = explode($pemisah, $s);
+            $belakang = end($bagian);
+
+            if ($jumlah > 1 || strlen($belakang) === 3) {
+                $s = str_replace($pemisah, '', $s);
+            } else {
+                $s = str_replace($pemisah, '.', $s);
+            }
+        }
+
+        if (!is_numeric($s)) {
+            return null;
+        }
+
+        $hasil = (float) $s;
+
+        return $negatif ? -$hasil : $hasil;
     }
 
     private function parseTanggal($v): ?string

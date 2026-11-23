@@ -19,10 +19,9 @@ class perhitunganNetSales extends Model
         'souvenir' => 'integer',
         'cashback' => 'integer',
         'sewa_laptop' => 'integer',
-        'oleh_oleh',
-        'biaya_lain_lain',
-        'keterangan_biaya_lain',
-        'exam',
+        'oleh_oleh' => 'integer',
+        'biaya_lain_lain' => 'integer',
+        'exam' => 'integer',
     ];
 
     public function rkm()

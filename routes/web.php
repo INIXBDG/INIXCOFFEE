@@ -121,7 +121,7 @@ use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\AnalysisFinanceController;
-use App\Http\Controllers\Office\KelengkapanDataController;
+use App\Http\Controllers\office\KelengkapanDataController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\PenambahanSouvenirController;
