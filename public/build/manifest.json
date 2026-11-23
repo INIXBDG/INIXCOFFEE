@@ -66,20 +66,26 @@
     "src": "resources/js/pages/kpi/dataTarget.js",
     "isEntry": true
   },
+  "resources/js/pages/kpi/kpiGrade.js": {
+    "file": "assets/kpiGrade-D0TWwkCy.js",
+    "name": "kpiGrade",
+    "src": "resources/js/pages/kpi/kpiGrade.js",
+    "isEntry": true
+  },
   "resources/js/pages/kpi/kpiIndex.js": {
-    "file": "assets/kpiIndex-D9j374VH.js",
+    "file": "assets/kpiIndex-BC0WR_Et.js",
     "name": "kpiIndex",
     "src": "resources/js/pages/kpi/kpiIndex.js",
     "isEntry": true
   },
   "resources/js/pages/kpi/kpiOverview.js": {
-    "file": "assets/kpiOverview-Byh3JiUi.js",
+    "file": "assets/kpiOverview-D2qvMfSQ.js",
     "name": "kpiOverview",
     "src": "resources/js/pages/kpi/kpiOverview.js",
     "isEntry": true
   },
   "resources/js/pages/kpi/kpiPersonal.js": {
-    "file": "assets/kpiPersonal-DFlnfoqp.js",
+    "file": "assets/kpiPersonal-CxlnSmsE.js",
     "name": "kpiPersonal",
     "src": "resources/js/pages/kpi/kpiPersonal.js",
     "isEntry": true

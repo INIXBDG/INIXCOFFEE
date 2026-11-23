@@ -1099,8 +1099,8 @@ $(document).ready(function() {
                     }).join('')}</div>`;
                 } else if (allowedAssistantRoutesForPresentaseGapKompetensi.includes(condition)) {
                     contentStatisticChart = buildGapKompetensiForm(
-                        data, 
-                        window.KPI_CONFIG.isKoordinatorItsm, 
+                        data,
+                        data.can_edit === true,
                         window.KPI_CONFIG.csrfToken
                     );
                 } else {
@@ -2156,5 +2156,4 @@ $(document).on('hidden.bs.modal', '#modalPanduan, #modalPanduanPdf', function ()
         $('.modal-backdrop').remove();
         $('body').removeClass('modal-open').css({ overflow: '', 'padding-right': '' });
     }
-});
-Object.assign(window, { formatNumber, getRawNumber, initInputFormatting, resetFormManual, loadContentForm, processRawData, renderTable, renderPagination, escHtml, syncPanduanPdfState, renderPanduanPdfOpsi, loadPanduanPdfOpsi });
+});Object.assign(window, { formatNumber, getRawNumber, initInputFormatting, resetFormManual, loadContentForm, processRawData, renderTable, renderPagination, escHtml, syncPanduanPdfState, renderPanduanPdfOpsi, loadPanduanPdfOpsi });
