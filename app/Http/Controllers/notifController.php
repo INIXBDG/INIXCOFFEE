@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\HariLibur;
 use App\Models\notif;
+use App\Models\User;
+use App\Notifications\GeneralAnnouncementNotification;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Notification;
 
 class notifController extends Controller
 {
@@ -44,13 +47,15 @@ class notifController extends Controller
         if ($request->ajax()){
             $data = HariLibur::where('id', $request->id)->first();
 
-            notif::create([
+            $announcement = notif::create([
                 'id_user' => auth()->user()->username,
                 'tipe_notifikasi' => 'Libur',
                 'isi_notifikasi' => $request->isi_notifikasi,
                 'tanggal_awal' => $request->tanggal_awal,
                 'tanggal_akhir' => $request->tanggal_akhir,
             ]);
+
+            $this->sendAnnouncementNotification($announcement);
 
             session()->flash('success_libur', 'Notifikasi Libur berhasil dibuat');
             return response()->json([
@@ -59,7 +64,7 @@ class notifController extends Controller
             ]);
         } 
 
-        notif::create([
+        $announcement = notif::create([
             'id_user' => auth()->user()->username,
             'tipe_notifikasi' => $request->tipe_notifikasi,
             'isi_notifikasi' => $request->isi_notifikasi,
@@ -67,7 +72,28 @@ class notifController extends Controller
             'tanggal_akhir' => $request->tanggal_akhir,
         ]);
 
+        $this->sendAnnouncementNotification($announcement);
+
         return redirect()->route('home')->with(['success' => 'Data Berhasil Disimpan!']);
+    }
+
+    private function sendAnnouncementNotification(notif $announcement): void
+    {
+        $recipients = User::query()
+            ->where('status_akun', '1')
+            ->with('karyawan')
+            ->get();
+
+        Notification::send(
+            $recipients,
+            new GeneralAnnouncementNotification(
+                'Pengumuman ' . $announcement->tipe_notifikasi,
+                $announcement->isi_notifikasi,
+                '/home',
+                $announcement->tipe_notifikasi,
+                auth()->user()?->username
+            )
+        );
     }
 
     //

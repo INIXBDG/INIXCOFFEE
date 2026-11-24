@@ -306,10 +306,11 @@
             <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
                 <ul class="navbar-nav">
                     <li class="nav-item mx-1">
-                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
-                            data-bs-placement="top" title="Logout">
+                        <button type="submit" form="logout-form" class="nav-link border-0 bg-transparent"
+                            id="logout-link" data-bs-toggle="tooltip" data-bs-placement="top" title="Logout"
+                            aria-label="Logout">
                             <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                        </a>
+                        </button>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>

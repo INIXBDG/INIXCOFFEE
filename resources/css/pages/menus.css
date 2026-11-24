@@ -612,6 +612,12 @@ canvas {
     border-color: #ced4da;
 }
 
+#logout-link {
+    position: relative;
+    z-index: 1001;
+    cursor: pointer;
+}
+
 @media (max-width: 576px) {
     #navbarkanan {
         order: 2;
