@@ -22,7 +22,7 @@ class LaporanHarianSalesController extends Controller
 
     public function index()
     {
-        return view('crm.laporanHarian.index');
+        return view(view()->exists('mom.index') ? 'mom.index' : 'crm.laporanHarian.index');
     }
 
     public function getDataTables(Request $request)
@@ -76,7 +76,7 @@ class LaporanHarianSalesController extends Controller
                 }
                 $clientList .= '</ul>';
             }
-            $jenisHtml = "<div class='ps-3'>{$row->jenis_meeting}{$clientList}</div>";
+            $jenisHtml = "<div class='ps-2'>{$row->jenis_meeting}{$clientList}</div>";
 
             // Format Jenis Catatan
             $catatanHtml = '<div class="d-flex flex-column gap-1">';
@@ -92,23 +92,41 @@ class LaporanHarianSalesController extends Controller
             }
             $catatanHtml .= '</div>';
 
-            // Format Aksi
-            $editUrl = route('laporan.harian.edit', $row->id);
-            $deleteUrl = route('laporan.harian.delete', $row->id);
-            
-            $aksiHtml = "<a href='{$editUrl}' class='btn btn-sm btn-warning mb-1 me-1'><i class='bx bx-edit'></i> Edit</a>";
-            $aksiHtml .= '<form method="POST" action="'.$deleteUrl.'" style="display: inline;" class="delete-form">' 
-                         . csrf_field() 
-                         . method_field("DELETE") 
-                         . '<button type="button" class="btn btn-sm btn-danger mb-1 me-1" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-action="'.$deleteUrl.'"><i class="bx bx-trash"></i> Hapus</button></form>';
+            // Format Aksi (Dropdown)
+            $editRoute = \Route::has('mom.edit') ? 'mom.edit' : 'laporan.harian.edit';
+            $deleteRoute = \Route::has('mom.delete') ? 'mom.delete' : 'laporan.harian.delete';
+            $pdfRoute = \Route::has('mom.pdf') ? 'mom.pdf' : 'laporan.harian.pdf';
 
+            $editUrl = route($editRoute, $row->id);
+            $deleteUrl = route($deleteRoute, $row->id);
+
+            $pdfItem = '';
             if (!$row->is_draft) {
                 if ($row->catatanClient->isNotEmpty()) {
-                    $aksiHtml .= "<a href='".route('laporan.harian.pdf', ['id'=>$row->id,'type'=>'client'])."' class='btn btn-sm btn-success mb-1'><i class='bx bx-file'></i> PDF</a>";
+                    $pdfUrl = route($pdfRoute, ['id' => $row->id, 'type' => 'client']);
+                    $pdfItem = "<li><a class='dropdown-item' href='{$pdfUrl}' target='_blank'><i class='bx bx-file me-2 text-secondary'></i> Unduh PDF Client</a></li>";
                 } else {
-                    $aksiHtml .= "<a href='".route('laporan.harian.pdf', ['id'=>$row->id,'type'=>'sales'])."' class='btn btn-sm btn-success mb-1'><i class='bx bx-file'></i> PDF</a>";
+                    $pdfUrl = route($pdfRoute, ['id' => $row->id, 'type' => 'sales']);
+                    $pdfItem = "<li><a class='dropdown-item' href='{$pdfUrl}' target='_blank'><i class='bx bx-file me-2 text-secondary'></i> Unduh PDF Sales</a></li>";
                 }
             }
+
+            $deleteButton = '<form method="POST" action="'.$deleteUrl.'" class="delete-form d-inline">' 
+                         . csrf_field() 
+                         . method_field("DELETE") 
+                         . '<button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-action="'.$deleteUrl.'"><i class="bx bx-trash me-2"></i> Hapus</button></form>';
+
+            $aksiHtml = "<div class='dropdown text-center'>
+                            <button class='btn btn-sm btn-outline-secondary dropdown-toggle' type='button' data-bs-toggle='dropdown' aria-expanded='false'>
+                                Aksi
+                            </button>
+                            <ul class='dropdown-menu dropdown-menu-end shadow-sm'>
+                                <li><a class='dropdown-item' href='{$editUrl}'><i class='bx bx-edit me-2 text-primary'></i> Edit</a></li>
+                                {$pdfItem}
+                                <li><hr class='dropdown-divider my-1'></li>
+                                <li>{$deleteButton}</li>
+                            </ul>
+                        </div>";
 
             return [
                 'no' => $startNumber++,
@@ -138,7 +156,7 @@ class LaporanHarianSalesController extends Controller
         $sales = karyawan::where('divisi', 'Sales & Marketing')
             ->get();
 
-        return view('crm.laporanHarian.create', compact('sales'));
+        return view(view()->exists('mom.create') ? 'mom.create' : 'crm.laporanHarian.create', compact('sales'));
     }
 
     /**
@@ -250,7 +268,8 @@ class LaporanHarianSalesController extends Controller
             }
         }
 
-        return redirect()->route('laporan.harian')->with('success', 'Laporan berhasil disimpan.');
+        $redirectRoute = \Route::has('mom.index') ? 'mom.index' : 'laporan.harian';
+        return redirect()->route($redirectRoute)->with('success', 'Laporan berhasil disimpan.');
     }
 
     public function autoSave(Request $request)
@@ -348,11 +367,11 @@ class LaporanHarianSalesController extends Controller
      */
     public function edit(string $id)
     {
-        $laporan = LaporanHarianSales::with('catatanSales')->findOrFail($id);
+        $laporan = LaporanHarianSales::with(['catatanSales', 'catatanClient'])->findOrFail($id);
         $sales = karyawan::where('divisi', 'Sales & Marketing')
             ->get();
 
-        return view('crm.laporanHarian.detail', compact('laporan', 'sales'));
+        return view(view()->exists('mom.detail') ? 'mom.detail' : 'crm.laporanHarian.detail', compact('laporan', 'sales'));
     }
 
     /**
@@ -444,7 +463,8 @@ class LaporanHarianSalesController extends Controller
             }
         }
 
-        return redirect()->route('laporan.harian')->with('success', 'Laporan berhasil diperbarui.');
+        $redirectRoute = \Route::has('mom.index') ? 'mom.index' : 'laporan.harian';
+        return redirect()->route($redirectRoute)->with('success', 'Laporan berhasil diperbarui.');
     }
 
     /**
@@ -463,7 +483,8 @@ class LaporanHarianSalesController extends Controller
         // Hapus laporan harian
         $laporan->delete();
 
-        return redirect()->route('laporan.harian')->with('success', 'Laporan berhasil dihapus.');
+        $redirectRoute = \Route::has('mom.index') ? 'mom.index' : 'laporan.harian';
+        return redirect()->route($redirectRoute)->with('success', 'Laporan berhasil dihapus.');
     }
 
     public function exportPdf($id, $type)

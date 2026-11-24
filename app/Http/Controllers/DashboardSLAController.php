@@ -105,36 +105,9 @@ class DashboardSLAController extends Controller
             ];
         }
 
-        $validator = Validator::make($request->all(), [
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-        ]);
-
-            return [
-                'startDate' => $startDate,
-                'endDate'   => $endDate,
-                'filters'   => ['start' => $startDate->toDateTimeString(), 'end' => $endDate->toDateTimeString()],
-            ];
-        }
-
-        // Prioritas 2: Jika ada parameter tahun & bulan dari filter global JS
-        $tahun = $request->input('tahun');
-        $bulan = $request->input('bulan'); // integer 1-12 atau 'all'
-
-        if ($tahun && is_numeric($tahun)) {
-            $year = (int) $tahun;
-
-            if ($bulan && $bulan !== 'all' && is_numeric($bulan)) {
-                // Filter per bulan tertentu
-                $month      = (int) $bulan;
-                $startDate  = Carbon::createFromDate($year, $month, 1, $this->timezone)->startOfMonth()->startOfDay();
-                $endDate    = $startDate->copy()->endOfMonth()->endOfDay();
-            } else {
-                // bulan = 'all' → tampilkan seluruh tahun
-                $startDate  = Carbon::createFromDate($year, 1, 1, $this->timezone)->startOfMonth()->startOfDay();
-                $endDate    = Carbon::createFromDate($year, 12, 31, $this->timezone)->endOfMonth()->endOfDay();
-            }
-
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+            $endDate   = Carbon::parse($request->input('end_date'))->endOfDay();
             return [
                 'startDate' => $startDate,
                 'endDate'   => $endDate,

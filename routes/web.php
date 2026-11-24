@@ -30,6 +30,7 @@ use App\Http\Controllers\Crm\RegisFormController;
 use App\Http\Controllers\Crm\salesPribadiController;
 use App\Http\Controllers\Crm\TargetAktivitas;
 use App\Http\Controllers\Crm\TodoAdministrasiController;
+use App\Http\Controllers\TodoListSalesController;
 use App\Http\Controllers\CVInstrukturController;
 use App\Http\Controllers\DaftarPesertaExamController;
 use App\Http\Controllers\DaftarTugasController;
@@ -2342,6 +2343,30 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/codes/{id}', [CodeDocumentationController::class, 'show'])->name('codes.show');
         Route::put('/codes/{id}', [CodeDocumentationController::class, 'update'])->name('codes.update');
         Route::delete('/codes/{id}', [CodeDocumentationController::class, 'destroy'])->name('codes.destroy');
+    });
+
+    // =========================================================================
+    // FITUR MOM (MINUTES OF MEETING) & TO DO LIST SALES - INIXCOFFEE
+    // =========================================================================
+    Route::prefix('mom')->name('mom.')->group(function () {
+        Route::get('/', [LaporanHarianSalesController::class, 'index'])->name('index');
+        Route::get('/create', [LaporanHarianSalesController::class, 'create'])->name('create');
+        Route::get('/{id}/edit', [LaporanHarianSalesController::class, 'edit'])->name('edit');
+        Route::post('/store', [LaporanHarianSalesController::class, 'store'])->name('store');
+        Route::post('/{id}/update', [LaporanHarianSalesController::class, 'update'])->name('update');
+        Route::delete('/delete/{id}', [LaporanHarianSalesController::class, 'delete'])->name('delete');
+        Route::get('/export/{id}/{type}', [LaporanHarianSalesController::class, 'exportPdf'])->name('pdf');
+        Route::post('/autosave', [LaporanHarianSalesController::class, 'autoSave'])->name('autosave');
+        Route::get('/data', [LaporanHarianSalesController::class, 'getDataTables'])->name('data');
+    });
+
+    Route::prefix('todo-list')->name('todo-list.')->group(function () {
+        Route::get('/', [TodoListSalesController::class, 'index'])->name('index');
+        Route::get('/events', [TodoListSalesController::class, 'getEvents'])->name('events');
+        Route::post('/store', [TodoListSalesController::class, 'store'])->name('store');
+        Route::post('/{id}/update', [TodoListSalesController::class, 'update'])->name('update');
+        Route::post('/{id}/toggle', [TodoListSalesController::class, 'toggle'])->name('toggle');
+        Route::delete('/{id}/delete', [TodoListSalesController::class, 'destroy'])->name('delete');
     });
 
     // =========================================================================

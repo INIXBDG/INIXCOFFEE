@@ -1270,7 +1270,7 @@
                                 : false,
                             'education' => $user ? $user->can('Fitur Menu Education') : false,
                             'office' => $user ? $user->can('Fitur Menu Office') : false,
-                            'crm' => $user ? $user->can('Fitur CRM') : false,
+                            'crm' => $user ? ($user->can('Fitur CRM') || $user->can('View MOM') || $user->can('View Todo Administrasi') || in_array(strtolower(trim($user->jabatan ?? '')), ['spv sales', 'adm sales', 'admin sales', 'super admin', 'programmer'])) : false,
                             'management' => $user ? $user->can('Fitur Menu Manajemen') : false,
                             'project' => $user ? $user->can('Fitur Menu Project') : false,
                         ];
@@ -2703,12 +2703,23 @@
                                 </div>
                             @endcan
                         @elseif ($key == 'crm')
-                            @can('Fitur CRM')
+                            @php
+                                $crmJabatan = strtolower(trim($user->jabatan ?? ''));
+                                $canAccessCrmSection = $user && (
+                                    $user->can('Fitur CRM') || 
+                                    $user->can('View MOM') || 
+                                    $user->can('View Todo Administrasi') || 
+                                    in_array($crmJabatan, ['spv sales', 'adm sales', 'admin sales', 'super admin', 'programmer']) ||
+                                    $user->hasAnyRole(['SPV Sales', 'Adm Sales', 'Admin Sales', 'Super Admin', 'Programmer'])
+                                );
+                            @endphp
+                            @if ($canAccessCrmSection)
                                 <div class="masonry-item">
                                     <div class="card">
                                         <div class="card-body">
                                             <h5 class="text-center card-title">Customer Relationship Management</h5>
                                             <div class="row dashboard-section-row" data-section="crm">
+                                                @can('Fitur CRM')
                                                 <div class="col-sm-6 mt-2" data-card-id="fitur_crm">
                                                     <div class="card" id="card-hover">
                                                         <div class="card-body d-flex">
@@ -2741,11 +2752,60 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @endcan
+
+                                                {{-- Card MoM (Minutes of Meeting) --}}
+                                                @can('View MOM')
+                                                <div class="col-sm-6 mt-2" data-card-id="laporan_mom">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2"><img
+                                                                    src="{{ asset('icon/file-text.svg') }}"
+                                                                    class="img-responsive" width="30px"></div>
+                                                            <div class="col-md-10" style="margin-left: 10px"><a
+                                                                    href="{{ route('mom.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">Laporan MoM</h5>
+                                                                </a>
+                                                                <p class="card-text">Minutes of Meeting & Catatan Rapat Sales</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endcan
+
+                                                {{-- Card To Do List Sales --}}
+                                                @php
+                                                    $userJabatan = strtolower(trim($user->jabatan ?? ''));
+                                                    $canSeeTodoList = $user && (
+                                                        in_array($userJabatan, ['spv sales', 'adm sales', 'admin sales', 'super admin', 'programmer']) ||
+                                                        $user->hasAnyRole(['SPV Sales', 'Adm Sales', 'Admin Sales', 'Super Admin', 'Programmer']) ||
+                                                        $user->can('View Todo Administrasi')
+                                                    );
+                                                @endphp
+                                                @if ($canSeeTodoList)
+                                                <div class="col-sm-6 mt-2" data-card-id="todo_list_sales">
+                                                    <div class="card" id="card-hover">
+                                                        <div class="card-body d-flex">
+                                                            <div class="col-md-2"><img
+                                                                    src="{{ asset('icon/calendar.svg') }}"
+                                                                    class="img-responsive" width="30px"></div>
+                                                            <div class="col-md-10" style="margin-left: 10px"><a
+                                                                    href="{{ route('todo-list.index') }}"
+                                                                    class="link stretched-link text-decoration-none">
+                                                                    <h5 class="card-title">To Do List</h5>
+                                                                </a>
+                                                                <p class="card-text">Jadwal & Agenda Aktivitas Sales</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            @endcan
+                            @endif
                         @elseif ($key == 'management')
                             @can('Fitur Menu Manajemen')
                                 <div class="masonry-item">
