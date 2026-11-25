@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UpdateCuti extends Command
 {
@@ -20,23 +21,55 @@ class UpdateCuti extends Command
      *
      * @var string
      */
-    protected $description = 'Update cuti menjadi 12 hari setiap bulan Februari';
+    protected $description = 'Update cuti tahunan pada Februari setelah masa kerja minimal 6 bulan';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        if (Carbon::now()->month !== 2) {
-            $this->info('Bukan bulan Februari, update cuti dibatalkan.');
-            return;
-        }
-
-        DB::table('karyawans')->update([
-            'cuti' => 12,
-            'updated_at' => now()
+        $executedAt = Carbon::now();
+        Log::info('app:update-cuti started', [
+            'executed_at' => $executedAt->toIso8601String(),
         ]);
 
-        $this->info('Jatah cuit berhasil di update');
+        if ($executedAt->month !== 2) {
+            Log::info('app:update-cuti skipped', [
+                'reason' => 'outside_february',
+                'month' => $executedAt->month,
+            ]);
+            $this->info('Bukan bulan Februari, update cuti dibatalkan.');
+
+            return self::SUCCESS;
+        }
+
+        try {
+            $cutoffDate = $executedAt->copy()->subMonthsNoOverflow(6)->toDateString();
+            $updatedRows = DB::table('karyawans')
+                ->where(function ($query) use ($cutoffDate) {
+                    $query->whereNull('awal_kontrak')
+                        ->orWhereDate('awal_kontrak', '<=', $cutoffDate);
+                })
+                ->update([
+                    'cuti' => 12,
+                    'updated_at' => $executedAt,
+                ]);
+        } catch (\Throwable $exception) {
+            Log::error('app:update-cuti failed', [
+                'executed_at' => $executedAt->toIso8601String(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
+        }
+
+        Log::info('app:update-cuti completed', [
+            'executed_at' => $executedAt->toIso8601String(),
+            'updated_rows' => $updatedRows,
+        ]);
+
+        $this->info("Jatah cuti berhasil di update. Total karyawan diperbarui: {$updatedRows}.");
+
+        return self::SUCCESS;
     }
 }
