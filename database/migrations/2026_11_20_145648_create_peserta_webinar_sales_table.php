@@ -17,8 +17,11 @@ return new class extends Migration
             $table->text('email_peserta');
             $table->text('nama_peserta');
             $table->text('no_hp')->nullable();
+            $table->text('domisili')->nullable();
             $table->text('id_perusahaan')->nullable();
             $table->text('id_sales')->nullable();
+            $table->text('info')->nullable();
+            $table->text('paket')->nullable();
             $table->timestamps();
         });
     }

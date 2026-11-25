@@ -16,6 +16,9 @@ class PesertaWebinarSales extends Model
         'no_hp',
         'id_perusahaan',
         'id_sales',
+        'domisili',
+        'info',
+        'paket',
     ];
 
     public function yearMapping()

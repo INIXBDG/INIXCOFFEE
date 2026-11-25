@@ -240,7 +240,7 @@
                                 Belum ada webinar (YearMapping).
                             </p>
 
-                            <select x-show="webinars.length > 0" x-model="selectedMapping" @change="loadPeserta()"
+                            <select x-show="webinars.length > 0" x-model="selectedMapping" @change="page = 1; loadPeserta()"
                                     class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
                                 <template x-for="w in webinars" :key="w.id">
                                     <option :value="w.id" x-text="w.label"></option>
@@ -248,13 +248,20 @@
                             </select>
                         </div>
 
-                        <div class="flex gap-2 w-full md:w-auto">
-                            <input type="text" x-model="search" placeholder="Cari nama / email / perusahaan..."
-                                   class="w-full md:w-72 border border-slate-300 rounded p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <input type="text" x-model="search" @input="page = 1" placeholder="Cari nama / email / perusahaan..."
+                                class="w-full md:w-72 border border-slate-300 rounded p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+
+                            <a :href="selectedMapping ? `${pesertaUrl}/export?year_mapping_id=${selectedMapping}` : '#'"
+                            :class="!selectedMapping ? 'opacity-50 pointer-events-none' : ''"
+                            class="px-4 py-2.5 text-sm bg-emerald-600 text-white hover:bg-emerald-700 rounded font-bold shadow whitespace-nowrap">
+                                Export Excel
+                            </a>
+
                             <button type="button" @click="openPesertaModal()" :disabled="!selectedMapping"
                                     class="px-4 py-2.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded font-bold shadow whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                                 + Tambah Peserta
-                            </button>
+                            </a>
                         </div>
                     </div>
 
@@ -266,28 +273,36 @@
                                     <th class="px-4 py-3">Nama</th>
                                     <th class="px-4 py-3">Email</th>
                                     <th class="px-4 py-3">No HP</th>
+                                    <th class="px-4 py-3">Domisili</th>
                                     <th class="px-4 py-3">Perusahaan</th>
+                                    <th class="px-4 py-3">Kategori</th>
                                     <th class="px-4 py-3">Sales</th>
+                                    <th class="px-4 py-3">Info</th>
+                                    <th class="px-4 py-3">Paket</th>
                                     <th class="px-4 py-3 w-32 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr x-show="isLoadingPeserta">
-                                    <td colspan="7" class="px-4 py-8 text-center text-slate-400 animate-pulse">Memuat data...</td>
+                                    <td colspan="11" class="px-4 py-8 text-center text-slate-400 animate-pulse">Memuat data...</td>
                                 </tr>
                                 <tr x-show="!isLoadingPeserta && filteredPeserta.length === 0">
-                                    <td colspan="7" class="px-4 py-8 text-center text-slate-400">Belum ada data peserta.</td>
+                                    <td colspan="11" class="px-4 py-8 text-center text-slate-400">Belum ada data peserta.</td>
                                 </tr>
 
-                                <template x-for="(p, idx) in filteredPeserta" :key="p.id">
+                                <template x-for="(p, idx) in paginatedPeserta" :key="p.id">
                                     <tr class="border-t border-slate-100 hover:bg-slate-50">
-                                        <td class="px-4 py-3 text-slate-400" x-text="idx + 1"></td>
+                                        <td class="px-4 py-3 text-slate-400" x-text="pageFrom + idx"></td>
                                         <td class="px-4 py-3 font-semibold text-slate-800" x-text="p.nama_peserta"></td>
                                         <td class="px-4 py-3 text-slate-600" x-text="p.email_peserta"></td>
                                         <td class="px-4 py-3 text-slate-600" x-text="p.no_hp || '-'"></td>
+                                        <td class="px-4 py-3 text-slate-600" x-text="p.domisili || '-'"></td>
                                         <td class="px-4 py-3 text-slate-600" x-text="p.perusahaan_nama || (p.id_perusahaan ? ('ID ' + p.id_perusahaan) : '-')"></td>
+                                        <td class="px-4 py-3 text-slate-600" x-text="p.kategori_perusahaan || '-'"></td>
                                         <td class="px-4 py-3 text-slate-600"
                                             x-text="p.id_sales ? (p.id_sales + (p.sales_nama ? ' - ' + p.sales_nama : '')) : '-'"></td>
+                                        <td class="px-4 py-3 text-slate-600" x-text="p.info || '-'"></td>
+                                        <td class="px-4 py-3 text-slate-600" x-text="p.paket || '-'"></td>
                                         <td class="px-4 py-3 text-center whitespace-nowrap">
                                             <button type="button" @click="openPesertaModal(p)" class="text-xs font-bold text-blue-600 hover:underline mr-3">Edit</button>
                                             <button type="button" @click="deletePeserta(p)" class="text-xs font-bold text-red-600 hover:underline">Hapus</button>
@@ -298,9 +313,42 @@
                         </table>
                     </div>
 
-                    <p class="text-xs text-slate-400 mt-3">
-                        Total: <span class="font-bold" x-text="filteredPeserta.length"></span> peserta
-                    </p>
+                    {{-- PAGINATION --}}
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mt-4">
+                        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span>
+                                Menampilkan
+                                <span class="font-bold" x-text="pageFrom"></span>-<span class="font-bold" x-text="pageTo"></span>
+                                dari <span class="font-bold" x-text="filteredPeserta.length"></span> peserta
+                            </span>
+                            <select x-model.number="perPage" @change="page = 1"
+                                    class="border border-slate-300 rounded p-1 text-xs bg-white outline-none">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span>per halaman</span>
+                        </div>
+
+                        <div class="flex items-center gap-1" x-show="totalPages > 1">
+                            <button type="button" @click="goToPage(page - 1)" :disabled="page === 1"
+                                    class="px-3 py-1.5 text-xs font-bold rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                &laquo;
+                            </button>
+
+                            <template x-for="n in pageNumbers" :key="n">
+                                <button type="button" @click="goToPage(n)"
+                                        :class="n === page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'"
+                                        class="px-3 py-1.5 text-xs font-bold rounded border" x-text="n"></button>
+                            </template>
+
+                            <button type="button" @click="goToPage(page + 1)" :disabled="page === totalPages"
+                                    class="px-3 py-1.5 text-xs font-bold rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                &raquo;
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif
@@ -333,54 +381,84 @@
         </div>
     </div>
 
-    {{-- MODAL PESERTA (tanpa overflow-hidden supaya dropdown Select2 tidak terpotong) --}}
+    {{-- MODAL PESERTA
+         Overlay yang bisa di-scroll + dialog tanpa overflow-hidden, supaya dropdown Select2 tidak terpotong --}}
     <div x-show="modals.peserta.open" x-cloak
-         class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm" x-transition>
-        <div id="modal-peserta" class="relative bg-white w-full max-w-md rounded-lg shadow-2xl p-6" @click.away="modals.peserta.open = false">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span class="bg-blue-100 text-blue-600 p-1 rounded">👤</span>
-                <span x-text="modals.peserta.id ? 'Edit Peserta' : 'Tambah Peserta'"></span>
-            </h3>
+         class="fixed inset-0 z-[2000] overflow-y-auto bg-black/60 backdrop-blur-sm" x-transition>
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div id="modal-peserta" class="relative bg-white w-full max-w-lg rounded-lg shadow-2xl p-6" @click.away="modals.peserta.open = false">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="bg-blue-100 text-blue-600 p-1 rounded">👤</span>
+                    <span x-text="modals.peserta.id ? 'Edit Peserta' : 'Tambah Peserta'"></span>
+                </h3>
 
-            <div class="space-y-3 mb-4">
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Nama Peserta *</label>
-                    <input type="text" x-model="modals.peserta.form.nama_peserta"
-                           class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Email *</label>
-                    <input type="email" x-model="modals.peserta.form.email_peserta"
-                           class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">No HP</label>
-                    <input type="text" x-model="modals.peserta.form.no_hp"
-                           class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Perusahaan</label>
-                    <select id="peserta-perusahaan" class="w-full"></select>
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Sales</label>
-                    <select x-model="modals.peserta.form.id_sales"
-                            class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="">- Tidak ada -</option>
-                        <template x-for="s in salesList" :key="s.kode">
-                            <option :value="s.kode" x-text="s.kode + ' - ' + s.nama"></option>
-                        </template>
-                    </select>
-                </div>
-            </div>
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Nama Peserta *</label>
+                        <input type="text" x-model="modals.peserta.form.nama_peserta"
+                               class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Email *</label>
+                        <input type="email" x-model="modals.peserta.form.email_peserta"
+                               class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
 
-            <div class="flex justify-end gap-2">
-                <button type="button" @click="modals.peserta.open = false" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded">Batal</button>
-                <button type="button" @click="savePeserta()" :disabled="isSavingPeserta"
-                        class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded font-bold shadow disabled:opacity-60">
-                    <span x-show="!isSavingPeserta">Simpan</span>
-                    <span x-show="isSavingPeserta">...</span>
-                </button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="min-w-0">
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">No HP</label>
+                            <input type="text" x-model="modals.peserta.form.no_hp"
+                                   class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="min-w-0">
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Domisili</label>
+                            <input type="text" x-model="modals.peserta.form.domisili"
+                                   class="w-full border border-slate-300 rounded p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Perusahaan</label>
+                        <select id="peserta-perusahaan" class="w-full"></select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Kategori Perusahaan</label>
+                        <input type="text" readonly tabindex="-1" :value="modals.peserta.kategori || '-'"
+                               class="w-full border border-slate-200 rounded p-2.5 text-sm bg-gray-100 text-slate-500 cursor-not-allowed outline-none">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Sales</label>
+                        <select x-model="modals.peserta.form.id_sales"
+                                class="w-full border border-slate-300 rounded p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">- Tidak ada -</option>
+                            <template x-for="s in salesList" :key="s.kode">
+                                <option :value="s.kode" x-text="s.kode + ' - ' + s.nama"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="min-w-0">
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Info</label>
+                            <select id="peserta-info" class="w-full"></select>
+                        </div>
+                        <div class="min-w-0">
+                            <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Paket</label>
+                            <select id="peserta-paket" class="w-full"></select>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400">* Info dan Paket: pilih dari daftar atau ketik sendiri lalu tekan Enter.</p>
+                </div>
+
+                <div class="flex justify-end gap-2">
+                    <button type="button" @click="modals.peserta.open = false" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded">Batal</button>
+                    <button type="button" @click="savePeserta()" :disabled="isSavingPeserta"
+                            class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded font-bold shadow disabled:opacity-60">
+                        <span x-show="!isSavingPeserta">Simpan</span>
+                        <span x-show="isSavingPeserta">...</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -402,17 +480,26 @@
             pesertaUrl: config.pesertaUrl ?? '',
             webinars: [],
             salesList: [],
+            infoOptions: [],
+            paketOptions: [],
             selectedMapping: '',
             metaLoaded: false,
             peserta: [],
             isLoadingPeserta: false,
             isSavingPeserta: false,
             search: '',
+            page: 1,
+            perPage: 10,
 
             modals: {
                 daily: { open: false, date: null, content: '', mappingId: null },
                 event: { open: false, mappingId: null, monthName: '', form: { title: '', speaker: '', desc: '' } },
-                peserta: { open: false, id: null, form: { nama_peserta: '', email_peserta: '', no_hp: '', id_perusahaan: '', id_sales: '' } }
+                peserta: {
+                    open: false,
+                    id: null,
+                    kategori: '', // readonly, hanya tampilan (dari perusahaan->kategori_perusahaan)
+                    form: { nama_peserta: '', email_peserta: '', no_hp: '', domisili: '', id_perusahaan: '', id_sales: '', info: '', paket: '' }
+                }
             },
 
             get progressPercent() {
@@ -436,6 +523,33 @@
                     (p.email_peserta || '').toLowerCase().includes(q) ||
                     (p.perusahaan_nama || '').toLowerCase().includes(q)
                 );
+            },
+
+            // ---------- PAGINATION ----------
+            get totalPages() {
+                return Math.max(1, Math.ceil(this.filteredPeserta.length / this.perPage));
+            },
+            get paginatedPeserta() {
+                const start = (this.page - 1) * this.perPage;
+                return this.filteredPeserta.slice(start, start + this.perPage);
+            },
+            get pageFrom() {
+                return this.filteredPeserta.length === 0 ? 0 : (this.page - 1) * this.perPage + 1;
+            },
+            get pageTo() {
+                return Math.min(this.page * this.perPage, this.filteredPeserta.length);
+            },
+            // Maksimal 5 nomor halaman di sekitar halaman aktif
+            get pageNumbers() {
+                const total = this.totalPages;
+                const end = Math.min(total, Math.max(1, this.page - 2) + 4);
+                const start = Math.max(1, end - 4);
+                const pages = [];
+                for (let i = start; i <= end; i++) pages.push(i);
+                return pages;
+            },
+            goToPage(n) {
+                this.page = Math.min(Math.max(1, n), this.totalPages);
             },
 
             // ---------- TAB ----------
@@ -471,6 +585,8 @@
                     const data = await this.pesertaRequest(`${this.pesertaUrl}/meta`, 'GET');
                     this.webinars = data.webinars;
                     this.salesList = data.sales;
+                    this.infoOptions = data.info_options;
+                    this.paketOptions = data.paket_options;
                     await this.$nextTick();
                     this.selectedMapping = data.default_mapping_id ?? '';
                     this.metaLoaded = true;
@@ -480,6 +596,16 @@
                     this.isLoadingPeserta = false;
                 }
             },
+            // Segarkan pilihan Info/Paket (nilai baru yang diketik sendiri ikut masuk daftar)
+            async refreshChoiceOptions() {
+                try {
+                    const data = await this.pesertaRequest(`${this.pesertaUrl}/meta`, 'GET');
+                    this.infoOptions = data.info_options;
+                    this.paketOptions = data.paket_options;
+                } catch (e) {
+                    console.error(e);
+                }
+            },
             async loadPeserta() {
                 if (!this.selectedMapping) { this.peserta = []; return; }
                 this.isLoadingPeserta = true;
@@ -487,6 +613,8 @@
                     this.peserta = await this.pesertaRequest(
                         `${this.pesertaUrl}?year_mapping_id=${this.selectedMapping}`, 'GET'
                     );
+                    // Kalau data di halaman terakhir terhapus, mundur ke halaman terakhir yang masih ada
+                    if (this.page > this.totalPages) this.page = this.totalPages;
                 } catch (e) {
                     alert('Gagal memuat peserta: ' + e.message);
                 } finally {
@@ -500,15 +628,24 @@
                 }
 
                 this.modals.peserta.id = row ? row.id : null;
+                this.modals.peserta.kategori = row ? (row.kategori_perusahaan || '') : '';
                 this.modals.peserta.form = {
                     nama_peserta: row ? row.nama_peserta : '',
                     email_peserta: row ? row.email_peserta : '',
                     no_hp: row ? (row.no_hp || '') : '',
+                    domisili: row ? (row.domisili || '') : '',
                     id_perusahaan: row ? (row.id_perusahaan || '') : '',
-                    id_sales: row ? (row.id_sales || '') : ''
+                    id_sales: row ? (row.id_sales || '') : '',
+                    info: row ? (row.info || '') : '',
+                    paket: row ? (row.paket || '') : ''
                 };
                 this.modals.peserta.open = true;
-                this.$nextTick(() => this.initPerusahaanSelect(row));
+
+                this.$nextTick(() => {
+                    this.initPerusahaanSelect(row);
+                    this.initTagSelect('#peserta-info', this.infoOptions, this.modals.peserta.form.info, 'info');
+                    this.initTagSelect('#peserta-paket', this.paketOptions, this.modals.peserta.form.paket, 'paket');
+                });
             },
             initPerusahaanSelect(row) {
                 const $ = window.jQuery;
@@ -518,6 +655,7 @@
                     return;
                 }
                 if ($sel.data('select2')) $sel.select2('destroy');
+                $sel.off('.peserta');
 
                 // Option kosong pertama dibutuhkan untuk placeholder + allowClear
                 $sel.empty().append(new Option('', '', false, false));
@@ -525,7 +663,6 @@
                     $sel.append(new Option(row.perusahaan_nama || ('ID ' + row.id_perusahaan), row.id_perusahaan, true, true));
                 }
 
-                const url = `${this.pesertaUrl}/perusahaan`;
                 $sel.select2({
                     theme: 'bootstrap-5',
                     width: '100%',
@@ -533,7 +670,7 @@
                     allowClear: true,
                     dropdownParent: $('#modal-peserta'),
                     ajax: {
-                        url: url,
+                        url: `${this.pesertaUrl}/perusahaan`,
                         dataType: 'json',
                         delay: 250,
                         data: params => ({ q: params.term || '', page: params.page || 1 }),
@@ -544,8 +681,62 @@
                     }
                 });
 
-                $sel.off('change.peserta').on('change.peserta', () => {
-                    this.modals.peserta.form.id_perusahaan = $sel.val() || '';
+                // Kategori readonly ikut berubah mengikuti perusahaan yang dipilih
+                $sel.on('select2:select.peserta', e => {
+                    this.modals.peserta.form.id_perusahaan = e.params.data.id;
+                    this.modals.peserta.kategori = e.params.data.kategori || '';
+                });
+                $sel.on('select2:clear.peserta', () => {
+                    this.modals.peserta.form.id_perusahaan = '';
+                    this.modals.peserta.kategori = '';
+                });
+            },
+            // Select2 pilihan + bisa ketik sendiri; nilai yang sama (beda huruf besar/kecil) tidak dibuat ganda
+            initTagSelect(selector, options, current, field) {
+                const $ = window.jQuery;
+                const $sel = $(selector);
+                if (!$sel.length || !$.fn.select2) {
+                    console.error('jQuery / Select2 belum termuat');
+                    return;
+                }
+                if ($sel.data('select2')) $sel.select2('destroy');
+                $sel.off('.peserta');
+
+                $sel.empty().append(new Option('', '', false, false));
+
+                const seen = new Set();
+                const addOption = v => {
+                    const key = String(v || '').trim().toLowerCase();
+                    if (!key || seen.has(key)) return;
+                    seen.add(key);
+                    $sel.append(new Option(v, v, false, false));
+                };
+                options.forEach(addOption);
+                if (current) addOption(current);
+
+                // Cocokkan nilai tersimpan dengan option tanpa peduli huruf besar/kecil
+                const match = $sel.find('option').toArray()
+                    .find(o => o.value.toLowerCase() === (current || '').toLowerCase());
+                $sel.val(match ? match.value : '');
+
+                $sel.select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Pilih / ketik sendiri...',
+                    allowClear: true,
+                    tags: true,
+                    dropdownParent: $('#modal-peserta'),
+                    createTag: params => {
+                        const term = (params.term || '').trim().replace(/\s+/g, ' ');
+                        if (term === '') return null;
+                        const exists = $sel.find('option').toArray()
+                            .some(o => o.value.toLowerCase() === term.toLowerCase());
+                        return exists ? null : { id: term, text: term };
+                    }
+                });
+
+                $sel.on('change.peserta', () => {
+                    this.modals.peserta.form[field] = $sel.val() || '';
                 });
             },
             async savePeserta() {
@@ -563,6 +754,7 @@
                     }
                     this.modals.peserta.open = false;
                     await this.loadPeserta();
+                    this.refreshChoiceOptions();
                 } catch (e) {
                     alert('Gagal menyimpan: ' + e.message);
                 } finally {
@@ -574,6 +766,7 @@
                 try {
                     await this.pesertaRequest(`${this.pesertaUrl}/${row.id}`, 'DELETE');
                     await this.loadPeserta();
+                    this.refreshChoiceOptions();
                 } catch (e) {
                     alert('Gagal menghapus: ' + e.message);
                 }
