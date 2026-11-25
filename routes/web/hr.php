@@ -372,15 +372,25 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
 
     Route::prefix('structure')->name('structure.')->group(function () {
         Route::get('/', [StructureInixindoController::class, 'index'])->name('index');
-        Route::get('/api/tree', [StructureInixindoController::class, 'apiTree'])->name('api.tree');
-        Route::post('/sync', [StructureInixindoController::class, 'sync'])->name('sync');
-        Route::post('/reorder', [StructureInixindoController::class, 'reorder'])->name('reorder');
-        Route::put('/update/{id}', [StructureInixindoController::class, 'update'])->name('update');
-        Route::delete('/{id}', [StructureInixindoController::class, 'destroy'])->name('destroy');
-        Route::post('/store', [StructureInixindoController::class, 'store'])->name('store');
-        Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
-        Route::post('/multi-parent', [StructureInixindoController::class, 'setMultiParent'])->name('multiParent');
         Route::put('/toggle-menus', [StructureInixindoController::class, 'toggleMenus'])->name('toggle.menus');
+
+        Route::get('/karyawans', [StructureInixindoController::class, 'getKaryawans'])->name('karyawans');
+        Route::get('/jabatans', [StructureInixindoController::class, 'getJabatans'])->name('jabatans');
+
+        Route::get('/charts', [StructureInixindoController::class, 'charts'])->name('charts.index');
+        Route::post('/charts', [StructureInixindoController::class, 'storeChart'])->name('charts.store');
+        Route::put('/charts/{chart}', [StructureInixindoController::class, 'updateChart'])->name('charts.update');
+        Route::delete('/charts/{chart}', [StructureInixindoController::class, 'destroyChart'])->name('charts.destroy');
+        Route::get('/charts/{chart}/tree', [StructureInixindoController::class, 'apiTree'])->name('charts.tree');
+        Route::post('/charts/{chart}/nodes', [StructureInixindoController::class, 'store'])->name('nodes.store');
+
+        Route::put('/nodes/{id}', [StructureInixindoController::class, 'update'])->name('nodes.update');
+        Route::delete('/nodes/{id}', [StructureInixindoController::class, 'destroy'])->name('nodes.destroy');
+        Route::post('/nodes/{id}/move', [StructureInixindoController::class, 'move'])->name('nodes.move');
+        Route::post('/nodes/{id}/parents', [StructureInixindoController::class, 'setAdditionalParents'])->name('nodes.parents');
+
+        Route::post('/nodes/positions', [StructureInixindoController::class, 'savePositions'])->name('nodes.positions');
+        Route::post('/charts/{chart}/reset-positions', [StructureInixindoController::class, 'resetPositions'])->name('charts.reset.positions');
     });
 
     Route::prefix('job-desk')->name('job_desk.')->group(function () {

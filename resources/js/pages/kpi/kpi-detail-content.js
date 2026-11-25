@@ -408,17 +408,25 @@
     function buildGapKompetensiForm(data, canEdit, csrfToken) {
         const list = Array.isArray(data.karyawan) ? data.karyawan : [];
         const disabledAttr = canEdit ? '' : 'disabled';
+        const targetGap = Number(data.nilai_target ?? 0);
 
         const rows = list.map((item, i) => {
             const skala = item.skala_kemampuan ?? null;
-            const badge = skala === null
-                ? '<span class="badge bg-secondary">Belum dinilai</span>'
-                : `<span class="badge bg-info text-dark">${f1(skala * 10)}%</span>`;
+
+            let badge;
+            if (skala === null) {
+                badge = '<span class="badge bg-secondary">Belum dinilai</span>';
+            } else {
+                // [INVERSE] Gap individu = 100 - kemampuan. Bagus bila gap <= target.
+                const gapIndividu = Math.max(0, 100 - (Number(skala) * 10));
+                const ok = gapIndividu <= targetGap;
+                badge = `<span class="badge bg-${ok ? 'success' : 'danger'}">Gap ${f1(gapIndividu)}%</span>`;
+            }
 
             return `
                 <div class="row mb-2 align-items-center p-2 rounded">
                     <div class="col-md-6 d-flex justify-content-between align-items-center">
-                        <span>${item.nama_lengkap ?? '-'}</span>${badge}
+                        <span>${esc(item.nama_lengkap ?? '-')}</span>${badge}
                     </div>
                     <div class="col-md-6">
                         <input type="number" min="1" max="10" step="0.5" class="form-control"
@@ -433,7 +441,7 @@
         return `
             <div class="mt-4"><div class="card shadow-sm border-0 rounded-4"><div class="card-body">
                 <h6 class="fw-semibold mb-1">Penilaian Kemampuan Tim</h6>
-                <small class="text-muted d-block mb-3">Isi skala 1-10 (8 = 80%). Gap dihitung dari rata-rata seluruh anggota tim.</small>
+                <small class="text-muted d-block mb-3">Isi skala 1-10 (8 = 80%). Gap dihitung dari rata-rata seluruh anggota tim. Hijau berarti gap individu masih dalam batas target (${f1(targetGap)}%), merah berarti melebihi batas.</small>
                 <form id="formGapKompetensi">
                     <input type="hidden" name="_token" value="${csrfToken}">
                     <div class="row mb-2 fw-semibold text-muted border-bottom pb-2">
@@ -452,6 +460,7 @@
     function buildStatistic(data, dd, cond, mode, pesertaPuas, isPesertaPuas) {
         const cfg = CFG[mode];
         if (cfg.manualRoutes.includes(cond)) return '';
+        if (mode === 'index' && isPesertaPuas) return '';
         if (mode === 'index' && cond === 'performa kpi departemen') return performaHtml(dd);
         if (cond === 'inovation adaption rate') return inovasiHtml(dd);
         if (cond === 'laporan analisis keuangan') return laporanHtml(dd, mode);
@@ -1230,10 +1239,13 @@
             const existing = Chart.getChart ? Chart.getChart(doughnutCtx) : null;
             if (existing) existing.destroy();
             const pie = dd.pie_chart || { above: 0, below: 0 };
+            const labels = dd.is_inverse === true
+                ? ['Dalam batas target', 'Melebihi target']
+                : ['Above', 'Below'];
             new Chart(doughnutCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Above', 'Below'],
+                    labels,
                     datasets: [{ label: 'Jumlah', data: [pie.above ?? 0, pie.below ?? 0], backgroundColor: ['#B66DFF', '#FE7C96'], hoverOffset: 4 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
@@ -1241,7 +1253,7 @@
         }
 
         bindTargetInputs(mode);
-        if (mode === 'index') bindGapForm();
+        bindGapForm();
         bindStatistic(dd);
 
         document.querySelectorAll('.btn-toggle-desc').forEach(btn => {

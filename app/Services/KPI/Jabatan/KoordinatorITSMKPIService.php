@@ -43,15 +43,25 @@ class KoordinatorITSMKPIService
 
         foreach ($dataSurvey as $survey) {
             $nilaiQ1 = match ($survey->q1) {
-                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+                1 => 10,
+                2 => 20,
+                3 => 30,
+                4 => 40,
+                default => 0,
             };
 
             $nilaiQ4 = match ($survey->q4) {
-                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+                1 => 10,
+                2 => 20,
+                3 => 30,
+                4 => 40,
+                default => 0,
             };
 
             $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20, 'Tidak' => 10, default => 0,
+                'Ya' => 20,
+                'Tidak' => 10,
+                default => 0,
             };
 
             $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
@@ -101,15 +111,25 @@ class KoordinatorITSMKPIService
 
         foreach ($dataSurvey as $survey) {
             $nilaiQ1 = match ($survey->q1) {
-                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+                1 => 10,
+                2 => 20,
+                3 => 30,
+                4 => 40,
+                default => 0,
             };
 
             $nilaiQ4 = match ($survey->q4) {
-                1 => 10, 2 => 20, 3 => 30, 4 => 40, default => 0,
+                1 => 10,
+                2 => 20,
+                3 => 30,
+                4 => 40,
+                default => 0,
             };
 
             $nilaiQ2 = match ($survey->q2) {
-                'Ya' => 20, 'Tidak' => 10, default => 0,
+                'Ya' => 20,
+                'Tidak' => 10,
+                default => 0,
             };
 
             $totalBaris = min(100, max(0, $nilaiQ1 + $nilaiQ2 + $nilaiQ4));
@@ -117,7 +137,9 @@ class KoordinatorITSMKPIService
 
             $totalResponden++;
             $isPuas = $skor >= 3.0 ? 100 : 0;
-            if ($skor >= 3.0) $respondenPuas++;
+            if ($skor >= 3.0) {
+                $respondenPuas++;
+            }
 
             $date = Carbon::parse($survey->created_at);
             $monthKey = $date->format('Y-m');
@@ -295,16 +317,14 @@ class KoordinatorITSMKPIService
     private function hitungGapDariSkor($skor): array
     {
         $avgKemampuan = (float) $skor->avg('presentase_kemampuan');
-        $avgStandar   = (float) $skor->avg('presentase_standar');
+        $avgStandar = (float) $skor->avg('presentase_standar');
 
-        $gap = $avgStandar > 0
-            ? round(min(max($avgStandar - $avgKemampuan, 0), 100), 1)
-            : 0;
+        $gap = $avgStandar > 0 ? round(min(max($avgStandar - $avgKemampuan, 0), 100), 1) : 0;
 
         return [
-            'gap'            => $gap,
-            'avg_kemampuan'  => round($avgKemampuan, 1),
-            'avg_standar'    => round($avgStandar, 1),
+            'gap' => $gap,
+            'avg_kemampuan' => round($avgKemampuan, 1),
+            'avg_standar' => round($avgStandar, 1),
         ];
     }
 
@@ -312,17 +332,18 @@ class KoordinatorITSMKPIService
     {
         $detail = $item->detailTargetKPI->first();
         if (!$detail) {
-            return null;
+            return 100;
         }
 
         $skor = $this->ambilSkorTimGap($item->detailTargetKPI->pluck('id'));
 
+        // Belum ada penilaian = gap maksimal (100), supaya tidak terbaca berhasil
         if ($skor->isEmpty()) {
-            return null;
+            return 100;
         }
 
-        // Progress = rata-rata kemampuan langsung (contoh: 77.5)
-        return $this->hitungGapDariSkor($skor)['avg_kemampuan'];
+        // Progress = persentase gap (skala 8 => gap 20, skala 1 => gap 90)
+        return $this->hitungGapDariSkor($skor)['gap'];
     }
 
     public function calculatePersentaseGapKompetensiDetail($itemDetail, $personId = null)
@@ -345,21 +366,28 @@ class KoordinatorITSMKPIService
         }
 
         $hasil = $this->hitungGapDariSkor($skor);
-        $progress = $hasil['avg_kemampuan']; // 77.5
-        $gap      = $hasil['gap'];          // 100 - 77.5 = 22.5
+        $progress = $hasil['gap']; // contoh: 90 bila semua diisi 1
 
-        $above = $skor->filter(fn($s) => $s->presentase_kemampuan >= $s->presentase_standar)->count();
+        // positif = masih di bawah batas (bagus), negatif = melebihi batas
+        $selisih = round($nilaiTarget - $progress, 1);
+        $gapStr = rtrim(rtrim(sprintf('%.1f', $selisih), '0'), '.');
+        if ($gapStr === '' || $gapStr === '-0') {
+            $gapStr = '0';
+        }
+
+        // Karyawan "tercapai" = gap individunya <= target
+        $above = $skor->filter(fn($s) => max($s->presentase_standar - $s->presentase_kemampuan, 0) <= $nilaiTarget)->count();
         $below = $skor->count() - $above;
 
         return [
-            'progress'       => $progress,                    // 77.5
-            'gap'            => rtrim(rtrim(sprintf('%.1f', $gap), '0'), '.'), // 22.5
-            'is_inverse'     => false,                         // semakin tinggi semakin bagus
-            'target_maks'    => $nilaiTarget,
-            'tercapai'       => $progress >= $nilaiTarget,    // sesuaikan target di DataTarget
-            'avg_kemampuan'  => $hasil['avg_kemampuan'],
+            'progress' => $progress,
+            'gap' => $gapStr,
+            'is_inverse' => true,
+            'target_maks' => $nilaiTarget,
+            'tercapai' => $progress <= $nilaiTarget,
+            'avg_kemampuan' => $hasil['avg_kemampuan'],
             'jumlah_dinilai' => $skor->count(),
-            'pie_chart'      => ['above' => $above, 'below' => $below],
+            'pie_chart' => ['above' => $above, 'below' => $below],
             'monthly_data' => [],
             'daily_breakdown_per_month' => [],
             'monthly_progress' => [],

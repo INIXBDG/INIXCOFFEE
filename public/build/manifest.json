@@ -51,7 +51,6 @@
     "file": "assets/dashboard-CipFuv-a.js",
     "name": "dashboard",
     "src": "resources/js/pages/dashboard.js",
-    "isEntry": true,
     "isDynamicEntry": true
   },
   "resources/js/pages/itsm-sla.js": {

@@ -9,11 +9,25 @@ class OrgStructure extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['jabatan', 'divisi', 'parent_id', 'sort_order', 'karyawan_ids', 'additional_parents'];
+    protected $fillable = [
+        'chart_id',
+        'jabatan',
+        'divisi',
+        'parent_id',
+        'sort_order',
+        'karyawan_ids',
+        'additional_parents',
+    ];
+
     protected $casts = [
         'karyawan_ids' => 'array',
         'additional_parents' => 'array',
     ];
+
+    public function chart()
+    {
+        return $this->belongsTo(OrgChart::class, 'chart_id');
+    }
 
     public function parent()
     {
@@ -23,16 +37,5 @@ class OrgStructure extends Model
     public function children()
     {
         return $this->hasMany(OrgStructure::class, 'parent_id')->orderBy('sort_order');
-    }
-
-    public function karyawans()
-    {
-        return $this->hasMany(karyawan::class, 'jabatan', 'jabatan')
-            ->where(function ($query) {
-                $query->whereIn('jabatan', ['Direktur', 'Direktur Utama'])->where('status_aktif', '1');
-            })
-            ->orWhere(function ($query) {
-                $query->where('status_aktif', '1')->where('jabatan', '!=', 'Outsource')->where('jabatan', '!=', 'Pilih Jabatan')->where('kode_karyawan', 'NOT LIKE', 'OL%')->whereNotNull('nip');
-            });
     }
 }

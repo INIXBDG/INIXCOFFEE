@@ -41,10 +41,10 @@
                     </button>
                 </div>
             </div>
+            <div class="px-4 pb-2 d-none" id="chartTabs"></div>
             <div id="exportWrapper" style="position: relative; background: #f8fafc;">
                 <div class="structure-header" id="structureHeader">
-                    <input type="text" id="chartTitle" value="Struktur Inixindo Bandung"
-                        placeholder="Klik untuk ubah judul" readonly>
+                    <input type="text" id="chartTitle" value="" placeholder="Struktur Organisasi" readonly>
                 </div>
                 <div id="structureContainer" class="structure-container">
                     <div id="structureChart" class="structure-chart"></div>
@@ -124,7 +124,7 @@
         .structure-chart {
             position: relative;
             display: inline-block;
-            padding: 60px 60px 100px;
+            padding: 0;
             min-width: 100%;
             min-height: 100%;
             transform-origin: 0 0;
@@ -133,6 +133,9 @@
         .org-node {
             position: absolute;
             width: 210px;
+            height: 186px;
+            display: flex;
+            flex-direction: column;
             background: #fff;
             border: 2px solid #3b82f6;
             border-radius: 12px;
@@ -143,9 +146,26 @@
         }
 
         .org-node .node-header {
-            padding: 12px 12px 8px;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px 6px;
             text-align: center;
             border-bottom: 1px solid #e2e8f0;
+        }
+
+        .org-title {
+            font-weight: 700;
+            font-size: .83rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
         }
 
         .org-node .node-actions {
@@ -274,10 +294,39 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, .22);
         }
 
-        .browser-fullscreen .structure-container {
-            height: calc(100vh - 130px) !important;
-            max-height: calc(100vh - 130px) !important;
-        }
+.browser-fullscreen {
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-fullscreen .card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-fullscreen .card-body > :not(#exportWrapper) {
+    flex: 0 0 auto;
+}
+
+.browser-fullscreen #exportWrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-fullscreen .structure-header {
+    flex: 0 0 auto;
+}
+
+.browser-fullscreen .structure-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+    max-height: none !important;
+}
 
         .karyawan-card {
             display: flex;
@@ -381,10 +430,6 @@
         }
 
         @media (max-width: 768px) {
-            .org-node {
-                width: 170px;
-            }
-
             .structure-container {
                 height: 480px;
                 max-height: 60vh;
@@ -447,32 +492,61 @@
             overflow: hidden;
             /* ubah dari 'auto' ke 'hidden' */
         }
-    </style>
 
+        .chart-tab {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #475569;
+            font-size: .8rem;
+            font-weight: 500;
+            padding: .35rem .85rem;
+            border-radius: 8px;
+            margin-right: .35rem;
+        }
+
+        .chart-tab.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const NS = 'http://www.w3.org/2000/svg';
             const NODE_W = 210;
-            const NODE_H = 130;
-            const LEVEL_H = 220;
-            const GAP = 80;
-            const ZOOM_MIN = 0.2;
+            const NODE_H = 186;
+            const GAP_X = 40;
+            const GAP_Y = 90;
+            const PAD = 60;
+            const ZOOM_MIN = 0.1;
             const ZOOM_MAX = 3.0;
             const ZOOM_STEP = 0.12;
+            const STORE_KEY = 'employee_structure_active_chart';
 
-            let structuresData = [];
-            let allPositions = [];
-
-            // --- Transform State (single source of truth) ---
-            let tx = 0,
-                ty = 0,
-                tz = 1.0;
-
+            const apiTree = "{{ route('employee.structure.api.tree') }}";
             const container = document.getElementById('structureContainer');
             const chart = document.getElementById('structureChart');
-            const apiTree = "{{ route('employee.structure.api.tree') }}";
 
-            // Apply transform matrix to chart
+            const state = {
+                charts: [],
+                chartId: null,
+                tree: [],
+                flat: [],
+                byId: new Map(),
+                layout: new Map(),
+                W: 0,
+                H: 0,
+            };
+
+            let tx = 0, ty = 0, tz = 1.0;
+
+            const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+
+            // ---------- Pan / zoom ----------
             const applyTransform = () => {
                 chart.style.transform = `matrix(${tz},0,0,${tz},${tx},${ty})`;
                 chart.style.transformOrigin = '0 0';
@@ -480,202 +554,151 @@
                 requestAnimationFrame(drawMiniMap);
             };
 
-            // Zoom centered on a point in container coordinates
             const zoomAt = (newZoom, cx, cy) => {
                 newZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, newZoom));
                 newZoom = Math.round(newZoom * 100) / 100;
-                // Point in chart space before zoom
                 const wx = (cx - tx) / tz;
                 const wy = (cy - ty) / tz;
                 tz = newZoom;
-                // Keep that chart-space point fixed under cursor
                 tx = cx - wx * tz;
                 ty = cy - wy * tz;
                 applyTransform();
             };
 
-            const zoomCenter = (newZoom) => {
-                const cx = container.clientWidth / 2;
-                const cy = container.clientHeight / 2;
-                zoomAt(newZoom, cx, cy);
-            };
+            const zoomCenter = (z) => zoomAt(z, container.clientWidth / 2, container.clientHeight / 2);
 
-            // ---- Pan with pointer events ----
             let panStart = null;
 
-            container.addEventListener('pointerdown', e => {
-                // Only pan on background, not on nodes/buttons
+            container.addEventListener('pointerdown', (e) => {
                 if (e.target.closest('.org-node')) return;
                 e.preventDefault();
                 container.setPointerCapture(e.pointerId);
-                panStart = {
-                    px: e.clientX,
-                    py: e.clientY,
-                    tx,
-                    ty
-                };
+                panStart = { px: e.clientX, py: e.clientY, tx, ty };
                 container.classList.add('panning');
             });
 
-            container.addEventListener('pointermove', e => {
+            container.addEventListener('pointermove', (e) => {
                 if (!panStart) return;
                 tx = panStart.tx + (e.clientX - panStart.px);
                 ty = panStart.ty + (e.clientY - panStart.py);
                 applyTransform();
             });
 
-            container.addEventListener('pointerup', () => {
+            const endPan = () => {
                 panStart = null;
                 container.classList.remove('panning');
-            });
-            container.addEventListener('pointercancel', () => {
-                panStart = null;
-                container.classList.remove('panning');
-            });
+            };
+            container.addEventListener('pointerup', endPan);
+            container.addEventListener('pointercancel', endPan);
 
-            // ---- Wheel zoom ----
-            container.addEventListener('wheel', e => {
+            container.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const rect = container.getBoundingClientRect();
-                const cx = e.clientX - rect.left;
-                const cy = e.clientY - rect.top;
-                const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-                zoomAt(tz + delta, cx, cy);
-            }, {
-                passive: false
-            });
+                zoomAt(tz + (e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP), e.clientX - rect.left, e.clientY - rect.top);
+            }, { passive: false });
 
-            // ---- Touch pinch zoom ----
             let lastPinchDist = null;
 
-            container.addEventListener('touchstart', e => {
+            container.addEventListener('touchstart', (e) => {
                 if (e.touches.length === 2) {
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    lastPinchDist = Math.hypot(dx, dy);
+                    lastPinchDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
                 }
-            }, {
-                passive: true
-            });
+            }, { passive: true });
 
-            container.addEventListener('touchmove', e => {
-                if (e.touches.length === 2 && lastPinchDist) {
-                    e.preventDefault();
-                    const dx = e.touches[0].clientX - e.touches[1].clientX;
-                    const dy = e.touches[0].clientY - e.touches[1].clientY;
-                    const dist = Math.hypot(dx, dy);
-                    const scale = dist / lastPinchDist;
-                    const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - container
-                        .getBoundingClientRect().left;
-                    const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - container
-                        .getBoundingClientRect().top;
-                    zoomAt(tz * scale, cx, cy);
-                    lastPinchDist = dist;
-                }
-            }, {
-                passive: false
-            });
+            container.addEventListener('touchmove', (e) => {
+                if (e.touches.length !== 2 || !lastPinchDist) return;
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const rect = container.getBoundingClientRect();
+                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+                zoomAt(tz * (dist / lastPinchDist), cx, cy);
+                lastPinchDist = dist;
+            }, { passive: false });
 
-            container.addEventListener('touchend', () => {
-                lastPinchDist = null;
-            });
+            container.addEventListener('touchend', () => { lastPinchDist = null; });
 
-            // ---- Zoom buttons ----
             document.getElementById('btnZoomIn').addEventListener('click', () => zoomCenter(tz + ZOOM_STEP));
             document.getElementById('btnZoomOut').addEventListener('click', () => zoomCenter(tz - ZOOM_STEP));
 
-            // ---- Fit to screen ----
             function fitToScreen() {
+                if (!state.flat.length) return;
                 const cw = container.clientWidth - 80;
                 const ch = container.clientHeight - 80;
-                const iw = parseFloat(chart.style.width) || chart.scrollWidth;
-                const ih = parseFloat(chart.style.height) || chart.scrollHeight;
-                const target = Math.min(cw / iw, ch / ih, 1);
-                tz = Math.max(ZOOM_MIN, target);
-                tx = (container.clientWidth - iw * tz) / 2;
+                tz = Math.max(ZOOM_MIN, Math.min(cw / state.W, ch / state.H, 1));
+                tx = (container.clientWidth - state.W * tz) / 2;
                 ty = 40;
                 applyTransform();
             }
 
             document.getElementById('btnFitScreen').addEventListener('click', fitToScreen);
 
-            // ---- Keyboard shortcuts ----
-            document.addEventListener('keydown', e => {
+            document.addEventListener('keydown', (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-                if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
-                    e.preventDefault();
-                    zoomCenter(tz + ZOOM_STEP);
-                }
-                if ((e.ctrlKey || e.metaKey) && e.key === '-') {
-                    e.preventDefault();
-                    zoomCenter(tz - ZOOM_STEP);
-                }
-                if ((e.ctrlKey || e.metaKey) && e.key === '0') {
-                    e.preventDefault();
-                    fitToScreen();
-                }
+                if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) { e.preventDefault(); zoomCenter(tz + ZOOM_STEP); }
+                if ((e.ctrlKey || e.metaKey) && e.key === '-') { e.preventDefault(); zoomCenter(tz - ZOOM_STEP); }
+                if ((e.ctrlKey || e.metaKey) && e.key === '0') { e.preventDefault(); fitToScreen(); }
             });
 
-            // ---- Level filter ----
-            document.getElementById('levelFilter').addEventListener('change', applyLevelFilter);
-
+            // ---------- Level filter ----------
             function applyLevelFilter() {
                 const val = document.getElementById('levelFilter').value;
-                document.querySelectorAll('.org-node').forEach(node => {
+                document.querySelectorAll('.org-node').forEach((node) => {
                     node.classList.remove('level-hidden');
                     if (val === 'all') return;
                     const lvl = parseInt(node.dataset.level, 10);
                     if (val === '4') {
                         if (lvl < 4) node.classList.add('level-hidden');
-                    } else {
-                        if (String(lvl) !== val) node.classList.add('level-hidden');
+                    } else if (String(lvl) !== val) {
+                        node.classList.add('level-hidden');
                     }
                 });
             }
+            document.getElementById('levelFilter').addEventListener('change', applyLevelFilter);
 
-            // ---- MiniMap ----
+            // ---------- MiniMap ----------
             function drawMiniMap() {
                 const canvas = document.getElementById('miniMapCanvas');
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (!state.W || !state.H) return;
 
-                const cw = parseFloat(chart.style.width) || 1;
-                const ch = parseFloat(chart.style.height) || 1;
-                const sx = canvas.width / cw;
-                const sy = canvas.height / ch;
+                const sx = canvas.width / state.W;
+                const sy = canvas.height / state.H;
 
                 ctx.fillStyle = '#93c5fd';
-                document.querySelectorAll('.org-node').forEach(node => {
-                    ctx.fillRect(
-                        parseFloat(node.style.left) * sx,
-                        parseFloat(node.style.top) * sy,
-                        NODE_W * sx, NODE_H * sy
-                    );
-                });
-
-                // Viewport rect: what's visible in container-space mapped back to chart-space
-                const vx = -tx / tz;
-                const vy = -ty / tz;
-                const vw = container.clientWidth / tz;
-                const vh = container.clientHeight / tz;
+                state.layout.forEach((p) => ctx.fillRect(p.x * sx, p.y * sy, NODE_W * sx, NODE_H * sy));
 
                 const vp = document.getElementById('miniMapViewport');
-                vp.style.left = (vx * sx) + 'px';
-                vp.style.top = (vy * sy) + 'px';
-                vp.style.width = (vw * sx) + 'px';
-                vp.style.height = (vh * sy) + 'px';
+                vp.style.left = (-tx / tz * sx) + 'px';
+                vp.style.top = (-ty / tz * sy) + 'px';
+                vp.style.width = (container.clientWidth / tz * sx) + 'px';
+                vp.style.height = (container.clientHeight / tz * sy) + 'px';
             }
 
-            // ---- Fullscreen ----
+            // ---------- Fullscreen ----------
+
+            let fitTimer;
+            new ResizeObserver(() => {
+                clearTimeout(fitTimer);
+                fitTimer = setTimeout(fitToScreen, 120);
+            }).observe(container);
+
             const mainCard = document.getElementById('mainCard');
             let isFullscreen = false;
             document.getElementById('btnFullscreen').addEventListener('click', () => {
                 isFullscreen = !isFullscreen;
                 mainCard.classList.toggle('browser-fullscreen', isFullscreen);
                 document.body.style.overflow = isFullscreen ? 'hidden' : '';
-                document.getElementById('btnFullscreen').innerHTML = isFullscreen ?
-                    '<i class="ri-fullscreen-exit-line"></i> Kecilkan' :
-                    '<i class="ri-fullscreen-line"></i> Perbesar';
+                document.getElementById('btnFullscreen').innerHTML = isFullscreen
+                    ? '<i class="fa-solid fa-minimize"></i> Kecilkan'
+                    : '<i class="fa-solid fa-maximize"></i> Perbesar';
                 setTimeout(fitToScreen, 200);
             });
 
@@ -685,310 +708,412 @@
                 resizeTimer = setTimeout(fitToScreen, 250);
             });
 
-            // ======================================================
-            // Tree layout — unchanged logic, same as your original
-            // ======================================================
-            const subtreeWidth = item => {
-                if (!item.children?.length) return NODE_W;
-                let total = 0;
-                item.children.forEach((c, i) => {
-                    total += subtreeWidth(c);
-                    if (i < item.children.length - 1) total += GAP;
+            // ---------- Data & layout (sama dengan halaman admin) ----------
+            const indexTree = () => {
+                state.flat = [];
+                state.byId = new Map();
+                const walk = (nodes) => nodes.forEach((n) => {
+                    state.flat.push(n);
+                    state.byId.set(n.id, n);
+                    walk(n.children || []);
                 });
-                return Math.max(NODE_W, total);
+                walk(state.tree);
             };
 
-            const flattenTree = items => {
-                let r = [];
-                items.forEach(item => {
-                    r.push(item);
-                    if (item.children) r = r.concat(flattenTree(item.children));
-                });
-                return r;
+            const parentIdsOf = (n) => {
+                const ids = [n.parent_id, ...(n.additional_parents || [])]
+                    .filter((v) => v !== null && v !== undefined)
+                    .map(Number)
+                    .filter((v) => v !== n.id && state.byId.has(v));
+                return [...new Set(ids)];
             };
 
-            const calcPositions = (items, level, startX) => {
-                let positions = [],
-                    curX = startX;
-                items.forEach(item => {
-                    const sw = subtreeWidth(item);
-                    const cx = curX + (sw - NODE_W) / 2;
-                    positions.push({
-                        item,
-                        x: cx,
-                        y: level * LEVEL_H + 40,
-                        level
+            const computeLayout = () => {
+                state.layout = new Map();
+                const widths = new Map();
+                const depths = new Map();
+                const visiting = new Set();
+                const usable = new Map();
+                const seen = new Set();
+                const kids = new Map();
+                const roots = [];
+                const order = (a, b) => (a.sort_order - b.sort_order) || (a.id - b.id);
+
+                const depthOf = (n) => {
+                    if (depths.has(n.id)) return depths.get(n.id);
+                    if (visiting.has(n.id)) return 0;
+                    visiting.add(n.id);
+                    const ps = parentIdsOf(n);
+                    const d = ps.length ? 1 + Math.max(...ps.map((p) => depthOf(state.byId.get(p)))) : 0;
+                    visiting.delete(n.id);
+                    depths.set(n.id, d);
+                    return d;
+                };
+
+                state.flat.forEach((n) => depthOf(n));
+
+                state.flat.forEach((n) => {
+                    const ps = parentIdsOf(n);
+                    if (!ps.length) { roots.push(n); return; }
+                    if (ps.length > 1) return;
+                    if (!kids.has(ps[0])) kids.set(ps[0], []);
+                    kids.get(ps[0]).push(n);
+                });
+
+                roots.sort(order);
+                kids.forEach((list) => list.sort(order));
+
+                const measure = (n) => {
+                    seen.add(n.id);
+                    const list = [];
+                    let total = 0;
+                    (kids.get(n.id) || []).forEach((c) => {
+                        if (seen.has(c.id)) return;
+                        total += (list.length ? GAP_X : 0) + measure(c);
+                        list.push(c);
                     });
-                    if (item.children?.length) {
-                        let childTotal = 0;
-                        item.children.forEach((c, i) => {
-                            childTotal += subtreeWidth(c);
-                            if (i < item.children.length - 1) childTotal += GAP;
-                        });
-                        const childStart = cx - (childTotal - NODE_W) / 2;
-                        positions = positions.concat(calcPositions(item.children, level + 1,
-                            childStart));
+                    usable.set(n.id, list);
+                    const w = Math.max(NODE_W, total);
+                    widths.set(n.id, w);
+                    return w;
+                };
+
+                const place = (n, left) => {
+                    const sw = widths.get(n.id);
+                    const depth = depths.get(n.id) || 0;
+                    state.layout.set(n.id, {
+                        x: left + (sw - NODE_W) / 2,
+                        y: depth * (NODE_H + GAP_Y),
+                        depth,
+                    });
+                    const list = usable.get(n.id) || [];
+                    const childrenW = list.reduce((a, c, i) => a + widths.get(c.id) + (i ? GAP_X : 0), 0);
+                    let cx = left + (sw - childrenW) / 2;
+                    list.forEach((c) => {
+                        place(c, cx);
+                        cx += widths.get(c.id) + GAP_X;
+                    });
+                };
+
+                let cursor = 0;
+                const placeRoot = (root) => {
+                    if (seen.has(root.id)) return;
+                    measure(root);
+                    place(root, cursor);
+                    cursor += widths.get(root.id) + GAP_X;
+                };
+
+                roots.forEach(placeRoot);
+
+                const collect = (n, out) => {
+                    out.push(n.id);
+                    (usable.get(n.id) || []).forEach((c) => collect(c, out));
+                    return out;
+                };
+
+                const pending = state.flat
+                    .filter((n) => parentIdsOf(n).length > 1)
+                    .sort((a, b) => depths.get(a.id) - depths.get(b.id));
+
+                let progress = true;
+                while (pending.length && progress) {
+                    progress = false;
+                    for (let i = 0; i < pending.length; i++) {
+                        const n = pending[i];
+                        const parentPos = parentIdsOf(n).map((p) => state.layout.get(p));
+                        if (parentPos.some((p) => !p)) continue;
+
+                        const centers = parentPos.map((p) => p.x + NODE_W / 2);
+                        const target = (Math.min(...centers) + Math.max(...centers)) / 2;
+                        const sw = measure(n);
+                        place(n, target - sw / 2);
+
+                        const ids = new Set(collect(n, []));
+                        const mine = [...ids].map((id) => state.layout.get(id));
+
+                        for (let guard = 0; guard < 300; guard++) {
+                            let shift = 0;
+                            state.layout.forEach((b, bid) => {
+                                if (ids.has(bid)) return;
+                                mine.forEach((a) => {
+                                    if (a.depth !== b.depth) return;
+                                    if (a.x < b.x + NODE_W + GAP_X && b.x < a.x + NODE_W + GAP_X) {
+                                        shift = Math.max(shift, b.x + NODE_W + GAP_X - a.x);
+                                    }
+                                });
+                            });
+                            if (!shift) break;
+                            mine.forEach((a) => { a.x += shift; });
+                        }
+
+                        pending.splice(i, 1);
+                        i--;
+                        progress = true;
                     }
-                    curX += sw + GAP;
-                });
-                return positions;
-            };
+                }
 
-            const adjustMultiParentPositions = () => {
-                const multiParentNodes = allPositions.filter(p =>
-                    p.item.additional_parents && p.item.additional_parents.length > 0
-                );
-                multiParentNodes.forEach(pos => {
-                    const item = pos.item;
-                    const allParentIds = [];
-                    if (item.parent_id) allParentIds.push(String(item.parent_id));
-                    if (item.additional_parents) item.additional_parents.forEach(pid => {
-                        if (!allParentIds.includes(String(pid))) allParentIds.push(String(pid));
-                    });
-                    if (!allParentIds.length) return;
-                    const parentPositions = allParentIds
-                        .map(pid => allPositions.find(ap => String(ap.item.id) === pid))
-                        .filter(Boolean);
-                    if (!parentPositions.length) return;
-                    const maxParentLevel = Math.max(...parentPositions.map(p => p.level));
-                    const targetLevel = maxParentLevel + 1;
-                    const minX = Math.min(...parentPositions.map(p => p.x));
-                    const maxX = Math.max(...parentPositions.map(p => p.x + NODE_W));
-                    const centerX = (minX + maxX) / 2 - NODE_W / 2;
-                    const offsetX = centerX - pos.x;
-                    const offsetY = (targetLevel - pos.level) * LEVEL_H;
-                    const shiftSubtree = nodePos => {
-                        nodePos.x += offsetX;
-                        nodePos.y += offsetY;
-                        nodePos.level = targetLevel + (nodePos.level - pos.level);
-                        allPositions
-                            .filter(p => p.item.parent_id && String(p.item.parent_id) === String(
-                                nodePos.item.id))
-                            .forEach(shiftSubtree);
-                    };
-                    shiftSubtree(pos);
-                });
-            };
+                state.flat.forEach(placeRoot);
 
-            const renderChart = items => {
-                chart.innerHTML = '';
-                if (!items?.length) {
-                    chart.innerHTML = `<div class="text-center py-5 text-muted" style="min-width:400px">
-                <i class="ri-sitemap-line fs-1 d-block mb-2"></i>Belum ada data.</div>`;
+                if (!state.layout.size) {
+                    state.W = 0;
+                    state.H = 0;
                     return;
                 }
-                let totalW = 0;
-                items.forEach((item, i) => {
-                    totalW += subtreeWidth(item);
-                    if (i < items.length - 1) totalW += GAP;
+
+                // posisi manual dari halaman admin (offset dari posisi otomatis)
+                state.flat.forEach((n) => {
+                    const p = state.layout.get(n.id);
+                    if (!p) return;
+                    p.x += Number(n.pos_x) || 0;
+                    p.y += Number(n.pos_y) || 0;
                 });
-                const chartPadX = 60;
-                const chartW = totalW + chartPadX * 2;
-                allPositions = calcPositions(items, 0, chartPadX);
-                adjustMultiParentPositions();
-                const totalH = allPositions.reduce((m, p) => Math.max(m, p.y + NODE_H + 80), 400);
 
-                chart.style.width = chartW + 'px';
-                chart.style.height = totalH + 'px';
-                chart.style.minWidth = '';
-                chart.style.minHeight = '';
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                state.layout.forEach((p) => {
+                    minX = Math.min(minX, p.x);
+                    maxX = Math.max(maxX, p.x + NODE_W);
+                    minY = Math.min(minY, p.y);
+                    maxY = Math.max(maxY, p.y + NODE_H);
+                });
 
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.id = 'connectorSvg';
-                svg.setAttribute('width', chartW);
-                svg.setAttribute('height', totalH);
-                chart.appendChild(svg);
+                const shiftX = PAD - minX;
+                const shiftY = PAD - minY;
+                state.layout.forEach((p) => {
+                    p.x += shiftX;
+                    p.y += shiftY;
+                });
 
-                allPositions.forEach(p => chart.appendChild(createNode(p.item, p.x, p.y, p.level)));
-                requestAnimationFrame(() => drawConnectors(items, svg));
-                applyLevelFilter();
-                requestAnimationFrame(drawMiniMap);
+                state.W = Math.ceil(maxX - minX + PAD * 2);
+                state.H = Math.ceil(maxY - minY + PAD * 2);
             };
 
-            const drawConnectors = (items, svg) => {
-                svg.innerHTML = '';
-                const posMap = {};
-                allPositions.forEach(p => posMap[p.item.id] = p);
+            // ---------- Garis penghubung ----------
+            const connectorPath = (x1, y1, x2, y2) => {
+                if (x1 === x2) return `M ${x1} ${y1} V ${y2}`;
+                const my = y1 + (y2 - y1) / 2;
+                const dir = Math.sign(x2 - x1);
+                const sy1 = Math.sign(my - y1) || 1;
+                const sy2 = Math.sign(y2 - my) || 1;
+                const r = Math.max(0, Math.min(10, Math.abs(x2 - x1) / 2, Math.abs(my - y1), Math.abs(y2 - my)));
+                return `M ${x1} ${y1} V ${my - sy1 * r} Q ${x1} ${my} ${x1 + dir * r} ${my} H ${x2 - dir * r} Q ${x2} ${my} ${x2} ${my + sy2 * r} V ${y2}`;
+            };
 
-                const drawLine = (x1, y1, x2, y2) => {
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    line.setAttribute('x1', x1);
-                    line.setAttribute('y1', y1);
-                    line.setAttribute('x2', x2);
-                    line.setAttribute('y2', y2);
-                    line.setAttribute('stroke', '#93c5fd');
-                    line.setAttribute('stroke-width', '2');
-                    svg.appendChild(line);
-                };
+            const linkPath = (pp, cp) => {
+                const pcx = pp.x + NODE_W / 2;
+                const ccx = cp.x + NODE_W / 2;
+                const pBottom = pp.y + NODE_H;
+                const cBottom = cp.y + NODE_H;
 
-                const drawTreeLines = nodes => {
-                    nodes.forEach(parent => {
-                        if (!parent.children?.length) return;
-                        const pp = posMap[parent.id];
+                if (cp.y >= pBottom + 16) return connectorPath(pcx, pBottom, ccx, cp.y);
+                if (cBottom + 16 <= pp.y) return connectorPath(pcx, pp.y, ccx, cBottom);
+
+                const right = ccx >= pcx;
+                const x1 = right ? pp.x + NODE_W : pp.x;
+                const y1 = pp.y + NODE_H / 2;
+                const x2 = right ? cp.x : cp.x + NODE_W;
+                const y2 = cp.y + NODE_H / 2;
+                if (right ? x2 > x1 + 8 : x2 < x1 - 8) {
+                    const mx = (x1 + x2) / 2;
+                    return `M ${x1} ${y1} H ${mx} V ${y2} H ${x2}`;
+                }
+                return `M ${pcx} ${y1} L ${ccx} ${y2}`;
+            };
+
+            const drawConnectors = (svg) => {
+                state.flat.forEach((n) => {
+                    const cp = state.layout.get(n.id);
+                    if (!cp) return;
+                    parentIdsOf(n).forEach((pid) => {
+                        const pp = state.layout.get(pid);
                         if (!pp) return;
-                        const px = pp.x + NODE_W / 2,
-                            py = pp.y + NODE_H;
-                        parent.children.forEach(child => {
-                            const cp = posMap[child.id];
-                            if (!cp) return;
-                            const cx = cp.x + NODE_W / 2,
-                                cy = cp.y;
-                            const midY = py + (cy - py) / 2;
-                            drawLine(px, py, px, midY);
-                            drawLine(px, midY, cx, midY);
-                            drawLine(cx, midY, cx, cy);
-                        });
-                        drawTreeLines(parent.children);
-                    });
-                };
-                drawTreeLines(items);
-
-                allPositions.forEach(p => {
-                    const item = p.item;
-                    if (!item.additional_parents?.length) return;
-                    const cx = p.x + NODE_W / 2,
-                        cy = p.y;
-                    item.additional_parents.forEach(addParentId => {
-                        const ap = posMap[String(addParentId)];
-                        if (!ap) return;
-                        const apx = ap.x + NODE_W / 2,
-                            apy = ap.y + NODE_H;
-                        const midY = apy + (cy - apy) / 2;
-                        drawLine(apx, apy, apx, midY);
-                        drawLine(apx, midY, cx, midY);
-                        drawLine(cx, midY, cx, cy);
+                        const p = document.createElementNS(NS, 'path');
+                        p.setAttribute('d', linkPath(pp, cp));
+                        p.setAttribute('fill', 'none');
+                        p.setAttribute('stroke', '#93c5fd');
+                        p.setAttribute('stroke-width', '2');
+                        p.setAttribute('stroke-linecap', 'round');
+                        p.setAttribute('stroke-linejoin', 'round');
+                        svg.appendChild(p);
                     });
                 });
             };
 
-            const createNode = (item, x, y, level) => {
+            // ---------- Render ----------
+            const createNode = (item, p) => {
                 const el = document.createElement('div');
                 el.className = 'org-node';
                 el.dataset.id = item.id;
-                el.dataset.level = level + 1;
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
+                el.dataset.level = p.depth + 1;
+                el.style.left = p.x + 'px';
+                el.style.top = p.y + 'px';
+                el.style.height = NODE_H + 'px';
 
                 const initial = (item.jabatan || '?').charAt(0).toUpperCase();
                 const count = item.karyawans?.length ?? 0;
-                const divisi = item.divisi ? `<div class="org-divisi">${item.divisi}</div>` : '';
+                const divisi = item.divisi ? `<div class="org-divisi">${esc(item.divisi)}</div>` : '';
 
                 el.innerHTML = `
-            <div class="node-header">
-                <div class="org-avatar">${initial}</div>
-                <div class="org-title">${item.jabatan}</div>
-                ${divisi}
-                <span class="org-count">${count} karyawan</span>
-            </div>
-            <div class="node-actions">
-                <button class="btn btn-outline-primary btn-action-karyawan" title="Lihat Karyawan">
-                    <i class="fa-solid fa-user-tie"></i>
-                </button>
-                <button class="btn btn-outline-info btn-action-detail" title="Detail">
-                    <i class="fa-solid fa-circle-info"></i>
-                </button>
-            </div>`;
+                    <div class="node-header">
+                        <div class="org-avatar">${esc(initial)}</div>
+                        <div class="org-title" title="${esc(item.jabatan)}">${esc(item.jabatan)}</div>
+                        ${divisi}
+                        <span class="org-count">${count} karyawan</span>
+                    </div>
+                    <div class="node-actions">
+                        <button class="btn btn-outline-primary btn-action-karyawan" title="Lihat Karyawan">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-action-detail" title="Detail">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </button>
+                    </div>`;
 
-                el.querySelector('.btn-action-karyawan').addEventListener('click', e => {
+                el.querySelector('.btn-action-karyawan').addEventListener('click', (e) => {
                     e.stopPropagation();
                     openKaryawanModal(item);
                 });
-                el.querySelector('.btn-action-detail').addEventListener('click', e => {
+                el.querySelector('.btn-action-detail').addEventListener('click', (e) => {
                     e.stopPropagation();
                     openDetailModal(item);
                 });
                 return el;
             };
 
-            // ---- Modals (unchanged) ----
-            const openKaryawanModal = item => {
+            const renderChart = () => {
+                chart.innerHTML = '';
+
+                if (!state.flat.length) {
+                    chart.style.width = '';
+                    chart.style.height = '';
+                    chart.innerHTML = `<div class="text-center py-5 text-muted" style="min-width:400px">
+                        <i class="fa-solid fa-sitemap fs-1 d-block mb-2"></i>Belum ada data.</div>`;
+                    drawMiniMap();
+                    return;
+                }
+
+                chart.style.width = state.W + 'px';
+                chart.style.height = state.H + 'px';
+
+                const svg = document.createElementNS(NS, 'svg');
+                svg.id = 'connectorSvg';
+                svg.setAttribute('width', state.W);
+                svg.setAttribute('height', state.H);
+                svg.setAttribute('viewBox', `0 0 ${state.W} ${state.H}`);
+                chart.appendChild(svg);
+                drawConnectors(svg);
+
+                state.flat.forEach((n) => chart.appendChild(createNode(n, state.layout.get(n.id))));
+                applyLevelFilter();
+            };
+
+            const renderTabs = () => {
+                const wrap = document.getElementById('chartTabs');
+                wrap.classList.toggle('d-none', state.charts.length <= 1);
+                wrap.innerHTML = state.charts.map((c) =>
+                    `<button type="button" class="chart-tab ${c.id === state.chartId ? 'active' : ''}" data-id="${c.id}">${esc(c.name)}</button>`
+                ).join('');
+            };
+
+            document.getElementById('chartTabs').addEventListener('click', (e) => {
+                const btn = e.target.closest('.chart-tab');
+                if (!btn) return;
+                const id = Number(btn.dataset.id);
+                if (id !== state.chartId) loadStructure(id);
+            });
+
+            // ---------- Modals ----------
+            const openKaryawanModal = (item) => {
                 document.getElementById('modalJabatanTitle').textContent = item.jabatan;
                 const body = document.getElementById('modalKaryawanBody');
                 const karyawans = item.karyawans || [];
+
                 if (!karyawans.length) {
                     body.innerHTML = `<div class="text-center py-4 text-muted">
-                <i class="ri-user-unfollow-line fs-2 d-block mb-2"></i>
-                Tidak ada karyawan dengan jabatan ini</div>`;
+                        <i class="fa-solid fa-user-slash fs-2 d-block mb-2"></i>
+                        Tidak ada karyawan dengan jabatan ini</div>`;
                 } else {
-                    body.innerHTML = karyawans.map(k => {
+                    body.innerHTML = karyawans.map((k) => {
                         const init = (k.nama_lengkap || '?').charAt(0).toUpperCase();
-                        const foto = k.foto ? `<img src="/storage/${k.foto}" alt="${k.nama_lengkap}">` :
-                            init;
+                        const foto = k.foto ? `<img src="/storage/${esc(k.foto)}" alt="${esc(k.nama_lengkap)}">` : esc(init);
                         const aktif = k.status_aktif === 'aktif' || k.status_aktif == 1;
-                        const status = aktif ?
-                            `<span class="status-badge" style="background:#dcfce7;color:#166534">Aktif</span>` :
-                            `<span class="status-badge" style="background:#fee2e2;color:#991b1b">Nonaktif</span>`;
+                        const status = aktif
+                            ? `<span class="status-badge" style="background:#dcfce7;color:#166534">Aktif</span>`
+                            : `<span class="status-badge" style="background:#fee2e2;color:#991b1b">Nonaktif</span>`;
                         return `<div class="karyawan-card">
-                    <div class="karyawan-avatar">${foto}</div>
-                    <div class="flex-grow-1">
-                        <div class="karyawan-name">${k.nama_lengkap}</div>
-                        <div class="karyawan-meta">
-                            ${k.nip    ? `NIP: ${k.nip}`  : ''}
-                            ${k.divisi ? ` · ${k.divisi}` : ''}
-                            ${k.email  ? ` · ${k.email}`  : ''}
-                        </div>
-                    </div>${status}</div>`;
+                            <div class="karyawan-avatar">${foto}</div>
+                            <div class="flex-grow-1">
+                                <div class="karyawan-name">${esc(k.nama_lengkap)}</div>
+                                <div class="karyawan-meta">
+                                    ${k.nip ? `NIP: ${esc(k.nip)}` : ''}
+                                    ${k.divisi ? ` · ${esc(k.divisi)}` : ''}
+                                    ${k.email ? ` · ${esc(k.email)}` : ''}
+                                </div>
+                            </div>${status}</div>`;
                     }).join('');
                 }
-                new bootstrap.Modal(document.getElementById('modalKaryawan')).show();
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalKaryawan')).show();
             };
 
-            const openDetailModal = item => {
+            const openDetailModal = (item) => {
                 const children = item.children?.length ?? 0;
                 const karyawans = item.karyawans?.length ?? 0;
-                const pos = allPositions.find(p => String(p.item.id) === String(item.id));
-                const levelText = pos ? `Level ${pos.level + 1}` : '—';
-                const findParent = (nodes, targetId, parent = null) => {
-                    for (const n of nodes) {
-                        if (String(n.id) === String(targetId)) return parent;
-                        const found = findParent(n.children || [], targetId, n);
-                        if (found !== undefined) return found;
-                    }
-                    return undefined;
-                };
-                const parentNode = findParent(structuresData, item.id);
-                const parentText = parentNode ? parentNode.jabatan : '— (Root)';
-                document.getElementById('modalDetailBody').innerHTML =
-                    `
-            <div class="detail-row"><div class="detail-icon"><i class="ri-briefcase-line"></i></div>
-                <div><div class="detail-label">Nama Jabatan</div><div class="detail-val">${item.jabatan}</div></div></div>
-            <div class="detail-row"><div class="detail-icon"><i class="ri-building-line"></i></div>
-                <div><div class="detail-label">Divisi</div><div class="detail-val">${item.divisi || '—'}</div></div></div>
-            <div class="detail-row"><div class="detail-icon"><i class="ri-git-branch-line"></i></div>
-                <div><div class="detail-label">Level Hierarki</div><div class="detail-val">${levelText}</div></div></div>
-            <div class="detail-row"><div class="detail-icon"><i class="ri-arrow-up-line"></i></div>
-                <div><div class="detail-label">Atasan Langsung</div><div class="detail-val">${parentText}</div></div></div>
-            <div class="detail-row"><div class="detail-icon"><i class="ri-group-line"></i></div>
-                <div><div class="detail-label">Jumlah Karyawan</div><div class="detail-val">${karyawans} orang</div></div></div>
-            <div class="detail-row"><div class="detail-icon"><i class="ri-node-tree"></i></div>
-                <div><div class="detail-label">Sub-jabatan Langsung</div><div class="detail-val">${children} jabatan</div></div></div>`;
-                new bootstrap.Modal(document.getElementById('modalDetail')).show();
+                const p = state.layout.get(item.id);
+                const levelText = p ? `Level ${p.depth + 1}` : '—';
+                const parents = parentIdsOf(item).map((id) => state.byId.get(id)).filter(Boolean);
+                const parentText = parents.length ? parents.map((x) => esc(x.jabatan)).join(', ') : '— (Root)';
+
+                document.getElementById('modalDetailBody').innerHTML = `
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-briefcase"></i></div>
+                        <div><div class="detail-label">Nama Jabatan</div><div class="detail-val">${esc(item.jabatan)}</div></div></div>
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-building"></i></div>
+                        <div><div class="detail-label">Divisi</div><div class="detail-val">${esc(item.divisi || '—')}</div></div></div>
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-code-branch"></i></div>
+                        <div><div class="detail-label">Level Hierarki</div><div class="detail-val">${levelText}</div></div></div>
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                        <div><div class="detail-label">Atasan</div><div class="detail-val">${parentText}</div></div></div>
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-users"></i></div>
+                        <div><div class="detail-label">Jumlah Karyawan</div><div class="detail-val">${karyawans} orang</div></div></div>
+                    <div class="detail-row"><div class="detail-icon"><i class="fa-solid fa-sitemap"></i></div>
+                        <div><div class="detail-label">Sub-jabatan Langsung</div><div class="detail-val">${children} jabatan</div></div></div>`;
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetail')).show();
             };
 
-            // ---- CSS: container overflow hidden (transform handles viewport) ----
+            // ---------- Load ----------
             container.style.overflow = 'hidden';
 
-            // ---- Load ----
-            const loadStructure = async () => {
-                chart.innerHTML = `<div class="d-flex align-items-center justify-content-center" style="min-height:300px">
-            <div class="spinner-border text-primary me-2"></div>
-            <span class="text-muted">Memuat struktur…</span></div>`;
+            const loadStructure = async (chartId = null) => {
+                chart.innerHTML = `<div class="d-flex align-items-center justify-content-center" style="min-height:300px;min-width:300px">
+                    <div class="spinner-border text-primary me-2"></div>
+                    <span class="text-muted">Memuat struktur…</span></div>`;
                 try {
-                    const res = await fetch(apiTree, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
+                    let id = chartId;
+                    if (id === null) {
+                        try { id = Number(localStorage.getItem(STORE_KEY)) || null; } catch (e) { id = null; }
+                    }
+
+                    const res = await fetch(id ? `${apiTree}?chart=${id}` : apiTree, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                     });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
                     const data = await res.json();
-                    structuresData = data.tree || [];
-                    renderChart(structuresData);
+
+                    state.charts = data.charts || [];
+                    state.chartId = data.chart ? data.chart.id : null;
+                    state.tree = data.tree || [];
+                    document.getElementById('chartTitle').value = data.chart ? data.chart.name : '';
+                    try { if (state.chartId) localStorage.setItem(STORE_KEY, String(state.chartId)); } catch (e) {}
+
+                    indexTree();
+                    computeLayout();
+                    renderTabs();
+                    renderChart();
                     setTimeout(fitToScreen, 100);
                 } catch (err) {
                     console.error(err);
-                    chart.innerHTML = `<div class="text-center py-5 text-muted">
-                <i class="ri-error-warning-line fs-1 d-block mb-2"></i>
-                <p>Gagal memuat struktur</p>
-                <button class="btn btn-sm btn-primary" onclick="location.reload()">Coba Lagi</button></div>`;
+                    chart.innerHTML = `<div class="text-center py-5 text-muted" style="min-width:400px">
+                        <i class="fa-solid fa-triangle-exclamation fs-1 d-block mb-2"></i>
+                        <p>Gagal memuat struktur</p>
+                        <button class="btn btn-sm btn-primary" onclick="location.reload()">Coba Lagi</button></div>`;
                 }
             };
 
