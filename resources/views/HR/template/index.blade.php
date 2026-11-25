@@ -1,858 +1,384 @@
 @extends('layout_HR.app')
 
 @section('content_HR')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
     <style>
-        /* =====================================================
-            CREATE OVERLAY - UNIQUE FULLSCREEN EXPERIENCE
-            ===================================================== */
-        .create-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1080;
-            display: flex;
-            align-items: stretch;
-            justify-content: center;
-            pointer-events: none;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.35s ease, visibility 0.35s ease;
+        .modal {
+            --bs-modal-zindex: 1100;
         }
 
-        .create-overlay.is-open {
-            pointer-events: auto;
-            opacity: 1;
-            visibility: visible;
+        .modal-backdrop {
+            --bs-backdrop-zindex: 1090;
+            --bs-backdrop-bg: #0f172a;
+            --bs-backdrop-opacity: .5;
         }
 
-        .create-overlay-backdrop {
-            position: absolute !important;
-            inset: 0 !important;
-            z-index: 0 !important;
+        .toast-container {
+            z-index: 1200 !important;
         }
 
-        .create-overlay-panel {
-            position: relative !important;
-            z-index: 1 !important;
-        }
-
-        .create-overlay.is-open .create-overlay-panel {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-
-        #generateModal,
-        #previewModal,
-        #historyModal,
-        #deleteConfirmModal,
-        #editTemplateModal {
-            z-index: 1060 !important;
-        }
-
-
-        /* Top Bar */
-        .create-topbar {
+        .tpl-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            flex-shrink: 0;
-            gap: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .btn-close-create {
+        .tpl-head h4 {
+            margin: 0;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .tpl-head p {
+            margin: .15rem 0 0;
+            font-size: .85rem;
+            color: #64748b;
+        }
+
+        .tpl-tools {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .tpl-search {
+            position: relative;
+            width: 240px;
+        }
+
+        .tpl-search .iconify {
+            position: absolute;
+            left: .7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .tpl-search input {
+            padding-left: 2.1rem;
+            border-radius: 8px;
+            font-size: .875rem;
+        }
+
+        .tpl-section {
+            margin-bottom: 2rem;
+        }
+
+        .tpl-section-title {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin: 0 0 .85rem;
+            font-size: .95rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .tpl-count {
+            font-size: .75rem;
+            font-weight: 500;
+            color: #64748b;
+            background: #f1f5f9;
+            border-radius: 999px;
+            padding: .05rem .55rem;
+        }
+
+        .tpl-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 1rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            transition: border-color .15s ease;
+        }
+
+        .tpl-card:hover {
+            border-color: #a5b4fc;
+        }
+
+        .tpl-icon {
             width: 40px;
             height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 10px;
-            border: 1px solid #e2e8f0;
-            background: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #64748b;
-            transition: all 0.2s ease;
-            cursor: pointer;
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 1.35rem;
+            margin-bottom: .85rem;
         }
 
-        .btn-close-create:hover {
-            background: #fee2e2;
-            border-color: #fecaca;
-            color: #dc2626;
-        }
-
-        /* Step Indicator */
-        .create-steps {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .step-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            opacity: 0.45;
-            transition: opacity 0.3s ease;
-        }
-
-        .step-item.active,
-        .step-item.done {
-            opacity: 1;
-        }
-
-        .step-circle {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #e2e8f0;
-            color: #64748b;
-            font-size: 0.8rem;
+        .tpl-name {
+            margin: 0 0 .25rem;
+            font-size: .95rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+            color: #0f172a;
         }
 
-        .step-item.active .step-circle {
-            background: #3b82f6;
-            color: white;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-        }
-
-        .step-item.done .step-circle {
-            background: #22c55e;
-            color: white;
-        }
-
-        .step-label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #475569;
-        }
-
-        .step-line {
-            width: 40px;
-            height: 2px;
-            background: #e2e8f0;
-            border-radius: 2px;
-        }
-
-        /* Skeleton */
-        .create-skeleton {
-            flex: 1;
-            display: flex;
-            gap: 1.25rem;
-            padding: 1.5rem;
+        .tpl-desc {
+            margin: 0 0 1rem;
+            font-size: .8rem;
+            line-height: 1.5;
+            color: #64748b;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
         }
 
-        .skeleton-left {
-            flex: 1.6;
+        .tpl-actions {
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            gap: .4rem;
+            margin-top: auto;
         }
 
-        .skeleton-right {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+        .tpl-actions .btn {
+            border-radius: 8px;
         }
 
-        .skeleton-block {
-            background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
-            background-size: 200% 100%;
-            animation: skeleton-shimmer 1.4s ease-in-out infinite;
-            border-radius: 12px;
+        .tpl-empty {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            color: #64748b;
         }
 
-        .skeleton-header {
-            height: 48px;
+        .tpl-empty img {
+            width: 140px;
+            max-width: 40%;
+            margin-bottom: 1rem;
         }
 
-        .skeleton-preview {
-            flex: 1;
-            min-height: 420px;
+        .tpl-empty h6 {
+            color: #0f172a;
+            font-weight: 600;
         }
 
-        .skeleton-card {
-            height: 160px;
-        }
-
-        .skeleton-card.short {
-            height: 110px;
-        }
-
-        @keyframes skeleton-shimmer {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
-        }
-
-        /* Content Area */
-        .create-content {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .create-body {
-            flex: 1;
-            display: flex;
-            gap: 1.25rem;
-            padding: 1.25rem 1.5rem 1.5rem;
-            overflow: hidden;
-        }
-
-        .create-preview-col {
-            flex: 1.65;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .create-sidebar-col {
-            flex: 1;
-            min-width: 320px;
-            max-width: 420px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        /* Cards di dalam create */
-        .create-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .create-card-header {
-            padding: 0.85rem 1.1rem;
-            border-bottom: 1px solid #f1f5f9;
-            background: #fafbfc;
-        }
-
-        .create-card-body {
-            padding: 1.1rem;
-        }
-
-        /* =====================================================
-            DOCX PREVIEW & MAPPING STYLES (dari create asli)
-            ===================================================== */
-        #docx-container {
-            border: none;
-            min-height: 520px;
-            max-height: calc(100vh - 220px);
-            background: #ffffff !important;
+        .docx-container-preview {
+            background: #e9ecef;
+            padding: 12px;
+            min-height: 100%;
             overflow: auto;
-            padding: 24px;
-            cursor: text;
-            user-select: text;
-            border-radius: 0 0 14px 14px;
         }
 
-        .docx-wrapper {
+        .docx-container-preview .docx-wrapper {
             background: transparent !important;
+            padding: 0 !important;
         }
 
-        .docx-wrapper>section.docx {
-            box-shadow: 0 0 0 1px #e2e8f0, 0 4px 12px rgba(0, 0, 0, 0.04) !important;
-            margin-bottom: 24px;
-            background: white !important;
-            padding: 40px;
-            border-radius: 4px;
+        .docx-container-preview .docx-wrapper>section.docx {
+            zoom: .8;
+            margin-bottom: 12px !important;
+            background: #fff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
         }
 
-        /* Mapped text highlight */
-        .text-mapped {
-            background-color: #d1e7dd !important;
-            color: #0f5132;
-            border-bottom: 2px solid #198754;
-            border-radius: 2px;
-            cursor: default;
-        }
-
-        .text-mapped-auto_date {
-            background-color: #cfe2ff !important;
-            color: #084298;
-            border-bottom: 2px solid #0d6efd;
-        }
-
-        .text-mapped-formula {
-            background-color: #e2d9f3 !important;
-            color: #59359a;
-            border-bottom: 2px solid #6f42c1;
-        }
-
-        .text-mapped-auth_field {
-            background-color: #fff3cd !important;
-            color: #664d03;
-            border-bottom: 2px solid #ffc107;
-        }
-
-        .text-mapped-relation_single {
-            background-color: #d1ecf1 !important;
-            color: #055160;
-            border-bottom: 2px solid #0dcaf0;
-        }
-
-        .text-mapped-loop_manual {
-            background-color: #f8d7da !important;
-            color: #842029;
-            border-bottom: 2px solid #dc3545;
-        }
-
-        .text-mapped-loop_relation {
-            background-color: #f5c2c7 !important;
-            color: #58151c;
-            border-bottom: 2px solid #b02a37;
-        }
-
-        .text-mapped-manual_text,
-        .text-mapped-manual_textarea,
-        .text-mapped-manual_number,
-        .text-mapped-manual_select,
-        .text-mapped-manual_checkbox,
-        .text-mapped-manual_date {
-            background-color: #e7f1ff !important;
-            color: #0a58ca;
-            border-bottom: 2px solid #6ea8fe;
-        }
-
-        /* Placeholder badge */
-        .placeholder-badge {
-            font-size: 9px;
-            vertical-align: super;
-            background: #198754;
-            color: white;
-            padding: 1px 5px;
-            border-radius: 3px;
-            margin-left: 3px;
-            font-weight: bold;
-            white-space: nowrap;
-            user-select: none;
-        }
-
-        .placeholder-badge-auto_date {
-            background: #0d6efd;
-        }
-
-        .placeholder-badge-formula {
-            background: #6f42c1;
-        }
-
-        .placeholder-badge-auth_field {
-            background: #ffc107;
-            color: #000;
-        }
-
-        .placeholder-badge-relation_single {
-            background: #0dcaf0;
-            color: #000;
-        }
-
-        .placeholder-badge-loop_manual {
-            background: #dc3545;
-        }
-
-        .placeholder-badge-loop_relation {
-            background: #b02a37;
-        }
-
-        .placeholder-badge-manual_text,
-        .placeholder-badge-manual_textarea,
-        .placeholder-badge-manual_number,
-        .placeholder-badge-manual_select,
-        .placeholder-badge-manual_checkbox,
-        .placeholder-badge-manual_date {
-            background: #6ea8fe;
-            color: #000;
-        }
-
-        ::selection {
-            background: #0dcaf0;
-            color: white;
-        }
-
-        .mapping-item {
-            font-size: 0.8rem;
-        }
-
-        /* =====================================================
-            UTILITIES & INDEX PAGE
-            ===================================================== */
-        .hover-shadow {
-            transition: box-shadow 0.25s ease, transform 0.25s ease;
-        }
-
-        .hover-shadow:hover {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
-            transform: translateY(-2px);
-        }
-
-        /* Toast z-index di atas overlay */
-        .toast-container {
-            z-index: 1200 !important;
-        }
-
-        /* Modal field config harus di atas overlay */
-        #fieldConfigModal {
-            z-index: 1100 !important;
-        }
-
-        .modal-backdrop {
-            z-index: 1050 !important;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .create-body {
-                flex-direction: column;
-                overflow-y: auto;
-            }
-
-            .create-preview-col,
-            .create-sidebar-col {
-                max-width: 100%;
-                min-width: 100%;
-            }
-
-            #docx-container {
-                max-height: 400px;
-            }
-
-            .create-steps .step-label {
-                display: none;
-            }
-
-            .step-line {
-                width: 24px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .create-topbar {
-                flex-wrap: wrap;
-                gap: 0.75rem;
-            }
-
-            .create-overlay-panel {
-                border-radius: 0;
-            }
-        }
-
-        /* =====================================================
-            FIX Z-INDEX MODAL (Hapus & Generate)
-            ===================================================== */
-
-        /* Create Overlay tetap di 1000 */
-        .create-overlay {
-            position: fixed !important;
-            inset: 0 !important;
-            z-index: 1080 !important;
-        }
-
-        /* Field Config Modal (di dalam Create) */
-        #fieldConfigModal {
-            z-index: 1100 !important;
-        }
-
-        /* Backdrop default Bootstrap harus lebih rendah dari modal */
-        .modal-backdrop {
-            z-index: 1050 !important;
-        }
-
-        /* Generate Modal & Delete Modal harus di atas backdrop */
-        #generateModal,
-        #deleteConfirmModal,
-        .modal {
-            z-index: 1060 !important;
-        }
-
-        /* Kalau ada multiple backdrop, pastikan yang terakhir benar */
-        .modal-backdrop+.modal-backdrop {
-            z-index: 1055 !important;
-        }
-
-        /* Toast tetap paling atas */
-        .toast-container {
-            z-index: 1200 !important;
-        }
-
-        /* History Modal Side Panel */
         .history-list-pane {
-            width: 42%;
-            min-width: 320px;
+            width: 100%;
             background: #f8fafc;
-            transition: width 0.3s ease;
+            transition: width .25s ease;
+        }
+
+        .history-list-pane.with-side {
+            width: 42%;
+            min-width: 340px;
         }
 
         .history-side-pane {
             width: 58%;
-            background: #ffffff;
+            background: #fff;
             display: none;
-            /* default tertutup */
             flex-direction: column;
+            border-left: 1px solid #e2e8f0;
         }
 
         .history-side-pane.is-open {
             display: flex;
         }
 
-        /* Saat side pane terbuka, list mengecil sedikit */
-        .history-list-pane.with-side {
-            width: 38%;
+        .history-folder {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            width: 100%;
+            padding: .85rem 1rem;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            text-align: left;
+            transition: border-color .15s ease;
+        }
+
+        .history-folder:hover {
+            border-color: #a5b4fc;
+        }
+
+        .history-folder .iconify {
+            font-size: 1.6rem;
+            color: #f59e0b;
+            flex-shrink: 0;
+        }
+
+        .history-folder strong {
+            display: block;
+            font-size: .9rem;
+            color: #0f172a;
+        }
+
+        .history-folder small {
+            color: #64748b;
+        }
+
+        .history-row-actions {
+            display: inline-flex;
+            gap: .15rem;
+        }
+
+        .history-row-actions .btn {
+            padding: .2rem .4rem;
+            border: 0;
+            color: #64748b;
+        }
+
+        .history-row-actions .btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .history-row-actions .btn.danger:hover {
+            background: #fee2e2;
+            color: #dc2626;
         }
 
         @media (max-width: 992px) {
-            .history-list-pane {
+            .history-list-pane.with-side {
                 width: 100%;
+                min-width: 0;
             }
 
             .history-side-pane {
                 position: absolute;
                 inset: 0;
                 width: 100%;
-                z-index: 10;
+                z-index: 5;
+            }
+
+            .tpl-search {
+                width: 100%;
             }
         }
-
-        /* ===== SIDEBAR EMPTY STATE ===== */
-        .sidebar-empty-state {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            color: var(--secondary);
-            list-style: none;
-        }
-
-        .sidebar-empty-state .empty-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin: 0 auto 1rem;
-            border: 2px dashed rgba(0, 98, 255, 0.3);
-            opacity: 0.9;
-        }
-
-        .sidebar-empty-state h6 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 0.25rem;
-        }
-
-        .sidebar-empty-state p {
-            font-size: 0.75rem;
-            color: var(--secondary);
-            margin-bottom: 1rem;
-            line-height: 1.5;
-        }
-
-        .sidebar-empty-state .btn-create-folder {
-            font-size: 0.75rem;
-            padding: 0.4rem 0.85rem;
-            border-radius: 0.375rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: all 0.15s;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .sidebar-empty-state .btn-create-folder:hover {
-            background: #0052d4;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 98, 255, 0.2);
-            color: white;
-        }
-
-        /* ===== ACTION DROPDOWN (History table) ===== */
-        .action-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .action-dropdown-btn {
-            background: transparent;
-            border: 1px solid transparent;
-            padding: 4px 8px;
-            border-radius: 6px;
-            color: #64748b;
-            cursor: pointer;
-            line-height: 1;
-            transition: all 0.15s ease;
-        }
-
-        .action-dropdown-btn:hover,
-        .action-dropdown:focus-within .action-dropdown-btn {
-            background: #f1f5f9;
-            border-color: #e2e8f0;
-            color: #334155;
-        }
-
-        .action-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 4px);
-            right: 0;
-            min-width: 160px;
-            padding: 6px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
-            z-index: 1080;
-            /* di atas modal content */
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-6px) scale(0.98);
-            transition: all 0.15s ease;
-            pointer-events: none;
-        }
-
-        /* Muncul saat hover / focus */
-        .action-dropdown:hover .action-dropdown-menu,
-        .action-dropdown:focus-within .action-dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        /* Item di dalam menu */
-        .action-dropdown-menu button {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: none;
-            background: transparent;
-            border-radius: 7px;
-            font-size: 0.875rem;
-            color: #334155;
-            text-align: left;
-            cursor: pointer;
-            transition: background 0.12s ease;
-        }
-
-        .action-dropdown-menu button:hover {
-            background: #f1f5f9;
-        }
-
-        .action-dropdown-menu button.text-danger {
-            color: #dc2626;
-        }
-
-        .action-dropdown-menu button.text-danger:hover {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        /* ===== PENTING: biarkan dropdown keluar dari overflow ===== */
-        #historyContentArea .table-responsive {
-            overflow: visible !important;
-        }
-
-        /* Kalau list sangat panjang, biarkan area tetap bisa di-scroll,
-       tapi dropdown tidak terpotong */
-        #historyContentArea {
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
     </style>
+
     <div class="container-fluid">
-        <nav aria-label="breadcrumb" class="mb-4">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item active">Dashboard Template</li>
-            </ol>
-        </nav>
-
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="card-title mb-0">Daftar Template Laporan</h5>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-primary" id="btnOpenCreateModal">
-                            <span class="iconify me-2" data-icon="mdi:plus"></span>Buat Template Baru
-                        </button>
-                        <button type="button" class="btn btn-outline-primary" onclick="openHistoryModal()">
-                            <span class="iconify me-2" data-icon="mdi:folders"></span>History
-                        </button>
-                    </div>
+        <div class="tpl-head">
+            <div>
+                <h4>Template Laporan</h4>
+                <p>Kelola template dokumen dan buat laporan dari data karyawan atau rekrutan.</p>
+            </div>
+            <div class="tpl-tools">
+                <div class="tpl-search">
+                    <span class="iconify" data-icon="mdi:magnify"></span>
+                    <input type="search" id="tplSearch" class="form-control form-control-sm" placeholder="Cari template">
                 </div>
-
-                <!-- Modal Edit Template (tetap sama) -->
-                <div class="modal fade" id="editTemplateModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <span class="iconify me-2" data-icon="mdi:pencil-box-outline"></span>
-                                    Edit Template
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <form id="formEditTemplate">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" id="edit_template_id" name="id">
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">Nama Template <span
-                                                class="text-danger">*</span></label>
-                                        <input type="text" id="edit_name" name="name" class="form-control" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">Kode Template <span
-                                                class="text-danger">*</span></label>
-                                        <input type="text" id="edit_code" name="code" class="form-control" required>
-                                        <small class="text-muted">Kode harus unik (tidak boleh sama dengan template
-                                            lain).</small>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label fw-semibold">Kategori</label>
-                                        <select id="edit_category" name="category" class="form-select">
-                                            <option value="karyawan">Karyawan</option>
-                                            <option value="pelamar">Rekrutan</option>
-                                        </select>
-                                    </div>
-                                    <div class="alert alert-info small mb-0">
-                                        <strong>Info:</strong> Mengedit di sini hanya mengubah metadata template. Untuk
-                                        mengubah struktur dokumen/mapping field, silakan gunakan fitur "Generate" lalu edit
-                                        ulang dokumennya.
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <span class="iconify me-1" data-icon="mdi:close"></span>Batal
-                                </button>
-                                <button type="button" class="btn btn-primary" id="btnSaveEdit"
-                                    onclick="executeEditTemplate()">
-                                    <span class="iconify me-1" data-icon="mdi:content-save"></span>Simpan Perubahan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                @if ($templates->isNotEmpty())
-                    @foreach ($templates as $category => $items)
-                        <h6 class="fw-bold text-uppercase text-muted mb-3 mt-4">{{ $category }}</h6>
-                        <div class="row g-3">
-                            @foreach ($items as $tpl)
-                                <div class="col-md-4 col-lg-3">
-                                    <div class="card h-100 border-0 shadow-sm hover-shadow">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                                <span class="iconify text-primary" data-icon="mdi:file-document-outline"
-                                                    style="font-size: 2rem;"></span>
-                                            </div>
-                                            <h6 class="card-title fw-bold mb-1">{{ $tpl->name }}</h6>
-                                            <p class="text-muted small mb-3">
-                                                {{ Str::limit($tpl->description ?? 'Tidak ada deskripsi', 50) }}
-                                            </p>
-                                            <div class="d-flex gap-2 mt-auto">
-                                                <button type="button" class="btn btn-sm btn-primary flex-grow-1"
-                                                    onclick="openGenerateModal({{ $tpl->id }}, '{{ addslashes($tpl->name) }}')">
-                                                    <span class="iconify me-1" data-icon="mdi:file-pdf-box"></span> Generate
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-warning" title="Edit"
-                                                    onclick="openEditOverlay({{ $tpl->id }})">
-                                                    <span class="iconify" data-icon="mdi:pencil"></span>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    onclick="confirmDeleteTemplate({{ $tpl->id }}, '{{ addslashes($tpl->name) }}')"
-                                                    title="Hapus">
-                                                    <span class="iconify" data-icon="mdi:delete"></span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endforeach
-                @else
-                    <div class="text-center py-5">
-                        <img src="{{ asset('svgundraw/emptydata.svg') }}" alt="" width="12%">
-                        <h5 class="mt-3"></h5>
-                        <button type="button" class="btn btn-primary mt-3" id="btnOpenCreateModalEmpty">Buat Template
-                            Baru</button>
-                    </div>
-                @endif
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnOpenHistory">
+                    <span class="iconify me-1" data-icon="mdi:history"></span>Riwayat
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btnOpenCreateModal">
+                    <span class="iconify me-1" data-icon="mdi:plus"></span>Template baru
+                </button>
             </div>
         </div>
-    </div>
 
+        @if ($templates->isNotEmpty())
+            @foreach ($templates as $category => $items)
+                <section class="tpl-section" data-section>
+                    <h6 class="tpl-section-title">
+                        {{ ucfirst($category ?: 'Lainnya') }}
+                        <span class="tpl-count">{{ $items->count() }}</span>
+                    </h6>
+                    <div class="row g-3">
+                        @foreach ($items as $tpl)
+                            <div class="col-md-6 col-xl-4 col-xxl-3" data-item
+                                data-search="{{ strtolower($tpl->name . ' ' . $tpl->code . ' ' . $category . ' ' . $tpl->description) }}">
+                                <div class="tpl-card">
+                                    <div class="tpl-icon">
+                                        <span class="iconify" data-icon="mdi:file-document-outline"></span>
+                                    </div>
+                                    <h6 class="tpl-name">{{ $tpl->name }}</h6>
+                                    <p class="tpl-desc">{{ $tpl->description ?: 'Tidak ada deskripsi' }}</p>
+                                    <div class="tpl-actions">
+                                        <button type="button" class="btn btn-sm btn-primary flex-grow-1"
+                                            data-tpl-act="generate" data-id="{{ $tpl->id }}"
+                                            data-name="{{ $tpl->name }}">
+                                            <span class="iconify me-1" data-icon="mdi:file-document-check-outline"></span>Buat laporan
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit"
+                                            data-tpl-act="edit" data-id="{{ $tpl->id }}">
+                                            <span class="iconify" data-icon="mdi:pencil-outline"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus"
+                                            data-tpl-act="delete" data-id="{{ $tpl->id }}"
+                                            data-name="{{ $tpl->name }}">
+                                            <span class="iconify" data-icon="mdi:delete-outline"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+            @endforeach
+
+            <div class="tpl-empty d-none" id="tplNoResult">
+                <h6>Template tidak ditemukan</h6>
+                <p class="mb-0 small">Coba kata kunci lain.</p>
+            </div>
+        @else
+            <div class="tpl-empty">
+                <img src="{{ asset('svgundraw/emptydata.svg') }}" alt="">
+                <h6>Belum ada template</h6>
+                <p class="small">Unggah dokumen Word untuk membuat template pertama.</p>
+                <button type="button" class="btn btn-primary btn-sm" id="btnOpenCreateModalEmpty">Template baru</button>
+            </div>
+        @endif
+    </div>
 
     <div class="modal fade" id="generateModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title d-flex align-items-center gap-2">
-                        <span class="iconify" data-icon="mdi:file-document-check-outline"
-                            style="font-size:1.4rem;"></span>
-                        <span id="generateModalTitle">Generate Laporan</span>
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <div class="modal-header">
+                    <h5 class="modal-title" id="generateModalTitle">Buat laporan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
-                <div class="modal-body p-0" id="generateModalBody" style="min-height: 60vh;">
-                    <div class="text-center py-5" id="generateModalLoading">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <p class="mt-3 text-muted">Memuat form generate...</p>
-                    </div>
-                </div>
+                <div class="modal-body p-0" id="generateModalBody" style="min-height: 50vh;"></div>
             </div>
         </div>
     </div>
 
     <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <span class="iconify me-2" data-icon="mdi:file-eye-outline"></span>
-                        <span id="previewModalTitle">Preview Dokumen</span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">Pratinjau dokumen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
-                <div class="modal-body p-0" style="height: 75vh;">
+                <div class="modal-body p-0" style="height: 75vh; overflow: auto;">
                     <div id="previewLoading" class="text-center py-5">
                         <div class="spinner-border text-primary"></div>
-                        <p class="mt-3 text-muted">Membuat preview...</p>
+                        <p class="mt-3 text-muted">Membuat pratinjau...</p>
                     </div>
-                    <div id="previewContent" style="display: none; height: 100%;"></div>
+                    <div id="previewContent" style="display: none; min-height: 100%;"></div>
                 </div>
                 <div class="modal-footer">
-                    <small class="text-muted me-auto">Ini hanya preview — belum disimpan</small>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <small class="text-muted me-auto">Hanya pratinjau, belum disimpan.</small>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -860,264 +386,239 @@
 
     <div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="height: 90vh;">
-                <div class="modal-header bg-primary text-white py-3">
-                    <h5 class="modal-title d-flex align-items-center gap-2">
-                        <span class="iconify" data-icon="mdi:history" style="font-size:1.3rem;"></span>
-                        Riwayat Generate
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-content border-0 shadow-lg" style="height: 88vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Riwayat laporan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
-
-                <div class="modal-body p-0 d-flex overflow-hidden">
-                    {{-- LEFT: List Folder / File --}}
-                    <div id="historyListPane" class="history-list-pane border-end">
-                        <div class="p-3 border-bottom bg-light d-flex justify-content-between align-items-center">
-                            <div id="historyBreadcrumb">
-                                <span class="fw-semibold">Semua Folder</span>
-                            </div>
-                            <button class="btn btn-sm btn-outline-secondary d-none" id="btnBackToFolders"
-                                onclick="showHistoryFolders()">
+                <div class="modal-body p-0 d-flex overflow-hidden position-relative">
+                    <div id="historyListPane" class="history-list-pane d-flex flex-column">
+                        <div class="px-3 py-2 border-bottom bg-white d-flex justify-content-between align-items-center">
+                            <div id="historyBreadcrumb" class="small fw-semibold text-dark">Semua folder</div>
+                            <button class="btn btn-sm btn-outline-secondary d-none" id="btnBackToFolders" type="button">
                                 <span class="iconify me-1" data-icon="mdi:arrow-left"></span>Kembali
                             </button>
                         </div>
-
-                        <div class="p-3 overflow-auto" style="height: calc(90vh - 130px);" id="historyContentArea">
-                            {{-- Folder / File akan di-render di sini --}}
-                            <div class="text-center py-5 text-muted">
-                                <div class="spinner-border spinner-border-sm"></div>
-                                <span class="ms-2">Memuat...</span>
-                            </div>
-                        </div>
+                        <div class="p-3 overflow-auto flex-grow-1" id="historyContentArea"></div>
                     </div>
 
-                    {{-- RIGHT: Side Panel (Preview / Edit / Detail) --}}
                     <div id="historySidePane" class="history-side-pane">
-                        <div class="h-100 d-flex flex-column">
-                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
-                                <h6 class="mb-0" id="sidePaneTitle">Detail</h6>
-                                <button type="button" class="btn-close" onclick="closeHistorySidePane()"></button>
-                            </div>
-                            <div class="flex-grow-1 overflow-auto p-3" id="sidePaneBody">
-                                <div class="text-center text-muted py-5">
-                                    <span class="iconify mb-3" data-icon="mdi:file-document-outline"
-                                        style="font-size:3rem;opacity:.3;"></span>
-                                    <p>Pilih file untuk melihat preview</p>
-                                </div>
-                            </div>
+                        <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-truncate" id="sidePaneTitle">Detail</h6>
+                            <button type="button" class="btn-close" id="btnCloseSidePane" aria-label="Tutup"></button>
                         </div>
+                        <div class="flex-grow-1 overflow-auto p-3" id="sidePaneBody"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://unpkg.com/docx-preview@0.3.0/dist/docx-preview.min.js"></script>
-
-    <script>
-        window.APP_DATA = {
-            columns: @json($allowedColumns),
-            saveUrl: "{{ route('HR.reports.save.mapping') }}",
-            csrfToken: "{{ csrf_token() }}",
-            redirectUrl: "{{ route('HR.reports.index') }}"
-        };
-    </script>
 
     @include('HR.template.partials.smart-creator')
 
     <script>
-        // =====================================================
-        // 1. TOAST & DELETE (dari index - tidak diubah)
-        // =====================================================
-        function confirmDeleteTemplate(templateId, templateName) {
-            const modalHtml = `
-                <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header text-dark">
-                                <h5 class="modal-title">
-                                    <span class="iconify me-2" data-icon="mdi:alert-circle"></span>
-                                    Konfirmasi Hapus
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="text-center mb-3">
-                                    <span class="iconify text-danger" data-icon="mdi:trash-can-outline" style="font-size: 48px;"></span>
-                                </div>
-                                <p class="mb-2">Apakah Anda yakin ingin menghapus template:</p>
-                                <h5 class="text-danger fw-bold text-center">"${templateName}"</h5>
-                                <div class="alert alert-warning small mt-3 mb-0">
-                                    <strong>Peringatan:</strong> Tindakan ini tidak dapat dibatalkan. 
-                                    Semua placeholder dan konfigurasi terkait akan dihapus permanen.
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <span class="iconify me-1" data-icon="mdi:close"></span>Batal
-                                </button>
-                                <button type="button" class="btn btn-danger" id="btnConfirmDelete" onclick="executeDeleteTemplate(${templateId})">
-                                    <span class="iconify me-1" data-icon="mdi:delete"></span>Ya, Hapus Template
-                                </button>
-                            </div>
+        (function() {
+            ['generateModal', 'previewModal', 'historyModal'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) document.body.appendChild(el);
+            });
+
+            document.addEventListener('show.bs.modal', function(e) {
+                const open = document.querySelectorAll('.modal.show').length;
+                const z = 1100 + open * 20;
+                e.target.style.zIndex = z;
+                requestAnimationFrame(function() {
+                    const fresh = Array.from(document.querySelectorAll('.modal-backdrop')).filter(function(b) {
+                        return !b.dataset.stacked;
+                    });
+                    const bd = fresh[fresh.length - 1];
+                    if (bd) {
+                        bd.style.zIndex = z - 10;
+                        bd.dataset.stacked = '1';
+                    }
+                });
+            });
+
+            document.addEventListener('hidden.bs.modal', function() {
+                if (document.querySelector('.modal.show')) return;
+                document.querySelectorAll('.modal-backdrop').forEach(function(b) {
+                    b.remove();
+                });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+                const overlay = document.getElementById('smOverlay');
+                if (overlay && overlay.classList.contains('is-open')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.removeProperty('overflow');
+                }
+            });
+        })();
+
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        } [c]));
+
+        const csrf = () => document.querySelector('meta[name="csrf-token"]').content;
+        const modalOf = id => bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer') || createToastContainer();
+            const bg = type === 'error' ? 'bg-danger' : 'bg-success';
+            const icon = type === 'error' ? 'mdi:alert-circle' : 'mdi:check-circle';
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="toast align-items-center text-white border-0 ${bg}" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <span class="iconify me-2" data-icon="${icon}"></span>${esc(message)}
                         </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                     </div>
-                </div>
-            `;
+                </div>`);
 
-            const oldModal = document.getElementById('deleteConfirmModal');
-            if (oldModal) oldModal.remove();
+            const el = container.lastElementChild;
+            new bootstrap.Toast(el, {
+                delay: 4000
+            }).show();
+            el.addEventListener('hidden.bs.toast', () => el.remove());
+        }
 
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-            modal.show();
+        function createToastContainer() {
+            const c = document.createElement('div');
+            c.id = 'toastContainer';
+            c.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(c);
+            return c;
+        }
 
-            document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
-                this.remove();
+        document.getElementById('btnOpenHistory').addEventListener('click', openHistoryModal);
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('[data-tpl-act]');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            if (btn.dataset.tplAct === 'generate') openGenerateModal(id, btn.dataset.name);
+            if (btn.dataset.tplAct === 'edit') window.openEditOverlay(id);
+            if (btn.dataset.tplAct === 'delete') confirmDeleteTemplate(id, btn.dataset.name);
+        });
+
+        const searchInput = document.getElementById('tplSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const q = this.value.trim().toLowerCase();
+                let total = 0;
+                document.querySelectorAll('[data-section]').forEach(function(section) {
+                    let visible = 0;
+                    section.querySelectorAll('[data-item]').forEach(function(item) {
+                        const match = !q || item.dataset.search.includes(q);
+                        item.classList.toggle('d-none', !match);
+                        if (match) visible++;
+                    });
+                    section.classList.toggle('d-none', visible === 0);
+                    total += visible;
+                });
+                document.getElementById('tplNoResult')?.classList.toggle('d-none', total > 0);
             });
         }
 
-        // Pastikan backdrop tidak menutupi modal
-        setTimeout(() => {
-            const backdrops = document.querySelectorAll('.modal-backdrop');
-            backdrops.forEach(bd => {
-                bd.style.zIndex = '1050';
-            });
+        function confirmDeleteTemplate(templateId, templateName) {
+            document.getElementById('deleteConfirmModal')?.remove();
 
-            const deleteModal = document.getElementById('deleteConfirmModal');
-            if (deleteModal) {
-                deleteModal.style.zIndex = '1060';
-            }
-        }, 10);
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Hapus template</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-1">Template berikut akan dihapus:</p>
+                                <h6 class="fw-bold text-danger">${esc(templateName)}</h6>
+                                <div class="alert alert-warning small mt-3 mb-0">
+                                    Semua placeholder dan konfigurasi terkait ikut terhapus permanen.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-danger" id="btnConfirmDelete">Hapus template</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`);
 
-        function executeDeleteTemplate(templateId, force = false) {
+            const el = document.getElementById('deleteConfirmModal');
+            el.addEventListener('hidden.bs.modal', () => el.remove());
+            document.getElementById('btnConfirmDelete').addEventListener('click', () => executeDeleteTemplate(templateId, false));
+            modalOf('deleteConfirmModal').show();
+        }
+
+        function executeDeleteTemplate(templateId, force) {
             const btn = document.getElementById('btnConfirmDelete');
-            const originalText = btn.innerHTML;
-
+            const original = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus';
 
-            const url = `/HR-dashboard/reports/delete/${templateId}` + (force ? '?force=1' : '');
-
-            fetch(url, {
+            fetch(`/HR-dashboard/reports/delete/${templateId}` + (force ? '?force=1' : ''), {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-CSRF-TOKEN': csrf(),
                         'Accept': 'application/json'
                     }
                 })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
-                        if (modal) modal.hide();
+                        modalOf('deleteConfirmModal').hide();
                         showToast(data.message, 'success');
-                        setTimeout(() => window.location.reload(), 1000);
+                        setTimeout(() => window.location.reload(), 900);
                     } else if (data.has_history) {
-                        // Template punya history -> tawarkan opsi hapus sekalian history
                         showForceDeletePrompt(templateId, data.history_count);
                     } else {
                         showToast(data.message || 'Gagal menghapus template', 'error');
                         btn.disabled = false;
-                        btn.innerHTML = originalText;
+                        btn.innerHTML = original;
                     }
                 })
-                .catch(error => {
-                    console.error('Error:', error);
+                .catch(() => {
                     showToast('Terjadi kesalahan koneksi', 'error');
                     btn.disabled = false;
-                    btn.innerHTML = originalText;
+                    btn.innerHTML = original;
                 });
         }
 
         function showForceDeletePrompt(templateId, historyCount) {
             const modalEl = document.getElementById('deleteConfirmModal');
-            const body = modalEl.querySelector('.modal-body');
-            const footer = modalEl.querySelector('.modal-footer');
-
-            body.innerHTML = `
-                <div class="text-center mb-3">
-                    <span class="iconify text-warning" data-icon="mdi:alert-outline" style="font-size: 48px;"></span>
-                </div>
-                <p class="mb-2 text-center">
-                    Template ini sudah digunakan untuk generate laporan sebanyak
-                    <strong>${historyCount} kali</strong>, sehingga tidak bisa dihapus begitu saja.
-                </p>
-                <div class="alert alert-danger small mt-3 mb-0">
-                    <strong>Hapus beserta history?</strong><br>
-                    Template, semua riwayat generate, dan seluruh file laporan hasil generate
-                    akan dihapus <strong>permanen</strong> dan tidak dapat dikembalikan.
-                </div>
-            `;
-
-            footer.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <span class="iconify me-1" data-icon="mdi:close"></span>Batal
-                </button>
-                <button type="button" class="btn btn-danger" id="btnConfirmDelete"
-                    onclick="executeDeleteTemplate(${templateId}, true)">
-                    <span class="iconify me-1" data-icon="mdi:delete-forever"></span>Hapus Template + History
-                </button>
-            `;
+            modalEl.querySelector('.modal-body').innerHTML = `
+                <p class="mb-2">Template ini sudah dipakai untuk membuat laporan sebanyak <strong>${esc(historyCount)} kali</strong>.</p>
+                <div class="alert alert-danger small mb-0">
+                    Template, seluruh riwayat, dan file laporan hasil generate akan dihapus permanen.
+                </div>`;
+            modalEl.querySelector('.modal-footer').innerHTML = `
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDelete">Hapus template dan riwayat</button>`;
+            document.getElementById('btnConfirmDelete').addEventListener('click', () => executeDeleteTemplate(templateId, true));
         }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer') || createToastContainer();
-            const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
-            const icon = type === 'error' ? 'mdi:alert-circle' : 'mdi:check-circle';
-
-            const toastHtml = `
-                <div class="toast align-items-center text-white border-0 ${bgClass}" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <span class="iconify me-2" data-icon="${icon}"></span>
-                            ${message}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            `;
-
-            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-            const toastElement = toastContainer.lastElementChild;
-            const toast = new bootstrap.Toast(toastElement, {
-                delay: 4000
-            });
-            toast.show();
-            toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
-        }
-
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.id = 'toastContainer';
-            container.className = 'toast-container position-fixed top-0 end-0 p-3';
-            container.style.zIndex = '1100';
-            document.body.appendChild(container);
-            return container;
-        }
-
-        // =====================================================
-        // GENERATE MODAL (berbeda dari Create Overlay)
-        // =====================================================
         async function openGenerateModal(templateId, templateName) {
-            const modalEl = document.getElementById('generateModal');
-            const modalBody = document.getElementById('generateModalBody');
-            const modalTitle = document.getElementById('generateModalTitle');
-            const loading = document.getElementById('generateModalLoading');
-
-            modalTitle.textContent = 'Generate: ' + templateName;
-            modalBody.innerHTML = `
-                <div class="text-center py-5" id="generateModalLoading">
+            const body = document.getElementById('generateModalBody');
+            document.getElementById('generateModalTitle').textContent = 'Buat laporan: ' + templateName;
+            body.innerHTML = `
+                <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-3 text-muted">Memuat form generate...</p>
-                </div>
-            `;
+                    <p class="mt-3 text-muted">Memuat form...</p>
+                </div>`;
 
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
+            modalOf('generateModal').show();
 
             try {
                 const res = await fetch(`/HR-dashboard/reports/${templateId}/generate-modal`, {
@@ -1126,251 +627,197 @@
                         'Accept': 'text/html'
                     }
                 });
-
                 if (!res.ok) throw new Error('Gagal memuat form');
-
-                const html = await res.text();
-                modalBody.innerHTML = html;
-
-                // Re-init script yang ada di dalam partial (loop, preview, dll)
-                // Karena script di dalam partial tidak otomatis jalan setelah innerHTML
-                initGenerateFormScripts();
-
+                body.innerHTML = await res.text();
+                initGenerateForm();
             } catch (err) {
-                console.error(err);
-                modalBody.innerHTML = `
-                    <div class="alert alert-danger m-4">
-                        Gagal memuat form generate.<br>
-                        <small>${err.message}</small>
-                    </div>
-                `;
+                body.innerHTML = `<div class="alert alert-danger m-4">Gagal memuat form.<br><small>${esc(err.message)}</small></div>`;
             }
         }
 
-        setTimeout(() => {
-            document.querySelectorAll('.modal-backdrop').forEach(bd => {
-                bd.style.zIndex = '1050';
-            });
-            document.getElementById('generateModal').style.zIndex = '1060';
-        }, 10);
+        function initGenerateForm() {
+            const form = document.getElementById('generateForm');
+            if (!form) return;
 
-        // Fungsi untuk mengaktifkan ulang script di dalam form yang di-load
-        function initGenerateFormScripts() {
-            // Re-bind tombol Preview
-            const previewBtn = document.getElementById('btnPreview');
-            if (previewBtn) {
-                previewBtn.onclick = window.doPreview || null;
-            }
-
-            // Di dalam initGenerateFormScripts() atau di global
-            document.getElementById('generateForm')?.addEventListener('submit', async function(e) {
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
-                const sourceEl = this.querySelector('[name="source_id"]');
-                if (!sourceEl || !sourceEl.value) {
-                    alert('Silakan pilih data sumber terlebih dahulu!');
+                const source = form.querySelector('[name="source_id"]');
+                if (!source || !source.value) {
+                    showToast('Pilih data sumber terlebih dahulu.', 'error');
                     return;
                 }
 
                 const btn = document.getElementById('btnGenerate');
-                const btnText = btn?.querySelector('.btn-text');
+                const text = btn?.querySelector('.btn-text');
                 const spinner = document.getElementById('loadingSpinner');
-
                 if (btn) btn.disabled = true;
-                if (btnText) btnText.classList.add('d-none');
-                if (spinner) spinner.classList.remove('d-none');
+                text?.classList.add('d-none');
+                spinner?.classList.remove('d-none');
 
                 try {
-                    const formData = new FormData(this);
-
-                    const res = await fetch(this.action, {
+                    const res = await fetch(form.action, {
                         method: 'POST',
-                        body: formData,
+                        body: new FormData(form),
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'text/html,application/xhtml+xml'
                         }
                     });
 
-                    // Kalau server mengembalikan redirect (biasanya ke halaman download/pending)
                     if (res.redirected) {
+                        if (new URL(res.url).pathname === window.location.pathname) {
+                            throw new Error('Gagal membuat laporan. Periksa isian lalu coba lagi.');
+                        }
                         window.location.href = res.url;
+                        modalOf('generateModal').hide();
                         return;
                     }
 
-                    // Kalau server mengembalikan HTML (halaman pending / download)
-                    const html = await res.text();
+                    const type = res.headers.get('content-type') || '';
 
-                    // Coba deteksi apakah ini halaman pending atau error
-                    if (html.includes('Sedang memproses') || html.includes('Generating Report')) {
-                        // Buka di tab baru atau ganti lokasi
-                        const newWindow = window.open('', '_blank');
-                        newWindow.document.write(html);
-                        newWindow.document.close();
-
-                        // Atau langsung redirect
-                        // window.location.href = res.url || this.action;
+                    if (type.includes('text/html')) {
+                        const html = await res.text();
+                        const w = window.open('', '_blank');
+                        if (w) {
+                            w.document.write(html);
+                            w.document.close();
+                        }
                     } else if (res.ok) {
-                        // Kalau langsung file download
                         const blob = await res.blob();
-                        const url = window.URL.createObjectURL(blob);
+                        const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = 'laporan.docx'; // atau sesuaikan
+                        a.download = 'laporan.docx';
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
-                        window.URL.revokeObjectURL(url);
+                        URL.revokeObjectURL(url);
                     } else {
-                        throw new Error('Gagal generate laporan');
+                        throw new Error('Gagal membuat laporan');
                     }
 
-                    // Tutup modal generate
-                    const generateModal = bootstrap.Modal.getInstance(document.getElementById('generateModal'));
-                    if (generateModal) generateModal.hide();
-
+                    modalOf('generateModal').hide();
                 } catch (err) {
-                    console.error(err);
-                    alert('Error: ' + err.message);
+                    showToast(err.message, 'error');
                 } finally {
                     if (btn) btn.disabled = false;
-                    if (btnText) btnText.classList.remove('d-none');
-                    if (spinner) spinner.classList.add('d-none');
+                    text?.classList.remove('d-none');
+                    spinner?.classList.add('d-none');
                 }
             });
-
-            // Re-bind form submit
-            const form = document.getElementById('generateForm');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    const sourceEl = form.querySelector('[name="source_id"]');
-                    if (!sourceEl || !sourceEl.value) {
-                        e.preventDefault();
-                        alert('Silakan pilih data sumber terlebih dahulu!');
-                        return false;
-                    }
-
-                    const btn = document.getElementById('btnGenerate');
-                    if (btn) {
-                        btn.disabled = true;
-                        const t = btn.querySelector('.btn-text');
-                        const s = btn.querySelector('#loadingSpinner');
-                        if (t) t.classList.add('d-none');
-                        if (s) s.classList.remove('d-none');
-                    }
-                });
-            }
         }
+
+        function reindexLoop(table) {
+            table.querySelectorAll('tbody tr').forEach(function(tr, i) {
+                tr.dataset.rowIndex = i;
+                const num = tr.querySelector('td');
+                if (num) num.textContent = i + 1;
+                tr.querySelectorAll('input, select, textarea').forEach(function(input) {
+                    input.name = input.name.replace(/^(manual_inputs\[[^\]]+\])\[\d+\]/, `$1[${i}]`);
+                });
+            });
+        }
+
+        window.addLoopRow = function(btn) {
+            const table = btn.closest('.section-card').querySelector('table[data-loop-key]');
+            const body = table.querySelector('tbody');
+            const clone = body.querySelector('tr').cloneNode(true);
+            clone.querySelectorAll('input, select, textarea').forEach(function(input) {
+                input.value = '';
+            });
+            body.appendChild(clone);
+            reindexLoop(table);
+            clone.querySelector('input')?.focus();
+        };
+
+        window.removeLoopRow = function(btn) {
+            const table = btn.closest('table');
+            const rows = table.querySelectorAll('tbody tr');
+            if (rows.length <= 1) {
+                rows[0].querySelectorAll('input, select, textarea').forEach(function(input) {
+                    input.value = '';
+                });
+                return;
+            }
+            btn.closest('tr').remove();
+            reindexLoop(table);
+        };
 
         window.doPreview = function() {
             const form = document.getElementById('generateForm');
-            if (!form) {
-                alert('Form generate tidak ditemukan');
-                return;
-            }
+            if (!form) return;
 
-            const sourceEl = form.querySelector('[name="source_id"]');
-            const sourceId = sourceEl ? sourceEl.value : '';
-
-            if (!sourceId) {
-                alert('Silakan pilih data sumber terlebih dahulu sebelum preview!');
+            const source = form.querySelector('[name="source_id"]');
+            if (!source || !source.value) {
+                showToast('Pilih data sumber terlebih dahulu.', 'error');
                 return;
             }
 
             const btn = document.getElementById('btnPreview');
             const btnText = document.getElementById('previewBtnText');
             const spinner = document.getElementById('previewSpinner');
-
             if (btn) btn.disabled = true;
-            if (btnText) btnText.textContent = 'Memproses...';
-            if (spinner) spinner.classList.remove('d-none');
+            if (btnText) btnText.textContent = 'Memproses';
+            spinner?.classList.remove('d-none');
 
-            // Ambil URL preview dari data attribute atau hardcode sesuai route
-            const previewUrl = form.dataset.previewUrl ||
-                form.action.replace('/generate', '/preview-generate') ||
-                `/HR-dashboard/reports/${form.querySelector('[name="template_id"]').value}/preview-generate`;
-
-            const formData = new FormData(form);
-
-            fetch(previewUrl, {
+            fetch(form.dataset.previewUrl, {
                     method: 'POST',
-                    body: formData,
+                    body: new FormData(form),
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/octet-stream, application/json'
                     }
                 })
-                .then(async (res) => {
-                    const contentType = res.headers.get('content-type') || '';
-
-                    if (contentType.includes('application/json')) {
+                .then(async res => {
+                    const type = res.headers.get('content-type') || '';
+                    if (type.includes('application/json')) {
                         const data = await res.json();
-                        throw new Error(data.message || 'Gagal membuat preview');
+                        throw new Error(data.message || 'Gagal membuat pratinjau');
                     }
-
-                    if (!res.ok) {
-                        throw new Error('Gagal membuat preview (status ' + res.status + ')');
-                    }
-
+                    if (!res.ok) throw new Error('Gagal membuat pratinjau (status ' + res.status + ')');
                     return res.arrayBuffer();
                 })
-                .then((arrayBuffer) => {
-                    // Tampilkan modal preview
-                    const modalEl = document.getElementById('previewModal');
-                    const modal = new bootstrap.Modal(modalEl);
+                .then(buffer => {
+                    const loading = document.getElementById('previewLoading');
+                    const content = document.getElementById('previewContent');
+                    loading.style.display = 'block';
+                    content.style.display = 'none';
+                    content.innerHTML = '';
 
-                    document.getElementById('previewLoading').style.display = 'block';
-                    document.getElementById('previewContent').style.display = 'none';
-                    document.getElementById('previewContent').innerHTML = '';
+                    modalOf('previewModal').show();
 
-                    modal.show();
+                    const holder = document.createElement('div');
+                    holder.className = 'docx-container-preview';
+                    content.appendChild(holder);
 
-                    const container = document.getElementById('previewContent');
-                    const docxContainer = document.createElement('div');
-                    docxContainer.className = 'docx-container-preview';
-                    container.appendChild(docxContainer);
-
-                    return window.docx.renderAsync(arrayBuffer, docxContainer, null, {
+                    return window.docx.renderAsync(buffer, holder, null, {
                         className: 'docx',
                         inWrapper: true,
-                        ignoreWidth: false,
-                        ignoreHeight: false,
-                        breakPages: true,
+                        breakPages: true
                     }).then(() => {
-                        document.getElementById('previewLoading').style.display = 'none';
-                        container.style.display = 'block';
+                        loading.style.display = 'none';
+                        content.style.display = 'block';
                     });
                 })
-                .catch((err) => {
-                    console.error(err);
-                    alert('Error Preview: ' + err.message);
-                })
+                .catch(err => showToast(err.message, 'error'))
                 .finally(() => {
                     if (btn) btn.disabled = false;
-                    if (btnText) btnText.textContent = 'Preview';
-                    if (spinner) spinner.classList.add('d-none');
+                    if (btnText) btnText.textContent = 'Pratinjau';
+                    spinner?.classList.add('d-none');
                 });
         };
 
-        // =====================================================
-        // EDIT MODE
-        // =====================================================
-        let isEditMode = false;
-        let currentEditId = null;
-
-        // =====================================================
-        // HISTORY MODAL + SIDE PANEL
-        // =====================================================
         let historyData = {};
+        let historyIndex = {};
         let currentHistoryFolder = null;
 
         function openHistoryModal() {
-            const modal = new bootstrap.Modal(document.getElementById('historyModal'));
-            modal.show();
-            loadHistoryData();
+            modalOf('historyModal').show();
+            loadHistoryData(null);
         }
 
-        function loadHistoryData() {
+        function loadHistoryData(keepFolder) {
             const area = document.getElementById('historyContentArea');
             area.innerHTML = `
                 <div class="text-center py-5 text-muted">
@@ -1378,17 +825,19 @@
                     <span class="ms-2">Memuat riwayat...</span>
                 </div>`;
 
-            fetch('{{ route('HR.reports.history.data') }}')
+            return fetch('{{ route('HR.reports.history.data') }}?_=' + Date.now(), {
+                    cache: 'no-store',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
                 .then(r => r.json())
                 .then(res => {
-                    if (!res.success || !res.data) {
-                        area.innerHTML = '<div class="text-center py-5 text-muted">Belum ada riwayat</div>';
-                        return;
-                    }
-
                     historyData = {};
-                    res.data.forEach(item => {
-                        const key = item.template_id || 'unknown';
+                    historyIndex = {};
+
+                    (res.success && res.data ? res.data : []).forEach(item => {
+                        const key = String(item.template_id || 'unknown');
                         if (!historyData[key]) {
                             historyData[key] = {
                                 name: item.template_name || 'Template',
@@ -1396,9 +845,14 @@
                             };
                         }
                         historyData[key].files.push(item);
+                        historyIndex[item.id] = item;
                     });
 
-                    renderHistoryFolders();
+                    if (keepFolder && historyData[keepFolder]) {
+                        openHistoryFolder(keepFolder);
+                    } else {
+                        renderHistoryFolders();
+                    }
                 })
                 .catch(() => {
                     area.innerHTML = '<div class="text-center py-5 text-danger">Gagal memuat data</div>';
@@ -1408,30 +862,24 @@
         function renderHistoryFolders() {
             currentHistoryFolder = null;
             document.getElementById('btnBackToFolders').classList.add('d-none');
-            document.getElementById('historyBreadcrumb').innerHTML = '<span class="fw-semibold">Semua Folder</span>';
+            document.getElementById('historyBreadcrumb').textContent = 'Semua folder';
 
             const keys = Object.keys(historyData);
-            let html = '';
+            let html;
 
-            if (keys.length === 0) {
-                html = '<div class="text-center py-5 text-muted">Belum ada riwayat generate</div>';
+            if (!keys.length) {
+                html = '<div class="text-center py-5 text-muted">Belum ada riwayat laporan.</div>';
             } else {
-                html = '<div class="row g-3">';
-                keys.forEach(key => {
-                    const folder = historyData[key];
-                    html += `
-                        <div class="col-6 col-md-4">
-                            <div class="card h-100 border-0 shadow-sm history-folder-card" 
-                                style="cursor:pointer" onclick="openHistoryFolder('${key}')">
-                                <div class="card-body text-center py-4">
-                                    <span class="iconify text-warning mb-2" data-icon="mdi:folder" style="font-size:2.8rem;"></span>
-                                    <h6 class="mb-1 text-truncate" title="${folder.name}">${folder.name}</h6>
-                                    <small class="text-muted">${folder.files.length} file</small>
-                                </div>
-                            </div>
-                        </div>`;
-                });
-                html += '</div>';
+                html = '<div class="row g-2">' + keys.map(key => `
+                    <div class="col-sm-6 col-xl-4">
+                        <button type="button" class="history-folder" data-folder="${esc(key)}">
+                            <span class="iconify" data-icon="mdi:folder"></span>
+                            <span class="text-truncate">
+                                <strong class="text-truncate">${esc(historyData[key].name)}</strong>
+                                <small>${historyData[key].files.length} file</small>
+                            </span>
+                        </button>
+                    </div>`).join('') + '</div>';
             }
 
             document.getElementById('historyContentArea').innerHTML = html;
@@ -1439,89 +887,63 @@
         }
 
         function openHistoryFolder(key) {
-            currentHistoryFolder = key;
             const folder = historyData[key];
             if (!folder) return;
+            currentHistoryFolder = key;
 
             document.getElementById('btnBackToFolders').classList.remove('d-none');
-            document.getElementById('historyBreadcrumb').innerHTML = `
-                <span class="text-muted">Folder /</span> 
-                <span class="fw-semibold">${folder.name}</span>`;
+            document.getElementById('historyBreadcrumb').textContent = folder.name;
 
-            let html = `
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>Judul</th>
-                                <th>Status</th>
-                                <th class="text-end">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
+            const statusMap = {
+                completed: ['bg-success-subtle text-success', 'Sukses'],
+                failed: ['bg-danger-subtle text-danger', 'Gagal'],
+            };
 
-            folder.files.forEach(item => {
-                let badge = 'bg-warning-subtle text-warning';
-                let status = 'Pending';
-                if (item.status === 'completed') {
-                    badge = 'bg-success-subtle text-success';
-                    status = 'Sukses';
-                }
-                if (item.status === 'failed') {
-                    badge = 'bg-danger-subtle text-danger';
-                    status = 'Gagal';
-                }
-
-                html += `
+            const rows = folder.files.map(item => {
+                const [badge, label] = statusMap[item.status] || ['bg-warning-subtle text-warning', 'Pending'];
+                return `
                     <tr>
-                        <td><small>${item.created_at}</small></td>
-                        <td>
-                            <div class="text-truncate" style="max-width:180px" title="${item.report_title}">
-                                ${item.report_title}
-                            </div>
-                        </td>
-                        <td><span class="badge ${badge}">${status}</span></td>
+                        <td class="small text-nowrap">${esc(item.created_at)}</td>
+                        <td><div class="text-truncate" style="max-width:200px" title="${esc(item.report_title)}">${esc(item.report_title)}</div></td>
+                        <td><span class="badge ${badge}">${label}</span></td>
                         <td class="text-end">
-                            <div class="action-dropdown">
-                                <button type="button" class="action-dropdown-btn" title="Aksi">
-                                    <span class="iconify" data-icon="mdi:dots-vertical" style="font-size:1.15rem;"></span>
-                                </button>
-
-                                <div class="action-dropdown-menu">
-                                    <button type="button"
-                                        onclick="showHistoryPreview(${item.id}, '${item.report_title.replace(/'/g, "\\'")}', '${item.download_url}', '${(item.file_extension || '').toUpperCase()}')">
-                                        <span class="iconify" data-icon="mdi:eye-outline"></span>
-                                        Preview
-                                    </button>
-
-                                    <button type="button"
-                                        onclick="showHistoryEdit(${item.id}, '${item.report_title.replace(/'/g, "\\'")}')">
-                                        <span class="iconify" data-icon="mdi:pencil-outline"></span>
-                                        Edit
-                                    </button>
-
-                                    <button type="button"
-                                        class="text-danger"
-                                        onclick="showHistoryDelete(${item.id}, '${item.report_title.replace(/'/g, "\\'")}')">
-                                        <span class="iconify" data-icon="mdi:delete-outline"></span>
-                                        Hapus
-                                    </button>
-                                </div>
+                            <div class="history-row-actions">
+                                <button type="button" class="btn" title="Pratinjau" data-h-act="preview" data-id="${item.id}"><span class="iconify" data-icon="mdi:eye-outline"></span></button>
+                                <button type="button" class="btn" title="Ubah judul" data-h-act="edit" data-id="${item.id}"><span class="iconify" data-icon="mdi:pencil-outline"></span></button>
+                                <button type="button" class="btn danger" title="Hapus" data-h-act="delete" data-id="${item.id}"><span class="iconify" data-icon="mdi:delete-outline"></span></button>
                             </div>
                         </td>
                     </tr>`;
-            });
+            }).join('');
 
-            html += `</tbody></table></div>`;
-            document.getElementById('historyContentArea').innerHTML = html;
+            document.getElementById('historyContentArea').innerHTML = `
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 bg-white">
+                        <thead class="table-light">
+                            <tr><th>Tanggal</th><th>Judul</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>`;
         }
 
-        function showHistoryFolders() {
-            renderHistoryFolders();
-        }
+        document.getElementById('btnBackToFolders').addEventListener('click', renderHistoryFolders);
+        document.getElementById('btnCloseSidePane').addEventListener('click', closeHistorySidePane);
 
-        // ---------- Side Panel ----------
+        document.getElementById('historyContentArea').addEventListener('click', function(e) {
+            const folder = e.target.closest('[data-folder]');
+            if (folder) return openHistoryFolder(folder.dataset.folder);
+
+            const btn = e.target.closest('[data-h-act]');
+            if (!btn) return;
+            const item = historyIndex[btn.dataset.id];
+            if (!item) return;
+
+            if (btn.dataset.hAct === 'preview') showHistoryPreview(item);
+            if (btn.dataset.hAct === 'edit') showHistoryEdit(item);
+            if (btn.dataset.hAct === 'delete') showHistoryDelete(item);
+        });
+
         function openHistorySidePane(title) {
             document.getElementById('sidePaneTitle').textContent = title;
             document.getElementById('historySidePane').classList.add('is-open');
@@ -1531,89 +953,91 @@
         function closeHistorySidePane() {
             document.getElementById('historySidePane').classList.remove('is-open');
             document.getElementById('historyListPane').classList.remove('with-side');
-            document.getElementById('sidePaneBody').innerHTML = `
-                <div class="text-center text-muted py-5">
-                    <span class="iconify mb-3" data-icon="mdi:file-document-outline" style="font-size:3rem;opacity:.3;"></span>
-                    <p>Pilih file untuk melihat preview</p>
-                </div>`;
+            document.getElementById('sidePaneBody').innerHTML = '';
         }
 
-        // ---------- Preview di Side Panel ----------
-        function showHistoryPreview(id, title, downloadUrl, extension) {
-            openHistorySidePane('Preview: ' + title);
-
+        function showHistoryPreview(item) {
+            openHistorySidePane('Pratinjau: ' + item.report_title);
             const body = document.getElementById('sidePaneBody');
+            const ext = (item.file_extension || '').toUpperCase();
+
             body.innerHTML = `
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary"></div>
-                    <p class="mt-3 text-muted">Memuat preview...</p>
+                    <p class="mt-3 text-muted">Memuat pratinjau...</p>
                 </div>`;
 
-            fetch(downloadUrl)
+            fetch(item.download_url)
                 .then(r => {
                     if (!r.ok) throw new Error('Gagal mengambil file');
                     return r.arrayBuffer();
                 })
                 .then(buffer => {
                     body.innerHTML = '';
-                    const container = document.createElement('div');
-                    container.className = 'docx-container-preview';
-                    body.appendChild(container);
-                    body.insertAdjacentHTML('beforeend', `
-                        <div class="mt-3 text-end">
-                            <a href="${downloadUrl}" class="btn btn-primary btn-sm" target="_blank">
-                                <span class="iconify me-1" data-icon="mdi:download"></span>Download
-                            </a>
-                        </div>`);
 
-                    if (extension === 'DOCX') {
-                        window.docx.renderAsync(buffer, container, null, {
+                    if (ext !== 'DOCX' && ext !== 'PDF') {
+                        body.innerHTML = '<div class="alert alert-warning">Format belum didukung untuk pratinjau.</div>';
+                        return;
+                    }
+
+                    const holder = document.createElement('div');
+                    holder.className = 'docx-container-preview';
+                    body.appendChild(holder);
+
+                    if (ext === 'DOCX') {
+                        window.docx.renderAsync(buffer, holder, null, {
                             className: 'docx',
                             inWrapper: true,
                             breakPages: true
                         });
-                    } else if (extension === 'PDF') {
-                        const blob = new Blob([buffer], {
-                            type: 'application/pdf'
-                        });
-                        const url = URL.createObjectURL(blob);
-                        container.innerHTML =
-                            `<iframe src="${url}" style="width:100%;height:70vh;border:none;"></iframe>`;
                     } else {
-                        body.innerHTML = `<div class="alert alert-warning">Format tidak didukung</div>`;
+                        const url = URL.createObjectURL(new Blob([buffer], {
+                            type: 'application/pdf'
+                        }));
+                        holder.innerHTML = `<iframe src="${url}" style="width:100%;height:70vh;border:none;"></iframe>`;
                     }
+
+                    body.insertAdjacentHTML('beforeend', `
+                        <div class="mt-3 text-end">
+                            <a href="${esc(item.download_url)}" class="btn btn-primary btn-sm" target="_blank">
+                                <span class="iconify me-1" data-icon="mdi:download"></span>Unduh
+                            </a>
+                        </div>`);
                 })
                 .catch(err => {
-                    body.innerHTML = `<div class="alert alert-danger">Gagal memuat preview: ${err.message}</div>`;
+                    body.innerHTML = `<div class="alert alert-danger">Gagal memuat pratinjau: ${esc(err.message)}</div>`;
                 });
         }
 
-        // ---------- Edit di Side Panel ----------
-        function showHistoryEdit(id, title) {
-            openHistorySidePane('Edit Riwayat');
-
+        function showHistoryEdit(item) {
+            openHistorySidePane('Ubah judul');
             document.getElementById('sidePaneBody').innerHTML = `
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Judul Laporan</label>
-                    <input type="text" id="sideEditTitle" class="form-control" value="${title}">
+                    <label class="form-label fw-semibold small">Judul laporan</label>
+                    <input type="text" id="sideEditTitle" class="form-control" maxlength="255" value="${esc(item.report_title)}">
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-primary" onclick="saveHistoryEdit(${id})">
-                        <span class="iconify me-1" data-icon="mdi:content-save"></span>Simpan
-                    </button>
-                    <button class="btn btn-light" onclick="closeHistorySidePane()">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveHistoryEdit">Simpan perubahan</button>
+                    <button type="button" class="btn btn-light" id="btnCancelSide">Batal</button>
                 </div>`;
+
+            document.getElementById('btnCancelSide').addEventListener('click', closeHistorySidePane);
+            document.getElementById('btnSaveHistoryEdit').addEventListener('click', () => saveHistoryEdit(item.id));
+            document.getElementById('sideEditTitle').focus();
         }
 
         function saveHistoryEdit(id) {
             const title = document.getElementById('sideEditTitle').value.trim();
-            if (!title) return alert('Judul wajib diisi');
+            if (!title) return showToast('Judul wajib diisi.', 'error');
+
+            const btn = document.getElementById('btnSaveHistoryEdit');
+            btn.disabled = true;
 
             fetch(`/HR-dashboard/reports/history/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-CSRF-TOKEN': csrf(),
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
@@ -1622,54 +1046,56 @@
                 })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        closeHistorySidePane();
-                        loadHistoryData(); // refresh
-                    } else {
-                        showToast(data.message || 'Gagal', 'error');
+                    if (!data.success) {
+                        const detail = data.errors ? Object.values(data.errors).flat().join(' ') : '';
+                        throw new Error(detail || data.message || 'Gagal menyimpan');
                     }
+                    showToast(data.message, 'success');
+                    closeHistorySidePane();
+                    return loadHistoryData(currentHistoryFolder);
+                })
+                .catch(err => {
+                    showToast(err.message, 'error');
+                    btn.disabled = false;
                 });
         }
 
-        // ---------- Delete di Side Panel ----------
-        function showHistoryDelete(id, title) {
-            openHistorySidePane('Hapus Riwayat');
-
+        function showHistoryDelete(item) {
+            openHistorySidePane('Hapus riwayat');
             document.getElementById('sidePaneBody').innerHTML = `
-                <div class="text-center mb-4">
-                    <span class="iconify text-danger" data-icon="mdi:trash-can-outline" style="font-size:3rem;"></span>
-                    <p class="mt-3">Yakin ingin menghapus riwayat ini?</p>
-                    <h6 class="text-danger">"${title}"</h6>
-                    <div class="alert alert-warning small mt-3">
-                        File laporan juga akan dihapus permanen.
-                    </div>
-                </div>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button class="btn btn-danger" onclick="confirmHistoryDelete(${id})">
-                        Ya, Hapus
-                    </button>
-                    <button class="btn btn-light" onclick="closeHistorySidePane()">Batal</button>
+                <p class="mb-1">Riwayat berikut akan dihapus:</p>
+                <h6 class="text-danger">${esc(item.report_title)}</h6>
+                <div class="alert alert-warning small mt-3">File laporan juga ikut terhapus permanen.</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-danger" id="btnConfirmHistoryDelete">Hapus riwayat</button>
+                    <button type="button" class="btn btn-light" id="btnCancelSide">Batal</button>
                 </div>`;
+
+            document.getElementById('btnCancelSide').addEventListener('click', closeHistorySidePane);
+            document.getElementById('btnConfirmHistoryDelete').addEventListener('click', () => confirmHistoryDelete(item.id));
         }
 
         function confirmHistoryDelete(id) {
+            const btn = document.getElementById('btnConfirmHistoryDelete');
+            btn.disabled = true;
+
             fetch(`/HR-dashboard/reports/history/${id}`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-CSRF-TOKEN': csrf(),
                         'Accept': 'application/json'
                     }
                 })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        closeHistorySidePane();
-                        loadHistoryData();
-                    } else {
-                        showToast(data.message || 'Gagal hapus', 'error');
-                    }
+                    if (!data.success) throw new Error(data.message || 'Gagal menghapus');
+                    showToast(data.message, 'success');
+                    closeHistorySidePane();
+                    return loadHistoryData(currentHistoryFolder);
+                })
+                .catch(err => {
+                    showToast(err.message, 'error');
+                    btn.disabled = false;
                 });
         }
     </script>

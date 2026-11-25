@@ -133,6 +133,28 @@
             color: #495057;
         }
 
+        .photo-wrap {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .photo-wrap img {
+            display: block;
+        }
+
+        .photo-stamp {
+            position: absolute;
+            right: 8px;
+            bottom: 8px;
+            background: rgba(0, 0, 0, .65);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
         .drag-handle {
             cursor: grab;
             color: #adb5bd;
@@ -486,6 +508,12 @@
                         <i class="bx bx-error"></i>
                         <strong>Halaman Perbaikan Data.</strong> Gunakan untuk memindahkan tugas yang salah tanggal/OB akibat
                         bug lama. Data tidak dihapus, hanya dipindahkan tanggal & OB-nya.
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalClearDouble">
+                            <i class="bx bx-trash-alt me-1"></i> Clear Double Task
+                        </button>
                     </div>
 
                     <div class="card border-0 shadow-sm rounded-4 mb-3">
@@ -1056,6 +1084,84 @@
         </div>
     </div>
 
+    @can('Perbaiki DaftarTugas Data OB')
+        <div class="modal fade" id="modalClearDouble" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold"><i class="bx bx-trash-alt me-2"></i>Clear Double Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" name="cdMode" id="cdModePeriode" value="periode" checked>
+                                <label class="form-check-label" for="cdModePeriode"><strong>Double per periode</strong> — kategori yang sama muncul lebih dari 1× dalam satu periode (minggu/bulan/quartal/semester/tahun).</label>
+                            </div>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" name="cdMode" id="cdModeError" value="error">
+                                <label class="form-check-label" for="cdModeError"><strong>Double error</strong> — kategori + OB + tanggal deadline persis sama.</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="cdMode" id="cdModeSekali" value="sekali">
+                                <label class="form-check-label" for="cdModeSekali"><strong>Tugas sekali saja</strong> — pilih kategori, hanya 1 baris (paling awal/berbukti) dipertahankan, tanggal lain dihapus.</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-md-3 d-none" id="cdKategoriWrap">
+                                <label class="form-label small fw-semibold">Kategori</label>
+                                <select id="cdKategori" class="form-select form-select-sm">
+                                    <option value="">-- Pilih kategori --</option>
+                                    @foreach ($dataKategori as $k)
+                                        <option value="{{ $k->id }}">{{ $k->judul_kategori }} ({{ $k->Tipe }}{{ $k->tipe_turunan ? ' - ' . $k->tipe_turunan : '' }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold">OB</label>
+                                <select id="cdKaryawan" class="form-select form-select-sm">
+                                    <option value="">Semua OB</option>
+                                    @foreach ($officeBoy as $ob)
+                                        <option value="{{ $ob->id }}">{{ $ob->nama_lengkap }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Dari</label>
+                                <input type="date" id="cdStart" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small fw-semibold">Sampai</label>
+                                <input type="date" id="cdEnd" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" id="btnCdScan"><i class="bx bx-search"></i> Scan</button>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning small">
+                            <i class="bx bx-info-circle me-1"></i>
+                            Baris <span class="badge bg-success">Dipertahankan</span> dipilih otomatis (bukti terlengkap → sudah selesai → deadline paling awal).
+                            Baris yang punya foto bukti tidak dicentang otomatis. Foto ikut terhapus jika baris dihapus.
+                        </div>
+
+                        <div id="cdResult"></div>
+                    </div>
+                    <div class="modal-footer bg-light justify-content-between">
+                        <div class="small text-muted" id="cdSummary">Belum ada hasil scan</div>
+                        <div>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                            <button type="button" class="btn btn-danger btn-sm" id="btnCdDelete" disabled>
+                                <i class="bx bx-trash"></i> Hapus Terpilih (<span id="cdSelCount">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
@@ -1094,7 +1200,9 @@
                     before: null,
                     after: null,
                     waktu_mulai: null,
-                    waktu_selesai: null
+                    waktu_selesai: null,
+                    tanggal_mulai: null,
+                    tanggal_selesai: null
                 };
                 if (!bukti) return defaultData;
                 try {
@@ -1125,6 +1233,26 @@
                     minute: '2-digit'
                 }) + ' WIB';
             }
+
+            function formatTanggalStamp(ymd) {
+                if (!ymd) return '-';
+                const d = new Date(String(ymd).substring(0, 10) + 'T00:00:00');
+                if (isNaN(d.getTime())) return ymd;
+                return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+
+            function formatYMD(ts) {
+                const d = new Date(ts);
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            }
+
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[c]));
 
             function getBuktiStatus(bukti) {
                 const data = parseBukti(bukti);
@@ -1212,7 +1340,7 @@
 
                             const buktiBtn = buktiStatus.canUpload ?
                                 `<button class="btn btn-sm btn-primary btn-uploadBukti" data-id="${it.id}" data-judul="${kat.replace(/"/g,'&quot;')}" data-bukti="${buktiDataStr}"><i class="bx bx-upload"></i> ${buktiStatus.hasBefore || buktiStatus.hasAfter ? 'Lengkapi' : 'Upload'}</button>` :
-                                `<button class="btn btn-sm btn-outline-primary btn-viewBukti" data-bukti="${buktiDataStr}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i> Lihat</button>`;
+                                `<button class="btn btn-sm btn-outline-primary btn-viewBukti" data-deadline="${dl}" data-bukti="${buktiDataStr}" data-judul="${kat.replace(/"/g,'&quot;')}"><i class="bx bx-show"></i> Lihat</button>`;
 
                             tb.append(`<tr class="${buktiStatus.rowClass} ${done?'bg-light':''}" data-id="${it.id}">
                                 <td class="text-center"><i class="bx bx-menu drag-handle"></i></td>
@@ -2130,6 +2258,7 @@
                         const fileBefore = new File([f], 'before_' + Date.now() + '.jpg', { type: 'image/jpeg' });
                         fd.append('bukti_before', fileBefore);
                         fd.append('waktu_mulai', formatHM(upState.before.takenAt));
+                        fd.append('tanggal_mulai', formatYMD(upState.before.takenAt));
                     }
 
                     if (upState.after) {
@@ -2143,6 +2272,7 @@
                         const fileAfter = new File([f], 'after_' + Date.now() + '.jpg', { type: 'image/jpeg' });
                         fd.append('bukti_after', fileAfter);
                         fd.append('waktu_selesai', formatHM(upState.after.takenAt));
+                        fd.append('tanggal_selesai', formatYMD(upState.after.takenAt));
                     }
 
                     txt.text('Mengupload ke Server...');
@@ -2389,63 +2519,39 @@
             $(document).on('click', '.btn-viewBukti', function() {
                 const bukti = $(this).data('bukti');
                 const judul = $(this).data('judul');
+                const deadline = $(this).data('deadline') || null;
                 $('#previewModalTitle').text(judul);
                 const body = $('#previewModalBody');
-                const modal = getModal('modalPreviewBukti');
-                modal.show();
+                getModal('modalPreviewBukti').show();
+
                 try {
                     const data = parseBukti(bukti);
-                    const beforeUrl = data.before ? `/storage/${data.before}` : null;
-                    const afterUrl = data.after ? `/storage/${data.after}` : null;
-                    const waktuMulai = formatWaktu(data.waktu_mulai);
-                    const waktuSelesai = formatWaktu(data.waktu_selesai);
 
-                    let html = '<div class="photo-comparison">';
-
-                    html += `<div class="photo-box p-3 bg-light rounded-3 border">
-                                <div class="label text-primary mb-1">Before (Sebelum)</div>
-                                <div class="mb-2">
-                                    <span class="badge bg-white text-dark border shadow-xs fw-normal px-2 py-1">
-                                        <i class="bx bx-time-five text-primary me-1"></i>Waktu Mulai: <strong>${waktuMulai}</strong>
-                                    </span>
-                                </div>`;
-                    if (beforeUrl) {
-                        const ext = beforeUrl.split('.').pop().toLowerCase();
-                        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-                            html +=
-                                `<img src="${beforeUrl}" class="img-fluid rounded shadow bukti-preview" alt="Before">`;
+                    const box = (title, cls, icon, lbl, path, tgl, waktu, alt) => {
+                        const tglLabel = formatTanggalStamp(tgl || deadline);
+                        const jam = waktu ? String(waktu).substring(0, 5) + ' WIB' : '';
+                        let h = `<div class="photo-box p-3 bg-light rounded-3 border">
+                            <div class="label ${cls} mb-1">${title}</div>
+                            <div class="mb-2"><span class="badge bg-white text-dark border fw-normal px-2 py-1">
+                                <i class="bx ${icon} ${cls} me-1"></i>${lbl}: <strong>${tglLabel}, ${formatWaktu(waktu)}</strong>
+                            </span></div>`;
+                        if (path) {
+                            h += `<div class="photo-wrap">
+                                    <img src="/storage/${path}" class="img-fluid rounded shadow bukti-preview" alt="${alt}">
+                                    <div class="photo-stamp"><i class="bx bx-calendar"></i> ${tglLabel}${jam ? ' • ' + jam : ''}</div>
+                                  </div>`;
                         } else {
-                            html +=
-                                `<div class="alert alert-secondary small mb-0">File: ${beforeUrl.split('/').pop()}</div>`;
+                            h += `<div class="alert alert-warning small mb-0">Foto ${alt} tidak tersedia</div>`;
                         }
-                    } else {
-                        html += `<div class="alert alert-warning small mb-0">Foto Before tidak tersedia</div>`;
-                    }
+                        return h + '</div>';
+                    };
 
-                    html += `</div><div class="photo-box p-3 bg-light rounded-3 border">
-                                <div class="label text-success mb-1">After (Sesudah)</div>
-                                <div class="mb-2">
-                                    <span class="badge bg-white text-dark border shadow-xs fw-normal px-2 py-1">
-                                        <i class="bx bx-check-double text-success me-1"></i>Waktu Selesai: <strong>${waktuSelesai}</strong>
-                                    </span>
-                                </div>`;
-                    if (afterUrl) {
-                        const ext = afterUrl.split('.').pop().toLowerCase();
-                        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-                            html +=
-                                `<img src="${afterUrl}" class="img-fluid rounded shadow bukti-preview" alt="After">`;
-                        } else {
-                            html +=
-                                `<div class="alert alert-secondary small mb-0">File: ${afterUrl.split('/').pop()}</div>`;
-                        }
-                    } else {
-                        html += `<div class="alert alert-warning small mb-0">Foto After tidak tersedia</div>`;
-                    }
-                    html += `</div></div>`;
-                    body.html(html);
+                    body.html('<div class="photo-comparison">' +
+                        box('Before (Sebelum)', 'text-primary', 'bx-time-five', 'Mulai', data.before, data.tanggal_mulai, data.waktu_mulai, 'Before') +
+                        box('After (Sesudah)', 'text-success', 'bx-check-double', 'Selesai', data.after, data.tanggal_selesai, data.waktu_selesai, 'After') +
+                        '</div>');
                 } catch (e) {
-                    body.html(
-                        '<div class="alert alert-danger">Gagal memuat bukti. Silakan coba lagi.</div>');
+                    body.html('<div class="alert alert-danger">Gagal memuat bukti. Silakan coba lagi.</div>');
                 }
             });
 
@@ -2972,6 +3078,121 @@
                     },
                     complete: function() {
                         btn.prop('disabled', false).html(origText);
+                    }
+                });
+            });
+
+            function cdParams() {
+                const mode = $('input[name="cdMode"]:checked').val();
+                return {
+                    mode: mode,
+                    kategori_id: mode === 'sekali' ? $('#cdKategori').val() : '',
+                    karyawan: $('#cdKaryawan').val(),
+                    start_date: $('#cdStart').val(),
+                    end_date: $('#cdEnd').val()
+                };
+            }
+
+            function cdUpdateCount() {
+                const n = $('.cd-check:checked').length;
+                $('#cdSelCount').text(n);
+                $('#btnCdDelete').prop('disabled', n === 0);
+            }
+
+            $('input[name="cdMode"]').on('change', function() {
+                $('#cdKategoriWrap').toggleClass('d-none', $(this).val() !== 'sekali');
+            });
+
+            $(document).on('change', '.cd-check', cdUpdateCount);
+
+            function cdScan() {
+                const p = cdParams();
+                if (p.mode === 'sekali' && !p.kategori_id) {
+                    showNotification('Peringatan', 'Pilih kategori untuk mode "Tugas sekali saja"', 'warning');
+                    return;
+                }
+                const btn = $('#btnCdScan');
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                $('#cdResult').html('<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.scanDouble') }}",
+                    type: 'GET',
+                    data: p,
+                    success: function(r) {
+                        if (!r.groups.length) {
+                            $('#cdResult').html('<div class="text-center text-muted py-4"><i class="bx bx-check-circle text-success" style="font-size:2rem"></i><p class="mt-2 mb-0">Tidak ada data double 🎉</p></div>');
+                            $('#cdSummary').text('0 data double');
+                            cdUpdateCount();
+                            return;
+                        }
+                        let html = '';
+                        r.groups.forEach(g => {
+                            const k = g.keep;
+                            html += `<div class="card mb-2">
+                                <div class="card-header py-2 small d-flex justify-content-between">
+                                    <strong>${esc(g.kategori)}</strong><span class="badge bg-info text-dark">${esc(g.tipe)}</span>
+                                </div>
+                                <ul class="list-group list-group-flush small">
+                                    <li class="list-group-item bg-success bg-opacity-10">
+                                        <span class="badge bg-success me-2">Dipertahankan</span>
+                                        ${esc(k.deadline)} · ${esc(k.ob)} · ${k.status == 1 ? 'Selesai' : 'Pending'}
+                                        ${k.has_bukti ? ' · <i class="bx bx-image"></i> ada bukti' : ''}
+                                    </li>`;
+                            g.hapus.forEach(t => {
+                                html += `<li class="list-group-item">
+                                    <label class="d-flex gap-2 align-items-center mb-0" style="cursor:pointer">
+                                        <input type="checkbox" class="form-check-input cd-check" value="${t.id}" ${t.has_bukti ? '' : 'checked'}>
+                                        <span class="badge bg-danger">Hapus</span>
+                                        ${esc(t.deadline)} · ${esc(t.ob)} · ${t.status == 1 ? 'Selesai' : 'Pending'}
+                                        ${t.has_bukti ? '<span class="badge bg-warning text-dark">ada foto bukti</span>' : ''}
+                                    </label></li>`;
+                            });
+                            html += '</ul></div>';
+                        });
+                        $('#cdResult').html(html);
+                        let sum = `${r.total_group} grup double • ${r.total_hapus} baris bisa dihapus`;
+                        if (r.total_group > r.groups.length) sum += ` (menampilkan ${r.groups.length} grup pertama, scan ulang setelah hapus)`;
+                        $('#cdSummary').text(sum);
+                        cdUpdateCount();
+                    },
+                    error: function(xhr) {
+                        $('#cdResult').html('');
+                        showNotification('Gagal', xhr.responseJSON?.message || 'Gagal scan data double', 'danger');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="bx bx-search"></i> Scan');
+                    }
+                });
+            }
+
+            $('#btnCdScan').on('click', cdScan);
+
+            $('#btnCdDelete').on('click', function() {
+                const ids = $('.cd-check:checked').map(function() { return $(this).val(); }).get();
+                if (!ids.length) return;
+                if (!confirm(`Hapus ${ids.length} tugas double? Foto bukti pada baris tersebut ikut terhapus dan tidak bisa dikembalikan.`)) return;
+
+                const btn = $(this);
+                const orig = btn.html();
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Menghapus...');
+
+                $.ajax({
+                    url: "{{ route('office.DaftarTugas.clearDouble') }}",
+                    type: 'POST',
+                    data: Object.assign({ _token: $('meta[name="csrf-token"]').attr('content'), ids: ids }, cdParams()),
+                    success: function(r) {
+                        showNotification('Berhasil', r.message, 'success');
+                        loadData();
+                        if (pfLoadedOnce) loadPerbaikanList();
+                        cdScan();
+                    },
+                    error: function(xhr) {
+                        showNotification('Gagal', xhr.responseJSON?.message || 'Gagal menghapus', 'danger');
+                    },
+                    complete: function() {
+                        btn.html(orig);
+                        cdUpdateCount();
                     }
                 });
             });

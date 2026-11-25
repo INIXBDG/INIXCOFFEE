@@ -28,7 +28,7 @@
     "isEntry": true
   },
   "resources/css/pages/menus.css": {
-    "file": "assets/menus-BdoS7EYI.css",
+    "file": "assets/menus-XIYpl9-e.css",
     "src": "resources/css/pages/menus.css",
     "isEntry": true
   },
@@ -48,10 +48,9 @@
     ]
   },
   "resources/js/pages/dashboard.js": {
-    "file": "assets/dashboard-CipFuv-a.js",
+    "file": "assets/dashboard-OJv7NQrz.js",
     "name": "dashboard",
     "src": "resources/js/pages/dashboard.js",
-    "isEntry": true,
     "isDynamicEntry": true
   },
   "resources/js/pages/itsm-sla.js": {
@@ -66,6 +65,12 @@
     "src": "resources/js/pages/kpi/dataTarget.js",
     "isEntry": true
   },
+  "resources/js/pages/kpi/kpi-detail-content.js": {
+    "file": "assets/kpi-detail-content-BF9YppwE.js",
+    "name": "kpi-detail-content",
+    "src": "resources/js/pages/kpi/kpi-detail-content.js",
+    "isEntry": true
+  },
   "resources/js/pages/kpi/kpiGrade.js": {
     "file": "assets/kpiGrade-D0TWwkCy.js",
     "name": "kpiGrade",
@@ -73,7 +78,7 @@
     "isEntry": true
   },
   "resources/js/pages/kpi/kpiIndex.js": {
-    "file": "assets/kpiIndex-BC0WR_Et.js",
+    "file": "assets/kpiIndex-CvvBd6AC.js",
     "name": "kpiIndex",
     "src": "resources/js/pages/kpi/kpiIndex.js",
     "isEntry": true
@@ -85,7 +90,7 @@
     "isEntry": true
   },
   "resources/js/pages/kpi/kpiPersonal.js": {
-    "file": "assets/kpiPersonal-CxlnSmsE.js",
+    "file": "assets/kpiPersonal-DID1q_3d.js",
     "name": "kpiPersonal",
     "src": "resources/js/pages/kpi/kpiPersonal.js",
     "isEntry": true
