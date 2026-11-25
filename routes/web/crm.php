@@ -96,6 +96,7 @@ Route::prefix('crm')->group(function () {
         Route::post('/peserta', [PesertaWebinarSalesController::class, 'store'])->name('peserta.store');
         Route::put('/peserta/{id}', [PesertaWebinarSalesController::class, 'update'])->name('peserta.update');
         Route::delete('/peserta/{id}', [PesertaWebinarSalesController::class, 'destroy'])->name('peserta.destroy');
+        Route::get('/peserta/export', [PesertaWebinarSalesController::class, 'export'])->name('peserta.export');
     });
 
     // Peluang CRM & Closed Win/Lost
