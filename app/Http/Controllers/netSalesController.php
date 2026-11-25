@@ -35,6 +35,22 @@ class netSalesController extends Controller
         $this->middleware('auth');
         $this->middleware('permission:View PaymantAdvance', ['only' => ['index']]);
     }
+
+    private const KOLOM_BIAYA = [
+        'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money',
+        'entertaint', 'souvenir', 'cashback', 'oleh_oleh', 'biaya_lain_lain',
+        'biaya_exam', 'sewa_laptop',
+    ];
+
+    private function totalBiaya($rows): float
+    {
+        $total = 0.0;
+        foreach (self::KOLOM_BIAYA as $kolom) {
+            $total += (float) $rows->sum($kolom);
+        }
+        return $total;
+    }
+
     public function index()
     {
         return view('netSales.index');
@@ -42,16 +58,10 @@ class netSalesController extends Controller
 
     public function store(Request $request)
     {
-        $request->merge([
-            'transportasi' => $request->transportasi ? str_replace('.', '', $request->transportasi) : null,
-            'akomodasi_peserta' => $request->akomodasi_peserta ? str_replace('.', '', $request->akomodasi_peserta) : null,
-            'akomodasi_tim' => $request->akomodasi_tim ? str_replace('.', '', $request->akomodasi_tim) : null,
-            'fresh_money' => $request->fresh_money ? str_replace('.', '', $request->fresh_money) : null,
-            'souvenir' => $request->souvenir ? str_replace('.', '', $request->souvenir) : null,
-            'cashback' => $request->cashback ? str_replace('.', '', $request->cashback) : null,
-            'entertaint' => $request->entertaint ? str_replace('.', '', $request->entertaint) : null,
-            'sewa_laptop' => $request->sewa_laptop ? str_replace('.', '', $request->sewa_laptop) : null,
-        ]);
+        foreach (self::KOLOM_BIAYA as $f) {
+            $v = $request->input($f);
+            $request->merge([$f => $v ? str_replace('.', '', $v) : null]);
+        }
 
         $data = $request->validate([
             'id_rkm' => 'required',
@@ -69,6 +79,10 @@ class netSalesController extends Controller
             'tgl_pa' => 'required',
             'tipe_pembayaran' => 'required|in:Cash,Transfer',
             'deskripsi_tambahan' => 'nullable',
+            'oleh_oleh'             => 'nullable|numeric',
+            'biaya_lain_lain'       => 'nullable|numeric',
+            'keterangan_biaya_lain' => 'nullable|string|max:500',
+            'biaya_exam'            => 'nullable|numeric',
         ]);
 
         $tracking = trackingNetSales::create([
@@ -199,6 +213,10 @@ class netSalesController extends Controller
                     $cashback = $netSalesList->sum('cashback');
                     $sewa_laptop = $netSalesList->sum('sewa_laptop');
 
+                    $oleh_oleh = $netSalesList->sum('oleh_oleh');
+                    $biaya_lain_lain = $netSalesList->sum('biaya_lain_lain');
+                    $biaya_exam = $netSalesList->sum('biaya_exam');
+
                     // Kalkulasi Total Penawaran
                     $totalPenawaran = floatval($item->pax * $item->harga_jual);
 
@@ -206,8 +224,7 @@ class netSalesController extends Controller
                     $potonganPajak = $totalPenawaran * (11 / 100);
 
                     // Kalkulasi Total Perhitungan Net Sales
-                    $totalPerhitunganNetSales = floatval($totalPenawaran - $potonganPajak - $transportasi - $fresh_money - $souvenir - $entertaint - $akomodasi_peserta - $akomodasi_tim - $cashback - $sewa_laptop);
-
+                    $totalPerhitunganNetSales = floatval($totalPenawaran - $potonganPajak - $this->totalBiaya($netSalesList));
                     $latestApproved = $netSalesList->flatMap->approvedNetSales->sortByDesc('created_at')->first();
 
                     return [
@@ -231,6 +248,9 @@ class netSalesController extends Controller
                         'souvenir' => $souvenir,
                         'cashback' => $cashback,
                         'sewa_laptop' => $sewa_laptop,
+                        'oleh_oleh' => $oleh_oleh,
+                        'biaya_lain_lain' => $biaya_lain_lain,
+                        'biaya_exam' => $biaya_exam,
                         'total' => $totalPerhitunganNetSales,
                         'level_status' => optional($latestApproved)->level_status ?? 'Belum Disetujui',
                         'keterangan' => optional($latestApproved)->keterangan ?? '-',
@@ -308,10 +328,8 @@ class netSalesController extends Controller
             $totalPenawaran = $netSale->rkm->pax * $netSale->rkm->harga_jual;
             $potonganPajak = $totalPenawaran * (11 / 100);
 
-            $total = $totalPenawaran - $potonganPajak - $netSale->transportasi - $netSale->akomodasi_tim - $netSale->akomodasi_peserta - $netSale->fresh_money - $netSale->entertaint - $netSale->cashback - $netSale->sewa_laptop - $netSale->souvenir;
-
-            $totalPA = $netSale->transportasi + $netSale->akomodasi_tim + $netSale->akomodasi_peserta + $netSale->fresh_money + $netSale->entertaint + $netSale->souvenir + $netSale->sewa_laptop;
-
+            $total = $totalPenawaran - $potonganPajak - $this->totalBiaya(collect([$netSale]));
+            $totalPA = $this->totalBiaya(collect([$netSale])) - (float) $netSale->cashback;
             $netSaleData = [
                 'id_netSales' => $netSale->id,
                 'transportasi' => $netSale->transportasi,
@@ -325,6 +343,10 @@ class netSalesController extends Controller
                 'cashback' => $netSale->cashback,
                 'souvenir' => $netSale->souvenir,
                 'sewa_laptop' => $netSale->sewa_laptop,
+                'oleh_oleh' => $netSale->oleh_oleh,
+                'biaya_lain_lain' => $netSale->biaya_lain_lain,
+                'keterangan_biaya_lain' => $netSale->keterangan_biaya_lain,
+                'biaya_exam' => $netSale->biaya_exam,
                 'tgl_pa' => $netSale->tgl_pa,
                 'tipe_pembayaran' => $netSale->tipe_pembayaran,
                 'bukti' => $netSale->bukti ?? null,
@@ -395,6 +417,16 @@ class netSalesController extends Controller
         $dataNetSales->souvenir = str_replace(['.', ','], '', $request->input('souvenir'));
         $dataNetSales->cashback = str_replace(['.', ','], '', $request->input('cashback'));
         $dataNetSales->sewa_laptop = str_replace(['.', ','], '', $request->input('sewa_laptop'));
+        foreach (['oleh_oleh', 'biaya_lain_lain', 'biaya_exam'] as $f) {
+            if ($request->has($f)) {
+                $v = preg_replace('/[^\d]/', '', (string) $request->input($f));
+                $dataNetSales->{$f} = $v === '' ? null : $v;
+            }
+        }
+        if ($request->has('keterangan_biaya_lain')) {
+            $dataNetSales->keterangan_biaya_lain = $request->input('keterangan_biaya_lain');
+        }
+
         $dataNetSales->tgl_pa = $request->input('tgl_pa');
         $dataNetSales->tipe_pembayaran = $request->input('tipe_pembayaran');
         $dataNetSales->deskripsi_tambahan = $request->input('deskripsi_tambahan');
@@ -407,14 +439,7 @@ class netSalesController extends Controller
             $potonganPajak = $totalPenawaran * (11 / 100);
 
             $allPA = perhitunganNetSales::where('id_rkm', $dataNetSales->id_rkm)->get();
-            $totalPAInputs = $allPA->sum('transportasi') +
-                             $allPA->sum('akomodasi_peserta') +
-                             $allPA->sum('akomodasi_tim') +
-                             $allPA->sum('fresh_money') +
-                             $allPA->sum('entertaint') +
-                             $allPA->sum('souvenir') +
-                             $allPA->sum('cashback') +
-                             $allPA->sum('sewa_laptop');
+            $totalPAInputs = $this->totalBiaya($allPA);
 
             // Menyimpan hasil akhir ke kolom netsales
             $peluang->netsales = $totalPenawaran - $potonganPajak - $totalPAInputs;
@@ -437,7 +462,11 @@ class netSalesController extends Controller
             'sewa_laptop',
             'tgl_pa',
             'tipe_pembayaran',
-            'deskripsi_tambahan'
+            'deskripsi_tambahan',
+            'oleh_oleh', 
+            'biaya_lain_lain', 
+            'keterangan_biaya_lain', 
+            'biaya_exam',
         ];
 
         foreach ($fieldsToWatch as $field) {
@@ -553,6 +582,9 @@ class netSalesController extends Controller
                     $souvenir           = $netSalesList->sum('souvenir');
                     $cashback           = $netSalesList->sum('cashback');
                     $sewa_laptop        = $netSalesList->sum('sewa_laptop');
+                    $oleh_oleh = $netSalesList->sum('oleh_oleh');
+                    $biaya_lain_lain = $netSalesList->sum('biaya_lain_lain');
+                    $biaya_exam = $netSalesList->sum('biaya_exam');
                     $deskripsi = $netSalesList->first()->deskripsi_tambahan ?? '-';
 
                     $totalPenawaran = $item->pax * $item->harga_jual;
@@ -591,8 +623,12 @@ class netSalesController extends Controller
                         'souvenir' => $souvenir,
                         'cashback' => $cashback,
                         'sewa_laptop' => $sewa_laptop,
+                        'oleh_oleh' => $oleh_oleh,
+                        'biaya_lain_lain' => $biaya_lain_lain,
+                        'biaya_exam' => $biaya_exam,
                         'deskripsi' => $deskripsi ?? '-',
                         'total' => $totalNetSales,
+                        'keterangan_biaya_lain' => $netSalesList->pluck('keterangan_biaya_lain')->filter()->implode('; '),
                         'level_status' => optional($latestApproved)->level_status ?? 'Belum Disetujui',
                         'keterangan' => optional($latestApproved)->keterangan ?? '-',
                         'perusahaan' => $item->perusahaan,
@@ -673,9 +709,7 @@ class netSalesController extends Controller
             'karyawan'
         ])->findOrFail($id);
 
-        $total = $data->transportasi + $data->akomodasi_peserta + $data->akomodasi_tim +
-                $data->fresh_money + $data->entertaint + $data->souvenir +
-                $data->cashback + $data->sewa_laptop;
+        $total = $this->totalBiaya(collect([$data]));
 
         return response()->json([
             'success' => true,

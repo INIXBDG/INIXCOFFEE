@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\DataPassword;
 use App\Models\karyawan;
 use App\Models\LogGaji;
+use App\Models\Pelatihan;
+use App\Models\Sertifikasi;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -65,6 +68,8 @@ class MasterKaryawanController extends Controller
 
     private const ORDER_COLUMNS = ['nama_lengkap', 'divisi', 'jabatan', 'status_karyawan'];
 
+    private const FILTER_PENGEMBANGAN = ['sertifikasi', 'pelatihan', 'keduanya', 'tidak'];
+
     private const REVIEW_GAJI_BULAN = 12;
 
     private const REMINDER_BULAN = 2;
@@ -117,11 +122,13 @@ class MasterKaryawanController extends Controller
             ->take($panjang)
             ->get();
 
+        $pengembangan = $this->statusPengembangan($rows);
+
         return response()->json([
             'draw'            => (int) $request->input('draw', 1),
             'recordsTotal'    => $total,
             'recordsFiltered' => $filtered,
-            'data'            => $rows->map(fn ($k) => $this->baris($k, $today))->values(),
+            'data'            => $rows->map(fn ($k) => $this->baris($k, $today, $pengembangan))->values(),
         ]);
     }
 
@@ -174,10 +181,11 @@ class MasterKaryawanController extends Controller
         }
 
         return response()->json([
-            'baris'         => $this->baris($k, $today),
+            'baris'         => $this->baris($k, $today, $this->statusPengembangan(collect([$k]))),
             'raw'           => $raw,
             'fields'        => $fields,
             'dokumen'       => $dokumen,
+            'pengembangan'  => $this->dataPengembangan($k),
             'log_gaji'      => $k->logGaji->map(fn ($l) => [
                 'bulan'             => (int) $l->bulan,
                 'tahun'             => (int) $l->tahun,
@@ -211,6 +219,62 @@ class MasterKaryawanController extends Controller
             ->values();
 
         return response()->json(['data' => $data]);
+    }
+
+    public function export(Request $request)
+    {
+        if ($blocked = $this->guard()) {
+            return $blocked;
+        }
+
+        $rows = $this->terapkanFilter($this->baseQuery(), $request)
+            ->with($this->relasiLog())
+            ->orderBy('nama_lengkap')
+            ->orderBy('id')
+            ->get();
+
+        $pengembangan = $this->statusPengembangan($rows);
+        $totalDokumen = count(self::DOC_FIELDS);
+        $namaFile = 'Master_Karyawan_' . date('Ymd_His') . '.csv';
+
+        return response()->streamDownload(function () use ($rows, $pengembangan, $totalDokumen) {
+            $out = fopen('php://output', 'w');
+
+            fwrite($out, "\xEF\xBB\xBF");
+            fwrite($out, "sep=;\r\n");
+
+            fputcsv($out, [
+                'NIP',
+                'Nama lengkap',
+                'Divisi',
+                'Jabatan',
+                'Status karyawan',
+                'Masa kerja',
+                'Masa kontrak',
+                'Basic salary',
+                'Kelengkapan dokumen',
+                'Sertifikasi / Pelatihan',
+            ], ';', '"', '\\');
+
+            foreach ($rows as $k) {
+                $terisi = $totalDokumen - $this->dokumenKosong($k)->count();
+
+                fputcsv($out, [
+                    $k->nip,
+                    $k->nama_lengkap,
+                    $k->divisi,
+                    $k->jabatan,
+                    $k->status_karyawan,
+                    $this->masaKerja($k),
+                    $this->masaKontrak($k),
+                    $this->basicSalary($k),
+                    $terisi . ' dari ' . $totalDokumen,
+                    $pengembangan[$k->id] ?? '-',
+                ], ';', '"', '\\');
+            }
+
+            fclose($out);
+        }, $namaFile, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function store(Request $request)
@@ -441,6 +505,10 @@ class MasterKaryawanController extends Controller
             })
             ->when($request->filled('divisi'), fn ($q) => $q->where('divisi', $request->divisi))
             ->when($request->filled('status'), fn ($q) => $q->where('status_karyawan', $request->status))
+            ->when(
+                in_array($request->pengembangan, self::FILTER_PENGEMBANGAN, true),
+                fn ($q) => $this->filterPengembangan($q, $request->pengembangan)
+            )
             ->when($request->dokumen === 'lengkap', function ($q) use ($kolomDokumen) {
                 foreach ($kolomDokumen as $c) {
                     $q->whereNotNull($c)->where($c, '!=', '');
@@ -458,6 +526,142 @@ class MasterKaryawanController extends Controller
     private function relasiLog(): array
     {
         return ['logGaji' => fn ($q) => $q->orderBy('tahun')->orderBy('bulan')->orderBy('id')];
+    }
+
+    private function punyaPengembangan($k): bool
+    {
+        $jabatan = mb_strtolower(trim((string) $k->jabatan));
+
+        return $jabatan === 'education manager' || str_contains($jabatan, 'instruktur');
+    }
+
+    private function filterPengembangan($query, string $nilai)
+    {
+        $sertifikasi = User::whereIn('id', Sertifikasi::select('user_id'))
+            ->whereNotNull('karyawan_id')
+            ->select('karyawan_id');
+
+        $pelatihan = User::whereIn('id', Pelatihan::select('user_id'))
+            ->whereNotNull('karyawan_id')
+            ->select('karyawan_id');
+
+        $query->where(function ($q) {
+            $q->whereRaw('LOWER(jabatan) = ?', ['education manager'])
+                ->orWhereRaw('LOWER(jabatan) LIKE ?', ['%instruktur%']);
+        });
+
+        return match ($nilai) {
+            'sertifikasi' => $query->whereIn('id', $sertifikasi)->whereNotIn('id', $pelatihan),
+            'pelatihan'   => $query->whereIn('id', $pelatihan)->whereNotIn('id', $sertifikasi),
+            'keduanya'    => $query->whereIn('id', $sertifikasi)->whereIn('id', $pelatihan),
+            default       => $query->whereNotIn('id', $sertifikasi)->whereNotIn('id', $pelatihan),
+        };
+    }
+
+    private function statusPengembangan($kumpulan): array
+    {
+        $target = collect($kumpulan)->filter(fn ($k) => $this->punyaPengembangan($k));
+
+        if ($target->isEmpty()) {
+            return [];
+        }
+
+        $petaUser = User::whereIn('karyawan_id', $target->pluck('id'))->pluck('id', 'karyawan_id');
+        $idUser = $petaUser->values();
+
+        $punyaSertifikasi = Sertifikasi::whereIn('user_id', $idUser)->distinct()->pluck('user_id')->flip();
+        $punyaPelatihan = Pelatihan::whereIn('user_id', $idUser)->distinct()->pluck('user_id')->flip();
+
+        $hasil = [];
+
+        foreach ($target as $k) {
+            $uid = $petaUser->get($k->id);
+            $s = $uid !== null && $punyaSertifikasi->has($uid);
+            $p = $uid !== null && $punyaPelatihan->has($uid);
+
+            $hasil[$k->id] = $s && $p ? 'Keduanya' : ($s ? 'Sertifikasi' : ($p ? 'Pelatihan' : 'Tidak ada'));
+        }
+
+        return $hasil;
+    }
+
+    private function dataPengembangan($k): array
+    {
+        $kosong = ['aktif' => false, 'sertifikasi' => [], 'pelatihan' => []];
+
+        if (!$this->punyaPengembangan($k)) {
+            return $kosong;
+        }
+
+        $kosong['aktif'] = true;
+        $userId = User::where('karyawan_id', $k->id)->value('id');
+
+        if (!$userId) {
+            return $kosong;
+        }
+
+        $sertifikasi = Sertifikasi::where('user_id', $userId)
+            ->orderByDesc('tanggal_ujian')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($s) => [
+                'id'            => $s->id,
+                'nama'          => $s->nama_sertifikat,
+                'vendor'        => $s->vendor,
+                'tanggal_ujian' => $this->tanggal($s->tanggal_ujian),
+                'masa_berlaku'  => $this->masaBerlaku($s),
+                'harga_fmt'     => $this->rupiah($s->harga),
+                'status'        => $s->status_approval,
+                'keterangan'    => $s->keterangan,
+                'file'          => $s->bukti_sertifikasi ? basename($s->bukti_sertifikasi) : null,
+                'url'           => $this->urlBukti($s->bukti_sertifikasi),
+            ])
+            ->values();
+
+        $pelatihan = Pelatihan::where('user_id', $userId)
+            ->orderByDesc('tanggal_mulai')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($p) => [
+                'id'         => $p->id,
+                'nama'       => $p->nama_pelatihan,
+                'vendor'     => $p->vendor,
+                'periode'    => $this->tanggal($p->tanggal_mulai) . ' - ' . $this->tanggal($p->tanggal_selesai),
+                'harga_fmt'  => $this->rupiah($p->harga),
+                'status'     => $p->status_approval,
+                'keterangan' => $p->keterangan,
+                'file'       => $p->bukti_pelatihan ? basename($p->bukti_pelatihan) : null,
+                'url'        => $this->urlBukti($p->bukti_pelatihan),
+            ])
+            ->values();
+
+        return [
+            'aktif'       => true,
+            'sertifikasi' => $sertifikasi,
+            'pelatihan'   => $pelatihan,
+        ];
+    }
+
+    private function urlBukti($path): ?string
+    {
+        if (empty($path)) {
+            return null;
+        }
+
+        return asset('storage/' . ltrim($path, '/'));
+    }
+
+    private function masaBerlaku($s): string
+    {
+        if (!$s->tanggal_berlaku_dari && !$s->tanggal_berlaku_sampai) {
+            return '-';
+        }
+
+        if (!$s->tanggal_berlaku_sampai) {
+            return $this->tanggal($s->tanggal_berlaku_dari) . ' - Seumur hidup';
+        }
+
+        return $this->tanggal($s->tanggal_berlaku_dari) . ' - ' . $this->tanggal($s->tanggal_berlaku_sampai);
     }
 
     private function aturanKaryawan(): array
@@ -534,7 +738,7 @@ class MasterKaryawanController extends Controller
         ];
     }
 
-    private function baris($k, Carbon $today): array
+    private function baris($k, Carbon $today, array $pengembangan = []): array
     {
         $kosong = $this->dokumenKosong($k);
         $total = count(self::DOC_FIELDS);
@@ -554,6 +758,7 @@ class MasterKaryawanController extends Controller
             'masa_kontrak'     => $this->masaKontrak($k),
             'basic_salary'     => $basic,
             'basic_salary_fmt' => $this->rupiah($basic),
+            'pengembangan'     => $pengembangan[$k->id] ?? null,
             'dokumen'          => [
                 'terisi' => $terisi,
                 'total'  => $total,

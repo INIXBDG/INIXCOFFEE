@@ -15,7 +15,7 @@
         ];
     @endphp
     <div class="content-wrapper">
-        @if(session('error'))
+        @if (session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
             </div>
@@ -25,8 +25,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold mb-0">Detail Lead</h4>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                        data-bs-target="#paymentAdvanceModal" @if ($netsales) disabled @endif>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#paymentAdvanceModal"
+                        @if ($netsales) disabled @endif>
                         <i class="menu-icon bx bx-plus"></i> Payment Advance
                     </button>
                     @if ($isLost)
@@ -36,7 +36,8 @@
                             href="/rkm/{{ $peluang->rkm->materi_key }}ixb{{ $peluang->rkm->tanggal_awal_day }}ie{{ $peluang->rkm->tanggal_awal_year }}ie{{ $peluang->rkm->tanggal_awal_month }}ixb{{ $peluang->rkm->metode_kelas_kode }}">Lihat
                             di RKM</a>
                     @endif
-                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editPeluangModal">
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+                        data-bs-target="#editPeluangModal">
                         Edit Lead
                     </button>
                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -60,7 +61,8 @@
                                 </button>
 
                                 @can('ForceDelete Peluang')
-                                    <form action="{{ route('forceDelete.peluang', $peluang->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data secara permanen?')">
+                                    <form action="{{ route('forceDelete.peluang', $peluang->id) }}" method="POST"
+                                        onsubmit="return confirm('Yakin ingin menghapus data secara permanen?')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">Force Delete</button>
@@ -255,7 +257,8 @@
                                         data-bs-target="#detailPAModal">
                                         <i class="bi bi-credit-card"></i> Detail PA
                                     </button>
-                                    <a class="btn btn-info btn-sm" href="/crm/edit/{{$netsales->id_rkm}}/pa" target="_blank"> Edit PA</a>
+                                    <a class="btn btn-info btn-sm" href="/crm/edit/{{ $netsales->id_rkm }}/pa"
+                                        target="_blank"> Edit PA</a>
                                 </div>
                             @endif
                         </div>
@@ -345,14 +348,17 @@
                                                 {{ \Carbon\Carbon::parse($history->created_at)->translatedFormat('d M Y, H:i') }}
                                             </td>
                                             <td class="px-3 py-2 text-center align-middle">
-                                                <span class="text-muted">{{ strtoupper($history->tahap_sebelumnya) }}</span>
+                                                <span
+                                                    class="text-muted">{{ strtoupper($history->tahap_sebelumnya) }}</span>
                                                 <i class="bx bx-right-arrow-alt mx-1"></i>
                                                 <strong class="text-dark">{{ strtoupper($history->tahap_baru) }}</strong>
                                             </td>
                                             <td class="px-3 py-2 text-center align-middle">
-                                                <span class="text-muted">{{ number_format($history->harga_sebelumnya, 0, ',', '.') }}</span>
+                                                <span
+                                                    class="text-muted">{{ number_format($history->harga_sebelumnya, 0, ',', '.') }}</span>
                                                 <i class="bx bx-right-arrow-alt mx-1"></i>
-                                                <strong class="text-dark">{{ number_format($history->harga_baru, 0, ',', '.') }}</strong>
+                                                <strong
+                                                    class="text-dark">{{ number_format($history->harga_baru, 0, ',', '.') }}</strong>
                                             </td>
                                             <td class="px-3 py-2 text-center align-middle">
                                                 <span class="text-muted">{{ $history->pax_sebelumnya }}</span>
@@ -386,7 +392,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="tambahAktivitasModalLabel">Tambah Aktivitas</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
@@ -453,15 +460,17 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="editPeluangModalLabel">Edit Lead</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body">
                             {{-- 🔹 Pesan informasi / error duplikasi di dalam modal --}}
-                            @if(session('error'))
+                            @if (session('error'))
                                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                     {{ session('error') }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                        aria-label="Close"></button>
                                 </div>
                             @endif
 
@@ -479,7 +488,7 @@
                                 <label for="edit_id_perusahaan" class="form-label">Perusahaan</label>
 
                                 <select class="form-select bg-light" id="edit_id_perusahaan" disabled>
-                                    @if($peluang->perusahaan)
+                                    @if ($peluang->perusahaan)
                                         <option value="{{ $peluang->perusahaan->id }}" selected>
                                             {{ $peluang->perusahaan->nama_perusahaan }}
                                         </option>
@@ -496,8 +505,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="edit_perusahaan_pendaftar" class="form-label">Perusahaan Pendaftar (Opsional)</label>
-                                <input type="text" class="form-control" id="edit_perusahaan_pendaftar" name="perusahaan_pendaftar"
+                                <label for="edit_perusahaan_pendaftar" class="form-label">Perusahaan Pendaftar
+                                    (Opsional)</label>
+                                <input type="text" class="form-control" id="edit_perusahaan_pendaftar"
+                                    name="perusahaan_pendaftar"
                                     value="{{ old('perusahaan_pendaftar', $peluang->perusahaan_pendaftar) }}">
                                 @error('perusahaan_pendaftar')
                                     <div class="text-danger">{{ $message }}</div>
@@ -510,7 +521,8 @@
                                 <select class="form-select" id="edit_id_materi" name="materi" required>
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
-                                        <option value="{{ $item->id }}" {{ $item->id == $peluang->materi ? 'selected' : '' }}>
+                                        <option value="{{ $item->id }}"
+                                            {{ $item->id == $peluang->materi ? 'selected' : '' }}>
                                             {{ $item->nama_materi }}
                                         </option>
                                     @endforeach
@@ -524,8 +536,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="catatan" class="form-label">Catatan</label>
-                                <textarea class="form-control" id="catatan" name="catatan"
-                                    rows="2">{{ old('catatan', $peluang->catatan) }}</textarea>
+                                <textarea class="form-control" id="catatan" name="catatan" rows="2">{{ old('catatan', $peluang->catatan) }}</textarea>
                                 @error('catatan')
                                     <div class="text-danger">{{ $message }}</div>
                                 @enderror
@@ -607,8 +618,8 @@
 
                             <div class="mb-3">
                                 <label class="form-label" for="event">Event</label>
-                                <select class="form-select @error('event') is-invalid @enderror"
-                                    name="event" required autocomplete="event">
+                                <select class="form-select @error('event') is-invalid @enderror" name="event" required
+                                    autocomplete="event">
 
                                     <option value="Kelas"
                                         {{ old('event', $peluang->rkm?->event) == 'Kelas' ? 'selected' : '' }}>
@@ -677,7 +688,8 @@
             </div>
         </div>
 
-        <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true">
+        <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -700,9 +712,11 @@
                                                 Sedang Dikonfirmasi oleh Bagian Finance kepada General Manager</option>
                                             <option value="Sedang Dikonfirmasi oleh Bagian Finance kepada Direksi">Sedang
                                                 Dikonfirmasi oleh Bagian Finance kepada Direksi</option>
-                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve Direksi
+                                            <option value="Finance Menunggu Approve Direksi">Finance Menunggu Approve
+                                                Direksi
                                             </option>
-                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke Direktur
+                                            <option value="Membuat Permintaan Ke Direktur Utama">Membuat Permintaan Ke
+                                                Direktur
                                                 Utama</option>
                                             <option value="Pengajuan sedang dalam proses Pencairan">Pengajuan sedang dalam
                                                 proses Pencairan</option>
@@ -717,16 +731,15 @@
                                     <input type="hidden" value="" id="id_rkm" name="id_rkm">
                                     <button class="btn btn-outline-primary" type="submit" id="btnApproveYes">Ya</button>
 
-                                    <input type="radio" class="btn-check" name="approval" id="approveNo" value="2"
-                                        autocomplete="off">
+                                    <input type="radio" class="btn-check" name="approval" id="approveNo"
+                                        value="2" autocomplete="off">
                                     <label class="btn btn-outline-danger" for="approveNo"
                                         onclick="toggleAlasanManager(true)">Tidak</label>
                                 </div>
 
                                 <div class="mt-3" id="alasanManagerInput" style="display: none;">
                                     <label for="alasan_manager" class="form-label">Alasan Penolakan</label>
-                                    <textarea class="form-control" id="alasan_manager" name="keterangan"
-                                        rows="3"></textarea>
+                                    <textarea class="form-control" id="alasan_manager" name="keterangan" rows="3"></textarea>
                                     <input type="hidden" value="{{ auth()->user()->jabatan }}" name="jabatan">
                                     <button class="btn btn-outline-success mt-3" type="submit">Kirim</button>
                                 </div>
@@ -750,7 +763,8 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Update Tahap Peluang</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Tutup"></button>
                         </div>
                         <div class="modal-body">
                             @php
@@ -780,7 +794,8 @@
 
                             <!-- Input Harga Final hanya muncul jika tahap = Merah -->
                             <div class="mb-3 d-none" id="input-close-win">
-                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan penawaran dikali dengan pax dan ppn)</label>
+                                <label for="close_win_display" class="form-label">Harga Final (Harga dari keseluruhan
+                                    penawaran dikali dengan pax dan ppn)</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="close_win_display"
                                         placeholder="Masukkan harga final">
@@ -806,12 +821,14 @@
         <div class="modal fade" id="paymentAdvanceModal" tabindex="-1" aria-labelledby="paymentAdvanceModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
-                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA" enctype="multipart/form-data">
+                <form action="{{ route('store.payment.advance') }}" method="POST" id="StorePA"
+                    enctype="multipart/form-data">
                     @csrf
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="paymentAdvanceModalLabel">Payment Advance</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
 
                         <div class="modal-body">
@@ -879,10 +896,36 @@
                                 <input type="text" class="form-control rupiah" name="cashback">
                             </div>
 
+                            <!-- OLEH-OLEH -->
+                            <div class="mb-3">
+                                <label class="form-label">Oleh-Oleh</label>
+                                <input type="text" class="form-control rupiah" name="oleh_oleh">
+                            </div>
+
+                            <!-- BIAYA LAIN-LAIN -->
+                            <div class="mb-3">
+                                <label class="form-label">Biaya Lain-Lain</label>
+                                <input type="text" class="form-control rupiah" name="biaya_lain_lain">
+                            </div>
+
+                            <!-- KETERANGAN BIAYA LAIN-LAIN -->
+                            <div class="mb-3">
+                                <label class="form-label">Keterangan Biaya Lain-Lain</label>
+                                <textarea class="form-control" name="keterangan_biaya_lain" rows="3"
+                                    placeholder="Jelaskan rincian biaya lain-lain"></textarea>
+                            </div>
+
+                            <!-- EXAM -->
+                            <div class="mb-3">
+                                <label class="form-label">Exam</label>
+                                <input type="text" class="form-control rupiah" name="exam">
+                            </div>
+
                             <!-- SEWA LAPTOP -->
                             <div class="mb-3">
                                 <label class="form-label">Sewa Laptop (Opsional)</label>
-                                <input type="text" class="form-control rupiah" name="sewa_laptop" placeholder="Opsional">
+                                <input type="text" class="form-control rupiah" name="sewa_laptop"
+                                    placeholder="Opsional">
                             </div>
 
                             {{-- Tanggal Payment --}}
@@ -910,7 +953,8 @@
                             <!-- Bukti -->
                             <div class="mb-3">
                                 <label class="form-label">Bukti Pembayaran</label>
-                                <input type="file" class="form-control" name="bukti" required accept=".jpg,.jpeg,.png,.pdf">
+                                <input type="file" class="form-control" name="bukti" required
+                                    accept=".jpg,.jpeg,.png,.pdf">
                                 <small class="form-text text-muted">Format file: JPG, PNG, PDF (Max 2MB)</small>
                             </div>
 
@@ -928,7 +972,8 @@
 
 
         <!-- Modal Detail PA -->
-        <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel" aria-hidden="true">
+        <div class="modal fade" id="detailPAModal" tabindex="-1" aria-labelledby="detailPAModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -954,6 +999,10 @@
                                             <th>Keterangan Entertaint</th>
                                             <th>Souvenir</th>
                                             <th>Cashback</th>
+                                            <th>Oleh-Oleh</th>
+                                            <th>Biaya Lain-Lain</th>
+                                            <th>Keterangan Biaya Lain-Lain</th>
+                                            <th>Exam</th>
                                             <th>Sewa Laptop</th>
                                             <th>Deskripsi Tambahan</th>
                                             <th>Tanggal PA</th>
@@ -984,6 +1033,14 @@
                                             <td>{{ $netsales->cashback ? 'Rp ' . number_format($netsales->cashback, 0, ',', '.') : '-' }}
                                             </td>
 
+                                            <td>{{ $netsales->oleh_oleh ? 'Rp ' . number_format($netsales->oleh_oleh, 0, ',', '.') : '-' }}</td>
+
+                                            <td>{{ $netsales->biaya_lain_lain ? 'Rp ' . number_format($netsales->biaya_lain_lain, 0, ',', '.') : '-' }}</td>
+
+                                            <td>{{ $netsales->keterangan_biaya_lain ?? '-' }}</td>
+
+                                            <td>{{ $netsales->exam ? 'Rp ' . number_format($netsales->exam, 0, ',', '.') : '-' }}</td>
+
                                             <td>{{ $netsales->sewa_laptop ? 'Rp ' . number_format($netsales->sewa_laptop, 0, ',', '.') : '-' }}
                                             </td>
 
@@ -994,7 +1051,8 @@
 
                                             <td>{{ ucfirst($netsales->tipe_pembayaran) }}</td>
                                             @if ($netsales->bukti)
-                                                <td><a href="/storage/{{ $netsales->bukti }}" target="_blank">Lihat Bukti</a></td>
+                                                <td><a href="/storage/{{ $netsales->bukti }}" target="_blank">Lihat
+                                                        Bukti</a></td>
                                             @else
                                                 <td class="text-muted">—</td>
                                             @endif
@@ -1047,9 +1105,9 @@
                                                 @php
                                                     $status = match (true) {
                                                         $approval->status === 1 &&
-                                                        $approval->level_status === '3' &&
-                                                        $approval->keterangan !== 'Selesai'
-                                                        => 'Diproses',
+                                                            $approval->level_status === '3' &&
+                                                            $approval->keterangan !== 'Selesai'
+                                                            => 'Diproses',
                                                         $approval->status === 1 => 'Disetujui',
                                                         $approval->status === 0 => 'Ditolak',
                                                         default => 'Belum diketahui',
@@ -1093,20 +1151,24 @@
                                 $level = $lastApproval ? $lastApproval->level_status : null;
 
                                 // Tambahkan pengecekan status Selesai di sini
-                                $isSelesai = ($lastApproval && $lastApproval->keterangan === 'Selesai');
+                                $isSelesai = $lastApproval && $lastApproval->keterangan === 'Selesai';
 
                                 $canApprove = false;
 
                                 // Jika sudah selesai, button tidak akan muncul (canApprove tetap false)
                                 if (!$isSelesai) {
                                     if (is_null($level) || $level === '' || $level === 'Belum Disetujui') {
-                                        $canApprove = ($jabatanUser === 'SPV Sales');
+                                        $canApprove = $jabatanUser === 'SPV Sales';
                                     } elseif ($level === '1') {
                                         $canApprove = in_array($jabatanUser, ['GM', 'Koordinator Office']);
                                     } elseif ($level === '2') {
-                                        $canApprove = ($jabatanUser === 'Finance & Accounting');
+                                        $canApprove = $jabatanUser === 'Finance & Accounting';
                                     } elseif ($level === '3') {
-                                        $canApprove = in_array($jabatanUser, ['Finance & Accounting', 'GM', 'SPV Sales']);
+                                        $canApprove = in_array($jabatanUser, [
+                                            'Finance & Accounting',
+                                            'GM',
+                                            'SPV Sales',
+                                        ]);
                                     }
                                 }
                             @endphp
@@ -1125,12 +1187,11 @@
                                     </button>
                                 </div>
                             @else
-
                             @endif
                         @endif
 
                         <a type="button" class="btn btn-primary" target="_blank"
-                            href="{{route('netsales.detail', ['id' => $peluang->id_rkm])}}">View PA</a>
+                            href="{{ route('netsales.detail', ['id' => $peluang->id_rkm]) }}">View PA</a>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
 
@@ -1139,7 +1200,8 @@
         </div>
 
         <!-- Modal Upload PDF -->
-        <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel" aria-hidden="true">
+        <div class="modal fade" id="uploadPdfModal" tabindex="-1" aria-labelledby="uploadPdfModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content rounded-3 shadow">
                     <div class="modal-header bg-primary text-white">
@@ -1188,145 +1250,146 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-primary btn-sm" id="btnUploadPdf">Upload</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
-@endsection
-@section('scripts')
-    <script>
-        // 1. Inisialisasi variabel global
-        let approveType = '';
+    @endsection
+    @section('scripts')
+        <script>
+            // 1. Inisialisasi variabel global
+            let approveType = '';
 
-        // 2. Fungsi untuk membuka modal Approve (Global Scope)
-        window.openApproveModal = function (id_rkm) {
-            console.log('ID RKM yang dikirim ke modal:', id_rkm);
+            // 2. Fungsi untuk membuka modal Approve (Global Scope)
+            window.openApproveModal = function(id_rkm) {
+                console.log('ID RKM yang dikirim ke modal:', id_rkm);
 
-            // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
-            const detailPAModalEl = document.getElementById('detailPAModal');
-            const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
-            if (detailPAModalInstance) {
-                detailPAModalInstance.hide();
-            } else {
-                // Jika instance belum ada (fallback menggunakan jQuery)
-                $('#detailPAModal').modal('hide');
-            }
-            // -------------------------------------------------------
-
-            // Reset form dan state modal approve
-            $('#approveForm')[0].reset();
-            $('#id_rkm').val(id_rkm);
-            $('#alasanManagerInput').hide();
-            $('#status_tracking').removeClass('is-invalid');
-            approveType = '';
-
-            // Tampilkan modal approve menggunakan instance Bootstrap 5
-            const modalElement = document.getElementById('approveModal');
-            const modalInstance = new bootstrap.Modal(modalElement);
-            modalInstance.show();
-        };
-
-        // 3. Fungsi toggle alasan penolakan (Global Scope)
-        window.toggleAlasanManager = function (show) {
-            if (show) {
-                $('#alasanManagerInput').slideDown();
-                $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
-            } else {
-                $('#alasanManagerInput').slideUp();
-                $('#alasan_manager').val('');
-                $('#btnApproveYes').show();
-            }
-        };
-
-        // 4. Event Listeners (Jquery Ready)
-        $(document).ready(function () {
-
-            // 🔹 Otomatis buka kembali modal Edit Lead jika terjadi error (duplikasi/validasi)
-            @if(session('error') || $errors->any())
-                var editPeluangModal = new bootstrap.Modal(document.getElementById('editPeluangModal'));
-                editPeluangModal.show();
-            @endif
-
-            // Menentukan tipe approve berdasarkan tombol yang diklik
-            $(document).on('click', '#btnApproveYes', function () {
-                approveType = 'ya';
-                window.toggleAlasanManager(false);
-            });
-
-            $(document).on('click', '#approveNo', function () {
-                approveType = 'tidak';
-            });
-
-            // Handle Submit Form via AJAX
-            $(document).on('submit', '#approveForm', function (e) {
-                e.preventDefault();
-
-                const jabatan = "{{ auth()->user()->jabatan }}";
-                const selectedTracking = $('#status_tracking').val();
-
-                // Validasi tracking khusus Finance jika memilih "Ya"
-                if (approveType === 'ya' && jabatan === 'Finance & Accounting') {
-                    if (!selectedTracking || selectedTracking === "null" || selectedTracking === "") {
-                        alert('Silakan pilih status tracking terlebih dahulu.');
-                        $('#status_tracking').addClass('is-invalid');
-                        return;
-                    }
+                // --- TAMBAHAN: Tutup modal detail PA terlebih dahulu ---
+                const detailPAModalEl = document.getElementById('detailPAModal');
+                const detailPAModalInstance = bootstrap.Modal.getInstance(detailPAModalEl);
+                if (detailPAModalInstance) {
+                    detailPAModalInstance.hide();
+                } else {
+                    // Jika instance belum ada (fallback menggunakan jQuery)
+                    $('#detailPAModal').modal('hide');
                 }
+                // -------------------------------------------------------
 
-                let formData = new FormData(this);
-                // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
-                formData.append('approval_status', approveType);
+                // Reset form dan state modal approve
+                $('#approveForm')[0].reset();
+                $('#id_rkm').val(id_rkm);
+                $('#alasanManagerInput').hide();
+                $('#status_tracking').removeClass('is-invalid');
+                approveType = '';
 
-                $.ajax({
-                    url: "{{ route('netsales.approved') }}",
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    beforeSend: function () {
-                        $('button[type="submit"]').prop('disabled', true).text('Processing...');
-                    },
-                    success: function (response) {
-                        const modalEl = document.getElementById('approveModal');
-                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                        if (modalInstance) modalInstance.hide();
+                // Tampilkan modal approve menggunakan instance Bootstrap 5
+                const modalElement = document.getElementById('approveModal');
+                const modalInstance = new bootstrap.Modal(modalElement);
+                modalInstance.show();
+            };
 
-                        location.reload();
-                    },
-                    error: function (xhr) {
-                        $('button[type="submit"]').prop('disabled', false).text('Kirim');
-                        console.error(xhr.responseText);
-                        alert('Terjadi kesalahan saat memproses data.');
-                    }
+            // 3. Fungsi toggle alasan penolakan (Global Scope)
+            window.toggleAlasanManager = function(show) {
+                if (show) {
+                    $('#alasanManagerInput').slideDown();
+                    $('#btnApproveYes').hide(); // Sembunyikan tombol "Ya" jika memilih "Tidak"
+                } else {
+                    $('#alasanManagerInput').slideUp();
+                    $('#alasan_manager').val('');
+                    $('#btnApproveYes').show();
+                }
+            };
+
+            // 4. Event Listeners (Jquery Ready)
+            $(document).ready(function() {
+
+                // 🔹 Otomatis buka kembali modal Edit Lead jika terjadi error (duplikasi/validasi)
+                @if (session('error') || $errors->any())
+                    var editPeluangModal = new bootstrap.Modal(document.getElementById('editPeluangModal'));
+                    editPeluangModal.show();
+                @endif
+
+                // Menentukan tipe approve berdasarkan tombol yang diklik
+                $(document).on('click', '#btnApproveYes', function() {
+                    approveType = 'ya';
+                    window.toggleAlasanManager(false);
                 });
-            });
-        });
-    </script>
-    <script>
-        $(document).ready(function () {
-            const perusahaanId = $('#id_perusahaan').val();
 
-            // Function to fetch and display activities
-            function loadActivities(targetElementId) {
-                $.ajax({
-                    url: `/crm/ambil/aktivitas/${perusahaanId}`,
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        const activities = data.data || data;
+                $(document).on('click', '#approveNo', function() {
+                    approveType = 'tidak';
+                });
 
-                        if (!Array.isArray(activities) || activities.length === 0) {
-                            $(`#${targetElementId}`).html(
-                                `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`
-                            );
+                // Handle Submit Form via AJAX
+                $(document).on('submit', '#approveForm', function(e) {
+                    e.preventDefault();
+
+                    const jabatan = "{{ auth()->user()->jabatan }}";
+                    const selectedTracking = $('#status_tracking').val();
+
+                    // Validasi tracking khusus Finance jika memilih "Ya"
+                    if (approveType === 'ya' && jabatan === 'Finance & Accounting') {
+                        if (!selectedTracking || selectedTracking === "null" || selectedTracking === "") {
+                            alert('Silakan pilih status tracking terlebih dahulu.');
+                            $('#status_tracking').addClass('is-invalid');
                             return;
                         }
+                    }
 
-                        let table = `
+                    let formData = new FormData(this);
+                    // Tambahkan flag ke FormData agar controller tahu ini Approve atau Reject
+                    formData.append('approval_status', approveType);
+
+                    $.ajax({
+                        url: "{{ route('netsales.approved') }}",
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json',
+                        beforeSend: function() {
+                            $('button[type="submit"]').prop('disabled', true).text('Processing...');
+                        },
+                        success: function(response) {
+                            const modalEl = document.getElementById('approveModal');
+                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) modalInstance.hide();
+
+                            location.reload();
+                        },
+                        error: function(xhr) {
+                            $('button[type="submit"]').prop('disabled', false).text('Kirim');
+                            console.error(xhr.responseText);
+                            alert('Terjadi kesalahan saat memproses data.');
+                        }
+                    });
+                });
+            });
+        </script>
+        <script>
+            $(document).ready(function() {
+                const perusahaanId = $('#id_perusahaan').val();
+
+                // Function to fetch and display activities
+                function loadActivities(targetElementId) {
+                    $.ajax({
+                        url: `/crm/ambil/aktivitas/${perusahaanId}`,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            const activities = data.data || data;
+
+                            if (!Array.isArray(activities) || activities.length === 0) {
+                                $(`#${targetElementId}`).html(
+                                    `<p class="text-muted">Tidak ada aktivitas yang tersedia untuk contact ini.</p>`
+                                );
+                                return;
+                            }
+
+                            let table = `
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover">
                                     <thead class="table-light">
@@ -1342,26 +1405,26 @@
                                     <tbody>
                         `;
 
-                        activities.forEach(a => {
-                            const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
-                                day: '2-digit',
-                                month: 'long',
-                                year: 'numeric'
-                            });
+                            activities.forEach(a => {
+                                const waktu = new Date(a.waktu).toLocaleDateString('id-ID', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                });
 
-                            // Evaluasi label aktivitas
-                            let labelAktivitas = a.aktivitas || '-';
-                            if (a.aktivitas === 'PI') {
-                                labelAktivitas = 'Leads';
-                            } else if (a.aktivitas === 'Form_Masuk') {
-                                labelAktivitas = 'Regis Form';
-                            } else if (a.aktivitas === 'Incharge') {
-                                labelAktivitas = 'Incharge Inhouse';
-                            } else if (a.aktivitas === 'PA') {
-                                labelAktivitas = 'Penawaran Awal';
-                            }
+                                // Evaluasi label aktivitas
+                                let labelAktivitas = a.aktivitas || '-';
+                                if (a.aktivitas === 'PI') {
+                                    labelAktivitas = 'Leads';
+                                } else if (a.aktivitas === 'Form_Masuk') {
+                                    labelAktivitas = 'Regis Form';
+                                } else if (a.aktivitas === 'Incharge') {
+                                    labelAktivitas = 'Incharge Inhouse';
+                                } else if (a.aktivitas === 'PA') {
+                                    labelAktivitas = 'Penawaran Awal';
+                                }
 
-                            table += `
+                                table += `
                                 <tr>
                                     <td><input type="checkbox" name="id_aktivitas[]" value="${a.id}"></td>
                                     <td>${a.kontak || '-'}</td>
@@ -1371,171 +1434,171 @@
                                     <td>${waktu}</td>
                                 </tr>
                             `;
-                        });
+                            });
 
-                        table += `</tbody></table></div>`;
-                        $(`#${targetElementId}`).html(table);
-                    },
-                    error: function (err) {
-                        console.error('Gagal memuat aktivitas:', err);
-                        $(`#${targetElementId}`).html(
-                            `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
-                        );
+                            table += `</tbody></table></div>`;
+                            $(`#${targetElementId}`).html(table);
+                        },
+                        error: function(err) {
+                            console.error('Gagal memuat aktivitas:', err);
+                            $(`#${targetElementId}`).html(
+                                `<p class="text-danger">Terjadi kesalahan saat memuat aktivitas. Periksa console untuk detail.</p>`
+                            );
+                        }
+                    }); // Pastikan penutup ajax terstruktur dengan benar
+                }
+
+                // Load activities for the main "Aktivitas Terkait" table
+                loadActivities('aktivitasTableWrapper');
+
+                // Load activities when Edit Lead Modal is opened
+                $('#editPeluangModal').on('show.bs.modal', function() {
+                    loadActivities('editAktivitasTableWrapper');
+                });
+
+                // Existing JavaScript for Select2 and input formatting
+                initContactSelect2();
+                initMateriSelect2();
+
+                let peluang = @json($peluang);
+                console.log(peluang);
+
+                const editLead = document.querySelectorAll(".editLead");
+                const rupiahInputs = document.querySelectorAll(".rupiah");
+                const tahapSelect = document.getElementById('tahap');
+                const closeWinInput = document.getElementById('input-close-win');
+                const displayInput = document.getElementById('close_win_display');
+                const hiddenInput = document.getElementById('close_win');
+                const descLostInput = document.getElementById('input-desc-lost');
+                const descLostField = document.getElementById('desc_lost');
+
+                // Toggle inputs based on stage
+                function toggleInputs() {
+                    if (tahapSelect.value.toLowerCase() === 'merah') {
+                        closeWinInput.classList.remove('d-none');
+                        displayInput.setAttribute('required', 'required');
+                        hiddenInput.setAttribute('required', 'required');
+                        descLostInput.classList.add('d-none');
+                        descLostField.removeAttribute('required');
+                    } else if (tahapSelect.value.toLowerCase() === 'lost') {
+                        descLostInput.classList.remove('d-none');
+                        descLostField.setAttribute('required', 'required');
+                        closeWinInput.classList.add('d-none');
+                        displayInput.removeAttribute('required');
+                        hiddenInput.removeAttribute('required');
+                    } else {
+                        closeWinInput.classList.add('d-none');
+                        displayInput.removeAttribute('required');
+                        hiddenInput.removeAttribute('required');
+                        descLostInput.classList.add('d-none');
+                        descLostField.removeAttribute('required');
                     }
-                }); // Pastikan penutup ajax terstruktur dengan benar
-            }
-
-            // Load activities for the main "Aktivitas Terkait" table
-            loadActivities('aktivitasTableWrapper');
-
-            // Load activities when Edit Lead Modal is opened
-            $('#editPeluangModal').on('show.bs.modal', function () {
-                loadActivities('editAktivitasTableWrapper');
-            });
-
-            // Existing JavaScript for Select2 and input formatting
-            initContactSelect2();
-            initMateriSelect2();
-
-            let peluang = @json($peluang);
-            console.log(peluang);
-
-            const editLead = document.querySelectorAll(".editLead");
-            const rupiahInputs = document.querySelectorAll(".rupiah");
-            const tahapSelect = document.getElementById('tahap');
-            const closeWinInput = document.getElementById('input-close-win');
-            const displayInput = document.getElementById('close_win_display');
-            const hiddenInput = document.getElementById('close_win');
-            const descLostInput = document.getElementById('input-desc-lost');
-            const descLostField = document.getElementById('desc_lost');
-
-            // Toggle inputs based on stage
-            function toggleInputs() {
-                if (tahapSelect.value.toLowerCase() === 'merah') {
-                    closeWinInput.classList.remove('d-none');
-                    displayInput.setAttribute('required', 'required');
-                    hiddenInput.setAttribute('required', 'required');
-                    descLostInput.classList.add('d-none');
-                    descLostField.removeAttribute('required');
-                } else if (tahapSelect.value.toLowerCase() === 'lost') {
-                    descLostInput.classList.remove('d-none');
-                    descLostField.setAttribute('required', 'required');
-                    closeWinInput.classList.add('d-none');
-                    displayInput.removeAttribute('required');
-                    hiddenInput.removeAttribute('required');
-                } else {
-                    closeWinInput.classList.add('d-none');
-                    displayInput.removeAttribute('required');
-                    hiddenInput.removeAttribute('required');
-                    descLostInput.classList.add('d-none');
-                    descLostField.removeAttribute('required');
-                }
-            }
-
-            if (tahapSelect) {
-                tahapSelect.addEventListener('change', toggleInputs);
-                toggleInputs(); // Initial trigger
-            }
-
-            // Format rupiah for close_win_display
-            displayInput.addEventListener('input', function () {
-                let value = this.value.replace(/\D/g, ''); // Pure numbers
-                if (!value) {
-                    this.value = "";
-                    hiddenInput.value = "";
-                    return;
                 }
 
-                this.value = new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    minimumFractionDigits: 0
-                }).format(value);
-                hiddenInput.value = value;
-            });
+                if (tahapSelect) {
+                    tahapSelect.addEventListener('change', toggleInputs);
+                    toggleInputs(); // Initial trigger
+                }
 
-            @if ($errors->uploadPdf->any())
-                var uploadPdfModal = new bootstrap.Modal(document.getElementById('uploadPdfModal'));
-                uploadPdfModal.show();
-            @endif
-
-            // Ensure hiddenInput is clean before submission
-            document.getElementById('updates').addEventListener('submit', function () {
-                hiddenInput.value = displayInput.value.replace(/\D/g, '');
-            });
-
-            // Format rupiah inputs
-            rupiahInputs.forEach(input => {
-                input.addEventListener("input", function () {
-                    let value = this.value.replace(/\D/g, "");
+                // Format rupiah for close_win_display
+                displayInput.addEventListener('input', function() {
+                    let value = this.value.replace(/\D/g, ''); // Pure numbers
                     if (!value) {
                         this.value = "";
+                        hiddenInput.value = "";
                         return;
                     }
-                    this.value = new Intl.NumberFormat("id-ID", {
-                        style: "currency",
-                        currency: "IDR",
+
+                    this.value = new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
                         minimumFractionDigits: 0
                     }).format(value);
+                    hiddenInput.value = value;
                 });
-            });
 
-            // Clean rupiah inputs before submission
-            document.getElementById("StorePA").addEventListener("submit", function () {
+                @if ($errors->uploadPdf->any())
+                    var uploadPdfModal = new bootstrap.Modal(document.getElementById('uploadPdfModal'));
+                    uploadPdfModal.show();
+                @endif
+
+                // Ensure hiddenInput is clean before submission
+                document.getElementById('updates').addEventListener('submit', function() {
+                    hiddenInput.value = displayInput.value.replace(/\D/g, '');
+                });
+
+                // Format rupiah inputs
                 rupiahInputs.forEach(input => {
-                    input.value = input.value.replace(/\D/g, "");
+                    input.addEventListener("input", function() {
+                        let value = this.value.replace(/\D/g, "");
+                        if (!value) {
+                            this.value = "";
+                            return;
+                        }
+                        this.value = new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0
+                        }).format(value);
+                    });
                 });
-            });
 
-            editLead.forEach(input => {
-                input.addEventListener("input", function () {
-                    let value = this.value.replace(/\D/g, "");
-                    if (!value) {
-                        this.value = "";
+                // Clean rupiah inputs before submission
+                document.getElementById("StorePA").addEventListener("submit", function() {
+                    rupiahInputs.forEach(input => {
+                        input.value = input.value.replace(/\D/g, "");
+                    });
+                });
+
+                editLead.forEach(input => {
+                    input.addEventListener("input", function() {
+                        let value = this.value.replace(/\D/g, "");
+                        if (!value) {
+                            this.value = "";
+                            return;
+                        }
+                        this.value = new Intl.NumberFormat("id-ID", {
+                            style: "currency",
+                            currency: "IDR",
+                            minimumFractionDigits: 0
+                        }).format(value);
+                    });
+                });
+
+                document.getElementById("editLeads").addEventListener("submit", function() {
+                    editLead.forEach(input => {
+                        input.value = input.value.replace(/\D/g, "");
+                    });
+                });
+
+                function initContactSelect2() {
+                    var $select = $('#id_contact');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
                         return;
                     }
-                    this.value = new Intl.NumberFormat("id-ID", {
-                        style: "currency",
-                        currency: "IDR",
-                        minimumFractionDigits: 0
-                    }).format(value);
-                });
-            });
-
-            document.getElementById("editLeads").addEventListener("submit", function () {
-                editLead.forEach(input => {
-                    input.value = input.value.replace(/\D/g, "");
-                });
-            });
-
-            function initContactSelect2() {
-                var $select = $('#id_contact');
-                if (typeof $.fn.select2 !== 'function') {
-                    console.error('Select2 belum ter-load!');
-                    return;
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
                 }
-                var $closestModal = $select.closest('.modal');
-                $select.select2({
-                    width: '100%',
-                    theme: 'bootstrap-5',
-                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                });
-            }
 
-            function initMateriSelect2() {
-                // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
-                var $select = $('#edit_id_materi');
-                if (typeof $.fn.select2 !== 'function') {
-                    console.error('Select2 belum ter-load!');
-                    return;
+                function initMateriSelect2() {
+                    // Ubah selektor menjadi #edit_id_materi sesuai dengan ID elemen HTML
+                    var $select = $('#edit_id_materi');
+                    if (typeof $.fn.select2 !== 'function') {
+                        console.error('Select2 belum ter-load!');
+                        return;
+                    }
+                    var $closestModal = $select.closest('.modal');
+                    $select.select2({
+                        width: '100%',
+                        theme: 'bootstrap-5',
+                        dropdownParent: $closestModal.length ? $closestModal : $(document.body)
+                    });
                 }
-                var $closestModal = $select.closest('.modal');
-                $select.select2({
-                    width: '100%',
-                    theme: 'bootstrap-5',
-                    dropdownParent: $closestModal.length ? $closestModal : $(document.body)
-                });
-            }
-        });
-    </script>
-@endsection
+            });
+        </script>
+    @endsection

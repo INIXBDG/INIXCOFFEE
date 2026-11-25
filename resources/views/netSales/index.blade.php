@@ -306,6 +306,9 @@
                         entertaint: item.entertaint || 0,
                         souvenir: item.souvenir || 0,
                         cashback: item.cashback || 0,
+                        oleh_oleh: item.oleh_oleh || 0,
+                        biaya_lain_lain: item.biaya_lain_lain || 0,
+                        biaya_exam: item.biaya_exam || 0,
                         sewa_laptop: item.sewa_laptop || 0,
                         total: item.total,
                         tgl_pa: item.tgl_pa || '-',
@@ -477,6 +480,9 @@
                     html += '<th style="font-size:14px">Entertaint (Rp.)</th>';
                     html += '<th style="font-size:14px">Souvenir (Rp.)</th>';
                     html += '<th style="font-size:14px">Cashback (Rp.)</th>';
+                    html += '<th style="font-size:14px">Oleh-Oleh (Rp.)</th>';
+                    html += '<th style="font-size:14px">Biaya Lain-Lain (Rp.)</th>';
+                    html += '<th style="font-size:14px">Exam (Rp.)</th>';
                     html += '<th style="font-size:14px">Sewa Laptop (Rp.)</th>';
                     html += '<th style="font-size:14px">Tanggal Payment Advance</th>';
                     html += '<th style="font-size:14px">NetSales (Rp.)</th>';
@@ -528,6 +534,9 @@
                             html += `<td>${formatWithoutDecimals(sales.entertaint || 0)}</td>`;
                             html += `<td>${formatWithoutDecimals(sales.souvenir || 0)}</td>`;
                             html += `<td>${formatWithoutDecimals(sales.cashback || 0)}</td>`;
+                            html += `<td>${formatWithoutDecimals(sales.oleh_oleh || 0)}</td>`;
+                            html += `<td>${formatWithoutDecimals(sales.biaya_lain_lain || 0)}</td>`;
+                            html += `<td>${formatWithoutDecimals(sales.biaya_exam || 0)}</td>`;
                             html += `<td>${formatWithoutDecimals(sales.sewa_laptop || 0)}</td>`;
                             html += `<td>${sales.tgl_pa || '-'}</td>`;
                             html += `<td>${formatWithoutDecimals(sales.total || 0)}</td>`;

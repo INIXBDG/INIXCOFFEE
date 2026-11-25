@@ -31,6 +31,21 @@ class LaporanPenjualanController extends Controller
         $this->middleware('permission:View CRM Laporan Penjualan 2', ['only' => ['laporanForGm']]);
     }
 
+    private const KOLOM_BIAYA = [
+        'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'fresh_money',
+        'entertaint', 'souvenir', 'cashback', 'oleh_oleh', 'biaya_lain_lain',
+        'biaya_exam', 'sewa_laptop',
+    ];
+
+    private function totalBiaya($rows): float
+    {
+        $total = 0.0;
+        foreach (self::KOLOM_BIAYA as $kolom) {
+            $total += (float) $rows->sum($kolom);
+        }
+        return $total;
+    }
+
     public function index(Request $request)
     {
         $sales = karyawan::where('jabatan', 'Sales')->where('status_aktif', '1')->get();
@@ -131,32 +146,8 @@ class LaporanPenjualanController extends Controller
             $pax = (float) ($item->pax ?? 0);
             $totalexam = $examHarga * $pax;
 
-            if (is_null($netsales)) {
-                $sum = [
-                    'transportasi' => 0.0, 'akomodasi_peserta' => 0.0, 'akomodasi_tim' => 0.0,
-                    'fresh_money' => 0.0, 'entertaint' => 0.0, 'souvenir' => 0.0,
-                    'sewa_laptop' => 0.0, 'cashback' => 0.0, 'grand_total' => 0.0, 'pembayaran' => null,
-                ];
-                $netsales = collect();
-            } else {
-                $sum = [
-                    'transportasi' => (float) $netsales->sum('transportasi'),
-                    'akomodasi_peserta' => (float) $netsales->sum('akomodasi_peserta'),
-                    'akomodasi_tim' => (float) $netsales->sum('akomodasi_tim'),
-                    'fresh_money' => (float) $netsales->sum('fresh_money'),
-                    'cashback' => (float) $netsales->sum('cashback'),
-                    'entertaint' => (float) $netsales->sum('entertaint'),
-                    'souvenir' => (float) $netsales->sum('souvenir'),
-                    'sewa_laptop' => (float) $netsales->sum('sewa_laptop'),
-                    'pembayaran' => $netsales->pluck('tipe_pembayaran')->first(),
-                ];
-
-                $sum['grand_total'] = array_sum([
-                    $sum['transportasi'], $sum['akomodasi_peserta'], $sum['akomodasi_tim'],
-                    $sum['fresh_money'], $sum['cashback'], $sum['entertaint'],
-                    $sum['sewa_laptop'], $sum['souvenir']
-                ]);
-            }
+            $netsales = $netsales ?? collect();
+            $sum = ['grand_total' => $this->totalBiaya($netsales)];
 
             $hargaJual = (float) ($item->harga_jual ?? 0.0);
             $totalPenjualan = $hargaJual * $pax;
@@ -249,14 +240,9 @@ class LaporanPenjualanController extends Controller
     public function updatePA(Request $request, $id)
     {
         $numericFields = [
-            'transportasi',
-            'akomodasi_peserta',
-            'akomodasi_tim',
-            'cashback',
-            'fresh_money',
-            'entertaint',
-            'souvenir',
-            'sewa_laptop',
+            'transportasi', 'akomodasi_peserta', 'akomodasi_tim', 'cashback',
+            'fresh_money', 'entertaint', 'souvenir', 'sewa_laptop',
+            'oleh_oleh', 'biaya_lain_lain', 'biaya_exam',
         ];
 
         foreach ($numericFields as $field) {
@@ -289,6 +275,10 @@ class LaporanPenjualanController extends Controller
             'entertaint'               => 'nullable|numeric|min:0',
             'keterangan_entertaint'    => 'nullable',
             'sewa_laptop'              => 'nullable|numeric|min:0',
+            'oleh_oleh'                => 'nullable|numeric|min:0',
+            'biaya_lain_lain'          => 'nullable|numeric|min:0',
+            'keterangan_biaya_lain'    => 'nullable|string|max:500',
+            'biaya_exam'               => 'nullable|numeric|min:0',
             'deskripsi_tambahan'       => 'nullable|string|max:500',
             'tgl_pa'                   => 'nullable|date',
             'tipe_pembayaran'          => 'nullable|string|in:cash,transfer,credit',
@@ -305,14 +295,7 @@ class LaporanPenjualanController extends Controller
             $potonganPajak = $totalPenawaran * (11 / 100);
 
             $allPA = perhitunganNetSales::where('id_rkm', $pa->id_rkm)->get();
-            $totalPAInputs = $allPA->sum('transportasi') +
-                             $allPA->sum('akomodasi_peserta') +
-                             $allPA->sum('akomodasi_tim') +
-                             $allPA->sum('fresh_money') +
-                             $allPA->sum('entertaint') +
-                             $allPA->sum('souvenir') +
-                             $allPA->sum('cashback') +
-                             $allPA->sum('sewa_laptop');
+            $totalPAInputs = $this->totalBiaya($allPA);
 
             $peluang->netsales = $totalPenawaran - $potonganPajak - $totalPAInputs;
             $peluang->save();
@@ -441,14 +424,7 @@ class LaporanPenjualanController extends Controller
         if (is_null($netsales) || $netsales->isEmpty()) {
             $grandNet = 0.0;
         } else {
-            $grandNet =
-                (float) $netsales->sum('transportasi') +
-                (float) $netsales->sum('penginapan') +
-                (float) $netsales->sum('fresh_money') +
-                (float) $netsales->sum('cashback') +
-                (float) $netsales->sum('diskon') +
-                (float) $netsales->sum('entertaint') +
-                (float) $netsales->sum('souvenir');
+            $grandNet = $this->totalBiaya($netsales ?? collect());
         }
 
         $grandtotal = $totalPenjualan - ($grandNet + $totalexam);
@@ -554,14 +530,7 @@ class LaporanPenjualanController extends Controller
             if (is_null($netsales)) {
                 $sumGrand = 0.0;
             } else {
-                $sumGrand =
-                    (float) $netsales->sum('transportasi') +
-                    (float) $netsales->sum('penginapan') +
-                    (float) $netsales->sum('fresh_money') +
-                    (float) $netsales->sum('cashback') +
-                    (float) $netsales->sum('diskon') +
-                    (float) $netsales->sum('entertaint') +
-                    (float) $netsales->sum('souvenir');
+                $sumGrand = $this->totalBiaya($netsales ?? collect());
             }
 
             $hargaJual = (float) ($item->harga_jual ?? 0.0);

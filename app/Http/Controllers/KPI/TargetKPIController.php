@@ -364,6 +364,101 @@ class TargetKPIController extends Controller
         return response()->json(['status' => true, 'message' => 'Data berhasil diupdate']);
     }
 
+    public function updateTarget(Request $request, $id)
+    {
+        $target = targetKPI::with('detailTargetKPI.detailPersonKPI')->find($id);
+        if (!$target) return response()->json(['message' => 'Target tidak ditemukan'], 404);
+
+        $user = auth()->user();
+        $superRoles = ['GM', 'HRD', 'Direktur Utama', 'Direktur'];
+        if ($target->id_pembuat != $user->id && !in_array($user->jabatan, $superRoles)) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengubah target ini'], 403);
+        }
+
+        $validated = $request->validate([
+            'judul_kpi'     => 'required|string|max:255',
+            'deskripsi_kpi' => 'nullable|string',
+            'detail_jangka' => 'nullable|integer|min:2000|max:' . (now()->year + 5),
+            'karyawan'      => 'required|array|min:1',
+            'karyawan.*'    => 'required|integer|distinct',
+        ], [
+            'karyawan.required' => 'Minimal satu karyawan harus dipilih.',
+            'karyawan.min'      => 'Minimal satu karyawan harus dipilih.',
+        ]);
+
+        $jabatanTarget = $target->detailTargetKPI->pluck('jabatan')->unique()->values();
+
+        // Karyawan baru hanya boleh dari jabatan yang sudah ada di target
+        $karyawanBaru = karyawan::whereIn('id', $validated['karyawan'])
+            ->whereIn('jabatan', $jabatanTarget)
+            ->get(['id', 'jabatan', 'divisi']);
+
+        if ($karyawanBaru->count() !== count(array_unique($validated['karyawan']))) {
+            return response()->json(['message' => 'Ada karyawan yang jabatannya tidak sesuai dengan target ini'], 422);
+        }
+
+        DB::transaction(function () use ($target, $validated, $karyawanBaru) {
+            $target->update([
+                'judul'     => $validated['judul_kpi'],
+                'deskripsi' => $validated['deskripsi_kpi'] ?? null,
+            ]);
+
+            if (!empty($validated['detail_jangka'])) {
+                foreach ($target->detailTargetKPI as $detail) {
+                    if (strtolower((string) $detail->jangka_target) === 'tahunan') {
+                        $detail->update(['detail_jangka' => $validated['detail_jangka']]);
+                    }
+                }
+            }
+
+            $idBaru = $karyawanBaru->pluck('id')->all();
+
+            // 1. Hapus karyawan yang dikurangi
+            foreach ($target->detailTargetKPI as $detail) {
+                $detail->detailPersonKPI()->whereNotIn('id_karyawan', $idBaru)->delete();
+            }
+
+            // 2. Tambah karyawan baru
+            $idLama   = $target->detailTargetKPI->flatMap->detailPersonKPI->pluck('id_karyawan')->all();
+            $template = $target->detailTargetKPI->first();
+
+            foreach ($karyawanBaru->whereNotIn('id', $idLama) as $k) {
+                $detail = $target->detailTargetKPI
+                    ->first(fn($d) => $d->jabatan === $k->jabatan && $d->divisi === $k->divisi);
+
+                if (!$detail) {
+                    $detail = DetailTargetKPI::create([
+                        'id_targetKPI'   => $target->id,
+                        'jabatan'        => $k->jabatan,
+                        'divisi'         => $k->divisi,
+                        'id_data_target' => $template->id_data_target,
+                        'jangka_target'  => $template->jangka_target,
+                        'detail_jangka'  => $template->detail_jangka,
+                        'tipe_target'    => $template->tipe_target,
+                        'nilai_target'   => $template->nilai_target,
+                        'manual_value'   => $template->manual_value,
+                    ]);
+                    $target->detailTargetKPI->push($detail);
+                }
+
+                detailPersonKPI::create([
+                    'id_target'       => $target->id,
+                    'detailTargetKey' => $detail->id,
+                    'id_karyawan'     => $k->id,
+                ]);
+            }
+
+            // 3. Bersihkan detail yang sudah kosong
+            DetailTargetKPI::where('id_targetKPI', $target->id)
+                ->whereDoesntHave('detailPersonKPI')
+                ->delete();
+        });
+
+        \Illuminate\Support\Facades\Cache::flush();
+
+        return response()->json(['message' => 'Data target berhasil diperbarui']);
+    }
+
     public function hapusTarget($id)
     {
         $target = targetKPI::with('detailTargetKPI.detailPersonKPI')->find($id);
@@ -530,7 +625,7 @@ class TargetKPIController extends Controller
         $query = targetKPI::with([
             'karyawan', 
             'detailTargetKPI.dataTarget', 
-            'detailTargetKPI.detailPersonKPI'
+            'detailTargetKPI.detailPersonKPI.karyawan'
         ])->whereYear('created_at', now()->year);
 
         if (filled($idUser) && filled($typeGet)) {
@@ -599,6 +694,14 @@ class TargetKPIController extends Controller
                 return $detailItem->detailPersonKPI->pluck('id_karyawan');
             })->unique()->count();
 
+            $karyawanTerpilih = $item->detailTargetKPI
+                ->flatMap(fn($d) => $d->detailPersonKPI)
+                ->unique('id_karyawan')
+                ->map(fn($p) => [
+                    'id'   => $p->id_karyawan,
+                    'text' => ($p->karyawan->nama_lengkap ?? '-') . ' (' . ($p->karyawan->jabatan ?? '-') . ')',
+                ])->values();
+
             return [
                 'id' => $item->id,
                 'pembuat' => $item->karyawan?->nama_lengkap ?? 'Tidak Diketahui',
@@ -618,6 +721,7 @@ class TargetKPIController extends Controller
                 'tenggat_waktu' => $this->formatTenggatWaktuExport($detail->dataTarget?->jangka_target ?? '', $detail->detail_jangka ?? ''),
                 'progress' => $progress,
                 'total_peserta' => $totalPeserta,
+                'karyawan_terpilih' => $karyawanTerpilih,
             ];
         })->filter()->values();
 
@@ -653,6 +757,9 @@ class TargetKPIController extends Controller
         $userJabatan = strtolower($user->jabatan ?? '');
         $isUserKoordinatorItsm = str_contains($userJabatan, 'koordinator itsm') || str_contains($userJabatan, 'koordinator');
 
+        $rolesLihatGap = ['gm', 'hrd', 'direktur utama', 'direktur'];
+        $canViewGap = $isUserKoordinatorItsm || in_array($userJabatan, $rolesLihatGap, true);
+
         $target = targetKPI::find($idTarget);
         $detailTarget = $target?->detailTargetKPI->first();
         $routeName = $detailTarget?->dataTarget?->asistant_route ?? '';
@@ -664,7 +771,7 @@ class TargetKPIController extends Controller
             'detailTargetKPI.dataTarget'
         ])->where('id', $idTarget);
 
-        $shouldFilterByPerson = !($isUserKoordinatorItsm && $isGapKompetensiTarget);
+        $shouldFilterByPerson = !($canViewGap && $isGapKompetensiTarget);
 
         if ($personId !== null && $shouldFilterByPerson) {
             $query->whereHas('detailTargetKPI.detailPersonKPI', fn($q) => $q->where('id_karyawan', $personId));
@@ -673,13 +780,13 @@ class TargetKPIController extends Controller
         $detailList = $query->get();
 
         $data = [
-            'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $isGapKompetensiTarget) {
+            'detail' => $detailList->map(function ($itemDetail) use ($personId, $isUserKoordinatorItsm, $canViewGap, $isGapKompetensiTarget) {
                 $detail = $itemDetail->detailTargetKPI->first();
                 if (!$detail) {
                     return null;
                 }
 
-                if ($isUserKoordinatorItsm && $isGapKompetensiTarget) {
+                if ($canViewGap && $isGapKompetensiTarget) {
                     $divisi = $detail->divisi;
 
                     $karyawanDiDivisi = karyawan::where('divisi', $divisi)
@@ -756,7 +863,7 @@ class TargetKPIController extends Controller
                     ),
                     'data_detail'    => $this->getCalculationByRoute(
                         $itemDetail,
-                        ($isUserKoordinatorItsm && $isGapKompetensiTarget) ? null : $personId
+                        ($canViewGap && $isGapKompetensiTarget) ? null : $personId
                     ),
                     'can_edit'       => $isUserKoordinatorItsm,
                 ];

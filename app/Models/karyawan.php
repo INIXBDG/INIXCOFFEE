@@ -249,4 +249,9 @@ class karyawan extends Model
             ];
         })->values();
     }
+
+    public function timelineItems()
+    {
+        return $this->hasMany(TimelineItem::class, 'id_karyawan', 'id');
+    }
 }

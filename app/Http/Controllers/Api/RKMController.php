@@ -15,6 +15,7 @@ use App\Models\Perusahaan;
 use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\RekomendasiLanjutan;
+use App\Models\eksam;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -72,16 +73,17 @@ class RKMController extends Controller
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
                         'r_k_m_s.tanggal_awal',
                         DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                     )
-                    ->groupBy(
+                    ->groupBy([
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
                         'r_k_m_s.tanggal_awal'
-                    )
+                    ])
                     ->orderBy('status_all', 'asc')
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
                     ->get();
@@ -120,6 +122,8 @@ class RKMController extends Controller
 
                 $perusahaanMap = Perusahaan::whereIn('id', $uniquePerusahaanIds)->get()->keyBy('id');
                 $rekomendasiMap = RekomendasiLanjutan::whereIn('id_rkm', $uniqueRkmIds)->get()->groupBy('id_rkm');
+                // Bulk fetch eksam yang sudah diajukan untuk RKM ini
+                $examedRkmIds = eksam::whereIn('id_rkm', $uniqueRkmIds)->whereNotNull('id_rkm')->pluck('id_rkm')->map(fn($v) => (string)$v)->flip()->toArray();
 
                 // 3. Pemetaan data kembali ke masing-masing baris (Mapping)
                 foreach ($rows as $row) {
@@ -160,6 +164,13 @@ class RKMController extends Controller
                     $row->rekomendasi_group = collect($rkmIdsArray)->flatMap(function ($id) use ($rekomendasiMap) {
                         return $rekomendasiMap->get($id) ?? [];
                     })->filter()->values();
+
+                    // Cek apakah ada RKM dari grup ini yang sudah diajukan exam
+                    $row->has_exam = collect($rkmIdsArray)->contains(fn($id) => isset($examedRkmIds[(string)$id]));
+
+                    // Nama sales (untuk Adm Sales)
+                    $salesIdsArr2 = array_filter(explode(', ', $row->sales_all ?? ''));
+                    $row->nama_sales_list = collect($salesIdsArr2)->map(fn($kode) => optional($karyawanMap->get(trim($kode)))->nama_lengkap)->filter()->implode(', ');
                 }
 
                 $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
@@ -245,16 +256,17 @@ class RKMController extends Controller
                         DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
                         DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
                         DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                        DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
                         'r_k_m_s.tanggal_awal',
                         DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
                     )
-                    ->groupBy(
+                    ->groupBy([
                         'r_k_m_s.materi_key',
                         'r_k_m_s.ruang',
                         'r_k_m_s.metode_kelas',
                         'r_k_m_s.event',
                         'r_k_m_s.tanggal_awal'
-                    )
+                    ])
                     ->orderBy('status_all', 'asc')
                     ->orderBy('r_k_m_s.tanggal_awal', 'asc')
                     ->get();

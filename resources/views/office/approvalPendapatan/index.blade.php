@@ -264,7 +264,8 @@
                             <i class="bi bi-download"></i>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm vlk-dropdown-menu">
-                            <li><button type="button" class="dropdown-item" id="btnExportExcel"><i
+                            <li><button type="button" class="dropdown-item" id="btnExportExcel" data-bs-toggle="modal"
+                                    data-bs-target="#exportModal"><i
                                         class="bi bi-file-earmark-spreadsheet-fill me-2 text-success"></i>Export
                                     Excel</button></li>
                         </ul>
@@ -540,6 +541,77 @@
         </div>
     </div>
 
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+                <div class="modal-header px-4 py-3" style="background:var(--vlk-primary);color:#fff;border:none;">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-spreadsheet-fill me-2"></i>Export Excel
+                        Approval Penjualan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Tahun</label>
+                        <input type="text" class="form-control bg-light" id="exportYear" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Periode</label>
+                        <select class="form-select" id="exportMode">
+                            <option value="tahunan">Tahunan (Januari - Desember)</option>
+                            <option value="kuartal">Kuartal (Q1 - Q4)</option>
+                            <option value="bulan" selected>Bulanan</option>
+                            <option value="minggu">Mingguan (Week per Bulan)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="exportQuarterGroup">
+                        <label class="form-label fw-semibold small">Kuartal</label>
+                        <select class="form-select" id="exportQuarter">
+                            <option value="1">Q1 (Januari - Maret)</option>
+                            <option value="2">Q2 (April - Juni)</option>
+                            <option value="3">Q3 (Juli - September)</option>
+                            <option value="4">Q4 (Oktober - Desember)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="exportMonthGroup">
+                        <label class="form-label fw-semibold small">Bulan</label>
+                        <select class="form-select" id="exportMonth">
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="exportWeekGroup">
+                        <label class="form-label fw-semibold small">Week</label>
+                        <select class="form-select" id="exportWeek"></select>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" id="exportUseFilter" checked>
+                        <label class="form-check-label small" for="exportUseFilter">Terapkan filter aktif (sales,
+                            instruktur, status, range nilai)</label>
+                    </div>
+                    <div class="p-3 rounded small"
+                        style="background:var(--vlk-primary-soft);color:var(--vlk-primary-dark);">
+                        <i class="bi bi-info-circle me-1"></i><span id="exportSummary"></span>
+                    </div>
+                </div>
+                <div class="modal-footer px-4 pb-4 border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success fw-semibold" id="btnConfirmExport"><i
+                            class="bi bi-download me-1"></i>Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="calculatorModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -685,7 +757,6 @@
 
                     <div class="modal-body vlk-modal-body vf-body">
 
-                        {{-- ============ INFORMASI ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-blue"><i
                                     class="bi bi-file-text me-2"></i><span>Informasi Training &amp; Invoice</span></div>
@@ -760,7 +831,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ PERHITUNGAN ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-mint"><i
                                     class="bi bi-calculator me-2"></i><span>Perhitungan Penjualan</span></div>
@@ -790,7 +860,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ PENGURANG ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-coral"><i
                                     class="bi bi-dash-circle me-2"></i><span>Pengurang</span></div>
@@ -875,7 +944,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ TRANSPORT & PAJAK ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-amber"><i
                                     class="bi bi-truck me-2"></i><span>Transport &amp; Pajak</span></div>
@@ -940,7 +1008,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ PEMBAYARAN ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-lavender"><i
                                     class="bi bi-wallet2 me-2"></i><span>Pembayaran</span></div>
@@ -976,7 +1043,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ TOTAL BERSIH ============ --}}
                         <div class="vf-section vf-summary">
                             <div class="vf-row">
                                 <label class="vf-label" for="total_penjualan_sales">Total Penjualan Sales (Bersih)
@@ -990,7 +1056,6 @@
                             </div>
                         </div>
 
-                        {{-- ============ TRACKING ============ --}}
                         <div class="vf-section">
                             <div class="section-label-bar section-lavender"><i
                                     class="bi bi-clipboard2-check me-2"></i><span>Tracking Outstanding</span></div>
@@ -1263,6 +1328,44 @@
             transition: transform .15s ease, background-color .15s ease;
         }
 
+        #exportModal .btn-success {
+            background: var(--vlk-mint);
+            border-color: var(--vlk-mint);
+            border-radius: 10px;
+            color: #fff;
+            box-shadow: 0 4px 12px -4px rgba(140, 197, 167, .55);
+        }
+
+        #exportModal .btn-success:hover {
+            background: #79B796;
+            border-color: #79B796;
+            color: #fff;
+        }
+
+        #exportModal .btn-light {
+            border-radius: 10px;
+            font-weight: 600;
+            background: #F1F4F9;
+            border-color: var(--vlk-border);
+        }
+
+        #exportModal .form-select,
+        #exportModal .form-control {
+            border-radius: 10px;
+            border-color: var(--vlk-border);
+        }
+
+        #exportModal .form-select:focus,
+        #exportModal .form-control:focus {
+            border-color: var(--vlk-primary);
+            box-shadow: 0 0 0 .22rem rgba(122, 164, 212, .22);
+        }
+
+        #exportModal .form-check-input:checked {
+            background-color: var(--vlk-mint);
+            border-color: var(--vlk-mint);
+        }
+
         .vlk-card {
             border-radius: 16px !important;
             border: 1px solid var(--vlk-border) !important;
@@ -1298,6 +1401,7 @@
         .vlk-card .card-body.text-center .bi-inbox {
             color: var(--vlk-lavender) !important;
         }
+
         .vlk-legend-item {
             display: inline-flex;
             align-items: center;
@@ -1305,6 +1409,7 @@
             font-size: 0.78rem;
             color: var(--vlk-muted);
         }
+
         .vlk-legend-swatch {
             display: inline-block;
             width: 22px;
@@ -1312,7 +1417,6 @@
             border-radius: 3px;
             border: 1px solid var(--vlk-border);
         }
-                
 
         @keyframes vlkFadeIn {
             from {
@@ -2006,14 +2110,12 @@
             line-height: 1.35;
             padding: 0.45rem 0.5rem;
             text-align: center !important;
-            /* Teks boleh turun ke baris berikutnya, tidak pernah dipotong/ellipsis */
             white-space: normal;
             word-wrap: break-word;
             overflow-wrap: anywhere;
             overflow: visible;
         }
 
-        /* Header: boleh 2-3 baris, tidak pernah terpotong */
         .vlk-fixed-table thead th {
             white-space: normal;
             word-break: break-word;
@@ -2023,7 +2125,6 @@
             vertical-align: middle;
         }
 
-        /* Body: nilai boleh wrap ke baris baru, tidak pernah ellipsis/terpotong */
         .vlk-fixed-table tbody td {
             white-space: normal;
             overflow: visible;
@@ -2031,7 +2132,6 @@
             text-align: center !important;
         }
 
-        /* FOOTER: tetap tidak boleh terpotong, dan rata tengah */
         .vlk-fixed-table tfoot td {
             white-space: normal;
             overflow: visible !important;
@@ -2045,6 +2145,7 @@
             background-color: #EDE7F6 !important;
             color: #4A3F6B;
         }
+
         .vlk-theme tr.row-out-of-period > td:first-child {
             box-shadow: inset 4px 0 0 #7E57C2;
         }
@@ -2053,11 +2154,12 @@
             background-color: #F5E6E0 !important;
             color: #5C4033;
         }
+
         .vlk-theme tr.table-warning.row-out-of-period > td:first-child {
             box-shadow: inset 4px 0 0 #E89B7C;
         }
 
-                #updateModal .modal-header {
+        #updateModal .modal-header {
             background: var(--vlk-primary);
             color: #fff;
             border-bottom: none;
@@ -2126,7 +2228,6 @@
             border-color: var(--vlk-border);
         }
 
-        /* Total bersih: panel biru seperti sebelumnya */
         #updateModal .vf-summary {
             background: var(--vlk-primary);
             border-color: var(--vlk-primary-dark);
@@ -2152,7 +2253,6 @@
             color: var(--vlk-ink);
         }
 
-        /* Tracking: switch di kanan, baris yang dicentang diberi tint */
         #updateModal .vf-row-check .form-check-input {
             width: 2.4em;
             height: 1.25em;
@@ -2200,7 +2300,6 @@
             border-color: var(--vlk-border);
         }
 
-        /* Layar kecil: label di atas input */
         @media (max-width: 576px) {
             #updateModal .vf-row {
                 grid-template-columns: 1fr;
@@ -2213,7 +2312,6 @@
         }
     </style>
 
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.17.1/moment-with-locales.min.js"></script>
     <script>
@@ -2229,7 +2327,7 @@
         };
         let filterState = {
             sales: '',
-            instruktur: '', 
+            instruktur: '',
             dateStart: '',
             dateEnd: '',
             status: '',
@@ -2416,6 +2514,12 @@
                 dataProp: 'tanggal_selesai'
             }
         };
+
+        const EXPORT_YEAR = {{ now()->year }};
+        const EXPORT_MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
+            'September', 'Oktober', 'November', 'Desember'
+        ];
+        const EXPORT_QUARTER_NAMES = ['Januari - Maret', 'April - Juni', 'Juli - September', 'Oktober - Desember'];
 
         $(document).ready(function() {
             checkAndInitLock();
@@ -3085,7 +3189,7 @@
 
         function readFilterFormIntoState() {
             filterState.sales = $('#filterSales').val().toLowerCase();
-            filterState.instruktur = ($('#filterInstruktur').val() || '').toLowerCase().trim(); 
+            filterState.instruktur = ($('#filterInstruktur').val() || '').toLowerCase().trim();
             filterState.dateStart = $('#filterDateStart').val();
             filterState.dateEnd = $('#filterDateEnd').val();
             filterState.status = $('#filterStatus').val();
@@ -3400,7 +3504,6 @@
                         'perusahaan', 'nama_sales', 'instruktur'
                     ];
 
-                    // Hanya hitung kolom depan yang consecutive dari awal
                     let visibleFrontCount = 0;
                     for (let i = 0; i < visibleCols.length; i++) {
                         if (frontMergeCols.indexOf(visibleCols[i]) !== -1) {
@@ -3411,7 +3514,6 @@
                     }
                     let labelColspan = 1 + visibleFrontCount;
 
-                    // dataProp → key SUM backend (sesuaikan setelah Anda tambah SUM di controller)
                     const totalMapping = {
                         'harga':                 'total_harga',
                         'pax':                   'total_pax',
@@ -3533,7 +3635,7 @@
         $('#changePassModal').on('hidden.bs.modal', function () {
             ['chgCurrentPass', 'chgNewPass', 'chgConfirmPass'].forEach(function (id) {
                 const input = document.getElementById(id);
-                const btn = input.nextElementSibling; 
+                const btn = input.nextElementSibling;
                 if (input) input.type = 'password';
                 if (btn) {
                     const icon = btn.querySelector('i');
@@ -3600,22 +3702,91 @@
             $('#komisiHasil').text('Rp ' + komisi.toLocaleString('id-ID'));
         }
 
-        $(document).on('click', '#btnExportExcel', function() {
-            let bulan = $('#month').val();
-            let tahun = $('#year').val();
-            if (!bulan || !tahun) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Peringatan',
-                    text: 'Pilih periode terlebih dahulu.'
+        function exportWeeksInMonth(year, month) {
+            moment.locale('id');
+            let first = moment([year, month - 1, 1]);
+            let last = first.clone().endOf('month');
+            let start = first.clone().isoWeekday(1);
+            let weeks = [];
+            let n = 1;
+            while (start.isSameOrBefore(last, 'day')) {
+                weeks.push({
+                    number: n,
+                    start: start.clone(),
+                    end: start.clone().add(4, 'days')
                 });
-                return;
+                start.add(1, 'week');
+                n++;
             }
+            return weeks;
+        }
+
+        function fillExportWeeks(selectedWeek) {
+            let month = parseInt($('#exportMonth').val(), 10);
+            let weeks = exportWeeksInMonth(EXPORT_YEAR, month);
+            let html = '';
+            weeks.forEach(function(w) {
+                html += '<option value="' + w.number + '">Week ' + w.number + ' ' + EXPORT_MONTH_NAMES[month - 1] +
+                    ' (' + w.start.format('DD MMM') + ' - ' + w.end.format('DD MMM') + ')</option>';
+            });
+            $('#exportWeek').html(html);
+            if (selectedWeek && selectedWeek <= weeks.length) {
+                $('#exportWeek').val(String(selectedWeek));
+            }
+        }
+
+        function updateExportSummary() {
+            let mode = $('#exportMode').val();
+            let month = parseInt($('#exportMonth').val(), 10);
+            let text = '';
+            if (mode === 'tahunan') {
+                text = 'Data satu tahun penuh ' + EXPORT_YEAR + ' (Januari - Desember) dalam 1 tabel.';
+            } else if (mode === 'kuartal') {
+                let q = parseInt($('#exportQuarter').val(), 10);
+                text = 'Data Q' + q + ' ' + EXPORT_YEAR + ' (' + EXPORT_QUARTER_NAMES[q - 1] + ') dalam 1 tabel.';
+            } else if (mode === 'bulan') {
+                text = 'Data bulan ' + EXPORT_MONTH_NAMES[month - 1] + ' ' + EXPORT_YEAR + ' dalam 1 tabel.';
+            } else {
+                text = 'Data ' + $('#exportWeek option:selected').text() + ' ' + EXPORT_YEAR + ' dalam 1 tabel.';
+            }
+            $('#exportSummary').text(text + ' Footer total ikut disertakan.');
+        }
+
+        function updateExportUI() {
+            let mode = $('#exportMode').val();
+            $('#exportQuarterGroup').toggleClass('d-none', mode !== 'kuartal');
+            $('#exportMonthGroup').toggleClass('d-none', mode !== 'bulan' && mode !== 'minggu');
+            $('#exportWeekGroup').toggleClass('d-none', mode !== 'minggu');
+            updateExportSummary();
+        }
+
+        $('#exportModal').on('show.bs.modal', function() {
+            let currentMonth = parseInt($('#month').val(), 10) || (new Date().getMonth() + 1);
+            $('#exportYear').val(EXPORT_YEAR);
+            $('#exportMode').val('bulan');
+            $('#exportMonth').val(String(currentMonth));
+            $('#exportQuarter').val(String(Math.ceil(currentMonth / 3)));
+            $('#exportUseFilter').prop('checked', true);
+            fillExportWeeks(1);
+            updateExportUI();
+        });
+
+        $(document).on('change', '#exportMode', updateExportUI);
+        $(document).on('change', '#exportQuarter, #exportWeek', updateExportSummary);
+        $(document).on('change', '#exportMonth', function() {
+            fillExportWeeks(1);
+            updateExportSummary();
+        });
+
+        $(document).on('click', '#btnConfirmExport', function() {
+            readFilterFormIntoState();
             let payload = {
-                tahun: tahun,
-                bulan: bulan,
-                filter: filterState,
-                _token: '{{ csrf_token() }}'
+                mode: $('#exportMode').val(),
+                kuartal: parseInt($('#exportQuarter').val(), 10),
+                bulan: parseInt($('#exportMonth').val(), 10),
+                minggu: parseInt($('#exportWeek').val(), 10) || 1,
+                use_filter: $('#exportUseFilter').is(':checked'),
+                filter: filterState
             };
             let form = $('<form>', {
                 'method': 'POST',
@@ -3635,9 +3806,9 @@
             $('body').append(form);
             form.submit();
             form.remove();
+            bootstrap.Modal.getInstance(document.getElementById('exportModal')).hide();
         });
 
-        // Hapus listener DOMContentLoaded lama untuk tracking_select_all, ganti dengan:
         $(document).on('change', '#tracking_select_all', function () {
             const checked = this.checked;
             $('#updateModal .tracking-check[type="checkbox"]').each(function () {
@@ -3658,7 +3829,6 @@
             selectAll.indeterminate = checked > 0 && checked < total;
         });
 
-        // Saat modal dibuka, sinkronkan state Select All
         $('#updateModal').on('shown.bs.modal', function () {
             const $all = $('#updateModal .tracking-check[type="checkbox"]:not(:disabled)');
             const total = $all.length;
@@ -3667,6 +3837,6 @@
             if (!selectAll) return;
             selectAll.checked = total > 0 && checked === total;
             selectAll.indeterminate = checked > 0 && checked < total;
-});
+        });
     </script>
 @endsection

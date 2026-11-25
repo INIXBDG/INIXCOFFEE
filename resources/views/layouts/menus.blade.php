@@ -306,10 +306,11 @@
             <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
                 <ul class="navbar-nav">
                     <li class="nav-item mx-1">
-                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
-                            data-bs-placement="top" title="Logout">
+                        <button type="submit" form="logout-form" class="nav-link border-0 bg-transparent"
+                            id="logout-link" data-bs-toggle="tooltip" data-bs-placement="top" title="Logout"
+                            aria-label="Logout">
                             <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                        </a>
+                        </button>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>
@@ -1873,6 +1874,22 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                @can('View Kelengkapan Data Penjualan')
+                                                    <div class="col-sm-6 mt-2" data-card-id="rencana_pembelian">
+                                                        <div class="card" id="card-hover">
+                                                            <div class="card-body d-flex">
+                                                                <div class="col-md-2"><i class="fa-solid fa-clipboard-check" style="font-size: 30px;"></i></div>
+                                                                <div class="col-md-10" style="margin-left: 10px"><a
+                                                                        href="{{ route('kelengkapan-data.index') }}"
+                                                                        class="link stretched-link text-decoration-none">
+                                                                        <h5 class="card-title">Kelengkapan Data Penjualan</h5>
+                                                                    </a>
+                                                                    <p class="card-text">periksa kelengkapan data penjualan.</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>

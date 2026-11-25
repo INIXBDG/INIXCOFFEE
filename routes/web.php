@@ -121,6 +121,7 @@ use App\Http\Controllers\office\PoExamSertifaController;
 use App\Http\Controllers\office\TagihanPerusahaanController;
 use App\Http\Controllers\office\vendorOfficeController;
 use App\Http\Controllers\office\AnalysisFinanceController;
+use App\Http\Controllers\office\KelengkapanDataController;
 use App\Http\Controllers\OutstandingController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\PenambahanSouvenirController;
@@ -135,6 +136,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PerpindahanDBController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\PesertaController;
+use App\Http\Controllers\PesertaWebinarSalesController;
 use App\Http\Controllers\PicPenagihanController;
 use App\Http\Controllers\ProjectAdministrationController;
 use App\Http\Controllers\ProjectHandoverController;
@@ -208,7 +210,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/admin/layout-setting', [DashboardLayoutController::class, 'index'])->name('admin.layout-setting');
     Route::post('/admin/layout-setting/update', [DashboardLayoutController::class, 'update'])->name('admin.layout-setting.update');
-
+    Route::post('/admin/layout-setting/reset', [DashboardLayoutController::class, 'reset'])->name('admin.layout-setting.reset');
+        
     // =========================================================================
     // 2. USER, KARYAWAN, ROLES & PERMISSIONS
     // =========================================================================
@@ -357,10 +360,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/fetch-attendance', [RKMController::class, 'fetchAttendance'])->name('attendance.fetch');
 
     // Management Kelas & Kelas Setting
-    Route::resource('management-kelas', managementKelasController::class);
+    // Route::resource('management-kelas', managementKelasController::class);
     Route::get('/management-kelas/get', [managementKelasController::class, 'get'])->name('managementKelas.get');
     Route::post('/management-kelas/{id}/batalkan', [managementKelasController::class, 'batalkan']);
-
+    Route::resource('management-kelas', managementKelasController::class)->except(['show']);
     Route::prefix('kelas-setting')->name('KelasSetting.')->group(function () {
         Route::get('/index', [KelasSettingController::class, 'index'])->name('index');
         Route::get('/', [KelasSettingController::class, 'getData'])->name('data');
@@ -412,6 +415,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/exam/{id}/delete-invoice/{filename}', [examController::class, 'deleteSpecificInvoice'])->name('exam.deleteSpecificInvoice');
     Route::put('/exam/update/status', [examController::class, 'updateStatus'])->name('exam.updateStatus');
     Route::get('getHistoriExam', [examController::class, 'getHistoriExam'])->name('getHistoriExam');
+    Route::get('getSalesBelumPengajuanExam', [examController::class, 'getSalesBelumPengajuanExam'])->name('getSalesBelumPengajuanExam');
     Route::get('/create-only', [examController::class, 'createOnly'])->name('exam.createOnly');
     Route::post('/store-only', [examController::class, 'storeOnly'])->name('exam.storeOnly');
     Route::get('/hargaExam', [examController::class, 'hargaExam']);
@@ -869,6 +873,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
         Route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
         Route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
+        Route::post('/update-target/{id}', [TargetKPIController::class, 'updateTarget'])->name('updateTarget');
         Route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
         Route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
         Route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');
@@ -990,6 +995,18 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/{id}/checklists', [checklistRKMController::class, 'updateMultiple'])->name('checklist.update-multiple');
         });
 
+        // Timeline Webinar Admin Sales
+        Route::prefix('/timeline-webinar')->name('crm.timeline-webinar.')->group(function () {
+            Route::get('/', [CalendarController::class, 'indexAdmSales'])->name('index');
+
+            Route::get('/peserta', [PesertaWebinarSalesController::class, 'index'])->name('peserta.index');
+            Route::get('/peserta/meta', [PesertaWebinarSalesController::class, 'meta'])->name('peserta.meta');
+            Route::get('/peserta/perusahaan', [PesertaWebinarSalesController::class, 'perusahaan'])->name('peserta.perusahaan');
+            Route::post('/peserta', [PesertaWebinarSalesController::class, 'store'])->name('peserta.store');
+            Route::put('/peserta/{id}', [PesertaWebinarSalesController::class, 'update'])->name('peserta.update');
+            Route::delete('/peserta/{id}', [PesertaWebinarSalesController::class, 'destroy'])->name('peserta.destroy');
+        });
+
         // Peluang CRM & Closed Win/Lost
         Route::get('/peluang/index', [PeluangController::class, 'index'])->name('index.peluang');
         Route::get('/index/peluang', [PeluangController::class, 'indexJson'])->name('index.peluang.json');
@@ -1100,6 +1117,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/approval-pendapatan-sales/update/{id}', [ApprovalPendapatanSalesController::class, 'update']);
         Route::get('/approval-pendapatan-sales/rkm-search', [ApprovalPendapatanSalesController::class, 'searchRkm']);
         Route::post('/approval-pendapatan-sales/store', [ApprovalPendapatanSalesController::class, 'store']);
+        Route::post('/approval-pendapatan-sales/validasi-all', [ApprovalPendapatanSalesController::class, 'validasiAll']);
+        Route::post('/approval-pendapatan-sales/validasi/{id}', [ApprovalPendapatanSalesController::class, 'validasi']);
     });
 
     // =========================================================================
@@ -1245,7 +1264,7 @@ Route::middleware(['auth'])->group(function () {
         // Approval Pendapatan & Komisi Sales
         Route::prefix('approval-pendapatan')->name('approvalPendapatan.')->group(function () {
             Route::get('/index', [ApprovalPendapatanController::class, 'index'])->name('index');
-            Route::get('/get/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'get'])->name('get');
+            Route::get('/get/{tahun?}/{bulan?}', [ApprovalPendapatanController::class, 'get'])->name('get');
             Route::post('update/{id}', [ApprovalPendapatanController::class, 'update'])->name('update');
             Route::get('total-tahunan/{tahun}/{bulan}', [ApprovalPendapatanController::class, 'totalTahunan']);
             Route::get('/lock-status', [ApprovalPendapatanController::class, 'checkLockStatus']);
@@ -1294,6 +1313,21 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/index', [MateriController::class, 'indexAlias'])->name('index');
             Route::get('/index/json', [MateriController::class, 'indexJsonAlias'])->name('index.json');
             Route::put('/update/{id}', [MateriController::class, 'updateAlias'])->name('update');
+        });
+
+        //kelengkapan dat penjualan
+        Route::prefix('kelengkapan-data')->name('kelengkapan-data.')->group(function () {
+            Route::get('/', [KelengkapanDataController::class, 'index'])->name('index');
+            Route::get('/pa/data', [KelengkapanDataController::class, 'paData'])->name('pa.data');
+            Route::get('/pa/template', [KelengkapanDataController::class, 'downloadTemplate'])->name('pa.template');
+            Route::post('/pa/preview', [KelengkapanDataController::class, 'preview'])->name('pa.preview');
+            Route::post('/pa/commit', [KelengkapanDataController::class, 'commit'])->name('pa.commit');
+
+            Route::get('/sinkron/data', [KelengkapanDataController::class, 'sinkronData'])->name('sinkron.data');
+            Route::post('/sinkron/konfirmasi', [KelengkapanDataController::class, 'sinkronKonfirmasi'])->name('sinkron.konfirmasi');
+            Route::post('/sinkron/batal', [KelengkapanDataController::class, 'sinkronBatal'])->name('sinkron.batal');
+            Route::post('/sinkron/simpan', [KelengkapanDataController::class, 'sinkronSimpan'])->name('sinkron.simpan');
+            Route::post('/sinkron/catatan', [KelengkapanDataController::class, 'sinkronCatatan'])->name('sinkron.catatan');
         });
     });
 
@@ -1425,6 +1459,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/perbaikan-data/bulk-update', [DaftarTugasController::class, 'bulkUpdatePerbaikan'])->name('bulkUpdatePerbaikan');
             Route::post('/perbaikan/bulk-save', [DaftarTugasController::class, 'bulkSavePerbaikan'])->name('bulkSavePerbaikan');
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
+            Route::get('/double/scan',  [DaftarTugasController::class, 'scanDouble'])->name('scanDouble');
+            Route::post('/double/clear', [DaftarTugasController::class, 'clearDouble'])->name('clearDouble');
         });
 
         Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function () {
@@ -1513,6 +1549,8 @@ Route::middleware(['auth'])->group(function () {
     // =========================================================================
     Route::prefix('rencana-pembelian')->name('rencanaPembelian.')->group(function () {
         Route::get('', [RencanaPembelianHrController::class, 'index'])->name('index');
+        Route::get('/export/pdf', [RencanaPembelianHrController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel', [RencanaPembelianHrController::class, 'exportExcel'])->name('export.excel');
         Route::post('/store', [RencanaPembelianHrController::class, 'store'])->name('store');
         Route::post('/update/{id}', [RencanaPembelianHrController::class, 'update'])->name('update');
         Route::post('/delete/{id}', [RencanaPembelianHrController::class, 'delete'])->name('delete');
@@ -1632,6 +1670,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/setup', [MasterKaryawanController::class, 'storeMaster'])->name('setup.store');
             Route::post('/unlock', [MasterKaryawanController::class, 'unlock'])->name('unlock');
             Route::post('/lock', [MasterKaryawanController::class, 'lock'])->name('lock');
+            Route::get('/export', [MasterKaryawanController::class, 'export'])->name('export');
         });
 
         Route::prefix('legalitas')->name('legalitas.')->group(function () {
@@ -1950,6 +1989,15 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/upload-kode-billing', [payrollController::class, 'uploadKodeBillingPph']);
             Route::get('/file/{jenis}', [payrollController::class, 'downloadBerkasPph']);
             Route::delete('/delete-all', [payrollController::class, 'deleteAllPph'])->name('delete-all');
+            Route::get('/analisis', [payrollController::class, 'getPphAnalysis']);
+            Route::get('/preview',  [payrollController::class, 'previewPph']);
+            Route::get('/desember', [payrollController::class, 'getPphDesember'])->name('desember');
+            Route::get('/desember/export-excel', [payrollController::class, 'exportPphDesemberExcel'])->name('desember.excel');
+            Route::get('/desember/export-pdf', [payrollController::class, 'exportPphDesemberPdf'])->name('desember.pdf');
+            Route::get('/export-data-excel', [payrollController::class, 'exportPphDataExcel']);
+            Route::get('/export-data-pdf', [payrollController::class, 'exportPphDataPdf']);
+            Route::get('/export-analisis-excel', [payrollController::class, 'exportPphAnalisisExcel']);
+            Route::get('/export-analisis-pdf', [payrollController::class, 'exportPphAnalisisPdf']);
         });
 
         Route::prefix('rekapan-penjualan')->name('rekap-penjualan.')->group(function () {
@@ -2045,6 +2093,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/registry/{tugas}/start', [RegistryFeatureController::class, 'startTask'])->name('registry.start');
     Route::patch('/registry/{tugas}/finish', [RegistryFeatureController::class, 'finishTask'])->name('registry.finish');
     Route::get('/registry/data', [RegistryFeatureController::class, 'getRegistry'])->name('registry.data');
+    Route::get('/registry/summary', [RegistryFeatureController::class, 'getSummary'])->name('registry.summary');
 
     Route::get('/projects/administrasi/get-data', [ProjectAdministrationController::class, 'getAdministrasi'])->name('getAdministrasi');
     Route::post('/projects/administrasi/{id}/update-stage', [ProjectAdministrationController::class, 'updateStage'])->name('administrasi.updateStage');

@@ -93,6 +93,7 @@ class RKMController extends Controller
             ->selectRaw('SUM(rkm.pax) AS pax')
             ->selectRaw('rkm.exam')
             ->selectRaw('rkm.makanan')
+            ->selectRaw('MAX(rkm.authorize) AS authorize')
             ->selectRaw('MIN(rkm.status) AS status')
             ->selectRaw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan SEPARATOR ", ") AS perusahaan_all')
             ->selectRaw('GROUP_CONCAT(DISTINCT sales.nama_lengkap ORDER BY sales.nama_lengkap SEPARATOR ", ") AS sales_all')

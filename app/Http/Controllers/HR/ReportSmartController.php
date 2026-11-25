@@ -92,6 +92,7 @@ class ReportSmartController extends ReportController
                 'category' => $template->category,
                 'source_table' => $table,
                 'columns' => $columns,
+                'all_columns' => $this->getAllowedColumns(),
                 'fields' => $fields,
                 'blanks' => $blanks,
                 'template_url' => $template->template_file_path ? asset('storage/' . $template->template_file_path) : null,
@@ -199,14 +200,17 @@ class ReportSmartController extends ReportController
             'category' => 'nullable|string|max:100',
             'fields' => 'nullable|string',
             'items' => 'nullable|string',
+            'source_table' => ['required', 'string', Rule::in(array_keys($this->getAvailableTables()))],
         ], [
             'code.unique' => 'Kode Template sudah dipakai template lain.',
         ]);
 
-        $table = strtolower($template->source_table ?: 'karyawan');
+        $table = strtolower($v['source_table']);
         $columns = $this->getAllowedColumns()[$table] ?? [];
         $existing = $template->placeholders()->get();
         $existingKeys = $existing->pluck('placeholder_key')->all();
+        $currentTable = strtolower($template->source_table ?: 'karyawan');
+        $switched = $table !== $currentTable;
 
         $newPath = null;
         $oldPath = $template->template_file_path;
@@ -217,6 +221,25 @@ class ReportSmartController extends ReportController
                 throw new \InvalidArgumentException('Format data field tidak valid.');
             }
             $items = $this->parseItems($v['items'] ?? '[]', $columns, $existingKeys);
+
+            if ($switched) {
+                $chosen = collect($fields)->keyBy(fn ($f) => $f['key'] ?? '');
+
+                $unresolved = $existing
+                    ->filter(fn ($ph) => !$ph->is_manual && $ph->field_type === 'text')
+                    ->filter(function ($ph) use ($chosen, $columns) {
+                        $col = $chosen->get($ph->placeholder_key)['source_column'] ?? null;
+
+                        return !$col || !isset($columns[$col]);
+                    })
+                    ->map(fn ($ph) => $ph->placeholder_label)
+                    ->values()
+                    ->all();
+
+                if ($unresolved) {
+                    throw new \InvalidArgumentException('Sumber data diganti. Pilih kolom baru untuk field: ' . implode(', ', $unresolved) . '.');
+                }
+            }
 
             $extracted = [];
             if (!empty($items)) {
@@ -239,22 +262,33 @@ class ReportSmartController extends ReportController
                 );
             }
 
-            DB::transaction(function () use ($template, $v, $fields, $items, $extracted, $existing, $existingKeys, $columns, $newPath) {
+            DB::transaction(function () use ($template, $v, $table, $switched, $fields, $items, $extracted, $existing, $existingKeys, $columns, $newPath) {
                 $meta = [
                     'name' => $v['name'],
                     'code' => $v['code'],
                     'category' => $v['category'] ?? $template->category,
+                    'source_table' => $table,
                 ];
 
-                if ($newPath) {
-                    $available = (array) ($template->available_fields ?? array_keys($columns));
+                if ($newPath || $switched) {
+                    $available = $switched
+                        ? array_merge(
+                            array_keys($columns),
+                            $existing->filter(fn ($p) => $p->is_manual || $p->field_type !== 'text')->pluck('placeholder_key')->all()
+                        )
+                        : (array) ($template->available_fields ?? array_keys($columns));
+
                     foreach ($items as $it) {
                         if (!in_array($it['key'], $available, true)) {
                             $available[] = $it['key'];
                         }
                     }
-                    $meta['template_file_path'] = $newPath;
-                    $meta['available_fields'] = array_values($available);
+
+                    $meta['available_fields'] = array_values(array_unique($available));
+
+                    if ($newPath) {
+                        $meta['template_file_path'] = $newPath;
+                    }
                 }
 
                 $template->update($meta);

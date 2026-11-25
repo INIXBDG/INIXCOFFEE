@@ -56,6 +56,7 @@ class RKMExcelAdmsales implements FromCollection, WithHeadings, WithStyles, Shou
                 'Event'         => $item['event'] ?: 'Belum Ditentukan',
                 'Ruang'         => $item['ruang'] ?: 'Belum Ditentukan',
                 'Pax'           => $item['pax'] ?? 0,
+                'Kelas'         => ($item['authorize'] ?? '0') == '1' ? 'Authorize' : 'Regular',
                 'Sales'         => implode(', ', $salesAll),
                 'Instruktur'    => $instruktur,
                 'Instruktur 2'  => $instruktur2,
@@ -80,6 +81,7 @@ class RKMExcelAdmsales implements FromCollection, WithHeadings, WithStyles, Shou
             'Event',
             'Ruang',
             'Pax',
+            'Kelas',
             'Sales',
             'Instruktur',
             'Instruktur 2',
@@ -89,7 +91,7 @@ class RKMExcelAdmsales implements FromCollection, WithHeadings, WithStyles, Shou
 
     public function styles(Worksheet $sheet)
     {
-        $lastColumn = 'M'; // sekarang M karena ada 13 kolom
+        $lastColumn = 'N'; // sekarang N karena ada 14 kolom
 
         // Warna background berdasarkan status
         foreach ($this->rowsWithStatus as $rowIndex => $status) {

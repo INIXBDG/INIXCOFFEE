@@ -11,6 +11,7 @@ class TimelineItem extends Model
 
     protected $fillable = [
         'year_mapping_id',
+        'id_karyawan',
         'item_date',
         'content',
         'color'
@@ -24,5 +25,10 @@ class TimelineItem extends Model
     public function yearMapping()
     {
         return $this->belongsTo(YearMapping::class, 'year_mapping_id');
+    }
+
+    public function karyawan()
+    {
+        return $this->belongsTo(karyawan::class, 'id_karyawan');
     }
 }

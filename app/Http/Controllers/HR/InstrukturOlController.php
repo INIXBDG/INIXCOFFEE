@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\HR;
 
-use App\Exports\ArrayExport;
+use App\Exports\InstrukturOlExport;
 use App\Http\Controllers\Controller;
 use App\Models\InstrukturOl;
 use App\Models\InstrukturOlMateri;
@@ -56,12 +56,51 @@ class InstrukturOlController extends Controller
         'pax'          => 'Pax',
     ];
 
+    private const KOLOM_PEMBAYARAN = [
+        'tanggal_bayar' => 'Tanggal Bayar',
+        'judul'         => 'Judul Pembayaran',
+        'kelas'         => 'Kelas',
+        'harga'         => 'Harga',
+        'perhitungan'   => 'Perhitungan',
+        'pax'           => 'Pax',
+        'total'         => 'Total',
+        'keterangan'    => 'Catatan',
+        'bukti'         => 'Bukti',
+    ];
+
     public function index()
     {
         return view('HR.InstrukturOL.index', [
-            'kolomList'    => self::KOLOM_LIST,
-            'kolomRiwayat' => self::KOLOM_RIWAYAT,
+            'kolomList'       => self::KOLOM_LIST,
+            'kolomRiwayat'    => self::KOLOM_RIWAYAT,
+            'kolomPembayaran' => self::KOLOM_PEMBAYARAN,
+            'allInstrukturs'  => InstrukturOl::query()
+                ->orderBy('nama')
+                ->get(['id', 'kode_karyawan', 'nama', 'core']),
+            'tahunOptions'    => $this->opsiTahunExport(),
         ]);
+    }
+
+    private function opsiTahunExport(): array
+    {
+        $tahunRkm = RKM::query()
+            ->whereNotNull('tanggal_awal')
+            ->selectRaw('YEAR(tanggal_awal) as y')
+            ->distinct()
+            ->pluck('y')
+            ->all();
+
+        $tahunBayar = InstrukturOlPembayaran::query()
+            ->whereNotNull('tanggal_bayar')
+            ->selectRaw('YEAR(tanggal_bayar) as y')
+            ->distinct()
+            ->pluck('y')
+            ->all();
+
+        $all = array_unique(array_filter(array_map('intval', array_merge($tahunRkm, $tahunBayar, [(int) now()->year]))));
+        rsort($all);
+
+        return array_values($all);
     }
 
     public function karyawanOl(Request $request): JsonResponse
@@ -154,6 +193,9 @@ class InstrukturOlController extends Controller
                 'tanpa_ktp'  => $kosong('ktp_path'),
                 'tanpa_kode' => $kosong('kode_karyawan'),
             ],
+            'all_instrukturs' => InstrukturOl::query()
+                ->orderBy('nama')
+                ->get(['id', 'kode_karyawan', 'nama', 'core']),
         ]));
     }
 
@@ -339,15 +381,43 @@ class InstrukturOlController extends Controller
     public function export(Request $request)
     {
         $request->validate([
-            'format'    => ['required', 'in:pdf,xlsx'],
-            'columns'   => ['required', 'array', 'min:1'],
-            'columns.*' => ['in:' . implode(',', array_keys(self::KOLOM_LIST))],
+            'format'               => ['required', 'in:pdf,xlsx'],
+            'columns'              => ['required', 'array', 'min:1'],
+            'columns.*'            => ['in:' . implode(',', array_keys(self::KOLOM_LIST))],
+            'instruktur_ids'       => ['nullable', 'array'],
+            'instruktur_ids.*'     => ['integer'],
+            'with_riwayat'         => ['nullable', 'boolean'],
+            'columns_riwayat'      => ['nullable', 'array'],
+            'columns_riwayat.*'    => ['in:' . implode(',', array_keys(self::KOLOM_RIWAYAT))],
+            'with_pembayaran'      => ['nullable', 'boolean'],
+            'columns_pembayaran'   => ['nullable', 'array'],
+            'columns_pembayaran.*' => ['in:' . implode(',', array_keys(self::KOLOM_PEMBAYARAN))],
+            'filter_periode'       => ['nullable', 'in:semua,bulan_tahun,rentang'],
+            'bulan'                => ['nullable', 'integer', 'between:1,12'],
+            'tahun'                => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'tanggal_awal'         => ['nullable', 'date'],
+            'tanggal_akhir'        => ['nullable', 'date'],
         ], ['columns.required' => 'Pilih minimal 1 kolom untuk diexport.']);
 
-        $cols = $this->pilihKolom(self::KOLOM_LIST, $request->input('columns'));
+        $cols           = $this->pilihKolom(self::KOLOM_LIST, $request->input('columns'));
+        $withRiwayat    = $request->boolean('with_riwayat', true);
+        $withPembayaran = $request->boolean('with_pembayaran', false);
+
+        $colsRiwayat = $this->pilihKolom(
+            self::KOLOM_RIWAYAT,
+            $request->input('columns_riwayat', array_keys(self::KOLOM_RIWAYAT))
+        ) ?: array_keys(self::KOLOM_RIWAYAT);
+
+        $colsPembayaran = $this->pilihKolom(
+            self::KOLOM_PEMBAYARAN,
+            $request->input('columns_pembayaran', array_keys(self::KOLOM_PEMBAYARAN))
+        ) ?: array_keys(self::KOLOM_PEMBAYARAN);
+
+        $ids = array_values(array_filter(array_map('intval', $request->input('instruktur_ids', []))));
 
         $items = InstrukturOl::query()
-            ->when($request->q, fn ($q, $term) => $this->cariInstruktur($q, $term))
+            ->when($ids, fn ($q) => $q->whereIn('id', $ids))
+            ->when(!$ids && $request->q, fn ($q, $term) => $this->cariInstruktur($q, $term))
             ->orderBy('nama')
             ->get();
 
@@ -367,22 +437,104 @@ class InstrukturOlController extends Controller
 
         $headings = array_merge(['No'], array_map(fn ($c) => self::KOLOM_LIST[$c], $cols));
 
-        return $this->kirimExport($request->format, 'data-instruktur-ol', 'Data Instruktur OL', $headings, $rows);
+        $sections       = [];
+        $headingsRiwayat = array_merge(['No', 'Instruktur', 'Kode'], array_map(fn ($c) => self::KOLOM_RIWAYAT[$c], $colsRiwayat));
+        $rowsRiwayat    = [];
+        $noRiw          = 1;
+
+        if ($withRiwayat) {
+            foreach ($items as $inst) {
+                foreach ($this->filterPeriode($this->riwayatItems($inst), $request, 'tanggal_awal') as $b) {
+                    $all = [
+                        'materi'       => $b['materi'],
+                        'perusahaan'   => $b['perusahaan'],
+                        'periode'      => $this->fmtTanggal($b['tanggal_awal']) . ' s/d ' . $this->fmtTanggal($b['tanggal_akhir']),
+                        'metode_kelas' => $b['metode_kelas'],
+                        'peran'        => $b['peran'],
+                        'pax'          => $b['pax'],
+                    ];
+
+                    $rowsRiwayat[] = array_merge(
+                        [$noRiw++, $inst->nama, $inst->kode_karyawan ?: '-'],
+                        array_map(fn ($c) => $all[$c], $colsRiwayat)
+                    );
+                }
+            }
+
+            $sections[] = [
+                'judul'    => 'Riwayat Mengajar' . $this->labelPeriode($request),
+                'headings' => $headingsRiwayat,
+                'rows'     => $rowsRiwayat,
+            ];
+        }
+
+        if ($withPembayaran) {
+            $headingsBayar = array_merge(['No', 'Instruktur', 'Kode'], array_map(fn ($c) => self::KOLOM_PEMBAYARAN[$c], $colsPembayaran));
+            $rowsBayar     = [];
+            $noBayar       = 1;
+            $totalSemua    = 0;
+
+            foreach ($items as $inst) {
+                foreach ($this->filterPeriode($this->pembayaranItems($inst), $request, 'tanggal_bayar') as $p) {
+                    $totalSemua += (int) $p['total'];
+                    $all = [
+                        'tanggal_bayar' => $this->fmtTanggal($p['tanggal_bayar']),
+                        'judul'         => $p['judul'],
+                        'kelas'         => $p['kelas_teks'],
+                        'harga'         => $this->fmtRupiah($p['harga']),
+                        'perhitungan'   => $p['kali_pax'] ? 'Kali Pax' : 'Tarif Tetap',
+                        'pax'           => $p['kali_pax'] ? (string) $p['pax'] : '-',
+                        'total'         => $this->fmtRupiah($p['total']),
+                        'keterangan'    => $p['keterangan'] ?: '-',
+                        'bukti'         => $p['bukti_ada'] ? 'Ada' : 'Belum',
+                    ];
+
+                    $rowsBayar[] = array_merge(
+                        [$noBayar++, $inst->nama, $inst->kode_karyawan ?: '-'],
+                        array_map(fn ($c) => $all[$c], $colsPembayaran)
+                    );
+                }
+            }
+
+            $sections[] = [
+                'judul'    => 'Riwayat Pembayaran' . $this->labelPeriode($request),
+                'headings' => $headingsBayar,
+                'rows'     => $rowsBayar,
+                'footer'   => 'Total Pembayaran: ' . $this->fmtRupiah($totalSemua),
+            ];
+        }
+
+        return $this->kirimExport(
+            $request->format,
+            'data-instruktur-ol',
+            'Data Instruktur OL' . $this->labelPeriode($request),
+            $headings,
+            $rows,
+            $sections
+        );
     }
 
     public function exportRiwayat(Request $request, InstrukturOl $instruktur)
     {
         $request->validate([
-            'format'    => ['required', 'in:pdf,xlsx'],
-            'columns'   => ['required', 'array', 'min:1'],
-            'columns.*' => ['in:' . implode(',', array_keys(self::KOLOM_RIWAYAT))],
+            'format'               => ['required', 'in:pdf,xlsx'],
+            'columns'              => ['required', 'array', 'min:1'],
+            'columns.*'            => ['in:' . implode(',', array_keys(self::KOLOM_RIWAYAT))],
+            'with_pembayaran'      => ['nullable', 'boolean'],
+            'columns_pembayaran'   => ['nullable', 'array'],
+            'columns_pembayaran.*' => ['in:' . implode(',', array_keys(self::KOLOM_PEMBAYARAN))],
+            'filter_periode'       => ['nullable', 'in:semua,bulan_tahun,rentang'],
+            'bulan'                => ['nullable', 'integer', 'between:1,12'],
+            'tahun'                => ['nullable', 'integer', 'min:2000', 'max:2100'],
+            'tanggal_awal'         => ['nullable', 'date'],
+            'tanggal_akhir'        => ['nullable', 'date'],
         ], ['columns.required' => 'Pilih minimal 1 kolom untuk diexport.']);
 
         $cols = $this->pilihKolom(self::KOLOM_RIWAYAT, $request->input('columns'));
         $rows = [];
         $no   = 1;
 
-        foreach ($this->riwayatItems($instruktur) as $b) {
+        foreach ($this->filterPeriode($this->riwayatItems($instruktur), $request, 'tanggal_awal') as $b) {
             $all = [
                 'materi'       => $b['materi'],
                 'perusahaan'   => $b['perusahaan'],
@@ -397,13 +549,51 @@ class InstrukturOlController extends Controller
 
         $headings = array_merge(['No'], array_map(fn ($c) => self::KOLOM_RIWAYAT[$c], $cols));
         $slug     = Str::slug($instruktur->nama);
+        $sections = [];
+
+        if ($request->boolean('with_pembayaran', false)) {
+            $colsPembayaran = $this->pilihKolom(
+                self::KOLOM_PEMBAYARAN,
+                $request->input('columns_pembayaran', array_keys(self::KOLOM_PEMBAYARAN))
+            ) ?: array_keys(self::KOLOM_PEMBAYARAN);
+
+            $headingsBayar = array_merge(['No'], array_map(fn ($c) => self::KOLOM_PEMBAYARAN[$c], $colsPembayaran));
+            $rowsBayar     = [];
+            $noBayar       = 1;
+            $totalSemua    = 0;
+
+            foreach ($this->filterPeriode($this->pembayaranItems($instruktur), $request, 'tanggal_bayar') as $p) {
+                $totalSemua += (int) $p['total'];
+                $all = [
+                    'tanggal_bayar' => $this->fmtTanggal($p['tanggal_bayar']),
+                    'judul'         => $p['judul'],
+                    'kelas'         => $p['kelas_teks'],
+                    'harga'         => $this->fmtRupiah($p['harga']),
+                    'perhitungan'   => $p['kali_pax'] ? 'Kali Pax' : 'Tarif Tetap',
+                    'pax'           => $p['kali_pax'] ? (string) $p['pax'] : '-',
+                    'total'         => $this->fmtRupiah($p['total']),
+                    'keterangan'    => $p['keterangan'] ?: '-',
+                    'bukti'         => $p['bukti_ada'] ? 'Ada' : 'Belum',
+                ];
+
+                $rowsBayar[] = array_merge([$noBayar++], array_map(fn ($c) => $all[$c], $colsPembayaran));
+            }
+
+            $sections[] = [
+                'judul'    => "Riwayat Pembayaran: {$instruktur->nama}" . $this->labelPeriode($request),
+                'headings' => $headingsBayar,
+                'rows'     => $rowsBayar,
+                'footer'   => 'Total Pembayaran: ' . $this->fmtRupiah($totalSemua),
+            ];
+        }
 
         return $this->kirimExport(
             $request->format,
             "riwayat-mengajar-{$slug}",
-            "Riwayat Mengajar: {$instruktur->nama}",
+            "Riwayat Mengajar: {$instruktur->nama}" . $this->labelPeriode($request),
             $headings,
-            $rows
+            $rows,
+            $sections
         );
     }
 
@@ -772,21 +962,154 @@ class InstrukturOlController extends Controller
         return $tanggal ? Carbon::parse($tanggal)->format('d-m-Y') : '-';
     }
 
+    private function fmtRupiah(int $nominal): string
+    {
+        return 'Rp ' . number_format($nominal, 0, ',', '.');
+    }
+
+    private function pembayaranItems(InstrukturOl $instruktur)
+    {
+        $items = $instruktur->pembayarans()
+            ->orderByDesc('tanggal_bayar')
+            ->orderByDesc('id')
+            ->get();
+
+        $rkms = RKM::with(['materi', 'perusahaan'])
+            ->whereIn('id', $items->pluck('rkm_id')->flatten()->filter()->unique()->values())
+            ->get()
+            ->keyBy('id');
+
+        return $items->map(function ($p) use ($rkms) {
+            $kelasList = collect($p->rkm_id ?? [])
+                ->map(fn ($id) => $rkms->get($id))
+                ->filter()
+                ->map(fn ($r) => ($r->materi->nama_materi ?? '-') . ' (' . ($r->perusahaan->nama_perusahaan ?? '-') . ')')
+                ->values()
+                ->all();
+
+            return [
+                'id'            => $p->id,
+                'judul'         => $p->judul,
+                'kelas_teks'    => $kelasList ? implode(', ', $kelasList) : 'Pembayaran umum',
+                'harga'         => (int) $p->harga,
+                'kali_pax'      => (bool) $p->kali_pax,
+                'pax'           => $p->pax ? (int) $p->pax : null,
+                'total'         => (int) $p->total,
+                'tanggal_bayar' => $p->tanggal_bayar?->format('Y-m-d'),
+                'keterangan'    => $p->keterangan,
+                'bukti_ada'     => (bool) $p->bukti_path,
+            ];
+        })->values();
+    }
+
+    private function filterPeriode($collection, Request $request, string $kolomTanggal)
+    {
+        $mode = $request->input('filter_periode', 'semua');
+
+        if ($mode === 'bulan_tahun') {
+            $bulan = (int) $request->input('bulan', 0);
+            $tahun = (int) $request->input('tahun', 0);
+
+            return collect($collection)->filter(function ($item) use ($kolomTanggal, $bulan, $tahun) {
+                $tgl = $item[$kolomTanggal] ?? null;
+                if (!$tgl) {
+                    return false;
+                }
+                $c = Carbon::parse($tgl);
+                if ($tahun && (int) $c->year !== $tahun) {
+                    return false;
+                }
+                if ($bulan && (int) $c->month !== $bulan) {
+                    return false;
+                }
+                return true;
+            })->values();
+        }
+
+        if ($mode === 'rentang') {
+            $awal  = $request->input('tanggal_awal');
+            $akhir = $request->input('tanggal_akhir');
+
+            return collect($collection)->filter(function ($item) use ($kolomTanggal, $awal, $akhir) {
+                $tgl = $item[$kolomTanggal] ?? null;
+                if (!$tgl) {
+                    return false;
+                }
+                if ($awal && $tgl < $awal) {
+                    return false;
+                }
+                if ($akhir && $tgl > $akhir) {
+                    return false;
+                }
+                return true;
+            })->values();
+        }
+
+        return collect($collection)->values();
+    }
+
+    private function labelPeriode(Request $request): string
+    {
+        $mode = $request->input('filter_periode', 'semua');
+        $namaBulan = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+        ];
+
+        if ($mode === 'bulan_tahun') {
+            $bulan = (int) $request->input('bulan', 0);
+            $tahun = (int) $request->input('tahun', 0);
+            $parts = [];
+            if ($bulan && isset($namaBulan[$bulan])) {
+                $parts[] = $namaBulan[$bulan];
+            }
+            if ($tahun) {
+                $parts[] = (string) $tahun;
+            }
+            return $parts ? ' (' . implode(' ', $parts) . ')' : '';
+        }
+
+        if ($mode === 'rentang') {
+            $awal  = $request->input('tanggal_awal');
+            $akhir = $request->input('tanggal_akhir');
+            if ($awal && $akhir) {
+                return ' (' . $this->fmtTanggal($awal) . ' s/d ' . $this->fmtTanggal($akhir) . ')';
+            }
+            if ($awal) {
+                return ' (Sejak ' . $this->fmtTanggal($awal) . ')';
+            }
+            if ($akhir) {
+                return ' (Sampai ' . $this->fmtTanggal($akhir) . ')';
+            }
+        }
+
+        return '';
+    }
+
     private function pilihKolom(array $katalog, array $dipilih): array
     {
         return array_values(array_intersect(array_keys($katalog), $dipilih));
     }
 
-    private function kirimExport(string $format, string $nama, string $judul, array $headings, array $rows)
+    private function kirimExport(string $format, string $nama, string $judul, array $headings, array $rows, array $sections = [])
     {
         $file = $nama . '-' . now()->format('Ymd-His');
 
         if ($format === 'xlsx') {
-            return Excel::download(new ArrayExport($headings, $rows), $file . '.xlsx');
+            return Excel::download(
+                new InstrukturOlExport($judul, $headings, $rows, $sections),
+                $file . '.xlsx'
+            );
         }
 
-        return Pdf::loadView('HR.InstrukturOL.export-pdf', compact('judul', 'headings', 'rows'))
-            ->setPaper('a4', count($headings) > 6 ? 'landscape' : 'portrait')
+        $maxCols = count($headings);
+        foreach ($sections as $sec) {
+            $maxCols = max($maxCols, count($sec['headings'] ?? []));
+        }
+
+        return Pdf::loadView('HR.InstrukturOL.export-pdf', compact('judul', 'headings', 'rows', 'sections'))
+            ->setPaper('a4', $maxCols > 6 ? 'landscape' : 'portrait')
             ->download($file . '.pdf');
     }
 

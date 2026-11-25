@@ -21,14 +21,163 @@ class RegistryFeatureController extends Controller
         return view('registry.index');
     }
 
-    public function getRegistry()
+    public function getRegistry(Request $request)
     {
-        $daftar_tugas = RegistryFeature::with([
+        $query = RegistryFeature::with([
             'pengerja.karyawan',
-        ])->orderBy('created_at', 'desc')->get();
+        ])->orderBy('created_at', 'desc');
+
+        if ($request->filled('tahun') && $request->tahun !== 'all') {
+            $query->whereYear('created_at', $request->tahun);
+        }
+        if ($request->filled('bulan') && $request->bulan !== 'all' && is_numeric($request->bulan)) {
+            $query->whereMonth('created_at', $request->bulan);
+        }
+        if ($request->filled('minggu') && $request->minggu !== 'all' && is_numeric($request->minggu)) {
+            $m = (int)$request->minggu;
+            $startDay = ($m - 1) * 7 + 1;
+            $endDay = $m >= 5 ? 31 : $m * 7;
+            $query->whereBetween(\Illuminate\Support\Facades\DB::raw('DAY(created_at)'), [$startDay, $endDay]);
+        }
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('tipe') && $request->tipe !== 'all') {
+            $query->where('tipe', $request->tipe);
+        }
+
+        $daftar_tugas = $query->get();
 
         return response()->json([
             'data' => $daftar_tugas
+        ]);
+    }
+
+    public function getSummary(Request $request)
+    {
+        $tahun = $request->query('tahun', now()->year);
+        $bulan = $request->query('bulan', 'all');
+        $minggu = $request->query('minggu', 'all');
+        $status = $request->query('status', 'all');
+        $tipe = $request->query('tipe', 'all');
+
+        $query = RegistryFeature::query();
+
+        if ($tahun && $tahun !== 'all' && is_numeric($tahun)) {
+            $query->whereYear('created_at', $tahun);
+        }
+        if ($bulan && $bulan !== 'all' && is_numeric($bulan)) {
+            $query->whereMonth('created_at', $bulan);
+        }
+        if ($minggu && $minggu !== 'all' && is_numeric($minggu)) {
+            $m = (int)$minggu;
+            $startDay = ($m - 1) * 7 + 1;
+            $endDay = $m >= 5 ? 31 : $m * 7;
+            $query->whereBetween(\Illuminate\Support\Facades\DB::raw('DAY(created_at)'), [$startDay, $endDay]);
+        }
+        if ($status && $status !== 'all') {
+            $query->where('status', $status);
+        }
+        if ($tipe && $tipe !== 'all') {
+            $query->where('tipe', $tipe);
+        }
+
+        $allData = $query->get();
+
+        $totalTugas = $allData->count();
+        $selesaiCount = $allData->where('status', 'Selesai')->count();
+        $dalamProsesCount = $allData->where('status', 'Dalam proses')->count();
+        $belumDimulaiCount = $allData->where('status', 'Belum dimulai')->count();
+
+        $totalEstimasiMenit = $allData->sum(function ($item) {
+            return is_numeric($item->waktu_perkiraan) ? (int)$item->waktu_perkiraan : 0;
+        });
+        $totalEstimasiJam = round($totalEstimasiMenit / 60, 1);
+
+        $selesaiItems = $allData->filter(function ($item) {
+            return $item->status === 'Selesai' && $item->tanggal_mulai && $item->tanggal_akhir;
+        });
+
+        $totalDurasiMenit = $selesaiItems->sum(function ($item) {
+            return \Carbon\Carbon::parse($item->tanggal_akhir)->diffInMinutes(\Carbon\Carbon::parse($item->tanggal_mulai));
+        });
+
+        $avgDurasiMenit = $selesaiItems->count() > 0 ? round($totalDurasiMenit / $selesaiItems->count()) : 0;
+        $days = floor($avgDurasiMenit / 1440);
+        $remMinutes = $avgDurasiMenit % 1440;
+        $hours = floor($remMinutes / 60);
+        $mins = $remMinutes % 60;
+        $avgDurasiHuman = ($days > 0 ? "{$days} Hari " : "") . ($hours > 0 ? "{$hours} Jam " : "") . "{$mins} Menit";
+        if ($avgDurasiMenit == 0) $avgDurasiHuman = "0 Jam";
+
+        $statusCounts = [
+            'Selesai' => $selesaiCount,
+            'Dalam proses' => $dalamProsesCount,
+            'Belum dimulai' => $belumDimulaiCount,
+        ];
+
+        $tipeCounts = $allData->groupBy(fn($i) => $i->tipe ?: 'Lainnya')->map->count();
+        $pemilikCounts = $allData->groupBy(fn($i) => $i->pemilik ?: 'Tanpa Pemilik')->map->count()->sortDesc()->take(10);
+        
+        $pengerjaCounts = $allData->load('pengerja.karyawan')->groupBy(function ($item) {
+            if ($item->pengerja && $item->pengerja->karyawan && $item->pengerja->karyawan->kode_karyawan) {
+                return $item->pengerja->karyawan->kode_karyawan;
+            }
+            return $item->pengerja?->name ?: 'Belum Ditugaskan';
+        })->map->count()->sortDesc();
+
+        $targetYear = ($tahun && $tahun !== 'all' && is_numeric($tahun)) ? (int)$tahun : (int)now()->year;
+        $monthlyCreated = [];
+        $monthlyCompleted = [];
+        $monthsLabel = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+        for ($m = 1; $m <= 12; $m++) {
+            $createdQuery = RegistryFeature::whereYear('created_at', $targetYear)->whereMonth('created_at', $m);
+            $completedQuery = RegistryFeature::where('status', 'Selesai')->whereYear('tanggal_akhir', $targetYear)->whereMonth('tanggal_akhir', $m);
+
+            if ($status && $status !== 'all') {
+                $createdQuery->where('status', $status);
+            }
+            if ($tipe && $tipe !== 'all') {
+                $createdQuery->where('tipe', $tipe);
+                $completedQuery->where('tipe', $tipe);
+            }
+
+            $monthlyCreated[] = $createdQuery->count();
+            $monthlyCompleted[] = $completedQuery->count();
+        }
+
+        return response()->json([
+            'kpi' => [
+                'total' => $totalTugas,
+                'selesai' => $selesaiCount,
+                'dalam_proses' => $dalamProsesCount,
+                'belum_dimulai' => $belumDimulaiCount,
+                'total_estimasi_jam' => $totalEstimasiJam,
+                'avg_durasi_human' => $avgDurasiHuman,
+            ],
+            'by_status' => [
+                'labels' => array_keys($statusCounts),
+                'values' => array_values($statusCounts)
+            ],
+            'by_tipe' => [
+                'labels' => $tipeCounts->keys()->values()->all(),
+                'values' => $tipeCounts->values()->values()->all()
+            ],
+            'by_pemilik' => [
+                'labels' => $pemilikCounts->keys()->values()->all(),
+                'values' => $pemilikCounts->values()->values()->all()
+            ],
+            'by_pengerja' => [
+                'labels' => $pengerjaCounts->keys()->values()->all(),
+                'values' => $pengerjaCounts->values()->values()->all()
+            ],
+            'monthly_trend' => [
+                'year' => $targetYear,
+                'labels' => $monthsLabel,
+                'created' => $monthlyCreated,
+                'completed' => $monthlyCompleted
+            ]
         ]);
     }
 
