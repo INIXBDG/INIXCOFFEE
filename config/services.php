@@ -36,9 +36,10 @@ return [
         'secret' => env('FORUMIUM_SSO_SECRET'),
     ],
 
-    // config/services.php
     'vapid' => [
-        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'public_key'  => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject'     => env('VAPID_SUBJECT', 'mailto:support@inixindobdg.co.id'),
     ],
 
     'telegram_pickup_driver' => [
@@ -47,12 +48,34 @@ return [
     ],
 
     'telegram' => [
-        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
-        'group_id' => env('TELEGRAM_GROUP_ID'),
+        'bot_token'      => env('TELEGRAM_BOT_TOKEN'),
+        'group_id'       => env('TELEGRAM_GROUP_ID'),
+        'webhook_url'    => env('TELEGRAM_WEBHOOK_URL'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+    ],
+
+    'fonnte' => [
+        'url'          => env('FONNTE_URL', 'https://api.fonnte.com/send'),
+        'api_key'      => env('FONNTE_API_KEY'),
+        'api_token'    => env('FONNTE_API_TOKEN', env('FONNTE_API_KEY')),
+        'target_group' => env('FONNTE_TARGET_GROUP', '120363418574215044@g.us'),
     ],
 
     'moodle' => [
-        'url' => env('MOODLE_URL'),
-        'token' => env('MOODLE_TOKEN'),
+        'url'          => env('MOODLE_URL'),
+        'token'        => env('MOODLE_TOKEN'),
+        'api_url'      => env('MOODLE_API_URL'),
+        'api_username' => env('MOODLE_API_USERNAME'),
+        'api_password' => env('MOODLE_API_PASSWORD'),
+    ],
+
+    'internal_api' => [
+        'username'     => env('API_USERNAME'),
+        'password'     => env('API_PASSWORD'),
+        'ticket_token' => env('INTERNAL_TICKET_TOKEN'),
+    ],
+
+    'external_web' => [
+        'webhook_token' => env('EXTERNAL_WEB_WEBHOOK_TOKEN'),
     ],
 ];

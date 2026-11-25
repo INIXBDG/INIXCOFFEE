@@ -575,8 +575,13 @@ class AuditCode extends Command
 
     private function locateInRoutes(array $needles): array
     {
+        $routeFiles = array_merge(
+            glob(base_path('routes/*.php')) ?: [],
+            glob(base_path('routes/*/*.php')) ?: []
+        );
+
         foreach ($needles as $needle) {
-            foreach (glob(base_path('routes/*.php')) as $file) {
+            foreach ($routeFiles as $file) {
                 foreach (file($file) as $i => $text) {
                     if (str_contains($text, $needle) && !str_starts_with(trim($text), '//')) {
                         return [$file, $i + 1];

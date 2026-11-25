@@ -10,17 +10,24 @@ class ApiBasicAuth
     public function handle(Request $request, Closure $next)
     {
         // Mengambil kredensial dari request HTTP Basic Auth
-        $username = $request->getUser();
-        $password = $request->getPassword();
+        $username = (string) ($request->getUser() ?? '');
+        $password = (string) ($request->getPassword() ?? '');
 
-        // Mencocokkan dengan yang ada di .env
-        $validUsername = env('API_USERNAME');
-        $validPassword = env('API_PASSWORD');
+        // Mengambil kredensial dari config (aman untuk php artisan config:cache)
+        $validUsername = (string) config('services.internal_api.username', '');
+        $validPassword = (string) config('services.internal_api.password', '');
 
-        if ($username !== $validUsername || $password !== $validPassword) {
+        if ($validUsername === '' || $validPassword === '') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized. Kredensial Basic Auth tidak valid.'
+                'message' => 'API Basic Auth belum dikonfigurasi pada server.',
+            ], 500);
+        }
+
+        if (!hash_equals($validUsername, $username) || !hash_equals($validPassword, $password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Kredensial Basic Auth tidak valid.',
             ], 401);
         }
 

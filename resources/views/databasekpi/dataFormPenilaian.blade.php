@@ -33,7 +33,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Validasi Gagal',
-                html: `{!! implode('<br>', $errors->all()) !!}`,
+                html: @json(implode('<br>', array_map('e', $errors->all()))),
                 confirmButtonColor: '#ef4444'
             });
         </script>

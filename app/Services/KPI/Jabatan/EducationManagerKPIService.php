@@ -263,7 +263,10 @@ class EducationManagerKPIService
             'progress' => 0, 'gap' => 0, 'pie_chart' => ['above' => 0, 'below' => 0],
             'monthly_data' => [], 'daily_breakdown_per_month' => [],
             'monthly_progress' => [], 'daily_progress_per_month' => [],
-            'class_breakdown' => ['internal' => 0, 'freelance' => 0],
+            'class_breakdown' => [
+                'internal' => 0, 'freelance' => 0, 'target' => 0,
+                'per_bulan' => [], 'per_instruktur' => [],
+            ],
         ];
 
         if (!$detail || !$detail->detail_jangka) {
@@ -280,10 +283,6 @@ class EducationManagerKPIService
         $startDate = Carbon::create($tahun, 1, 1)->startOfDay();
         $endDate = Carbon::create($tahun, 12, 31)->endOfDay();
 
-        if ($startDate > $endDate) {
-            return $emptyResponse;
-        }
-
         $rkms = RKM::select('id', 'tanggal_awal', 'instruktur_key', 'instruktur_key2', 'asisten_key')
             ->where('tanggal_awal', '<=', $endDate)
             ->where('tanggal_akhir', '>=', $startDate)
@@ -291,24 +290,51 @@ class EducationManagerKPIService
             ->where('instruktur_key', '!=', '-')
             ->get();
 
+        $idPeserta = $itemDetail->detailTargetKPI
+            ->flatMap(fn($d) => $d->detailPersonKPI->pluck('id_karyawan'))
+            ->unique()
+            ->values()
+            ->all();
+
+        $pesertaMap = karyawan::whereIn('id', $idPeserta)
+            ->get(['kode_karyawan', 'nama_lengkap'])
+            ->pluck('nama_lengkap', 'kode_karyawan')
+            ->toArray();
+
+        $perBulan = [];
+        for ($m = 1; $m <= 12; ++$m) {
+            $perBulan[sprintf('%d-%02d', $tahun, $m)] = ['internal' => 0, 'freelance' => 0];
+        }
+
         $totalKelasInternal = 0;
         $totalKelasFreelance = 0;
         $dailyValues = [];
+        $perInstruktur = [];
 
         foreach ($rkms as $rkm) {
             $classDate = Carbon::parse($rkm->tanggal_awal);
             if ($classDate > $endDate) {
                 continue;
             }
+            if ($classDate < $startDate) {
+                $classDate = $startDate->copy();
+            }
 
             $dateKey = $classDate->format('Y-m-d');
+            $monthKey = $classDate->format('Y-m');
             $isFreelance = ($rkm->instruktur_key === 'OL' || $rkm->instruktur_key2 === 'OL' || $rkm->asisten_key === 'OL');
 
             if ($isFreelance) {
                 ++$totalKelasFreelance;
+                $perBulan[$monthKey]['freelance']++;
             } else {
                 ++$totalKelasInternal;
+                $perBulan[$monthKey]['internal']++;
                 $dailyValues[$dateKey] = ($dailyValues[$dateKey] ?? 0) + 1;
+                $kunci = $rkm->instruktur_key;
+                if (isset($pesertaMap[$kunci])) {
+                    $perInstruktur[$kunci] = ($perInstruktur[$kunci] ?? 0) + 1;
+                }
             }
         }
 
@@ -347,6 +373,31 @@ class EducationManagerKPIService
         ksort($monthlyProgress);
         ksort($dailyProgressPerMonth);
 
+        $perBulanRows = [];
+        foreach ($perBulan as $bulan => $v) {
+            $perBulanRows[] = [
+                'bulan' => $bulan,
+                'internal' => $v['internal'],
+                'freelance' => $v['freelance'],
+            ];
+        }
+
+        foreach ($pesertaMap as $kode => $nama) {
+            if (!isset($perInstruktur[$kode])) {
+                $perInstruktur[$kode] = 0;
+            }
+        }
+
+        arsort($perInstruktur);
+        $perInstrukturRows = [];
+        foreach ($perInstruktur as $kunci => $jumlah) {
+            $perInstrukturRows[] = [
+                'nama' => $pesertaMap[$kunci] ?? $kunci,
+                'jumlah' => $jumlah,
+                'persen' => $totalKelasInternal > 0 ? round(($jumlah / $totalKelasInternal) * 100, 1) : 0,
+            ];
+        }
+
         return [
             'progress' => $progress,
             'gap' => $gap,
@@ -355,7 +406,13 @@ class EducationManagerKPIService
             'daily_breakdown_per_month' => $dailyBreakdownPerMonth,
             'monthly_progress' => $monthlyProgress,
             'daily_progress_per_month' => $dailyProgressPerMonth,
-            'class_breakdown' => ['internal' => $totalKelasInternal, 'freelance' => $totalKelasFreelance],
+            'class_breakdown' => [
+                'internal' => $totalKelasInternal,
+                'freelance' => $totalKelasFreelance,
+                'target' => $targetKelas,
+                'per_bulan' => $perBulanRows,
+                'per_instruktur' => $perInstrukturRows,
+            ],
         ];
     }
 

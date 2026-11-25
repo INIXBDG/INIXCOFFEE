@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class LspAsesor extends Model
 {
     protected $table = 'lsp_asesors';
-    protected $guarded = [];
+
+    protected $fillable = [
+        'nama_lengkap',
+        'alamat',
+        'no_telp',
+        'email',
+        'npwp',
+        'ktp',
+    ];
 
     public function lsps()
     {

@@ -15,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -96,51 +95,15 @@ class ReportController extends Controller
                 throw new \Exception('File template tidak ditemukan.');
             }
 
-            $replacements = [];
+            $replacements = $this->collectReplacements((array) ($validated['replacements'] ?? []));
 
-            foreach ((array) ($validated['replacements'] ?? []) as $item) {
-                $find = trim($item['find'] ?? '');
-                $field = trim($item['replace'] ?? '');
-                $blank = trim($item['blank'] ?? '');
+            $specialFields = $this->decodeSpecialFields($validated['special_fields'] ?? null);
 
-                if ($find === '' || $field === '') {
-                    continue;
-                }
-
-                $replacements[md5($find . '|' . $field)] = ['find' => $find, 'replace' => $field, 'blank' => $blank];
+            if ($specialFields instanceof JsonResponse) {
+                return $specialFields;
             }
 
-            $specialFields = [];
-
-            if (!empty($validated['special_fields'])) {
-                $decoded = json_decode($validated['special_fields'], true);
-
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    return response()->json(['success' => false, 'message' => 'Format special fields tidak valid.'], 422);
-                }
-
-                if (is_array($decoded)) {
-                    $specialFields = $decoded;
-                }
-            }
-
-            foreach ($specialFields as $idx => $sf) {
-                if (empty($sf['placeholder_key']) || empty($sf['field_type'])) {
-                    unset($specialFields[$idx]);
-                    continue;
-                }
-
-                if (!in_array($sf['field_type'], self::ALL_FIELD_TYPES, true)) {
-                    return response()->json(['success' => false, 'message' => "Tipe field tidak valid: {$sf['field_type']}"], 422);
-                }
-
-                if (!preg_match('/^[a-z0-9_]+$/', $sf['placeholder_key'])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Key placeholder tidak valid: {$sf['placeholder_key']}. Hanya huruf kecil, angka, dan underscore.",
-                    ], 422);
-                }
-
+            foreach ($specialFields as $sf) {
                 if (!empty($sf['find_text'])) {
                     $findText = trim($sf['find_text']);
                     $placeholderKey = trim($sf['placeholder_key']);
@@ -152,7 +115,6 @@ class ReportController extends Controller
                 }
             }
 
-            $specialFields = array_values($specialFields);
             $replacements = array_values($replacements);
 
             Log::info('saveWithMapping', [
@@ -167,88 +129,27 @@ class ReportController extends Controller
                 throw new \Exception('Gagal memproses file template.');
             }
 
-            $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
-            $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
+            $storedPath = $this->storeTemplateFile($processedPath);
 
-            @unlink($processedPath);
-
-            if (!$storedPath) {
-                throw new \Exception('Gagal menyimpan file ke storage.');
-            }
-
-            $allowedColumnsByTable = $this->getAllowedColumns();
-            $availableFields = array_keys($allowedColumnsByTable[$validated['source_table']] ?? []);
-
-            foreach ($specialFields as $sf) {
-                if (!in_array($sf['placeholder_key'], $availableFields, true)) {
-                    $availableFields[] = $sf['placeholder_key'];
-                }
-            }
+            $sourceTable = strtolower($validated['source_table']);
 
             $template = ReportTemplate::create([
                 'name' => $validated['name'],
                 'code' => $validated['code'],
                 'category' => $validated['category'],
-                'source_table' => strtolower($validated['source_table']),
+                'source_table' => $sourceTable,
                 'template_file_path' => $storedPath,
                 'description' => $validated['description'] ?? null,
-                'available_fields' => $availableFields,
+                'available_fields' => $this->resolveAvailableFields($validated['source_table'], $specialFields),
                 'created_by' => Auth::id(),
                 'is_active' => true,
             ]);
 
-            $absolutePath = $this->generatorService->getTemplateAbsolutePath($storedPath);
-
-            if (!$absolutePath || !file_exists($absolutePath)) {
-                throw new \Exception('File template hasil proses tidak ditemukan.');
-            }
-
-            $placeholders = $this->generatorService->extractPlaceholdersFromDocx($absolutePath);
-            $allowedColumns = $allowedColumnsByTable[$validated['source_table']] ?? [];
-
-            foreach ($placeholders as $index => $ph) {
-                $placeholderKey = $ph['key'];
-                $specialMatch = collect($specialFields)->firstWhere('placeholder_key', $placeholderKey);
-
-                if ($specialMatch) {
-                    $fieldType = $specialMatch['field_type'];
-                    $config = $specialMatch['config'] ?? null;
-
-                    if (is_array($config)) {
-                        $config = $this->cleanConfig($fieldType, $config);
-                    }
-
-                    TemplatePlaceholder::create([
-                        'template_id' => $template->id,
-                        'placeholder_key' => $specialMatch['placeholder_key'],
-                        'placeholder_label' => $specialMatch['placeholder_label']
-                            ?? $this->generateLabelFromKey($specialMatch['placeholder_key']),
-                        'field_type' => $fieldType,
-                        'is_manual' => $this->isManualFieldType($fieldType),
-                        'source_column' => null,
-                        'config' => $config,
-                        'default_value' => $this->extractDefaultValue($fieldType, $config),
-                        'options' => $this->extractOptions($fieldType, $config),
-                        'sort_order' => $index,
-                    ]);
-
-                    continue;
-                }
-
-                TemplatePlaceholder::create([
-                    'template_id' => $template->id,
-                    'placeholder_key' => $placeholderKey,
-                    'placeholder_label' => $allowedColumns[$placeholderKey] ?? $this->generateLabelFromKey($placeholderKey),
-                    'field_type' => 'text',
-                    'is_manual' => false,
-                    'source_column' => $placeholderKey,
-                    'sort_order' => $index,
-                ]);
-            }
+            $count = $this->rebuildPlaceholdersFromFile($template, $storedPath, $specialFields, $validated['source_table']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Template berhasil dibuat dengan ' . count($placeholders) . ' placeholder.',
+                'message' => 'Template berhasil dibuat dengan ' . $count . ' placeholder.',
                 'data' => ['id' => $template->id, 'name' => $template->name],
             ], 201);
         } catch (\Throwable $e) {
@@ -284,11 +185,13 @@ class ReportController extends Controller
                 'category' => $template->category,
                 'source_table' => $template->source_table ?? 'karyawan',
                 'description' => $template->description,
-                'template_url' => $template->template_file_path ? asset('storage/' . $template->template_file_path) : null,
+                'template_url' => $template->template_file_path
+                    ? asset('storage/' . $template->template_file_path) . '?v=' . ($template->updated_at?->timestamp ?? time())
+                    : null,
                 'existingMappings' => $existingMappings,
                 'allowedColumns' => $this->getAllowedColumns(),
             ],
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     public function update(Request $request, ReportTemplate $template): JsonResponse
@@ -311,44 +214,34 @@ class ReportController extends Controller
                 'template_file.mimes' => 'File harus bertipe .docx atau .doc',
             ]);
 
-            $sourceTable = strtolower($validated['source_table'] ?? $template->source_table);
+            $sourceTable = strtolower($validated['source_table'] ?? $template->source_table ?? 'karyawan');
 
             $allDbMappings = [];
             $replacements = [];
+
             foreach ((array) ($validated['replacements'] ?? []) as $item) {
                 $find = trim($item['find'] ?? '');
                 $field = trim($item['replace'] ?? '');
                 $blank = trim($item['blank'] ?? '');
-                if ($field !== '') {
-                    $allDbMappings[$field] = ['find' => $find, 'replace' => $field];
-                    if ($find !== '') {
-                        $replacements[md5($find . '|' . $field)] = ['find' => $find, 'replace' => $field, 'blank' => $blank];
-                    }
-                }
-            }
-            $allDbMappings = array_values($allDbMappings);
 
-            $specialFields = [];
-            if (!empty($validated['special_fields'])) {
-                $decoded = json_decode($validated['special_fields'], true);
-                if (is_array($decoded)) {
-                    $specialFields = $decoded;
-                }
-            }
-
-            foreach ($specialFields as $idx => $sf) {
-                if (empty($sf['placeholder_key']) || empty($sf['field_type'])) {
-                    unset($specialFields[$idx]);
+                if ($field === '') {
                     continue;
                 }
-                if (!in_array($sf['field_type'], self::ALL_FIELD_TYPES, true)) {
-                    return response()->json(['success' => false, 'message' => "Tipe field tidak valid: {$sf['field_type']}"], 422);
-                }
-                if (!preg_match('/^[a-z0-9_]+$/', $sf['placeholder_key'])) {
-                    return response()->json(['success' => false, 'message' => "Key placeholder tidak valid: {$sf['placeholder_key']}"], 422);
+
+                $allDbMappings[$field] = ['find' => $find, 'replace' => $field];
+
+                if ($find !== '') {
+                    $replacements[md5($find . '|' . $field)] = ['find' => $find, 'replace' => $field, 'blank' => $blank];
                 }
             }
-            $specialFields = array_values($specialFields);
+
+            $allDbMappings = array_values($allDbMappings);
+
+            $specialFields = $this->decodeSpecialFields($validated['special_fields'] ?? null);
+
+            if ($specialFields instanceof JsonResponse) {
+                return $specialFields;
+            }
 
             foreach ($specialFields as $sf) {
                 if (!empty($sf['find_text'])) {
@@ -360,6 +253,7 @@ class ReportController extends Controller
                     ];
                 }
             }
+
             $replacements = array_values($replacements);
 
             Log::info('update template', [
@@ -370,162 +264,77 @@ class ReportController extends Controller
                 'special_fields' => count($specialFields),
             ]);
 
+            $oldPath = $template->template_file_path;
+            $newPath = null;
+
             if ($request->hasFile('template_file')) {
-                $tempPath = $request->file('template_file')->getRealPath();
+                $processedPath = $this->generatorService->replaceDummyWithPlaceholders(
+                    $request->file('template_file')->getRealPath(),
+                    $replacements
+                );
+                $newPath = $this->storeTemplateFile($processedPath);
+            } elseif (!empty($replacements)) {
+                $existingAbsolute = $this->generatorService->getTemplateAbsolutePath((string) $oldPath);
 
-                $processedPath = $this->generatorService->replaceDummyWithPlaceholders($tempPath, $replacements);
-
-                $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
-                $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
-                @unlink($processedPath);
-
-                if (!$storedPath) {
-                    throw new \Exception('Gagal menyimpan file ke storage');
+                if (!file_exists($existingAbsolute)) {
+                    throw new \Exception('File template lama tidak ditemukan.');
                 }
-
-                if ($template->template_file_path && Storage::disk('public')->exists($template->template_file_path)) {
-                    Storage::disk('public')->delete($template->template_file_path);
-                }
-
-                $availableFields = array_keys($this->getAllowedColumns()[$sourceTable] ?? []);
-                foreach ($specialFields as $sf) {
-                    if (!in_array($sf['placeholder_key'], $availableFields, true)) {
-                        $availableFields[] = $sf['placeholder_key'];
-                    }
-                }
-
-                $template->update([
-                    'name' => $validated['name'],
-                    'code' => $validated['code'],
-                    'category' => $validated['category'] ?? $template->category,
-                    'source_table' => $sourceTable,
-                    'template_file_path' => $storedPath,
-                    'description' => $validated['description'] ?? $template->description,
-                    'available_fields' => $availableFields,
-                    'is_active' => $validated['is_active'] ?? $template->is_active,
-                ]);
-
-                $template->placeholders()->delete();
-                $absolutePath = $this->generatorService->getTemplateAbsolutePath($storedPath);
-                $placeholders = $this->generatorService->extractPlaceholdersFromDocx($absolutePath);
-                $allowedColumns = $this->getAllowedColumns()[$sourceTable] ?? [];
-
-                foreach ($placeholders as $index => $ph) {
-                    $specialMatch = collect($specialFields)->firstWhere('placeholder_key', $ph['key']);
-
-                    if ($specialMatch) {
-                        $fieldType = $specialMatch['field_type'];
-                        $config = is_array($specialMatch['config'] ?? null)
-                            ? $this->cleanConfig($fieldType, $specialMatch['config'])
-                            : null;
-
-                        TemplatePlaceholder::create([
-                            'template_id' => $template->id,
-                            'placeholder_key' => $specialMatch['placeholder_key'],
-                            'placeholder_label' => $specialMatch['placeholder_label'] ?? $this->generateLabelFromKey($specialMatch['placeholder_key']),
-                            'field_type' => $fieldType,
-                            'is_manual' => $this->isManualFieldType($fieldType),
-                            'source_column' => null,
-                            'config' => $config,
-                            'default_value' => $this->extractDefaultValue($fieldType, $config),
-                            'options' => $this->extractOptions($fieldType, $config),
-                            'sort_order' => $index,
-                        ]);
-                    } else {
-                        TemplatePlaceholder::create([
-                            'template_id' => $template->id,
-                            'placeholder_key' => $ph['key'],
-                            'placeholder_label' => $allowedColumns[$ph['key']] ?? $this->generateLabelFromKey($ph['key']),
-                            'field_type' => 'text',
-                            'is_manual' => false,
-                            'source_column' => $ph['key'],
-                            'sort_order' => $index,
-                        ]);
-                    }
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Template berhasil diupdate dengan file baru (' . count($placeholders) . ' placeholder).',
-                ]);
-            }
-
-            if (!empty($replacements)) {
-                $oldPath = $template->template_file_path;
-                $existingAbsolute = $this->generatorService->getTemplateAbsolutePath($oldPath);
 
                 $processedPath = $this->generatorService->replaceDummyWithPlaceholders($existingAbsolute, $replacements);
-
-                $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
-                $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
-                @unlink($processedPath);
-
-                if (!$storedPath) {
-                    throw new \Exception('Gagal menyimpan file hasil proses');
-                }
-
-                if ($oldPath && Storage::disk('public')->exists($oldPath)) {
-                    Storage::disk('public')->delete($oldPath);
-                }
-                $template->template_file_path = $storedPath;
+                $newPath = $this->storeTemplateFile($processedPath);
             }
 
-            $availableFields = array_keys($this->getAllowedColumns()[$sourceTable] ?? []);
-            foreach (array_merge($specialFields, $allDbMappings) as $f) {
-                $key = $f['placeholder_key'] ?? $f['replace'] ?? null;
-                if ($key && !in_array($key, $availableFields, true)) {
-                    $availableFields[] = $key;
-                }
-            }
-
-            $template->update([
+            $attributes = [
                 'name' => $validated['name'],
                 'code' => $validated['code'],
                 'category' => $validated['category'] ?? $template->category,
                 'source_table' => $sourceTable,
                 'description' => $validated['description'] ?? $template->description,
-                'available_fields' => $availableFields,
+                'available_fields' => $this->resolveAvailableFields($sourceTable, $specialFields, $allDbMappings),
                 'is_active' => $validated['is_active'] ?? $template->is_active,
-            ]);
+            ];
 
-            $template->placeholders()->delete();
+            if ($newPath) {
+                $attributes['template_file_path'] = $newPath;
+            }
 
-            $allowedColumns = $this->getAllowedColumns()[$sourceTable] ?? [];
-            $sort = 0;
+            $template->update($attributes);
 
-            foreach ($allDbMappings as $m) {
-                TemplatePlaceholder::create([
-                    'template_id' => $template->id,
-                    'placeholder_key' => $m['replace'],
-                    'placeholder_label' => $allowedColumns[$m['replace']] ?? $this->generateLabelFromKey($m['replace']),
-                    'field_type' => 'text',
-                    'is_manual' => false,
-                    'source_column' => $m['replace'],
-                    'sort_order' => $sort++,
+            if ($newPath) {
+                if ($oldPath && $oldPath !== $newPath && Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+
+                $count = $this->rebuildPlaceholdersFromFile($template, $newPath, $specialFields, $sourceTable);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Template berhasil diperbarui (' . $count . ' placeholder tersimpan).',
                 ]);
             }
 
-            foreach ($specialFields as $sf) {
-                $fieldType = $sf['field_type'];
-                $config = is_array($sf['config'] ?? null) ? $this->cleanConfig($fieldType, $sf['config']) : null;
+            $allowedColumns = $this->getAllowedColumns()[$sourceTable] ?? [];
+            $sort = ((int) TemplatePlaceholder::where('template_id', $template->id)->max('sort_order')) + 1;
 
-                TemplatePlaceholder::create([
-                    'template_id' => $template->id,
-                    'placeholder_key' => $sf['placeholder_key'],
-                    'placeholder_label' => $sf['placeholder_label'] ?? $this->generateLabelFromKey($sf['placeholder_key']),
-                    'field_type' => $fieldType,
-                    'is_manual' => $this->isManualFieldType($fieldType),
-                    'source_column' => null,
-                    'config' => $config,
-                    'default_value' => $this->extractDefaultValue($fieldType, $config),
-                    'options' => $this->extractOptions($fieldType, $config),
-                    'sort_order' => $sort++,
-                ]);
+            foreach ($allDbMappings as $m) {
+                $current = TemplatePlaceholder::where('template_id', $template->id)
+                    ->where('placeholder_key', $m['replace'])
+                    ->first();
+
+                if ($current && $current->field_type !== 'text') {
+                    continue;
+                }
+
+                $this->savePlaceholder($template, $this->dbAttributes($m['replace'], $allowedColumns), $sort);
+            }
+
+            foreach ($specialFields as $sf) {
+                $this->savePlaceholder($template, $this->specialAttributes($sf), $sort);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Template berhasil diperbarui (' . $sort . ' placeholder tersimpan).',
+                'message' => 'Template berhasil diperbarui.',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Validasi gagal', 'errors' => $e->errors()], 422);
@@ -808,7 +617,9 @@ class ReportController extends Controller
             'download_url' => route('HR.reports.download', $g),
         ]);
 
-        return response()->json(['success' => true, 'data' => $generations]);
+        return response()
+            ->json(['success' => true, 'data' => $generations])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     public function preview(ReportGeneration $generation)
@@ -1064,6 +875,191 @@ class ReportController extends Controller
         }
     }
 
+    protected function collectReplacements(array $items): array
+    {
+        $replacements = [];
+
+        foreach ($items as $item) {
+            $find = trim($item['find'] ?? '');
+            $field = trim($item['replace'] ?? '');
+            $blank = trim($item['blank'] ?? '');
+
+            if ($find === '' || $field === '') {
+                continue;
+            }
+
+            $replacements[md5($find . '|' . $field)] = ['find' => $find, 'replace' => $field, 'blank' => $blank];
+        }
+
+        return $replacements;
+    }
+
+    protected function decodeSpecialFields(?string $json): array|JsonResponse
+    {
+        $specialFields = [];
+
+        if (!empty($json)) {
+            $decoded = json_decode($json, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return response()->json(['success' => false, 'message' => 'Format special fields tidak valid.'], 422);
+            }
+
+            if (is_array($decoded)) {
+                $specialFields = $decoded;
+            }
+        }
+
+        foreach ($specialFields as $idx => $sf) {
+            if (empty($sf['placeholder_key']) || empty($sf['field_type'])) {
+                unset($specialFields[$idx]);
+                continue;
+            }
+
+            if (!in_array($sf['field_type'], self::ALL_FIELD_TYPES, true)) {
+                return response()->json(['success' => false, 'message' => "Tipe field tidak valid: {$sf['field_type']}"], 422);
+            }
+
+            if (!preg_match('/^[a-z0-9_]+$/', $sf['placeholder_key'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Key placeholder tidak valid: {$sf['placeholder_key']}. Hanya huruf kecil, angka, dan underscore.",
+                ], 422);
+            }
+        }
+
+        return array_values($specialFields);
+    }
+
+    protected function storeTemplateFile(string $processedPath): string
+    {
+        if (!$processedPath || !file_exists($processedPath)) {
+            throw new \Exception('Gagal memproses file template.');
+        }
+
+        $filename = 'template_' . time() . '_' . Str::random(10) . '.docx';
+        $storedPath = Storage::disk('public')->putFileAs('report_templates', $processedPath, $filename);
+
+        @unlink($processedPath);
+
+        if (!$storedPath) {
+            throw new \Exception('Gagal menyimpan file ke storage.');
+        }
+
+        return $storedPath;
+    }
+
+    protected function resolveAvailableFields(string $sourceTable, array $specialFields, array $dbMappings = []): array
+    {
+        $fields = array_keys($this->getAllowedColumns()[strtolower($sourceTable)] ?? []);
+
+        foreach ($specialFields as $sf) {
+            $key = $sf['placeholder_key'] ?? null;
+            if ($key && !in_array($key, $fields, true)) {
+                $fields[] = $key;
+            }
+        }
+
+        foreach ($dbMappings as $m) {
+            $key = $m['replace'] ?? null;
+            if ($key && !in_array($key, $fields, true)) {
+                $fields[] = $key;
+            }
+        }
+
+        return $fields;
+    }
+
+    protected function specialAttributes(array $sf): array
+    {
+        $fieldType = $sf['field_type'];
+        $config = is_array($sf['config'] ?? null) ? $this->cleanConfig($fieldType, $sf['config']) : null;
+
+        return [
+            'placeholder_key' => $sf['placeholder_key'],
+            'placeholder_label' => $sf['placeholder_label'] ?? $this->generateLabelFromKey($sf['placeholder_key']),
+            'field_type' => $fieldType,
+            'is_manual' => $this->isManualFieldType($fieldType),
+            'source_column' => null,
+            'config' => $config,
+            'default_value' => $this->extractDefaultValue($fieldType, $config),
+            'options' => $this->extractOptions($fieldType, $config),
+        ];
+    }
+
+    protected function dbAttributes(string $key, array $allowedColumns): array
+    {
+        return [
+            'placeholder_key' => $key,
+            'placeholder_label' => $allowedColumns[$key] ?? $this->generateLabelFromKey($key),
+            'field_type' => 'text',
+            'is_manual' => false,
+            'source_column' => $key,
+            'config' => null,
+            'default_value' => null,
+            'options' => null,
+        ];
+    }
+
+    protected function savePlaceholder(ReportTemplate $template, array $attributes, int &$sort): void
+    {
+        $placeholder = TemplatePlaceholder::firstOrNew([
+            'template_id' => $template->id,
+            'placeholder_key' => $attributes['placeholder_key'],
+        ]);
+
+        if (!$placeholder->exists) {
+            $attributes['sort_order'] = $sort++;
+        }
+
+        $placeholder->fill($attributes)->save();
+    }
+
+    protected function rebuildPlaceholdersFromFile(ReportTemplate $template, string $storedPath, array $specialFields, string $sourceTable): int
+    {
+        $absolutePath = $this->generatorService->getTemplateAbsolutePath($storedPath);
+
+        if (!$absolutePath || !file_exists($absolutePath)) {
+            throw new \Exception('File template hasil proses tidak ditemukan.');
+        }
+
+        $placeholders = $this->generatorService->extractPlaceholdersFromDocx($absolutePath);
+        $allowedColumns = $this->getAllowedColumns()[strtolower($sourceTable)] ?? [];
+        $existing = TemplatePlaceholder::where('template_id', $template->id)->get()->keyBy('placeholder_key');
+
+        $template->placeholders()->delete();
+
+        foreach ($placeholders as $index => $ph) {
+            $key = $ph['key'];
+            $special = collect($specialFields)->firstWhere('placeholder_key', $key);
+
+            if ($special) {
+                $attributes = $this->specialAttributes($special);
+            } elseif ($existing->has($key)) {
+                $old = $existing->get($key);
+                $attributes = [
+                    'placeholder_key' => $key,
+                    'placeholder_label' => $old->placeholder_label,
+                    'field_type' => $old->field_type,
+                    'is_manual' => $old->is_manual,
+                    'source_column' => $old->source_column,
+                    'config' => $old->config,
+                    'default_value' => $old->default_value,
+                    'options' => $old->options,
+                ];
+            } else {
+                $attributes = $this->dbAttributes($key, $allowedColumns);
+            }
+
+            $attributes['template_id'] = $template->id;
+            $attributes['sort_order'] = $index;
+
+            TemplatePlaceholder::create($attributes);
+        }
+
+        return count($placeholders);
+    }
+
     protected function isManualFieldType(string $fieldType): bool
     {
         return in_array($fieldType, self::MANUAL_INPUT_TYPES, true)
@@ -1175,7 +1171,7 @@ class ReportController extends Controller
                 'whatsapp' => 'Nomor Whatsapp',
                 'Telepon' => 'Nomor Telepon',
                 'resigned_at' => 'Tanggal Resign',
-                'alasan_resign' => 'Alasan Resign'
+                'alasan_resign' => 'Alasan Resign',
             ],
             'pelamar' => [
                 'nama_lengkap' => 'Nama Lengkap',
@@ -1221,6 +1217,7 @@ class ReportController extends Controller
             ],
         ];
     }
+
     public function updateHistory(Request $request, ReportGeneration $generation): JsonResponse
     {
         try {
@@ -1276,7 +1273,6 @@ class ReportController extends Controller
             $generations = ReportGeneration::where('template_id', $template->id)->get();
             $generationCount = $generations->count();
 
-            // Ada history & tidak force -> tolak, kirim flag supaya frontend bisa menawarkan opsi
             if ($generationCount > 0 && !$force) {
                 return response()->json([
                     'success' => false,
@@ -1286,7 +1282,6 @@ class ReportController extends Controller
                 ], 422);
             }
 
-            // Force delete: hanya pemilik template atau admin
             if ($generationCount > 0 && $force) {
                 if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
                     return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
@@ -1294,7 +1289,6 @@ class ReportController extends Controller
             }
 
             DB::transaction(function () use ($template, $generations) {
-                // Hapus file hasil generate + record history
                 foreach ($generations as $generation) {
                     if ($generation->output_file_path) {
                         $filePath = storage_path('app/public/' . $generation->output_file_path);
@@ -1305,7 +1299,6 @@ class ReportController extends Controller
                     $generation->delete();
                 }
 
-                // Hapus file template
                 if ($template->template_file_path) {
                     $filePath = storage_path('app/public/' . $template->template_file_path);
                     if (file_exists($filePath)) {
@@ -1319,8 +1312,8 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => $generations->count() > 0
-                    ? "Template beserta {$generations->count()} history berhasil dihapus."
+                'message' => $generationCount > 0
+                    ? "Template beserta {$generationCount} history berhasil dihapus."
                     : 'Template berhasil dihapus.',
             ]);
         } catch (\Exception $e) {

@@ -244,7 +244,11 @@
                                                 <a class="dropdown-item" href="/laporan-insiden/edit/${item.id}"><i class="fa-solid fa-pen-to-square me-4"></i> Edit</a>
                                             </li>
                                             <li>
-                                                <a class="dropdown-item" href="/laporan-insiden/hapus/${item.id}"><i class="fa-regular fa-trash me-4"></i> Hapus</a>
+                                                <form method="POST" action="/laporan-insiden/hapus/${item.id}" class="m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan ini?');">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                                    <input type="hidden" name="_method" value="DELETE">
+                                                    <button type="submit" class="dropdown-item text-danger"><i class="fa-regular fa-trash me-4"></i> Hapus</button>
+                                                </form>
                                             </li>
                                             <li>
                                                 <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalResponsyy" data-nama="${item.pelapor}" data-kejadian="${item.kejadian}" data-deskripsi="${item.deskripsi}" data-id="${item.id}" data-status="${item.status}">

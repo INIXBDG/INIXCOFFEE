@@ -12,8 +12,26 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentSuccesController extends Controller
 {
+    private function isValidWebhookToken(Request $request): bool
+    {
+        $configured = (string) config('services.external_web.webhook_token', '');
+        if ($configured === '') {
+            // Belum dikonfigurasi di .env — izinkan sementara agar integrasi web tidak putus,
+            // lalu segera set EXTERNAL_WEB_WEBHOOK_TOKEN di kedua server untuk verifikasi ketat.
+            return true;
+        }
+
+        $provided = (string) ($request->header('X-Webhook-Token') ?: $request->bearerToken() ?: '');
+
+        return hash_equals($configured, $provided);
+    }
+
     public function receivePayment(Request $request)
     {
+        if (!$this->isValidWebhookToken($request)) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         try {
             $recive = $request->validate([
                 'nama' => 'required|string',
@@ -57,6 +75,10 @@ class PaymentSuccesController extends Controller
 
     public function requestPenawaran(Request $request)
     {
+        if (!$this->isValidWebhookToken($request)) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         try {
             $validated = $request->validate([
                 'nama_materi' => 'required|string',

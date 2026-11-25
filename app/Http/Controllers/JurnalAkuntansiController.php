@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\JurnalArrayImport;
 use App\Models\JurnalAkuntansi;
 use App\Models\karyawan;
 use App\Models\no_akun;
@@ -10,15 +11,8 @@ use App\Models\PengajuanBarang;
 use App\Models\perhitunganNetSales;
 use App\Models\SuratPerjalanan;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Concerns\ToArray;
-use Maatwebsite\Excel\Concerns\WithCalculatedFormulas;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-
-class JurnalArrayImport implements ToArray, WithCalculatedFormulas
-{
-    public function array(array $array) {}
-}
 
 class JurnalAkuntansiController extends Controller
 {
@@ -650,81 +644,14 @@ class JurnalAkuntansiController extends Controller
         }
     }
 
+    private function evaluateSimpleArithmetic(string $expression): float
+    {
+        return app(\App\Services\ExcelFormulaEvaluator::class)->evaluateSimpleArithmetic($expression);
+    }
+
     private function parseExcelAmount($value)
     {
-        if ($value === null || $value === '') {
-            return 0;
-        }
-
-        // Angka biasa
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
-        $value = trim((string) $value);
-
-        /*
-        * Excel kamu punya formula seperti:
-        *
-        * =75000+10000+65306-6+140000+4000
-        *
-        * Ini TIDAK bisa diproses dengan
-        * preg_replace menjadi angka.
-        *
-        * Jadi kita evaluasi formula aritmatika sederhana.
-        */
-
-        if (str_starts_with($value, '=')) {
-
-            $formula = substr($value, 1);
-
-            // Hanya izinkan angka + - * / ( )
-            if (preg_match('/^[0-9+\-*\/().\s]+$/', $formula)) {
-
-                try {
-                    return (float) eval("return {$formula};");
-                } catch (\Throwable $e) {
-                    return 0;
-                }
-            }
-        }
-
-        /*
-        * Fallback untuk format seperti:
-        * Rp75.000
-        * 75,000
-        * 75000
-        */
-
-        $clean = preg_replace('/[^0-9.,-]/', '', $value);
-
-        $lastComma = strrpos($clean, ',');
-        $lastDot = strrpos($clean, '.');
-
-        if ($lastComma !== false && $lastDot !== false) {
-            if ($lastComma > $lastDot) {
-                // Comma is decimal: 294.300,00
-                $clean = str_replace('.', '', $clean);
-                $clean = str_replace(',', '.', $clean);
-            } else {
-                // Dot is decimal: 294,300.00
-                $clean = str_replace(',', '', $clean);
-            }
-        } elseif ($lastComma !== false) {
-            // Only comma. If 3 digits after comma, it's likely thousands separator.
-            if (preg_match('/,[0-9]{3}$/', $clean)) {
-                $clean = str_replace(',', '', $clean);
-            } else {
-                $clean = str_replace(',', '.', $clean);
-            }
-        } elseif ($lastDot !== false) {
-            // Only dot. If 3 digits after dot, it's likely thousands separator.
-            if (preg_match('/\.[0-9]{3}$/', $clean)) {
-                $clean = str_replace('.', '', $clean);
-            }
-        }
-
-        return $clean !== '' ? abs((float) $clean) : 0;
+        return app(\App\Services\ExcelFormulaEvaluator::class)->parseAmount($value);
     }
 
     /**

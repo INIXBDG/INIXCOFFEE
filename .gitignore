@@ -22,4 +22,8 @@ Homestead.json
 /.vagrant
 .phpunit.result.cache
 /database_cadangan
+*.sql
+public/phpinfo.php
+mailpit.exe
+"et --hard ORIG_HEAD"
 

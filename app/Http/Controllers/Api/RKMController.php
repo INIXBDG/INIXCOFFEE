@@ -16,6 +16,7 @@ use App\Http\Resources\PostResource;
 use App\Models\AbsensiPDF;
 use App\Models\RekomendasiLanjutan;
 use App\Models\eksam;
+use App\Support\CacheRegistry;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -27,159 +28,169 @@ class RKMController extends Controller
 
     public function showMonth($year, $month)
     {
-        DB::statement("SET SESSION group_concat_max_len = 10000");
-        $bulan = $month + 1;
-        $startDate = CarbonImmutable::create($year, $month, 1);
-        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
-        $now = CarbonImmutable::now()->locale('id_ID');
+        $yearInt = (int) $year;
+        $monthInt = (int) $month;
 
-        $monthRanges = [];
-        $date = $startDate;
+        $monthRanges = CacheRegistry::rememberRkm("show_month:{$yearInt}:{$monthInt}", 300, function () use ($yearInt, $monthInt) {
+            DB::statement("SET SESSION group_concat_max_len = 10000");
 
-        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
-            $startOfMonth = $date->startOfMonth();
-            $endOfMonth = $date->addMonth()->endOfMonth();
+            $startDate = CarbonImmutable::create($yearInt, $monthInt, 1)->locale('id_ID');
+            $startOfMonth = $startDate->startOfMonth();
+            $endOfMonth = $startDate->addMonth()->endOfMonth();
 
-            $weekRanges = [];
-            $startOfWeek = $startOfMonth->startOfWeek();
-
-            while ($startOfWeek->lte($endOfMonth)) {
-                $endOfWeek = $startOfWeek->copy()->endOfWeek();
-                $start = $startOfWeek->format('Y-m-d');
-                $end = $endOfWeek->format('Y-m-d');
-                $startOfWeek = $startOfWeek->addWeek();
-
-                // Eksekusi Query Utama RKM
-                $rows = RKM::with(['materi', 'peluang'])
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    // ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1)->orWhere('tahap', 'lost');
-                    })
-                    ->select(
-                        DB::raw('MAX(r_k_m_s.souvenir) AS souvenir'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                        DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
-                        'r_k_m_s.tanggal_awal',
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-                    )
-                    ->groupBy([
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        'r_k_m_s.tanggal_awal'
-                    ])
-                    ->orderBy('status_all', 'asc')
-                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    ->get();
-
-                // 1. Ekstraksi ID secara kolektif
-                $allSalesIds = [];
-                $allInstrukturIds = [];
-                $allPerusahaanIds = [];
-                $allRkmIds = [];
-
-                foreach ($rows as $row) {
-                    $sales_ids = array_filter(explode(', ', $row->sales_all ?? ''));
-                    $perusahaan_ids = array_filter(explode(', ', $row->perusahaan_all ?? ''));
-                    $instruktur_ids = array_filter(explode(', ', $row->instruktur_all ?? ''));
-                    $rkm_ids = array_filter(array_map('trim', explode(',', $row->id_all ?? '')));
-
-                    $allSalesIds = array_merge($allSalesIds, $sales_ids);
-                    $allPerusahaanIds = array_merge($allPerusahaanIds, $perusahaan_ids);
-                    $allInstrukturIds = array_merge($allInstrukturIds, $instruktur_ids);
-                    $allRkmIds = array_merge($allRkmIds, $rkm_ids);
-                }
-
-                // Hapus duplikasi ID untuk optimasi query
-                $uniqueSalesIds = array_unique($allSalesIds);
-                $uniqueInstrukturIds = array_unique($allInstrukturIds);
-                $uniquePerusahaanIds = array_unique($allPerusahaanIds);
-                $uniqueRkmIds = array_unique($allRkmIds);
-                $uniqueKaryawanIds = array_unique(array_merge($uniqueSalesIds, $uniqueInstrukturIds));
-
-                // 2. Eksekusi query relasi secara kolektif (Bulk Fetch)
-                $karyawanMap = karyawan::whereIn('kode_karyawan', $uniqueKaryawanIds)->get()->keyBy('kode_karyawan');
-
-                // Ambil data User berdasarkan relasi karyawan_id
-                $karyawanPrimaryIds = $karyawanMap->pluck('id')->toArray();
-                $userMap = User::whereIn('karyawan_id', $karyawanPrimaryIds)->get()->keyBy('karyawan_id');
-
-                $perusahaanMap = Perusahaan::whereIn('id', $uniquePerusahaanIds)->get()->keyBy('id');
-                $rekomendasiMap = RekomendasiLanjutan::whereIn('id_rkm', $uniqueRkmIds)->get()->groupBy('id_rkm');
-                // Bulk fetch eksam yang sudah diajukan untuk RKM ini
-                $examedRkmIds = eksam::whereIn('id_rkm', $uniqueRkmIds)->whereNotNull('id_rkm')->pluck('id_rkm')->map(fn($v) => (string)$v)->flip()->toArray();
-
-                // 3. Pemetaan data kembali ke masing-masing baris (Mapping)
-                foreach ($rows as $row) {
-                    // Pemetaan Sales dan injeksi atribut User
-                    $salesIdsArray = array_filter(explode(', ', $row->sales_all ?? ''));
-                    $row->sales = collect($salesIdsArray)->map(function ($kode) use ($karyawanMap, $userMap) {
-                        $karyawan = $karyawanMap->get($kode);
-                        if ($karyawan) {
-                            $user = $userMap->get($karyawan->id);
-                            // Menambahkan atribut id_sales dan id_instruktur dari tabel User
-                            $karyawan->user_id_sales = $user ? $user->id_sales : null;
-                            $karyawan->user_id_instruktur = $user ? $user->id_instruktur : null;
-                        }
-                        return $karyawan;
-                    })->filter()->values();
-
-                    // Pemetaan Instruktur dan injeksi atribut User
-                    $instrukturIdsArray = array_filter(explode(', ', $row->instruktur_all ?? ''));
-                    $row->instruktur = collect($instrukturIdsArray)->map(function ($kode) use ($karyawanMap, $userMap) {
-                        $karyawan = $karyawanMap->get($kode);
-                        if ($karyawan) {
-                            $user = $userMap->get($karyawan->id);
-                            // Menambahkan atribut id_sales dan id_instruktur dari tabel User
-                            $karyawan->user_id_sales = $user ? $user->id_sales : null;
-                            $karyawan->user_id_instruktur = $user ? $user->id_instruktur : null;
-                        }
-                        return $karyawan;
-                    })->filter()->values();
-
-                    // Pemetaan Perusahaan
-                    $perusahaanIdsArray = array_filter(explode(', ', $row->perusahaan_all ?? ''));
-                    $row->perusahaan = collect($perusahaanIdsArray)->map(function ($id) use ($perusahaanMap) {
-                        return $perusahaanMap->get($id);
-                    })->filter()->values();
-
-                    // Pemetaan Rekomendasi Lanjutan
-                    $rkmIdsArray = array_filter(array_map('trim', explode(',', $row->id_all ?? '')));
-                    $row->rekomendasi_group = collect($rkmIdsArray)->flatMap(function ($id) use ($rekomendasiMap) {
-                        return $rekomendasiMap->get($id) ?? [];
-                    })->filter()->values();
-
-                    // Cek apakah ada RKM dari grup ini yang sudah diajukan exam
-                    $row->has_exam = collect($rkmIdsArray)->contains(fn($id) => isset($examedRkmIds[(string)$id]));
-
-                    // Nama sales (untuk Adm Sales)
-                    $salesIdsArr2 = array_filter(explode(', ', $row->sales_all ?? ''));
-                    $row->nama_sales_list = collect($salesIdsArr2)->map(fn($kode) => optional($karyawanMap->get(trim($kode)))->nama_lengkap)->filter()->implode(', ');
-                }
-
-                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
+            // 1. Susun daftar rentang minggu terlebih dahulu (1 query untuk seluruh rentang)
+            $weekBuckets = [];
+            $cursor = $startOfMonth->startOfWeek();
+            while ($cursor->lte($endOfMonth)) {
+                $endOfWeek = $cursor->copy()->endOfWeek();
+                $weekBuckets[] = [
+                    'start' => $cursor->format('Y-m-d'),
+                    'end'   => $endOfWeek->format('Y-m-d'),
+                ];
+                $cursor = $cursor->addWeek();
             }
 
-            $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
+            if (empty($weekBuckets)) {
+                return [['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => []]];
+            }
 
-            $date = $date->addMonth();
-        }
+            $overallStart = $weekBuckets[0]['start'];
+            $overallEnd = $weekBuckets[count($weekBuckets) - 1]['end'];
+
+            // 2. Satu query RKM teragregasi untuk seluruh rentang 2 bulan (menggantikan ~9 query loop mingguan)
+            $allRows = RKM::with(['materi', 'peluang'])
+                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->whereBetween('r_k_m_s.tanggal_awal', [$overallStart, $overallEnd])
+                ->whereDoesntHave('peluang', function ($query) {
+                    $query->where('tentatif', 1)->orWhere('tahap', 'lost');
+                })
+                ->select(
+                    DB::raw('MAX(r_k_m_s.souvenir) AS souvenir'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id_all'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.registrasi_form SEPARATOR ", ") AS registrasi_form'),
+                    'r_k_m_s.materi_key',
+                    'r_k_m_s.ruang',
+                    'r_k_m_s.metode_kelas',
+                    'r_k_m_s.event',
+                    DB::raw('GROUP_CONCAT(r_k_m_s.exam SEPARATOR ", ") AS exam'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.makanan SEPARATOR ", ") AS makanan'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                    DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                    DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                    DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
+                    'r_k_m_s.tanggal_awal',
+                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                )
+                ->groupBy([
+                    'r_k_m_s.materi_key',
+                    'r_k_m_s.ruang',
+                    'r_k_m_s.metode_kelas',
+                    'r_k_m_s.event',
+                    'r_k_m_s.tanggal_awal',
+                ])
+                ->orderBy('status_all', 'asc')
+                ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                ->get();
+
+            // 3. Ekstraksi ID kolektif sekali saja untuk seluruh rentang
+            $allKaryawanCodes = [];
+            $allPerusahaanIds = [];
+            $allRkmIds = [];
+
+            foreach ($allRows as $row) {
+                foreach (explode(', ', $row->sales_all ?? '') as $code) {
+                    $code = trim($code);
+                    if ($code !== '') $allKaryawanCodes[$code] = true;
+                }
+                foreach (explode(', ', $row->instruktur_all ?? '') as $code) {
+                    $code = trim($code);
+                    if ($code !== '') $allKaryawanCodes[$code] = true;
+                }
+                foreach (explode(', ', $row->perusahaan_all ?? '') as $pid) {
+                    $pid = trim($pid);
+                    if ($pid !== '') $allPerusahaanIds[$pid] = true;
+                }
+                foreach (explode(',', $row->id_all ?? '') as $rid) {
+                    $rid = trim($rid);
+                    if ($rid !== '') $allRkmIds[$rid] = true;
+                }
+            }
+
+            $uniqueKaryawanIds = array_keys($allKaryawanCodes);
+            $uniquePerusahaanIds = array_keys($allPerusahaanIds);
+            $uniqueRkmIds = array_keys($allRkmIds);
+
+            // 4. Bulk fetch relasi sekali saja (total 5 query, bukan ~45 query per request)
+            $karyawanMap = !empty($uniqueKaryawanIds)
+                ? karyawan::whereIn('kode_karyawan', $uniqueKaryawanIds)->get()->keyBy('kode_karyawan')
+                : collect();
+
+            $karyawanPrimaryIds = $karyawanMap->pluck('id')->all();
+            $userMap = !empty($karyawanPrimaryIds)
+                ? User::whereIn('karyawan_id', $karyawanPrimaryIds)->get()->keyBy('karyawan_id')
+                : collect();
+
+            foreach ($karyawanMap as $karyawan) {
+                $user = $userMap->get($karyawan->id);
+                $karyawan->user_id_sales = $user ? $user->id_sales : null;
+                $karyawan->user_id_instruktur = $user ? $user->id_instruktur : null;
+            }
+
+            $perusahaanMap = !empty($uniquePerusahaanIds)
+                ? Perusahaan::whereIn('id', $uniquePerusahaanIds)->get()->keyBy('id')
+                : collect();
+
+            $rekomendasiMap = !empty($uniqueRkmIds)
+                ? RekomendasiLanjutan::whereIn('id_rkm', $uniqueRkmIds)->get()->groupBy('id_rkm')
+                : collect();
+
+            $examedRkmIds = !empty($uniqueRkmIds)
+                ? eksam::whereIn('id_rkm', $uniqueRkmIds)
+                    ->whereNotNull('id_rkm')
+                    ->pluck('id_rkm')
+                    ->map(fn($v) => (string) $v)
+                    ->flip()
+                    ->toArray()
+                : [];
+
+            // 5. Pemetaan data dan pengelompokan ke bucket mingguan di memori
+            foreach ($allRows as $row) {
+                $salesCodes = array_values(array_filter(array_map('trim', explode(', ', $row->sales_all ?? ''))));
+                $instrukturCodes = array_values(array_filter(array_map('trim', explode(', ', $row->instruktur_all ?? ''))));
+                $perusahaanIds = array_values(array_filter(array_map('trim', explode(', ', $row->perusahaan_all ?? ''))));
+                $rkmIds = array_values(array_filter(array_map('trim', explode(',', $row->id_all ?? ''))));
+
+                $row->sales = collect($salesCodes)->map(fn($c) => $karyawanMap->get($c))->filter()->values();
+                $row->instruktur = collect($instrukturCodes)->map(fn($c) => $karyawanMap->get($c))->filter()->values();
+                $row->perusahaan = collect($perusahaanIds)->map(fn($id) => $perusahaanMap->get($id))->filter()->values();
+                $row->rekomendasi_group = collect($rkmIds)->flatMap(fn($id) => $rekomendasiMap->get($id) ?? [])->filter()->values();
+                $row->has_exam = collect($rkmIds)->contains(fn($id) => isset($examedRkmIds[(string) $id]));
+                $row->nama_sales_list = collect($salesCodes)
+                    ->map(fn($c) => optional($karyawanMap->get($c))->nama_lengkap)
+                    ->filter()
+                    ->implode(', ');
+            }
+
+            $weekRanges = [];
+            foreach ($weekBuckets as $bucket) {
+                $start = $bucket['start'];
+                $end = $bucket['end'];
+                $weekRows = $allRows->filter(function ($row) use ($start, $end) {
+                    $tgl = substr((string) $row->tanggal_awal, 0, 10);
+                    return $tgl >= $start && $tgl <= $end;
+                })->values();
+
+                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $weekRows];
+            }
+
+            $result = [['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges]];
+
+            // Simpan sebagai plain array agar payload Redis ringan & cepat di-unserialize
+            return json_decode(json_encode($result), true);
+        });
 
         return new PostResource(true, 'List Detail Bulan RKM', $monthRanges);
     }
@@ -201,113 +212,175 @@ class RKMController extends Controller
 
     public function RKMAPIabsensi($year, $month)
     {
-        DB::statement("SET SESSION group_concat_max_len = 10000");
-        $bulan = $month + 1;
-        $startDate = CarbonImmutable::create($year, $month, 1);
-        $endDate = CarbonImmutable::create($year, $month, 1)->endOfMonth();
-        $now = CarbonImmutable::now()->locale('id_ID');
+        $yearInt = (int) $year;
+        $monthInt = (int) $month;
 
-        $monthRanges = [];
-        $date = $startDate;
+        $json = CacheRegistry::rememberRkm("absensi:{$yearInt}:{$monthInt}", 300, function () use ($yearInt, $monthInt) {
+            DB::statement("SET SESSION group_concat_max_len = 10000");
 
-        while ($date->month <= $endDate->month && $date->year <= $endDate->year) {
-            $startOfMonth = $date->startOfMonth();
-            $endOfMonth = $date->addMonth()->endOfMonth();
+            $startDate = CarbonImmutable::create($yearInt, $monthInt, 1)->locale('id_ID');
+            $startOfMonth = $startDate->startOfMonth();
+            $endOfCurrentMonth = $startOfMonth->endOfMonth();
+            $endOfTwoMonths = $startDate->addMonth()->endOfMonth();
 
-            $weekRanges = [];
-            $startOfWeek = $startOfMonth->startOfWeek();
-            while ($startOfWeek->lte($endOfMonth)) {
-                $endOfWeek = $startOfWeek->copy()->endOfWeek();
-                $start = $startOfWeek->format('Y-m-d');
-                $end = $endOfWeek->format('Y-m-d');
-                $startOfWeek = $startOfWeek->addWeek();
-                $rows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
-                    ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
-                    ->whereMonth('r_k_m_s.tanggal_awal', $date->month)
-                    ->whereBetween('r_k_m_s.tanggal_awal', [$start, $end])
-                    ->where('r_k_m_s.status', '0')
-                    ->whereDoesntHave('peluang', function ($query) {
-                        $query->where('tentatif', 1);
-                    })->where(function ($query) {
-                        $query->whereHas('exam.approvalexam', function ($q) {
-                            $q->where('technical_support', 1);
-                        })
-                        ->orWhereDoesntHave('exam.approvalexam');
-                    })
-                    ->select(
-                        DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        DB::raw('GROUP_CONCAT(CASE
-                WHEN r_k_m_s.exam = "0" THEN "Tidak"
-                WHEN r_k_m_s.exam = "1" THEN "Ya"
-                ELSE COALESCE(r_k_m_s.exam, "Tidak")
-            END SEPARATOR ", ") AS exam'),
-                        DB::raw('GROUP_CONCAT(CASE
-                WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
-                WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
-                WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
-                ELSE COALESCE(r_k_m_s.makanan, "Tidak Ada")
-            END SEPARATOR ", ") AS makanan'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
-                        DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
-                        DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
-                        DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
-                        DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
-                        'r_k_m_s.tanggal_awal',
-                        DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
-                    )
-                    ->groupBy([
-                        'r_k_m_s.materi_key',
-                        'r_k_m_s.ruang',
-                        'r_k_m_s.metode_kelas',
-                        'r_k_m_s.event',
-                        'r_k_m_s.tanggal_awal'
-                    ])
-                    ->orderBy('status_all', 'asc')
-                    ->orderBy('r_k_m_s.tanggal_awal', 'asc')
-                    ->get();
-                foreach ($rows as $row) {
-                    if ($row->instruktur_all == null) {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $row->sales = karyawan::whereIn('kode_karyawan', $sales_ids)->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    } else {
-                        $sales_ids = explode(', ', $row->sales_all);
-                        $perusahaan_ids = explode(', ', $row->perusahaan_all);
-                        $instruktur_ids = explode(', ', $row->instruktur_all);
-                        $row->instruktur = karyawan::with('user')
-                            ->whereHas('user', function ($query) use ($instruktur_ids) {
-                                $query->whereIn('users.id_instruktur', $instruktur_ids);
-                            })
-                            ->get();
-
-                        $row->sales = karyawan::with('user')
-                            ->whereHas('user', function ($query) use ($sales_ids) {
-                                $query->whereIn('users.id_sales', $sales_ids);
-                            })
-                            ->get();
-                        $row->perusahaan = Perusahaan::whereIn('id', $perusahaan_ids)->get();
-                    }
-                    $absensiExists = AbsensiPDF::where('id_rkm', $row->id)->exists();
-                    $row->absensi_status = $absensiExists ? 'green' : 'red';
-                }
-
-                // return $rows;
-
-                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $rows];
+            $weekBuckets = [];
+            $cursor = $startOfMonth->startOfWeek();
+            while ($cursor->lte($endOfTwoMonths)) {
+                $endOfWeek = $cursor->copy()->endOfWeek();
+                $weekBuckets[] = [
+                    'start' => $cursor->format('Y-m-d'),
+                    'end'   => $endOfWeek->format('Y-m-d'),
+                ];
+                $cursor = $cursor->addWeek();
             }
 
-            $monthRanges[] = ['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges];
+            // Query SARGable (menggantikan whereMonth + loop mingguan + N+1 per baris)
+            $allRows = RKM::with(['materi', 'peluang', 'exam', 'exam.approvalexam'])
+                ->join('materis', 'r_k_m_s.materi_key', '=', 'materis.id')
+                ->whereBetween('r_k_m_s.tanggal_awal', [
+                    $startOfMonth->format('Y-m-d'),
+                    $endOfCurrentMonth->format('Y-m-d'),
+                ])
+                ->where('r_k_m_s.status', '0')
+                ->whereDoesntHave('peluang', function ($query) {
+                    $query->where('tentatif', 1);
+                })
+                ->where(function ($query) {
+                    $query->whereHas('exam.approvalexam', function ($q) {
+                        $q->where('technical_support', 1);
+                    })
+                    ->orWhereDoesntHave('exam.approvalexam');
+                })
+                ->select(
+                    DB::raw('GROUP_CONCAT(r_k_m_s.id SEPARATOR ", ") AS id'),
+                    'r_k_m_s.materi_key',
+                    'r_k_m_s.ruang',
+                    'r_k_m_s.metode_kelas',
+                    'r_k_m_s.event',
+                    DB::raw('GROUP_CONCAT(CASE
+                        WHEN r_k_m_s.exam = "0" THEN "Tidak"
+                        WHEN r_k_m_s.exam = "1" THEN "Ya"
+                        ELSE COALESCE(r_k_m_s.exam, "Tidak")
+                    END SEPARATOR ", ") AS exam'),
+                    DB::raw('GROUP_CONCAT(CASE
+                        WHEN r_k_m_s.makanan = "0" THEN "Tidak Ada"
+                        WHEN r_k_m_s.makanan = "1" THEN "Nasi Box"
+                        WHEN r_k_m_s.makanan = "2" THEN "Prasmanan"
+                        ELSE COALESCE(r_k_m_s.makanan, "Tidak Ada")
+                    END SEPARATOR ", ") AS makanan'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.instruktur_key SEPARATOR ", ") AS instruktur_all'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.perusahaan_key SEPARATOR ", ") AS perusahaan_all'),
+                    DB::raw('GROUP_CONCAT(r_k_m_s.sales_key SEPARATOR ", ") AS sales_all'),
+                    DB::raw('CASE WHEN SUM(r_k_m_s.status = 0) > 0 THEN 0 ELSE MIN(r_k_m_s.status) END AS status_all'),
+                    DB::raw('SUM(r_k_m_s.pax) AS total_pax'),
+                    DB::raw('MAX(r_k_m_s.authorize) AS authorize'),
+                    'r_k_m_s.tanggal_awal',
+                    DB::raw('MAX(r_k_m_s.tanggal_akhir) AS tanggal_akhir')
+                )
+                ->groupBy([
+                    'r_k_m_s.materi_key',
+                    'r_k_m_s.ruang',
+                    'r_k_m_s.metode_kelas',
+                    'r_k_m_s.event',
+                    'r_k_m_s.tanggal_awal',
+                ])
+                ->orderBy('status_all', 'asc')
+                ->orderBy('r_k_m_s.tanggal_awal', 'asc')
+                ->get();
 
-            $date = $date->addMonth();
-        }
+            // Bulk fetch seluruh relasi sekali saja (menggantikan ~200+ query N+1)
+            $allSalesCodes = [];
+            $allInstrukturCodes = [];
+            $allPerusahaanIds = [];
+            $allCompositeRkmIds = [];
 
-        $json = $monthRanges;
+            foreach ($allRows as $row) {
+                $allCompositeRkmIds[] = $row->id;
+                foreach (explode(', ', $row->sales_all ?? '') as $c) {
+                    $c = trim($c);
+                    if ($c !== '') $allSalesCodes[$c] = true;
+                }
+                foreach (explode(', ', $row->instruktur_all ?? '') as $c) {
+                    $c = trim($c);
+                    if ($c !== '') $allInstrukturCodes[$c] = true;
+                }
+                foreach (explode(', ', $row->perusahaan_all ?? '') as $pid) {
+                    $pid = trim($pid);
+                    if ($pid !== '') $allPerusahaanIds[$pid] = true;
+                }
+            }
+
+            $salesCodesList = array_keys($allSalesCodes);
+            $instrukturCodesList = array_keys($allInstrukturCodes);
+            $perusahaanIdsList = array_keys($allPerusahaanIds);
+
+            $karyawanByKode = !empty($salesCodesList)
+                ? karyawan::whereIn('kode_karyawan', $salesCodesList)->get()->keyBy('kode_karyawan')
+                : collect();
+
+            $karyawanBySalesUser = !empty($salesCodesList)
+                ? karyawan::with('user')
+                    ->whereHas('user', fn($q) => $q->whereIn('users.id_sales', $salesCodesList))
+                    ->get()
+                    ->groupBy(fn($k) => optional($k->user)->id_sales)
+                : collect();
+
+            $karyawanByInstrukturUser = !empty($instrukturCodesList)
+                ? karyawan::with('user')
+                    ->whereHas('user', fn($q) => $q->whereIn('users.id_instruktur', $instrukturCodesList))
+                    ->get()
+                    ->groupBy(fn($k) => optional($k->user)->id_instruktur)
+                : collect();
+
+            $perusahaanMap = !empty($perusahaanIdsList)
+                ? Perusahaan::whereIn('id', $perusahaanIdsList)->get()->keyBy('id')
+                : collect();
+
+            $existingAbsensiIds = !empty($allCompositeRkmIds)
+                ? AbsensiPDF::whereIn('id_rkm', array_unique($allCompositeRkmIds))
+                    ->pluck('id_rkm')
+                    ->flip()
+                    ->toArray()
+                : [];
+
+            foreach ($allRows as $row) {
+                $salesIds = array_values(array_filter(array_map('trim', explode(', ', $row->sales_all ?? ''))));
+                $perusahaanIds = array_values(array_filter(array_map('trim', explode(', ', $row->perusahaan_all ?? ''))));
+
+                if ($row->instruktur_all == null) {
+                    $row->sales = collect($salesIds)->map(fn($c) => $karyawanByKode->get($c))->filter()->values();
+                } else {
+                    $instrukturIds = array_values(array_filter(array_map('trim', explode(', ', $row->instruktur_all ?? ''))));
+                    $row->instruktur = collect($instrukturIds)
+                        ->flatMap(fn($c) => $karyawanByInstrukturUser->get($c, collect()))
+                        ->unique('id')
+                        ->values();
+                    $row->sales = collect($salesIds)
+                        ->flatMap(fn($c) => $karyawanBySalesUser->get($c, collect()))
+                        ->unique('id')
+                        ->values();
+                }
+
+                $row->perusahaan = collect($perusahaanIds)->map(fn($id) => $perusahaanMap->get($id))->filter()->values();
+                $row->absensi_status = isset($existingAbsensiIds[$row->id]) ? 'green' : 'red';
+            }
+
+            $weekRanges = [];
+            foreach ($weekBuckets as $bucket) {
+                $start = $bucket['start'];
+                $end = $bucket['end'];
+                $weekRows = $allRows->filter(function ($row) use ($start, $end) {
+                    $tgl = substr((string) $row->tanggal_awal, 0, 10);
+                    return $tgl >= $start && $tgl <= $end;
+                })->values();
+
+                $weekRanges[] = ['start' => $start, 'end' => $end, 'data' => $weekRows];
+            }
+
+            $result = [['month' => $startOfMonth->translatedFormat('F-Y'), 'weeksData' => $weekRanges]];
+
+            return json_decode(json_encode($result), true);
+        });
 
         return new PostResource(true, 'List Detail Bulan RKM', $json);
     }
@@ -457,29 +530,30 @@ class RKMController extends Controller
         $startDate = $today->copy()->subMonths(4)->startOfMonth()->toDateString();
         $endDate = $today->copy()->endOfMonth()->toDateString();
 
-       // Ambil data RKM beserta relasi materi
-        $rows = RKM::with('materi')
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-			->where('status', '0')
-            ->get();
+        $result = CacheRegistry::rememberRkm("jadwal_api:{$startDate}:{$endDate}", 300, function () use ($startDate, $endDate) {
+            $rows = RKM::with('materi')
+                ->whereBetween('tanggal_awal', [$startDate, $endDate])
+                ->where('status', '0')
+                ->get();
 
-        // Kelompokkan berdasarkan nama materi dan tanggal_awal
-        $grouped = $rows->groupBy(function ($item) {
-            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
+            $grouped = $rows->groupBy(function ($item) {
+                return ($item->materi->nama_materi ?? '-') . '|' . $item->tanggal_awal;
+            });
+
+            $mapped = $grouped->map(function ($items, $key) {
+                [$nama_materi, $tanggal_awal] = explode('|', $key);
+                $tanggal_akhir = $items->first()->tanggal_akhir;
+
+                return [
+                    'nama_materi'   => $nama_materi,
+                    'tanggal_awal'  => $tanggal_awal,
+                    'tanggal_akhir' => $tanggal_akhir,
+                    'jadwals'       => $items,
+                ];
+            })->values();
+
+            return json_decode(json_encode($mapped), true);
         });
-
-        // Format hasil akhir
-        $result = $grouped->map(function ($items, $key) {
-            [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir; // Ambil tanggal_akhir dari item pertama
-
-            return [
-                'nama_materi' => $nama_materi,
-                'tanggal_awal' => $tanggal_awal,
-                'tanggal_akhir' => $tanggal_akhir,
-                'jadwals' => $items, // Seluruh entri RKM dalam grup ini
-            ];
-        })->values();
 
         return response()->json([
             'success' => true,

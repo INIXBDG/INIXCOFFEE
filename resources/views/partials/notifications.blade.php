@@ -1,5 +1,8 @@
 @if(auth()->check() && auth()->user())
-@foreach (auth()->user()->unreadNotifications as $notification)
+@php
+    $notifItems = $unreadNotifications ?? auth()->user()->unreadNotifications()->latest()->limit(50)->get();
+@endphp
+@forelse ($notifItems as $notification)
     @php
         // Menggunakan null coalescing untuk mencegah "Undefined array key"
         $tipePesan = $notification->data['message']['tipe'] ?? '';
@@ -2163,5 +2166,7 @@
         </div>
     @endif
     <hr>
-@endforeach
+@empty
+    <p class="text-muted text-center my-3 mb-0">Tidak ada notifikasi baru.</p>
+@endforelse
 @endif

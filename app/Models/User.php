@@ -55,6 +55,17 @@ class User extends Authenticatable
         return $this->belongsTo(karyawan::class, 'karyawan_id', 'id');
     }
 
+    /**
+     * Alamat email kantor untuk channel `mail` pada Notification.
+     * Diambil dari karyawan.email; jika kosong, channel mail dilewati.
+     */
+    public function routeNotificationForMail($notification = null)
+    {
+        $email = $this->karyawan?->email;
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
+    }
+
     public function isAdmin()
     {
         return $this->jabatan === 'HRD';

@@ -26,32 +26,72 @@
                         <table class="table modern-table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th><div class="skeleton" style="width: 60px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 60px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 60px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 60px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 60px; height: 16px;"></div></th>
-                                    <th><div class="skeleton" style="width: 50px; height: 16px;"></div></th>
+                                    <th>
+                                        <div class="skeleton" style="width: 60px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 50px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 50px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 50px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 60px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 50px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 60px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 60px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 60px; height: 16px;"></div>
+                                    </th>
+                                    <th>
+                                        <div class="skeleton" style="width: 50px; height: 16px;"></div>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @for($i = 0; $i < 10; $i++)
-                                <tr class="skeleton-row">
-                                    <td><div class="skeleton-text" style="width: 80%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 60%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 50%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 70%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 60%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 75%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 65%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 90%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 55%"></div></td>
-                                    <td><div class="skeleton-text" style="width: 40%"></div></td>
-                                </tr>
+                                @for ($i = 0; $i < 10; $i++)
+                                    <tr class="skeleton-row">
+                                        <td>
+                                            <div class="skeleton-text" style="width: 80%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 60%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 50%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 70%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 60%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 75%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 65%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 90%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 55%"></div>
+                                        </td>
+                                        <td>
+                                            <div class="skeleton-text" style="width: 40%"></div>
+                                        </td>
+                                    </tr>
                                 @endfor
                             </tbody>
                         </table>
@@ -61,7 +101,8 @@
 
                 <div id="kpi-real-view" class="d-none">
                     <div class="action-bar">
-                        <button type="button" class="btn-action primary" data-bs-toggle="modal" data-bs-target="#modalBuatTarget">
+                        <button type="button" class="btn-action primary" data-bs-toggle="modal"
+                            data-bs-target="#modalBuatTarget">
                             <i class="fa-solid fa-plus"></i> <span>Buat Target Baru</span>
                         </button>
                         @if (Auth()->user()->jabatan === 'Koordinator ITSM')
@@ -70,17 +111,21 @@
                                 <i class="fa-solid fa-broom"></i> <span>Database Cleaning</span>
                             </a>
                         @endif
-                        <button type="button" class="btn-action success" data-bs-toggle="modal" data-bs-target="#ModalImport">
+                        <button type="button" class="btn-action success" data-bs-toggle="modal"
+                            data-bs-target="#ModalImport">
                             <i class="fa-solid fa-file-import"></i> <span>Import Data</span>
                         </button>
-                        <button type="button" class="btn-action" style="background: #fff; border: 1px solid #e2e8f0; color: #475569;"
-                            data-bs-toggle="modal" data-bs-target="#modalPanduanPdf">
+                        <button type="button" class="btn-action"
+                            style="background: #fff; border: 1px solid #e2e8f0; color: #475569;" data-bs-toggle="modal"
+                            data-bs-target="#modalPanduanPdf">
                             <i class="fa-solid fa-file-pdf"></i> <span>Download Panduan</span>
                         </button>
                         <div class="ms-auto" style="min-width: 260px;">
                             <div class="position-relative">
-                                <i class="fa-solid fa-magnifying-glass position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem;"></i>
-                                <input type="text" id="searchTarget" class="form-control" placeholder="Cari judul, pembuat, divisi..." style="padding-left: 2.5rem;">
+                                <i class="fa-solid fa-magnifying-glass position-absolute"
+                                    style="left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: .85rem;"></i>
+                                <input type="text" id="searchTarget" class="form-control"
+                                    placeholder="Cari judul, pembuat, divisi..." style="padding-left: 2.5rem;">
                             </div>
                         </div>
                     </div>
@@ -89,9 +134,16 @@
                         <table class="table modern-table align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th>Judul</th><th>Jangka</th><th>Status</th><th>Target</th>
-                                    <th>Jabatan</th><th>Divisi</th><th>Pembuat</th><th>Progress</th>
-                                    <th>Tenggat</th><th style="width: 120px;">Aksi</th>
+                                    <th>Judul</th>
+                                    <th>Jangka</th>
+                                    <th>Status</th>
+                                    <th>Target</th>
+                                    <th>Jabatan</th>
+                                    <th>Divisi</th>
+                                    <th>Pembuat</th>
+                                    <th>Progress</th>
+                                    <th>Tenggat</th>
+                                    <th style="width: 120px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="content_target">
@@ -111,7 +163,8 @@
     <div class="modal fade" id="ModalImport" tabindex="-1" aria-labelledby="ModalImportLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <form action="{{ route('kpi.importTarget') }}" method="post" enctype="multipart/form-data" id="formImport">
+                <form action="{{ route('kpi.importTarget') }}" method="post" enctype="multipart/form-data"
+                    id="formImport">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="ModalImportLabel"><span class="title-icon"><i
@@ -139,7 +192,8 @@
                         </div>
                         <div class="options-card mb-4">
                             <div class="p-3 border-bottom">
-                                <h6 class="fw-semibold mb-0 text-dark"><i class="fa-solid fa-sliders text-primary me-2"></i>
+                                <h6 class="fw-semibold mb-0 text-dark"><i
+                                        class="fa-solid fa-sliders text-primary me-2"></i>
                                     Opsi Import</h6>
                             </div>
                             <div class="form-check form-switch">
@@ -210,7 +264,8 @@
                                 <strong class="text-dark">Catatan Penting</strong>
                                 <p class="mb-0 mt-1 small">Kolom <code>Tipe Target</code>, <code>Nilai Target</code>, dan
                                     <code>Jangka Target</code> <u>tidak perlu diisi</u> karena akan diambil otomatis dari
-                                    konfigurasi database berdasarkan <strong>Assistant Route</strong>.</p>
+                                    konfigurasi database berdasarkan <strong>Assistant Route</strong>.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -451,7 +506,81 @@
             </form>
         </div>
     </div>
-    
+
+    <div class="modal fade" id="modalUpdateTarget" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="formUpdateTarget">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><span class="title-icon"><i class="fa-solid fa-pen-to-square"></i></span>
+                            Update Data Target</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="updateTargetId">
+
+                        <div class="mb-4">
+                            <label for="updateJudul" class="form-label">Judul KPI <span
+                                    class="text-warning">*</span></label>
+                            <input type="text" id="updateJudul" name="judul_kpi" class="form-control"
+                                maxlength="255" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="updateDeskripsi" class="form-label">Deskripsi KPI</label>
+                            <textarea id="updateDeskripsi" name="deskripsi_kpi" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Assistant Route</label>
+                                <input type="text" id="updateRoute" class="form-control bg-light" disabled>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Jabatan</label>
+                                <input type="text" id="updateJabatan" class="form-control bg-light" disabled>
+                            </div>
+                        </div>
+
+                        <div class="p-3 mb-4" style="background:#f8fafc;border-radius:12px;border:1px dashed #cbd5e1;">
+                            <label class="form-label mb-2"><strong>Detail Konfigurasi</strong>
+                                <small class="text-muted fw-normal">(tidak dapat diubah)</small></label>
+                            <div class="row g-2">
+                                <div class="col-md-4"><input type="text" id="updateJangka"
+                                        class="form-control bg-light" disabled placeholder="Jangka Target"></div>
+                                <div class="col-md-4"><input type="text" id="updateTipe"
+                                        class="form-control bg-light" disabled placeholder="Tipe Target"></div>
+                                <div class="col-md-4"><input type="text" id="updateNilai"
+                                        class="form-control bg-light" disabled placeholder="Nilai Target"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="updateTahunWrap">
+                            <label for="updateTahun" class="form-label">Tahun Pelaksanaan</label>
+                            <input type="number" id="updateTahun" name="detail_jangka" class="form-control"
+                                min="2000">
+                            <small class="text-muted d-block mt-1">Mengubah tahun akan mengubah periode perhitungan
+                                progress target ini.</small>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="updateKaryawan" class="form-label">Karyawan / Peserta <span
+                                    class="text-warning">*</span>
+                                <small class="text-muted fw-normal">(bisa ditambah atau dikurangi, sebatas jabatan
+                                    target)</small></label>
+                            <select id="updateKaryawan" name="karyawan[]" class="form-select select2" multiple></select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn-action primary" id="btnUpdateTarget">
+                            <i class="fa-solid fa-check"></i> <span>Update Data</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal Panduan --}}
     <div class="modal fade" id="modalPanduan" tabindex="-1" aria-labelledby="modalPanduanLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -480,11 +609,13 @@
             <div class="modal-content">
                 <form id="formPanduanPdf" method="GET" action="{{ route('kpi.panduanPdf') }}">
                     <div class="modal-header">
-                        <h5 class="modal-title"><span class="title-icon"><i class="fa-solid fa-file-pdf"></i></span> Download Panduan (PDF)</h5>
+                        <h5 class="modal-title"><span class="title-icon"><i class="fa-solid fa-file-pdf"></i></span>
+                            Download Panduan (PDF)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted small mb-3">Pilih jabatan atau divisi. Semua panduan yang dipilih digabung menjadi satu file PDF.</p>
+                        <p class="text-muted small mb-3">Pilih jabatan atau divisi. Semua panduan yang dipilih digabung
+                            menjadi satu file PDF.</p>
                         <div class="form-check mb-3 pb-3 border-bottom">
                             <input class="form-check-input" type="checkbox" id="cekSemuaPanduan">
                             <label class="form-check-label fw-semibold" for="cekSemuaPanduan">Pilih semua</label>
@@ -504,7 +635,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="{{ asset('assets/vendor/libs/chartjs/chart.js') }}"></script>
     <script>
         window.KPI_CONFIG = {
@@ -519,12 +650,13 @@
             manualValue: "{{ route('kpi.manualValue') }}",
             assistantRoutes: "{{ route('kpi.assistantRoutes') }}",
             hapusTarget: "{{ route('kpi.hapus', ['id' => 'REPLACE_ID']) }}",
-            
+            updateTarget: "{{ route('kpi.updateTarget', ['id' => 'REPLACE_ID']) }}",
+
             // Tokens & Dates
             csrfToken: "{{ csrf_token() }}",
             dateNow: "{{ now()->format('Y-m-d') }}",
             startOfYear: "{{ now()->startOfYear()->format('Y-m-d') }}",
-            
+
             // Session & Auth
             importErrors: @json(session('import_errors')),
             isKoordinatorItsm: {{ auth()->user()->jabatan === 'Koordinator ITSM' ? 'true' : 'false' }},
@@ -542,5 +674,6 @@
     {{-- ===== EXTERNAL JS FILE ===== --}}
     @push('scripts')
         @vite(['resources/js/pages/kpi/kpiIndex.js'])
+        @vite(['resources/js/pages/kpi/kpi-detail-content.js'])
     @endpush
 @endsection

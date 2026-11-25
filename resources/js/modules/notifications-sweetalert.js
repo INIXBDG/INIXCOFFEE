@@ -138,30 +138,42 @@
                 }, 1000);
             }
 
-            const modalBody = document.querySelector('#notificationModal .modal-body');
-            if (modalBody) {
-                const originalHtml = modalBody.innerHTML;
-                modalBody.innerHTML =
-                    '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Memuat notifikasi terbaru...</p></div>';
+            const modalEl = document.getElementById('notificationModal');
+            const lazyContainer = modalEl?.querySelector('.lazy-notifications-container[data-lazy-url]');
+            const modalBody = lazyContainer || modalEl?.querySelector('.modal-body');
 
-                fetch('/notifications/modal-content')
-                    .then(function (res) {
-                        if (!res.ok) throw new Error('Network response was not ok');
-                        return res.text();
-                    })
-                    .then(function (html) {
-                        modalBody.innerHTML = html;
-                    })
-                    .catch(function () {
-                        modalBody.innerHTML = originalHtml;
-                        const item = document.createElement('div');
-                        item.className = 'notification p-3 border-bottom animate__animated animate__fadeIn';
-                        item.innerHTML =
-                            '<p class="mb-1 fw-bold text-danger">Baru!</p><p class="mb-1"><strong class="n-user"></strong></p><p class="mb-1 n-tipe"></p><small class="text-muted">Baru saja</small>';
-                        item.querySelector('.n-user').textContent = data.message?.user || 'System';
-                        item.querySelector('.n-tipe').textContent = data.message?.message?.tipe || 'Notifikasi';
-                        modalBody.insertBefore(item, modalBody.firstChild);
-                    });
+            if (modalBody) {
+                const isModalOpen = modalEl?.classList.contains('show');
+                if (lazyContainer && !isModalOpen) {
+                    // Tandai agar data terbaru otomatis diambil saat modal dibuka kembali
+                    lazyContainer.dataset.loaded = 'false';
+                } else {
+                    const originalHtml = modalBody.innerHTML;
+                    modalBody.innerHTML =
+                        '<div class="text-center p-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Memuat notifikasi terbaru...</p></div>';
+
+                    fetch('/notifications/modal-content')
+                        .then(function (res) {
+                            if (!res.ok) throw new Error('Network response was not ok');
+                            return res.text();
+                        })
+                        .then(function (html) {
+                            modalBody.innerHTML = html;
+                            if (lazyContainer) {
+                                lazyContainer.dataset.loaded = 'true';
+                            }
+                        })
+                        .catch(function () {
+                            modalBody.innerHTML = originalHtml;
+                            const item = document.createElement('div');
+                            item.className = 'notification p-3 border-bottom animate__animated animate__fadeIn';
+                            item.innerHTML =
+                                '<p class="mb-1 fw-bold text-danger">Baru!</p><p class="mb-1"><strong class="n-user"></strong></p><p class="mb-1 n-tipe"></p><small class="text-muted">Baru saja</small>';
+                            item.querySelector('.n-user').textContent = data.message?.user || 'System';
+                            item.querySelector('.n-tipe').textContent = data.message?.message?.tipe || 'Notifikasi';
+                            modalBody.insertBefore(item, modalBody.firstChild);
+                        });
+                }
             }
         });
     }

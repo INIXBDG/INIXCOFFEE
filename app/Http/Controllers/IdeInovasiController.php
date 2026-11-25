@@ -23,7 +23,7 @@ class IdeInovasiController extends Controller
             'deskripsi'   => 'required|string',
         ]);
 
-        $data = $request->all();
+        $data = $request->only(['judul', 'deskripsi']);
         $data['id_karyawan'] = auth()->user()->id;
 
         // Menyimpan data Ide Inovasi

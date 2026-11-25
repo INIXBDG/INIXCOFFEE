@@ -7,8 +7,8 @@
     <meta name="vapid-public-key" content="{{ config('services.vapid.public_key') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="user-id" content="{{ auth()->id() }}">
-    <meta name="pusher-app-key" content="{{ env('PUSHER_APP_KEY') }}">
-    <meta name="pusher-app-cluster" content="{{ env('PUSHER_APP_CLUSTER') }}">
+    <meta name="pusher-app-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-app-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster') }}">
     <title>INIXCOFFEE</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -17,6 +17,8 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="theme-color" content="#333333">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
         integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -27,7 +29,7 @@
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     @vite(['resources/css/pages/menus.css', 'resources/js/app.js', 'resources/js/pages/menus.js'])
     @stack('styles')
@@ -45,18 +47,11 @@
         $canManageNotif = in_array($jabatanUser, ['HRD', 'Koordinator Office', 'Office Manager']);
         $notifikasi = $notifikasi ?? [];
         $absenHariIni = $absenHariIni ?? null;
-        $filteredNotif = collect($notifikasi)
-            ->sortByDesc('created_at')
-            ->filter(function ($notif) {
-                return \Carbon\Carbon::parse($notif->tanggal_akhir)->lt(
-                    \Carbon\Carbon::parse($notif->tanggal_akhir)->addWeek(),
-                );
-            });
-        $isEvening = \Carbon\Carbon::now()->between(
-            \Carbon\Carbon::createFromTimeString('17:00:00'),
-            \Carbon\Carbon::createFromTimeString('23:59:59'),
-        );
+        $filteredNotif = collect($notifikasi)->sortByDesc('created_at');
+        $nowTime = \Carbon\Carbon::now();
+        $isEvening = $nowTime->hour >= 17;
         $hasAbsenPulang = !empty($absenHariIni) ? !empty($absenHariIni->jam_keluar) : false;
+        $unreadNotifCount = $globalUnreadNotifCount ?? 0;
     @endphp
 
     <div id="app">
@@ -69,10 +64,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @include('partials.notifications')
+                        @include('partials.notification-modal-body')
                     </div>
                     <div class="modal-footer">
-                        @if (auth()->user()->unreadNotifications->count() > 0)
+                        @if ($unreadNotifCount > 0)
                             <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('PUT')
@@ -261,10 +256,10 @@
                         <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#"
                             data-bs-toggle="modal" data-bs-target="#notificationModal">
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
-                            @if (auth()->user()->unreadNotifications->count() > 0)
-                                <span
+                            @if ($unreadNotifCount > 0)
+                                <span id="notifBadge"
                                     class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    {{ auth()->user()->unreadNotifications->count() }}
+                                    {{ $unreadNotifCount }}
                                     <span class="visually-hidden">unread notifications</span>
                                 </span>
                             @endif
@@ -306,10 +301,11 @@
             <div class="col-md-1 col-sm-1 col-xs-1 d-flex justify-content-end" id="navbarpalingkanan">
                 <ul class="navbar-nav">
                     <li class="nav-item mx-1">
-                        <a class="nav-link" href="#" id="logout-link" data-bs-toggle="tooltip"
-                            data-bs-placement="top" title="Logout">
+                        <button type="submit" form="logout-form" class="nav-link border-0 bg-transparent"
+                            id="logout-link" data-bs-toggle="tooltip" data-bs-placement="top" title="Logout"
+                            aria-label="Logout">
                             <img src="{{ asset('icon/power.svg') }}" class="img-responsive" width="30px">
-                        </a>
+                        </button>
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>
@@ -323,11 +319,10 @@
         <div class="tab-content" id="pills-tabContent">
             <div class="tab-pane fade" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                 @php
+                    $cachedLayouts = \App\Models\DashboardLayout::cachedAll();
                     if (!isset($visibleSections)) {
                         $user = auth()->user();
-                        $globalOrder = \App\Models\DashboardLayout::orderBy('sort_order', 'asc')
-                            ->pluck('section_key')
-                            ->toArray();
+                        $globalOrder = $cachedLayouts->pluck('section_key')->toArray();
                         if (empty($globalOrder)) {
                             $globalOrder = [
                                 'karyawan',
@@ -361,7 +356,7 @@
                         );
                     }
                     if (!isset($dashboardLayouts)) {
-                        $dashboardLayouts = \App\Models\DashboardLayout::all()->keyBy('section_key');
+                        $dashboardLayouts = $cachedLayouts->keyBy('section_key');
                     }
                     $savedCardOrders = [];
                     foreach ($dashboardLayouts as $secKey => $layoutRow) {
@@ -2110,22 +2105,22 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    @endcan
-                                    <div class="col-sm-6 mt-2">
-                                        <div class="card" id="card-hover">
-                                            <div class="card-body d-flex">
-                                                <div class="col-md-2"><img src="{{ asset('icon/zap.svg') }}"
-                                                        class="img-responsive" width="30px"></div>
-                                                <div class="col-md-10" style="margin-left: 10px"><a
-                                                        href="/user-dropdown"
-                                                        class="link stretched-link text-decoration-none">
-                                                        <h5 class="card-title">Shortcut</h5>
-                                                    </a>
-                                                    <p class="card-text">shortcut.</p>
+                                        <div class="col-sm-6 mt-2">
+                                            <div class="card" id="card-hover">
+                                                <div class="card-body d-flex">
+                                                    <div class="col-md-2"><img src="{{ asset('icon/zap.svg') }}"
+                                                            class="img-responsive" width="30px"></div>
+                                                    <div class="col-md-10" style="margin-left: 10px"><a
+                                                            href="/user-dropdown"
+                                                            class="link stretched-link text-decoration-none">
+                                                            <h5 class="card-title">Shortcut</h5>
+                                                        </a>
+                                                        <p class="card-text">shortcut.</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endcan
                                     <div class="col-sm-6 mt-2">
                                         <div class="card" id="card-hover">
                                             <div class="card-body d-flex">
@@ -2172,9 +2167,6 @@
     <audio id="notifSound" src="{{ asset('bell.mp3') }}" preload="auto"></audio>
 
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous">
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
     </script>
@@ -2186,7 +2178,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        window.vapidPublicKey = '{{ env('VAPID_PUBLIC_KEY') }}';
+        window.vapidPublicKey = '{{ config('services.vapid.public_key') }}';
         window.csrfToken = '{{ csrf_token() }}';
         window.subscribeUrl = '{{ route('webpush.subscribe') }}';
         window.menusConfig = {

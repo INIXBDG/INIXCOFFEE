@@ -9,6 +9,7 @@ use App\Models\RKM;
 use App\Models\User;
 use App\Models\Notification;
 use App\Notifications\CommentNotification;
+use App\Support\CacheRegistry;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class CommentController extends Controller
@@ -84,23 +85,27 @@ class CommentController extends Controller
 
     public function markAsRead($notificationId)
     {
-        $notification = \App\Models\Notification::findOrFail($notificationId);
+        $user = auth()->user();
+        $notification = $user->notifications()->where('id', $notificationId)->firstOrFail();
 
         $notification->delete();
+        CacheRegistry::forgetUnreadNotifCount($user->id);
 
         return redirect()->back();
     }
 
     public function markAllAsRead()
     {
-        $notifications = auth()->user()->unreadNotifications->filter(function ($notification) {
-            return $notification->type !== "App\\Notifications\\OutstandingNotification"
-                && $notification->type !== "App\\Notifications\\BayarExamNotification";
-        });
+        $user = auth()->user();
 
-        foreach ($notifications as $notification) {
-            $notification->delete();
-        }
+        $user->unreadNotifications()
+            ->whereNotIn('type', [
+                'App\\Notifications\\OutstandingNotification',
+                'App\\Notifications\\BayarExamNotification',
+            ])
+            ->delete();
+
+        CacheRegistry::forgetUnreadNotifCount($user->id);
 
         return redirect()->back()->with('success', 'Semua notifikasi terkait telah dihapus.');
     }
