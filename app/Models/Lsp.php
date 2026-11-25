@@ -6,7 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lsp extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'nama',
+        'jenis',
+        'bidang',
+        'based',
+        'nomor_pks_mou',
+        'tanggal_mulai',
+        'tanggal_berakhir',
+        'pic',
+        'no_hp',
+        'email',
+        'website',
+        'status',
+        'karyawan',
+        'keterangan',
+    ];
 
     protected $casts = [
         'tanggal_mulai'    => 'date',

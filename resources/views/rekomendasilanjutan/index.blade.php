@@ -294,7 +294,7 @@
             dataType: 'json',
             success: function(response) {
                 var html = '';
-                var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
+                var jabatan = @json(trim((string) auth()->user()->jabatan));
                 var listMateriSemua = {!! json_encode($dataMateri) !!};
                 response.data.forEach(function(monthData) {
                     monthData.weeksData.forEach(function(weekData) {

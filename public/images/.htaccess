@@ -1,0 +1,11 @@
+# Nonaktifkan eksekusi script PHP & CGI di direktori gambar publik
+Options -Indexes -ExecCGI
+<FilesMatch "\.(?i:php|phtml|phar|php[3-8]|pht|shtml|cgi|pl|py|sh)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

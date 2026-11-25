@@ -539,6 +539,7 @@ class AktivitasController extends Controller
             'waktu_aktivitas' => 'required|date',
             'total'           => 'nullable|numeric',
             'foto_lokasi'     => 'nullable|string',
+            'file_foto'       => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
             'latitude'        => 'nullable|string',
             'longitude'       => 'nullable|string',
         ];
@@ -560,22 +561,37 @@ class AktivitasController extends Controller
         $folderPath = "uploads/aktivitas/visit/";
 
         if ($request->aktivitas === 'Visit' && $request->filled('foto_lokasi')) {
-            $img = $request->foto_lokasi;
+            $img = (string) $request->foto_lokasi;
             $folderPath = "uploads/aktivitas/visit/";
 
-            $image_parts = explode(";base64,", $img);
-            $image_type_aux = explode("image/", $image_parts[0]);
-            $image_type = $image_type_aux[1];
-            $image_base64 = base64_decode($image_parts[1]);
-
-            $fileName = 'visit_' . time() . '_' . uniqid() . '.' . $image_type;
-            $file = public_path($folderPath) . $fileName;
-
-            if (!file_exists(public_path($folderPath))) {
-                mkdir(public_path($folderPath), 0777, true);
+            if (!preg_match('/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+\/=\r\n]+)$/i', $img, $matches)) {
+                return response()->json(['error' => 'Format gambar base64 tidak valid. Hanya JPEG, PNG, atau WEBP yang diizinkan.'], 422);
             }
 
-            file_put_contents($file, $image_base64);
+            $image_base64 = base64_decode($matches[2], true);
+            if ($image_base64 === false || strlen($image_base64) > 5 * 1024 * 1024) {
+                return response()->json(['error' => 'Ukuran atau isi gambar tidak valid (maksimal 5MB).'], 422);
+            }
+
+            $imageInfo = @getimagesizefromstring($image_base64);
+            $mimeToExt = [
+                'image/jpeg' => 'jpg',
+                'image/png'  => 'png',
+                'image/webp' => 'webp',
+            ];
+            $detectedMime = $imageInfo['mime'] ?? '';
+            if (!isset($mimeToExt[$detectedMime])) {
+                return response()->json(['error' => 'File bukan gambar valid (JPEG/PNG/WEBP).'], 422);
+            }
+
+            $fileName = 'visit_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $mimeToExt[$detectedMime];
+            $targetDir = public_path($folderPath);
+
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+
+            file_put_contents($targetDir . $fileName, $image_base64);
             $aktivitasData['foto_lokasi'] = $folderPath . $fileName;
             $aktivitasData['latitude'] = $request->latitude;
             $aktivitasData['longitude'] = $request->longitude;
@@ -592,8 +608,19 @@ class AktivitasController extends Controller
                 $lng = $this->gpsToDecimal($exif['GPSLongitude'], $exif['GPSLongitudeRef']);
             }
 
-            $fileName = 'visit_up_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path($folderPath), $fileName);
+            $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+            $safeExt = strtolower((string) $file->extension());
+            if (!in_array($safeExt, $allowedExts, true)) {
+                return response()->json(['error' => 'Format file foto tidak diizinkan.'], 422);
+            }
+
+            $targetDir = public_path($folderPath);
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+
+            $fileName = 'visit_up_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $safeExt;
+            $file->move($targetDir, $fileName);
 
             $aktivitasData['foto_lokasi'] = $folderPath . $fileName;
             $aktivitasData['latitude'] = $lat;

@@ -131,7 +131,7 @@ class DatabaseKPIController extends Controller
 
         try {
             $response = Http::timeout(10)->get('http://192.168.95.173:8000/uptime.php', [
-                'password' => env('UPTIME_PASSWORD')
+                'password' => config('uptime.password')
             ]);
 
             if (!$response->failed() && $response->body() !== 'FILE_NOT_FOUND') {

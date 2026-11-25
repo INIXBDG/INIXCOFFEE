@@ -5,8 +5,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                // Global CSS & SCSS
-                'resources/sass/app.scss',
+                // Global CSS
                 'resources/css/app.css',
 
                 // Page-specific CSS

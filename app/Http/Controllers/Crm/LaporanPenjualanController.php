@@ -49,7 +49,7 @@ class LaporanPenjualanController extends Controller
     public function index(Request $request)
     {
         $sales = karyawan::where('jabatan', 'Sales')->where('status_aktif', '1')->get();
-        $materi = Materi::all();
+        $materi = Materi::cachedAll();
         return view('crm.LaporanPenjualan.index', compact(
             'sales',
             'materi',

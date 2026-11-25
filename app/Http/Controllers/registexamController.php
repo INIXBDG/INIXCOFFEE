@@ -418,7 +418,9 @@ class registexamController extends Controller
 
         if ($request->hasFile('pdf')) {
             $file = $request->file('pdf');
-            $nama_file = "Hasil_Exam_Peserta-" . $request->id_peserta . "-dengan_id-" . $request->id_registexam . ".pdf";
+            $safePesertaId = (int) ($request->id_peserta ?? 0);
+            $safeRegistId = (int) ($request->id_registexam ?? $id);
+            $nama_file = "Hasil_Exam_Peserta-" . $safePesertaId . "-dengan_id-" . $safeRegistId . ".pdf";
             $file->move(public_path('storage/hasilexam'), $nama_file);
         }
         // Check if $hasilUjian is null

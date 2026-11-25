@@ -18,17 +18,27 @@ use App\Http\Controllers\Api\ContactwebController;
 use App\Http\Controllers\Api\RegisApiController;
 use App\Http\Controllers\HR\FeedbackInstukturController;
 use App\Http\Middleware\ApiBasicAuth;
+use App\Http\Middleware\EncryptCookies;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Session\Middleware\StartSession;
 
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
+| Here you can register API routes for your application. These
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+$statefulOrSanctumAuth = [
+    EncryptCookies::class,
+    AddQueuedCookiesToResponse::class,
+    StartSession::class,
+    'auth:web,sanctum',
+];
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/webpush/subscribe', [WebPushController::class, 'subscribe'])->name('api.webpush.subscribe');
@@ -37,56 +47,67 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/webpush/test', [WebPushController::class, 'testNotification'])->name('api.webpush.test');
 });
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->get('/user', [apiController::class, 'currentUser']);
+
+// =========================================================================
+// Internal AJAX / DataTable & Dashboard API (Wajib Login Web Session atau Sanctum)
+// =========================================================================
+Route::middleware($statefulOrSanctumAuth)->group(function () {
+    Route::get('rkmAPI/{year}/{month}', [App\Http\Controllers\Api\RKMController::class, 'showMonth'])->name('rkmAPI');
+    Route::get('AbsensiRKMAPI/{year}/{month}', [App\Http\Controllers\Api\RKMController::class, 'RKMAPIabsensi'])->name('RKMAPIabsensi');
+    Route::get('getRKMRegist', [App\Http\Controllers\Api\RKMController::class, 'getRKMRegist'])->name('getRKMRegist');
+    Route::get('getRKMDetail', [App\Http\Controllers\Api\RKMController::class, 'getRKMDetail'])->name('getRKMDetail');
+    Route::get('getRKMDetailGroup', [App\Http\Controllers\Api\RKMController::class, 'getRKMDetailGroup'])->name('getRKMDetailGroup');
+    Route::get('registrasi/list/{id_peserta}', [App\Http\Controllers\Api\PesertaController::class, 'listMateri'])->name('listMateri');
+    Route::get('getRKMSouvenir', [App\Http\Controllers\Api\RKMController::class, 'getRKMSouvenir'])->name('getRKMSouvenir');
+    Route::get('getFeedbacks', [App\Http\Controllers\Api\apiController::class, 'getFeedbacks'])->name('getFeedbacks');
+    Route::get('getMateri', [App\Http\Controllers\Api\apiController::class, 'getMateri'])->name('getMateri');
+    Route::get('getUserall', [App\Http\Controllers\Api\apiController::class, 'getUserall'])->name('getUserall');
+    Route::get('getUserProject', [App\Http\Controllers\Api\apiController::class, 'getUserProject'])->name('getUserProject');
+    Route::get('getJabatan', [App\Http\Controllers\Api\apiController::class, 'getJabatan'])->name('getJabatan');
+    Route::get('getMateris', [App\Http\Controllers\Api\apiController::class, 'getMateris'])->name('getMateris');
+    Route::get('getRegistrasi', [App\Http\Controllers\Api\apiController::class, 'getRegistrasi'])->name('getRegistrasi');
+    Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'getInventaris'])->name('getInventaris');
+    Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
+
+    Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
+    Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
+    Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
+
+    Route::get('/feedback-instruktur/{year}/{type?}/{period?}', [FeedbackInstukturController::class, 'getDataFeedbackInstruktur']);
+    Route::get('/feedback-instruktur/detail/{kode_karyawan}/{peran}/{year}/{type}/{period?}', [FeedbackInstukturController::class, 'getDetailRkmInstruktur']);
+
+    Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
+    Route::post('/create/ticket', [TicketController::class, 'store']);
 });
-Route::apiResource('/rkmAPI', \App\Http\Controllers\Api\RKMController::class);
-// Route::get('rkmAPI', [App\Http\Controllers\UserController::class, 'index']);
-Route::get('rkmAPI/{year}/{month}', [App\Http\Controllers\Api\RKMController::class, 'showMonth'])->name('rkmAPI');
-Route::get('AbsensiRKMAPI/{year}/{month}', [App\Http\Controllers\Api\RKMController::class, 'RKMAPIabsensi'])->name('RKMAPIabsensi');
+
+// Admin / Development-only Telegram webhook setup
+Route::middleware(array_merge($statefulOrSanctumAuth, ['permission:Akses Development']))
+    ->get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])
+    ->name('telegram.setwebhook');
+
+// =========================================================================
+// External Web & Public Read Endpoints (Koordinasikan token sebelum dikunci penuh)
+// =========================================================================
 Route::get('perusahaan', [App\Http\Controllers\Api\PerusahaanController::class, 'getPerusahaan'])->name('getPerusahaan');
-Route::get('getRKMRegist', [App\Http\Controllers\Api\RKMController::class, 'getRKMRegist'])->name('getRKMRegist');
 Route::get('cek-peserta', [App\Http\Controllers\Api\PesertaController::class, 'cekPeserta'])->name('cekPeserta');
-Route::get('getRKMDetail', [App\Http\Controllers\Api\RKMController::class, 'getRKMDetail'])->name('getRKMDetail');
-Route::get('getRKMDetailGroup', [App\Http\Controllers\Api\RKMController::class, 'getRKMDetailGroup'])->name('getRKMDetailGroup');
-Route::get('registrasi/list/{id_peserta}', [App\Http\Controllers\Api\PesertaController::class, 'listMateri'])->name('listMateri');
-// Route::get('/cek-peserta', 'PesertaController@cekPeserta')->name('cekPeserta');
-Route::get('getRKMSouvenir', [App\Http\Controllers\Api\RKMController::class, 'getRKMSouvenir'])->name('getRKMSouvenir');
-Route::get('getFeedbacks', [App\Http\Controllers\Api\apiController::class, 'getFeedbacks'])->name('getFeedbacks');
-Route::get('getMateri', [App\Http\Controllers\Api\apiController::class, 'getMateri'])->name('getMateri');
-// Route::get('getPerusahaanall', [App\Http\Controllers\Api\apiController::class, 'getPerusahaanall'])->name('getPerusahaanall');
-Route::get('getUserall', [App\Http\Controllers\Api\apiController::class, 'getUserall'])->name('getUserall');
-Route::get('getUserProject', [App\Http\Controllers\Api\apiController::class, 'getUserProject'])->name('getUserProject');
-Route::get('getJabatan', [App\Http\Controllers\Api\apiController::class, 'getJabatan'])->name('getJabatan');
-Route::get('getMateris', [App\Http\Controllers\Api\apiController::class, 'getMateris'])->name('getMateris');
-Route::get('getRegistrasi', [App\Http\Controllers\Api\apiController::class, 'getRegistrasi'])->name('getRegistrasi');
 Route::get('upcomingRKM', [App\Http\Controllers\Api\apiController::class, 'UpcomingRKM'])->name('UpcomingRKM');
 Route::get('jadwalRKM', [App\Http\Controllers\Api\apiController::class, 'jadwalRKM'])->name('jadwalRKM');
+Route::get('jadwalRKM/data', [App\Http\Controllers\Api\RKMController::class, 'jadwalRKM'])->name('jadwalRKM.data');
 Route::get('materiinix', [App\Http\Controllers\Api\apiController::class, 'getMateriInix'])->name('materiinix');
 Route::get('materiinix/{id}', [App\Http\Controllers\Api\apiController::class, 'getMateriInixByID'])->name('materiinixID');
-// Route::get('getPerusahaanById', [App\Http\Controllers\Api\PerusahaanController::class, 'getPerusahaanById'])->name('getPerusahaanById');
-Route::get('getInventaris', [App\Http\Controllers\Api\apiController::class, 'getInventaris'])->name('getInventaris');
-Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
-Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
-Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
-Route::get('getDBKlien', [App\Http\Controllers\Api\apiController::class, 'getDBKlien'])->name('getDBKlien');
-Route::get('jadwalRKM/data', [App\Http\Controllers\Api\RKMController::class, 'jadwalRKM'])->name('jadwalRKM.data');
 
-Route::post('/contact/web', [ContactWebController::class, 'store'])->name('ContactWeb');
+Route::middleware('throttle:30,1')->group(function () {
+    Route::post('/contact/web', [ContactwebController::class, 'store'])->name('ContactWeb');
+    Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class, 'receivePayment'])->name('receivePayment');
+    Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');
+});
 
-
-Route::post('/create/ticket', [TicketController::class, 'store']);
-
+// =========================================================================
+// Webhooks (Fonnte, Telegram, Koordinasi OB, Pickup Driver)
+// =========================================================================
 Route::match(['get', 'post'], '/webhook/fonnte', [WebhookController::class, 'handle']);
-
-Route::get('/telegram/setwebhook', [TelegramController::class, 'setWebhook'])->name('telegram.setwebhook');
 Route::post('/telegram/webhook', [TelegramController::class, 'webhook'])->name('telegram.webhook');
-Route::get('/dashboard/csat-instruktur', [apiController::class, 'CSATinstruktur'])->name('CSATinstruktur');
-Route::get('/dashboard/aktivitas-instruktur', [apiController::class, 'AktivitasInstruktur'])->name('AktivitasInstruktur');
-Route::get('/dashboard/rekomendasi-materi', [apiController::class, 'RekomendasiMateri'])->name('RekomendasiMateri');
-
-
-Route::get('/moodle-grades-sharingknowledge', [MoodleApiController::class, 'fetchGradesSharingKnowledge']);
 
 // update koordinasi ob
 Route::post('/koordinasi-ob/updateFromTelegram', [KoordinasiOfficeBoyController::class, 'updateFromTelegram']);
@@ -97,11 +118,6 @@ Route::prefix('pickup-driver')->group(function () {
     // Route::post('action/terima', [PickupDriverWebhookController::class, 'actionTerimaFromTelegramToken'])->name('action.terima');
 });
 Route::post('/new-pickup-driver-notification', [PickupDriverWebhookController::class, 'requestHandler']);
-
-Route::post('/payment', [App\Http\Controllers\Api\PaymentSuccesController::class, 'receivePayment'])->name('receivePayment');
-Route::post('/requestPenawaran', [App\Http\Controllers\Api\PaymentSuccesController::class, 'requestPenawaran'])->name('requestPenawaran');
-Route::get('/feedback-instruktur/{year}/{type?}/{period?}',[FeedbackInstukturController::class, 'getDataFeedbackInstruktur']);
-Route::get('/feedback-instruktur/detail/{kode_karyawan}/{peran}/{year}/{type}/{period?}', [FeedbackInstukturController::class, 'getDetailRkmInstruktur']);
 
 Route::middleware(ApiBasicAuth::class)->group(function () {
     Route::get('/feedback/data', [App\Http\Controllers\Api\FeedbackAPIController::class, 'index']);

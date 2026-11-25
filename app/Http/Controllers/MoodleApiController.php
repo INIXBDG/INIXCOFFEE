@@ -11,10 +11,10 @@ class MoodleApiController extends Controller
     public function fetchGradesSharingKnowledge()
     {
         try {
-            // Ekstraksi Variabel Environment
-            $apiUrl = env('MOODLE_API_URL');
-            $apiUsername = env('MOODLE_API_USERNAME');
-            $apiPassword = env('MOODLE_API_PASSWORD');
+            // Ekstraksi Konfigurasi Moodle API (aman untuk config:cache)
+            $apiUrl = config('services.moodle.api_url');
+            $apiUsername = config('services.moodle.api_username');
+            $apiPassword = config('services.moodle.api_password');
 
             // Eksekusi Permintaan HTTP GET dengan Basic Authentication
             $response = Http::withBasicAuth($apiUsername, $apiPassword)

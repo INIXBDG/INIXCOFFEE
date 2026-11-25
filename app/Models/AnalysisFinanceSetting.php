@@ -6,7 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class AnalysisFinanceSetting extends Model
 {
-    protected $guarded = [];
+    protected $fillable = [
+        'tahun',
+        'target_tagihan',
+        'target_pencairan',
+        'target_ide',
+        'bobot_tagihan',
+        'bobot_pencairan',
+        'bobot_ide',
+    ];
 
     public static function forYear(int $tahun): self
     {

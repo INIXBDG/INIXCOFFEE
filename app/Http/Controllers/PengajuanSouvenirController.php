@@ -122,7 +122,7 @@ class PengajuanSouvenirController extends Controller
         }
 
         $vendors = vendorSouvenir::where('is_active', 1)->get();
-        $souvenirs = souvenir::all();
+        $souvenirs = souvenir::cachedAll();
 
         return view('pengajuansouvenir.create', compact('karyawan', 'vendors', 'souvenirs'));
     }
@@ -236,7 +236,7 @@ class PengajuanSouvenirController extends Controller
         $tracking = TrackingPengajuanSouvenir::where('id_pengajuan_souvenir', $id)
                         ->orderBy('created_at', 'asc')->get();
 
-        $souvenirs = souvenir::all(); // Diperlukan untuk modal edit
+        $souvenirs = souvenir::cachedAll(); // Diperlukan untuk modal edit
 
         return view('pengajuansouvenir.show', compact('data', 'tracking', 'souvenirs'));
     }

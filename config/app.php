@@ -56,6 +56,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'trusted_proxies' => env('TRUSTED_PROXIES', '127.0.0.1,::1'),
+
+    'trusted_hosts' => env('TRUSTED_HOSTS'),
+
+    'prevent_lazy_loading_strict' => (bool) env('PREVENT_LAZY_LOADING_STRICT', false),
+
     'asset_url' => env('ASSET_URL', '/'),
 
     /*

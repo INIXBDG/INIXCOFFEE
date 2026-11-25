@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Support\CacheRegistry;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Materi extends Model
 {
@@ -44,5 +47,20 @@ class Materi extends Model
     public function subscriptions()
     {
         return $this->belongsToMany(Subscription::class, 'subscription_materi', 'materi_id', 'subscription_id');
+    }
+
+    public static function cachedAll(): Collection
+    {
+        return Cache::remember(CacheRegistry::materiKey('all'), now()->addHours(12), function () {
+            return static::all();
+        });
+    }
+
+    protected static function booted(): void
+    {
+        $bump = static fn () => CacheRegistry::bumpMateriVersion();
+
+        static::saved($bump);
+        static::deleted($bump);
     }
 }

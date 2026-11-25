@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CacheRegistry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -181,5 +182,14 @@ class RKM extends Model
         public function dataExam()
     {
         return $this->hasOne(eksam::class, 'id_rkm', 'id');
+    }
+
+    protected static function booted(): void
+    {
+        $bump = static fn () => CacheRegistry::bumpRkmVersion();
+
+        static::saved($bump);
+        static::deleted($bump);
+        static::restored($bump);
     }
 }

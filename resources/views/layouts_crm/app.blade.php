@@ -198,10 +198,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @include('partials.notifications')
+                        @include('partials.notification-modal-body')
                     </div>
                     <div class="modal-footer">
-                        @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                        @if(($globalUnreadNotifCount ?? 0) > 0)
                         <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')

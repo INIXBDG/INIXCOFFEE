@@ -1,6 +1,7 @@
 <?php
 return [
     'urls' => env('UPTIME_URLS', 'https://inixcoffee.inixindobdg.co.id/,https://latte.inixindobdg.co.id/'),
+    'password' => env('UPTIME_PASSWORD'),
     'services' => [
         'coffee' => [
             'https://coffee.inixindobdg.co.id/',

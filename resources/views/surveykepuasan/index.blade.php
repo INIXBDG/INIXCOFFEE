@@ -110,7 +110,7 @@
             if (result.isConfirmed) {
                 $.ajax({
                     url: '/survey/kepuasan/destroy/' + id,
-                    type: 'get',
+                    type: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
