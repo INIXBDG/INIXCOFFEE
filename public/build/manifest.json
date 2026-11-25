@@ -38,7 +38,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-DYtz42vt.js",
+    "file": "assets/app-SBnv3rAm.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -48,7 +48,7 @@
     ]
   },
   "resources/js/pages/dashboard.js": {
-    "file": "assets/dashboard-OJv7NQrz.js",
+    "file": "assets/dashboard-CipFuv-a.js",
     "name": "dashboard",
     "src": "resources/js/pages/dashboard.js",
     "isDynamicEntry": true
@@ -66,7 +66,7 @@
     "isEntry": true
   },
   "resources/js/pages/kpi/kpi-detail-content.js": {
-    "file": "assets/kpi-detail-content-D8N2V7C9.js",
+    "file": "assets/kpi-detail-content-BF9YppwE.js",
     "name": "kpi-detail-content",
     "src": "resources/js/pages/kpi/kpi-detail-content.js",
     "isEntry": true
@@ -78,7 +78,7 @@
     "isEntry": true
   },
   "resources/js/pages/kpi/kpiIndex.js": {
-    "file": "assets/kpiIndex-BnkC0tbb.js",
+    "file": "assets/kpiIndex-CvvBd6AC.js",
     "name": "kpiIndex",
     "src": "resources/js/pages/kpi/kpiIndex.js",
     "isEntry": true

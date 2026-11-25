@@ -60,6 +60,17 @@ document.addEventListener('submit', function(e) {
 
     // 2. Identifikasi elemen formulir dan kecualikan halaman/form login
     const formElement = e.target;
+
+    // Abaikan & batalkan jika masih ada proses kompresi file async yang sedang berlangsung
+    if (
+        formElement.dataset.isCompressing === 'true' ||
+        formElement.querySelector('input[type="file"][data-is-processing="true"]') ||
+        (window.CompressValidator && window.CompressValidator.isProcessing(formElement))
+    ) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return;
+    }
     const formAction = (formElement.getAttribute('action') || '').toLowerCase();
     const isLoginForm =
         formElement.hasAttribute('data-no-loading') ||
