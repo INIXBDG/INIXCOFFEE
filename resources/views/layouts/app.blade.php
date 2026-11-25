@@ -12,8 +12,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{asset('icon/apple-touch-icon-180x180.png')}}" /> --}}
 
     <meta name="user-id" content="{{ auth()->id() }}">
-    <meta name="pusher-app-key" content="{{ env('PUSHER_APP_KEY') }}">
-    <meta name="pusher-app-cluster" content="{{ env('PUSHER_APP_CLUSTER') }}">
+    <meta name="pusher-app-key" content="{{ config('broadcasting.connections.pusher.key') }}">
+    <meta name="pusher-app-cluster" content="{{ config('broadcasting.connections.pusher.options.cluster') }}">
 
 
     <title>INIXCOFFEE</title>
@@ -25,10 +25,11 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
     <meta name="msapplication-TileColor" content="#2b5797">
     <meta name="theme-color" content="#333333">
-    <!-- Fonts -->
+    <!-- Fonts & CDN Preconnect -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-    <link type="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" />
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"> --}}
@@ -58,10 +59,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @include('partials.notifications')
+                        @include('partials.notification-modal-body')
                     </div>
                     <div class="modal-footer">
-                        @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                        @if(($globalUnreadNotifCount ?? 0) > 0)
                         <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')
@@ -91,9 +92,9 @@
                         <a class="nav-link position-relative" style="margin: 7px 3px 0px 3px" href="#"
                             data-bs-toggle="modal" data-bs-target="#notificationModal">
                             <img src="{{ asset('icon/whitebell.svg') }}" class="img-responsive" width="30px">
-                            @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    {{ auth()->user()->unreadNotifications->count() }}
+                            @if(($globalUnreadNotifCount ?? 0) > 0)
+                                <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {{ $globalUnreadNotifCount }}
                                     <span class="visually-hidden">unread notifications</span>
                                 </span>
                             @endif
@@ -146,9 +147,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/id.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/timepicker/1.3.5/jquery.timepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('js')

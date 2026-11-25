@@ -13,8 +13,10 @@ use App\Models\jabatan;
 use App\Models\TunjanganKaryawan;
 use Vinkla\Hashids\Facades\Hashids;
 use Carbon\Carbon;
+use App\Http\Requests\Karyawan\UpdateGajiRequest;
 use App\Models\EducationalBackground;
 use App\Models\LogGaji;
+use App\Policies\KaryawanPolicy;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel\Month;
@@ -24,11 +26,32 @@ class KaryawanController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware("permission:Managament Gaji", ['only' => ['gajiIndex', 'updateGaji']]);
+        $this->middleware("permission:Managament Gaji", ['only' => ['gajiIndex', 'storeGaji', 'updateGaji']]);
     }
+
+    private function canManageEmployeeData(): bool
+    {
+        $currentUser = auth()->user();
+
+        return $currentUser !== null
+            && app(KaryawanPolicy::class)->manageAll($currentUser);
+    }
+
+    private function authorizeKaryawanAccess(karyawan $karyawan, ?User $ownerUser = null): void
+    {
+        $currentUser = auth()->user();
+        $ownerUser = $ownerUser ?? User::where('karyawan_id', $karyawan->id)->first();
+
+        if (!$currentUser || !app(KaryawanPolicy::class)->update($currentUser, $karyawan, $ownerUser)) {
+            abort(403, 'Anda tidak diizinkan mengakses atau mengubah data karyawan ini.');
+        }
+    }
+
     public function gantiFoto($id)
     {
         $users = karyawan::findOrFail($id);
+        $this->authorizeKaryawanAccess($users);
+
         return view('karyawan.gantifoto', compact('users'));
     }
 
@@ -42,12 +65,10 @@ class KaryawanController extends Controller
         $users = karyawan::with('educations')->findOrFail($realId);
         $user = User::where('karyawan_id', $users->id)->firstOrFail();
 
-        // Batasi akses ke user sendiri atau admin
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
-            abort(403);
-        }
+        // Batasi akses ke user sendiri atau admin/HRD
+        $this->authorizeKaryawanAccess($users, $user);
 
-        $jabatan = jabatan::all();
+        $jabatan = jabatan::cachedAll();
         return view('user.edit', compact('users', 'jabatan'));
     }   
 
@@ -63,9 +84,7 @@ class KaryawanController extends Controller
         $user = User::where('karyawan_id', $karyawan->id)->firstOrFail();
 
         // Cek Otorisasi
-        if (auth()->id() !== $user->id && auth()->user()->role !== 'Admin' && auth()->user()->jabatan !== 'HRD') {
-            abort(403);
-        }
+        $this->authorizeKaryawanAccess($karyawan, $user);
 
         $contactRules = ['nullable'];
 
@@ -108,13 +127,33 @@ class KaryawanController extends Controller
 
                 // --- Educational Background ---
                 'educations' => ['nullable', 'array'],
-                'educations.*.name' => $contactRules, ['string'],
+                'educations.*.name' => array_merge($contactRules, ['string']),
 
                 'alasan_resign' => ['nullable', 'string', 'max:500'],
                 'is_resign' => ['nullable', 'boolean'],
             ]);
 
         $karyawanData = collect($data)->except(['educations'])->toArray();
+
+        // Cegah user non-HRD/Admin mengubah field administratif (jabatan, divisi, status, cuti, kode)
+        if (!$this->canManageEmployeeData()) {
+            unset(
+                $karyawanData['jabatan'],
+                $karyawanData['divisi'],
+                $karyawanData['status_aktif'],
+                $karyawanData['kode_karyawan'],
+                $karyawanData['nip'],
+                $karyawanData['cuti'],
+                $karyawanData['awal_probation'],
+                $karyawanData['akhir_probation'],
+                $karyawanData['awal_kontrak'],
+                $karyawanData['akhir_kontrak'],
+                $karyawanData['awal_tetap'],
+                $karyawanData['akhir_tetap'],
+                $karyawanData['alasan_resign'],
+                $karyawanData['is_resign']
+            );
+        }
 
         $karyawan->update($karyawanData);
 
@@ -146,23 +185,25 @@ class KaryawanController extends Controller
             }
         }
 
-        $id_instruktur = null;
-        $id_sales = null;
+        if ($this->canManageEmployeeData()) {
+            $id_instruktur = null;
+            $id_sales = null;
 
-        if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
-            $id_instruktur = $request->kode_karyawan;
+            if (in_array($request->jabatan, ['Instruktur', 'Technical Support'])) {
+                $id_instruktur = $request->kode_karyawan;
+            }
+
+            if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
+                $id_sales = $request->kode_karyawan;
+            }
+
+            $user->jabatan = $data['jabatan'] ?? $user->jabatan;
+            $user->status_akun = $data['status_aktif'];
+            $user->id_instruktur = $id_instruktur;
+            $user->id_sales = $id_sales;
+
+            $user->save();
         }
-
-        if (in_array($request->jabatan, ['SPV Sales', 'Sales', 'Adm Sales'])) {
-            $id_sales = $request->kode_karyawan;
-        }
-
-        $user->jabatan = $data['jabatan'] ?? $user->jabatan;
-        $user->status_akun = $data['status_aktif'];
-        $user->id_instruktur = $id_instruktur;
-        $user->id_sales = $id_sales;
-
-        $user->save();
 
         if ($request->akhir_kontrak) {
             $administrasi = AdministrasiKaryawan::where('id_karyawan', $karyawan->id)
@@ -205,12 +246,13 @@ class KaryawanController extends Controller
 
     public function updateFoto(Request $request, $id): RedirectResponse
     {
+        $post = karyawan::findOrFail($id);
+        $this->authorizeKaryawanAccess($post);
+
         $this->validate($request, [
             'foto' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
             'ttd' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
         ]);
-
-        $post = karyawan::findOrFail($id);
 
         // Proses foto
         if ($request->hasFile('foto')) {
@@ -256,14 +298,9 @@ class KaryawanController extends Controller
         return view('gaji.index', compact('karyawan'));
     }
 
-    public function updateGaji(Request $request, $id)
+    public function updateGaji(UpdateGajiRequest $request, $id)
     {
-        $request->validate([
-            'jumlah_gaji'       => 'required|numeric|min:0',
-            'tunjangan_jabatan' => 'nullable|numeric|min:0',
-            'bulan'             => 'required|integer|between:1,12',
-            'tahun'             => 'required|integer|min:2000|max:2099',
-        ]);
+        $request->validated();
 
         $bulanInput = (int) $request->bulan;
         $tahunInput = (int) $request->tahun;

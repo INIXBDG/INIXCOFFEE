@@ -7,7 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class LspLpkProgram extends Model
 {
     protected $table = 'lsp_lpk_programs';
-    protected $guarded = [];
+
+    protected $fillable = [
+        'lsp_id',
+        'jenis',
+        'nama_skema',
+        'jenis_skema',
+        'jenjang_kkni',
+        'pelaksanaan',
+        'harga_sertifikasi_per_pax',
+        'harga_pelatihan_per_hari',
+        'keterangan',
+    ];
 
     public function lsp() { return $this->belongsTo(Lsp::class, 'lsp_id'); }
 

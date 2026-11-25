@@ -11,5 +11,6 @@ return [
     'click' => env('AUDIT_CLICK'),
     'playwright_browsers_path' => env('PLAYWRIGHT_BROWSERS_PATH'),
     'playwright_search_paths' => array_values(array_filter(array_map('trim', explode(',', (string) env('AUDIT_PLAYWRIGHT_PATHS', ''))))),
+    'php_binary' => env('AUDIT_PHP_BINARY'),
 ];
  

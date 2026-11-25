@@ -227,7 +227,7 @@ class ContactController extends Controller
 
             // dd($items);
 
-        $materi = Materi::all();
+        $materi = Materi::cachedAll();
 
 
         return view('crm.contact.detail', compact('data', 'items', 'aktivitas','aktivitass', 'peluang', 'materi'));

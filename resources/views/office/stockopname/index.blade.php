@@ -887,7 +887,10 @@
 
                 $.ajax({
                     url: "{{ route('office.stockOpname.delete', '') }}/" + id,
-                    type: "GET",
+                    type: "DELETE",
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
                     success: function(response) {
                         showToast('Barang berhasil dihapus');
                         reloadTableStock();

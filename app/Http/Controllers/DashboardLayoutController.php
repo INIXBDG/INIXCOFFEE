@@ -231,6 +231,8 @@ private function permissionsFromJabatan(string $jabatan): array
             }
         }
 
+        DashboardLayout::clearCache();
+
         return response()->json([
             'success'      => true,
             'message'      => $isRole
@@ -309,6 +311,8 @@ private function permissionsFromJabatan(string $jabatan): array
                 $message = 'Seluruh urutan section dan kartu (Global) berhasil dikembalikan ke default.';
             }
         }
+
+        DashboardLayout::clearCache();
 
         return response()->json([
             'success'      => true,

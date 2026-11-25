@@ -11,8 +11,8 @@ class FonnteService
 
     public function __construct()
     {
-        $this->url = env('FONNTE_URL');
-        $this->apiKey = env('FONNTE_API_KEY');
+        $this->url = config('services.fonnte.url');
+        $this->apiKey = config('services.fonnte.api_key');
     }
 
     public function sendMessage($target, $message)

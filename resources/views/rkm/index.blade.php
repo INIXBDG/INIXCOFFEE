@@ -327,7 +327,7 @@
             success: function(response) {
                 var html = '';
                 var count = 1;
-                var jabatan = `{!! auth()->user()->jabatan !!}`.replace(/&amp;/g, "&").trim();
+                var jabatan = @json(trim((string) auth()->user()->jabatan));
                 var userKode = "{{ auth()->user()->karyawan->kode_karyawan ?? '' }}";
                 response.data.forEach(function(monthData) {
                     monthData.weeksData.forEach(function(weekData) {

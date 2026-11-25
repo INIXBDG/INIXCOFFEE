@@ -459,8 +459,10 @@ class examController extends Controller
             $existingFiles = $exam->file_invoice ?? [];
 
             if ($request->hasFile('file_invoice')) {
+                $safeInvoiceCode = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $exam->invoice) ?: 'doc';
                 foreach ($request->file('file_invoice') as $file) {
-                    $filename = time().'_'.uniqid().'_invoice_'.$exam->invoice.'.'.$file->getClientOriginalExtension();
+                    $safeExt = strtolower((string) $file->extension());
+                    $filename = time().'_'.bin2hex(random_bytes(6)).'_invoice_'.$safeInvoiceCode.'.'.$safeExt;
                     $file->move(public_path('uploads/invoices'), $filename);
                     $existingFiles[] = $filename;
                 }
@@ -479,14 +481,19 @@ class examController extends Controller
     {
         try {
             $exam = eksam::findOrFail($id);
-            $existingFiles = $exam->file_invoice ?? [];
+            $existingFiles = is_array($exam->file_invoice) ? $exam->file_invoice : [];
 
-            $newFiles = array_values(array_filter($existingFiles, function ($file) use ($filename) {
-                return $file !== $filename;
+            $safeFilename = basename((string) $filename);
+            if ($safeFilename === '' || $safeFilename !== $filename || !in_array($safeFilename, $existingFiles, true)) {
+                abort(404, 'File invoice tidak ditemukan pada data exam ini.');
+            }
+
+            $newFiles = array_values(array_filter($existingFiles, function ($file) use ($safeFilename) {
+                return $file !== $safeFilename;
             }));
 
-            $filePath = public_path('uploads/invoices/'.$filename);
-            if (file_exists($filePath)) {
+            $filePath = public_path('uploads/invoices/'.$safeFilename);
+            if (is_file($filePath)) {
                 unlink($filePath);
             }
 

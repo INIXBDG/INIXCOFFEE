@@ -267,7 +267,11 @@ class AuditFeatures extends Command
     private function routeLocation(array $f): array
     {
         if (!$this->routeFiles) {
-            foreach (glob(base_path('routes/*.php')) ?: [] as $path) {
+            $paths = array_merge(
+                glob(base_path('routes/*.php')) ?: [],
+                glob(base_path('routes/*/*.php')) ?: []
+            );
+            foreach ($paths as $path) {
                 $this->routeFiles[$path] = file($path) ?: [];
             }
         }

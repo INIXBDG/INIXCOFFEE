@@ -237,7 +237,16 @@ class SuratPerjalananController extends Controller
             'tanggal_pulang.after_or_equal' => 'Tanggal Pulang tidak boleh kurang dari Tanggal Berangkat.',
         ]);
 
-        $data = $request->all();
+        $data = $request->only([
+            'id_karyawan',
+            'tipe',
+            'tujuan',
+            'tanggal_berangkat',
+            'tanggal_pulang',
+            'alasan',
+            'jenis_dinas',
+            'durasi',
+        ]);
         $data['jadwal_RKM'] = $request->input('jadwal_RKM') !== '-' ? $request->input('jadwal_RKM') : null;
 
         // Kalkulasi durasi di sisi backend jika bernilai null atau kosong
@@ -374,7 +383,15 @@ class SuratPerjalananController extends Controller
         ]);
 
         $suratPerjalanan = SuratPerjalanan::findOrFail($id);
-        $updateData = $request->all();
+        $updateData = $request->only([
+            'id_karyawan',
+            'approval_hrd',
+            'durasi',
+            'ratemakan',
+            'ratespj',
+            'ratetaksi',
+            'total',
+        ]);
 
         if ($suratPerjalanan->tipe === 'Domestik') {
             $updateData['approval_gm'] = '1';

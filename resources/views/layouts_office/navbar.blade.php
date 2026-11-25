@@ -25,9 +25,9 @@
                         data-bs-toggle="modal" data-bs-target="#notificationModal"
                         title="Notifikasi" style="font-size: 24px; line-height: 1; min-width: 28px;">
                             <i class="bx bx-bell" style="font-size: 24px; color: #5B73EB;"></i>
-                            @if (auth()->user()->unreadNotifications->count() > 0)
-                            <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 11px; min-width: 22px; padding: 4px 6px;">
-                                {{ auth()->user()->unreadNotifications->count() }}
+                            @if (($globalUnreadNotifCount ?? 0) > 0)
+                            <span id="notifBadge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle" style="font-size: 11px; min-width: 22px; padding: 4px 6px;">
+                                {{ $globalUnreadNotifCount }}
                             </span>
                         @endif
                     </a>

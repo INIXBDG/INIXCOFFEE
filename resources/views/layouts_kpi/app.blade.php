@@ -165,10 +165,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        @include('partials.notifications')
+                        @include('partials.notification-modal-body')
                     </div>
                     <div class="modal-footer">
-                        @if(auth()->check() && auth()->user()->unreadNotifications->count() > 0)
+                        @if(($globalUnreadNotifCount ?? 0) > 0)
                         <form action="{{ route('notifications.markAllAsRead') }}" method="POST" class="d-inline">
                             @csrf
                             @method('PUT')
@@ -211,8 +211,8 @@
     <!-- GitHub button -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 

@@ -8,6 +8,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CVInstrukturController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         return view('cv-instruktur.index');

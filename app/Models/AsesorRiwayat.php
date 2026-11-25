@@ -7,7 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 class AsesorRiwayat extends Model
 {
     protected $table = 'asesor_riwayat';
-    protected $guarded = [];
+
+    protected $fillable = [
+        'asesor_id',
+        'jenis',
+        'nama_manual',
+        'tanggal',
+        'harga',
+        'keterangan',
+    ];
     protected $casts = ['tanggal' => 'date'];
 
     public function asesor() { return $this->belongsTo(LspAsesor::class, 'asesor_id'); }

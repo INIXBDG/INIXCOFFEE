@@ -16,118 +16,109 @@ use App\Models\Registrasi;
 use App\Models\RekomendasiLanjutan;
 use App\Models\RKM;
 use App\Models\User;
+use App\Support\CacheRegistry;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class apiController extends Controller
 {
     public function getFeedbacks()
     {
-        $feedbacks = Nilaifeedback::with(['rkm.materi']) // Eager load materi sekaligus
-            ->has('rkm') // Hanya ambil data yang relasi RKM-nya tidak null
-            ->whereYear('created_at', '2026')
-            ->get();
+        $year = Carbon::now()->year;
+        $sortedFeedbacks = Cache::remember("api:feedbacks:{$year}", now()->addMinutes(5), function () use ($year) {
+            $yearStart = Carbon::create($year, 1, 1)->startOfYear();
+            $yearEnd = $yearStart->copy()->endOfYear();
 
-        // $groupedFeedbacks = $feedbacks->groupBy('id_rkm');
-        $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
-            return
-                $feedback->rkm->materi->nama_materi . '/' .
-                $feedback->rkm->tanggal_awal . '/' .
-                $feedback->rkm->instruktur_key;
-        });
+            $feedbacks = Nilaifeedback::with(['rkm.materi']) // Eager load materi sekaligus
+                ->has('rkm') // Hanya ambil data yang relasi RKM-nya tidak null
+                ->whereBetween('created_at', [$yearStart, $yearEnd])
+                ->get();
 
-        // return $groupedFeedbacks;
-        $averageFeedbacks = [];
+            $groupedFeedbacks = $feedbacks->groupBy(function ($feedback) {
+                return
+                    ($feedback->rkm->materi->nama_materi ?? '-') . '/' .
+                    $feedback->rkm->tanggal_awal . '/' .
+                    $feedback->rkm->instruktur_key;
+            });
 
-        foreach ($groupedFeedbacks as $materi_key => $feedbackGroup) {
+            $averageFeedbacks = [];
 
-            $first = $feedbackGroup->first();
+            foreach ($groupedFeedbacks as $feedbackGroup) {
+                $first = $feedbackGroup->first();
 
-            $materi_key     = $first->rkm->materi_key;
-            $nama_materi    = $first->rkm->materi->nama_materi;
-            $instruktur_key = $first->rkm->instruktur_key;
-            $sales_key      = $first->rkm->sales_key;
-            $created_at     = $first->created_at;
+                $materi_key     = $first->rkm->materi_key;
+                $nama_materi    = $first->rkm->materi->nama_materi ?? '-';
+                $instruktur_key = $first->rkm->instruktur_key;
+                $sales_key      = $first->rkm->sales_key;
+                $created_at     = $first->created_at;
 
-            $tanggal_awal = Carbon::parse($first->rkm->tanggal_awal)->format('Y-m-d');
-            $tanggal_akhir = $first->rkm->tanggal_akhir;
+                $tanggal_awal = Carbon::parse($first->rkm->tanggal_awal)->format('Y-m-d');
+                $tanggal_akhir = $first->rkm->tanggal_akhir;
 
-            $totalFeedbacks = $feedbackGroup->count();
+                $totalFeedbacks = $feedbackGroup->count();
 
-            // =========================
-            // FIELD GROUP DEFINISI
-            // =========================
-            $groups = [
-                'M'   => ['M1','M2','M3','M4'],
-                'P'   => ['P1','P2','P3','P4','P5','P6','P7','P8'],
-                'F'   => ['F1','F2','F3','F4','F5'],
-                'I'   => ['I1','I2','I3','I4','I5','I6','I7','I8'],
-                'Ib'  => ['I1b','I2b','I3b','I4b','I5b','I6b','I7b','I8b'],
-                'Ias' => ['I1as','I2as','I3as','I4as','I5as','I6as','I7as','I8as'],
-            ];
+                $groups = [
+                    'M'   => ['M1', 'M2', 'M3', 'M4'],
+                    'P'   => ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'],
+                    'F'   => ['F1', 'F2', 'F3', 'F4', 'F5'],
+                    'I'   => ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8'],
+                    'Ib'  => ['I1b', 'I2b', 'I3b', 'I4b', 'I5b', 'I6b', 'I7b', 'I8b'],
+                    'Ias' => ['I1as', 'I2as', 'I3as', 'I4as', 'I5as', 'I6as', 'I7as', 'I8as'],
+                ];
 
-            $result = [];
+                $result = [];
 
-            foreach ($groups as $groupName => $fields) {
+                foreach ($groups as $groupName => $fields) {
+                    $totalGroupScore = 0;
+                    $activeFieldCount = 0;
 
-                $totalGroupScore = 0;
-                $activeFieldCount = 0;
+                    foreach ($fields as $field) {
+                        if ($feedbackGroup->whereNotNull($field)->count() > 0) {
+                            $fieldTotal = $feedbackGroup->sum(fn($item) => $item->$field ?? 0);
 
-                foreach ($fields as $field) {
+                            $result["average{$field}"] = $totalFeedbacks > 0
+                                ? $fieldTotal / $totalFeedbacks
+                                : 0;
 
-                    // cek apakah kolom ada & ada nilainya
-                    if ($feedbackGroup->whereNotNull($field)->count() > 0) {
-
-                        $fieldTotal = $feedbackGroup->sum(function ($item) use ($field) {
-                            return $item->$field ?? 0;
-                        });
-
-                        $result["average{$field}"] = $totalFeedbacks > 0
-                            ? $fieldTotal / $totalFeedbacks
-                            : 0;
-
-                        $totalGroupScore += $fieldTotal;
-                        $activeFieldCount++;
+                            $totalGroupScore += $fieldTotal;
+                            $activeFieldCount++;
+                        }
                     }
+
+                    $result["average{$groupName}"] =
+                        ($totalFeedbacks > 0 && $activeFieldCount > 0)
+                        ? round($totalGroupScore / ($totalFeedbacks * $activeFieldCount), 1)
+                        : 0;
                 }
 
-                // Hitung rata-rata group (M, P, F, dst)
-                $result["average{$groupName}"] =
-                    ($totalFeedbacks > 0 && $activeFieldCount > 0)
-                    ? round($totalGroupScore / ($totalFeedbacks * $activeFieldCount), 1)
-                    : 0;
+                $averageFeedbacks[] = array_merge([
+                    'nama_materi'    => $nama_materi,
+                    'materi_key'     => $materi_key,
+                    'instruktur_key' => $instruktur_key,
+                    'sales_key'      => $sales_key,
+                    'tanggal_awal'   => $tanggal_awal,
+                    'tanggal_akhir'  => $tanggal_akhir,
+                    'created_at'     => $created_at,
+                ], $result);
             }
 
-            $averageFeedbacks[] = array_merge([
-                'nama_materi'    => $nama_materi,
-                'materi_key'     => $materi_key,
-                'instruktur_key' => $instruktur_key,
-                'sales_key'      => $sales_key,
-                'tanggal_awal'   => $tanggal_awal,
-                'tanggal_akhir'  => $tanggal_akhir,
-                'created_at'     => $created_at,
-            ], $result);
-        }
+            return collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
+        });
 
-        // Urutkan hasil berdasarkan tanggal_awal secara descending
-        $sortedFeedbacks = collect($averageFeedbacks)->sortByDesc('created_at')->values()->all();
-
-        // return response()->json(['feedbacks' => $sortedFeedbacks]);
         return response()->json([
             'success' => true,
             'message' => 'List Feedbacks',
-            'data' => $sortedFeedbacks
-            // 'data' => $groupedFeedbacks
+            'data' => $sortedFeedbacks,
         ]);
-
     }
 
     public function getMateri()
     {
-        $materi = Materi::all();
+        $materi = Materi::cachedAll();
 
         return response()->json([
             'success' => true,
@@ -138,28 +129,31 @@ class apiController extends Controller
 
     public function getMateriInix()
     {
-        $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
+        $groupMateri = Cache::remember(CacheRegistry::materiKey('inix_grouped'), now()->addMinutes(15), function () {
+            $materi = Materi::whereIn('tipe_materi', ['Normal', 'Webinar/Workshop'])->get();
 
-        $groupMateri = $materi->groupBy(function ($item) {
-            return $item->kategori_materi;
-        })->map(function ($group) {
-            return $group->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nama_materi' => $item->nama_materi,
-                    'kategori_materi' => $item->kategori_materi,
-                    'kode_materi' => $item->kode_materi ? $item->kode_materi : '-',
-                    'vendor' => $item->vendor,
-                    'durasi' => $item->durasi,
-                    'tipe_materi' => $item->tipe_materi,
-                    'status' => $item->status ? $item->status : 'Nonaktif',
-                    'deskripsi' => 'test',
-                    'harga' => '5000000',
-                    'created_at' => $item->created_at,
-                    'updated_at' => $item->updated_at,
-                ];
+            $grouped = $materi->groupBy(fn($item) => $item->kategori_materi)->map(function ($group) {
+                return $group->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'nama_materi' => $item->nama_materi,
+                        'kategori_materi' => $item->kategori_materi,
+                        'kode_materi' => $item->kode_materi ? $item->kode_materi : '-',
+                        'vendor' => $item->vendor,
+                        'durasi' => $item->durasi,
+                        'tipe_materi' => $item->tipe_materi,
+                        'status' => $item->status ? $item->status : 'Nonaktif',
+                        'deskripsi' => 'test',
+                        'harga' => '5000000',
+                        'created_at' => $item->created_at,
+                        'updated_at' => $item->updated_at,
+                    ];
+                });
             });
+
+            return json_decode(json_encode($grouped), true);
         });
+
         return response()->json([
             'success' => true,
             'message' => 'List Materi',
@@ -202,7 +196,7 @@ class apiController extends Controller
 
     public function getJabatan()
     {
-        $materi = jabatan::all();
+        $materi = jabatan::cachedAll();
 
         return response()->json([
             'success' => true,
@@ -284,72 +278,64 @@ class apiController extends Controller
         $startDate = $today->copy()->startOfMonth()->toDateString();
         $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
-        // Ambil data RKM beserta relasi materi
-        $rows = RKM::with('materi')
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->get();
+        $result = CacheRegistry::rememberRkm("upcoming:{$startDate}:{$endDate}", 300, function () use ($startDate, $endDate) {
+            $rows = RKM::with('materi')
+                ->whereBetween('tanggal_awal', [$startDate, $endDate])
+                ->get();
 
-        // Kelompokkan berdasarkan nama materi dan tanggal_awal
-        $grouped = $rows->groupBy(function ($item) {
-            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
+            $grouped = $rows->groupBy(fn($item) => ($item->materi->nama_materi ?? '-') . '|' . $item->tanggal_awal);
+
+            $mapped = $grouped->map(function ($items, $key) {
+                [$nama_materi, $tanggal_awal] = explode('|', $key);
+                $tanggal_akhir = $items->first()->tanggal_akhir;
+
+                return [
+                    'nama_materi'   => $nama_materi,
+                    'tanggal_awal'  => $tanggal_awal,
+                    'tanggal_akhir' => $tanggal_akhir,
+                    'jadwals'       => $items,
+                ];
+            })->values();
+
+            return json_decode(json_encode($mapped), true);
         });
-
-        // Format hasil akhir
-        $result = $grouped->map(function ($items, $key) {
-            [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir; // Ambil tanggal_akhir dari item pertama
-
-            return [
-                'nama_materi' => $nama_materi,
-                'tanggal_awal' => $tanggal_awal,
-                'tanggal_akhir' => $tanggal_akhir,
-                'jadwals' => $items, // Seluruh entri RKM dalam grup ini
-            ];
-        })->values();
 
         return response()->json([
             'success' => true,
             'message' => 'Upcoming RKM',
             'data' => $result,
         ]);
-
     }
+
     public function jadwalRKM(Request $request)
     {
         $today = Carbon::now();
         $startDate = $today->copy()->startOfMonth()->toDateString();
         $endDate = $today->copy()->addMonths(4)->endOfMonth()->toDateString();
 
-        // Ambil data RKM beserta relasi materi
-        $rows = RKM::with('materi')
-            ->whereBetween('tanggal_awal', [$startDate, $endDate])
-            ->get();
+        $groupedByMonth = CacheRegistry::rememberRkm("jadwal_monthly:{$startDate}:{$endDate}", 300, function () use ($startDate, $endDate) {
+            $rows = RKM::with('materi')
+                ->whereBetween('tanggal_awal', [$startDate, $endDate])
+                ->get();
 
-        // Kelompokkan berdasarkan nama materi dan tanggal_awal
-        $grouped = $rows->groupBy(function ($item) {
-            return $item->materi->nama_materi . '|' . $item->tanggal_awal;
+            $grouped = $rows->groupBy(fn($item) => ($item->materi->nama_materi ?? '-') . '|' . $item->tanggal_awal);
+
+            $result = $grouped->map(function ($items, $key) {
+                [$nama_materi, $tanggal_awal] = explode('|', $key);
+                $tanggal_akhir = $items->first()->tanggal_akhir;
+                $bulan = Carbon::parse($tanggal_awal)->format('Y-m');
+
+                return [
+                    'nama_materi'   => $nama_materi,
+                    'tanggal_awal'  => $tanggal_awal,
+                    'tanggal_akhir' => $tanggal_akhir,
+                    'bulan'         => $bulan,
+                    'jadwals'       => $items,
+                ];
+            });
+
+            return json_decode(json_encode($result->groupBy('bulan')->sortKeys()), true);
         });
-
-        // Format hasil akhir
-        $result = $grouped->map(function ($items, $key) {
-            [$nama_materi, $tanggal_awal] = explode('|', $key);
-            $tanggal_akhir = $items->first()->tanggal_akhir;
-
-            // Tambahkan bulan sebagai informasi tambahan untuk pengelompokan
-            $bulan = Carbon::parse($tanggal_awal)->format('Y-m');
-
-            return [
-                'nama_materi' => $nama_materi,
-                'tanggal_awal' => $tanggal_awal,
-                'tanggal_akhir' => $tanggal_akhir,
-                'bulan' => $bulan,
-                'jadwals' => $items,
-            ];
-        });
-
-        // Kelompokkan berdasarkan bulan
-        $groupedByMonth = $result->groupBy('bulan')->sortKeys();
-
 
         return response()->json([
             'success' => true,
@@ -390,26 +376,35 @@ class apiController extends Controller
         ]);
     }
 
-   public function AktivitasInstruktur(Request $request)
+    public function AktivitasInstruktur(Request $request)
     {
         $tahun = Carbon::now()->year;
-        $sharingKnowledge = ActivityInstruktur::where('activity_type', 'Sharing Knowledge')
-            ->whereYear('created_at', $tahun)
-            ->count();
+        $counts = Cache::remember("api:aktivitas_instruktur:{$tahun}", now()->addMinutes(5), function () use ($tahun) {
+            $yearStart = Carbon::create($tahun, 1, 1)->startOfYear();
+            $yearEnd = $yearStart->copy()->endOfYear();
 
-        $pembuatanMateri = ActivityInstruktur::where('activity_type', 'Pembuatan Materi')
-            ->whereYear('created_at', $tahun)
-            ->count();
+            $rows = ActivityInstruktur::whereIn('activity_type', [
+                'Sharing Knowledge',
+                'Pembuatan Materi',
+                'Pembuatan Silabus',
+            ])
+                ->whereBetween('created_at', [$yearStart, $yearEnd])
+                ->select('activity_type', DB::raw('COUNT(*) as total'))
+                ->groupBy('activity_type')
+                ->pluck('total', 'activity_type');
 
-        $pembuatanSilabus = ActivityInstruktur::where('activity_type', 'Pembuatan Silabus')
-            ->whereYear('created_at', $tahun)
-            ->count();
+            return [
+                'sharingKnowledge' => (int) ($rows['Sharing Knowledge'] ?? 0),
+                'pembuatanMateri'  => (int) ($rows['Pembuatan Materi'] ?? 0),
+                'pembuatanSilabus' => (int) ($rows['Pembuatan Silabus'] ?? 0),
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'sharingKnowledge' => $sharingKnowledge,
-            'pembuatanMateri' => $pembuatanMateri,
-            'pembuatanSilabus' => $pembuatanSilabus,
+            'sharingKnowledge' => $counts['sharingKnowledge'],
+            'pembuatanMateri' => $counts['pembuatanMateri'],
+            'pembuatanSilabus' => $counts['pembuatanSilabus'],
         ]);
     }
 
@@ -528,5 +523,10 @@ class apiController extends Controller
         return response()->json([
             'data' => $data
         ]);
+    }
+
+    public function currentUser(Request $request)
+    {
+        return $request->user();
     }
 }

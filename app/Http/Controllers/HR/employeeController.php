@@ -1292,4 +1292,9 @@ class employeeController extends Controller
             return response()->json(['success' => false, 'message' => 'Karyawan tidak ditemukan'], 404);
         }
     }
+
+    public function submitItsm()
+    {
+        return response()->json(['success' => true, 'message' => 'Request submitted']);
+    }
 }

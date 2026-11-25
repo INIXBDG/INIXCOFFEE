@@ -86,7 +86,7 @@ class TunjanganController extends Controller
 
     public function indexGenerate()
     {
-        $tunjangan = JenisTunjangan::all();
+        $tunjangan = JenisTunjangan::cachedAll();
         return view('tunjangan.generate', compact('tunjangan'));
     }
 
@@ -779,7 +779,7 @@ class TunjanganController extends Controller
         }
 
         $karyawan = karyawan::where('status_aktif', '1')->get();
-        $tunjangan = JenisTunjangan::all();
+        $tunjangan = JenisTunjangan::cachedAll();
 
         return view('tunjangan.createManual', compact('karyawan', 'tunjangan', 'bulan', 'tahun'));
     }

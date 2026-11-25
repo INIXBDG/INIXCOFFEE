@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\AbsensiKaryawan;
 use App\Models\LeadProject;
 use App\Models\notif;
-use App\Models\Registrasi;
-use App\Models\RKM;
 use App\Models\target;
-use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -32,35 +30,10 @@ class HomeController extends Controller
     public function index()
     {
         $now = Carbon::now();
-        $startOfWeek = $now->startOfWeek()->toDateString(); // Mengambil tanggal awal minggu ini
-        $endOfWeek = $now->endOfWeek()->toDateString();
-        $idInstruktur = auth()->user()->id_instruktur;
-        $totalkaryawan = User::count();
-        $kelasmingguini = RKM::where('instruktur_key', $idInstruktur)
-            ->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-            ->count();
-        $jumlahmengajar1 = RKM::where('instruktur_key', $idInstruktur)->count();
-        $jumlahmengajar2 = RKM::where('instruktur_key2', $idInstruktur)->count();
-        $jumlahmengajar = $jumlahmengajar1 + $jumlahmengajar2;
-        $pesertaanda = Registrasi::with('rkm', 'peserta.perusahaan', 'materi')
-            ->whereHas('rkm', function ($query) use ($idInstruktur) {
-                $query->where('instruktur_key', $idInstruktur);
-            })
-            ->count();
-        $kelasmingguini1 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-            ->count();
-        $kelasmingguini2 = RKM::where('instruktur_key', $idInstruktur)->whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-            ->count();
-        $kelasmingguini = $kelasmingguini1 + $kelasmingguini2;
-        $runningclass = RKM::whereBetween('tanggal_awal', [$startOfWeek, $endOfWeek])
-            ->count();
-        $karyawanaktif = User::where('status_akun', '1')->count();
-        $pesertaaktif = Registrasi::all()->count();
+        $startDate = $now->copy()->startOfWeek();
+        $endDate = $now->copy()->endOfWeek();
+        $sekarang = $now->toDateString();
 
-        // Mengambil tanggal awal dan akhir minggu ini
-        $startDate = Carbon::now()->startOfWeek();
-        $endDate = Carbon::now()->endOfWeek();
-        $sekarang = Carbon::now()->toDateString();
         // Mengambil notifikasi yang berada di antara tanggal awal dan akhir minggu ini
         $notifikasi = notif::with('users')
             ->where(function ($query) use ($startDate, $endDate) {
@@ -68,33 +41,44 @@ class HomeController extends Controller
                     ->orWhereBetween('tanggal_akhir', [$startDate, $endDate]);
             })
             ->get();
-        $id_karyawan = auth()->user()->karyawan->id;
-        $absenHariIni = AbsensiKaryawan::where('id_karyawan', $id_karyawan)
-            ->where('tanggal', $sekarang)
-            ->first();
 
-        // return $absenHariIni;
+        $user = auth()->user();
+        $id_karyawan = $user->karyawan_id ?? $user->karyawan?->id;
+        $absenHariIni = $id_karyawan
+            ? AbsensiKaryawan::where('id_karyawan', $id_karyawan)
+                ->where('tanggal', $sekarang)
+                ->first()
+            : null;
+
         return view('layouts.menus', compact('notifikasi', 'absenHariIni'));
+    }
+
+    public function dashboardPartial()
+    {
+        return view('partials.dashboard');
+    }
+
+    public function keepAlive(): JsonResponse
+    {
+        return response()->json(['status' => 'alive']);
     }
 
     private function getTotalSales($year)
     {
-        if ($year === '2023' || $year === '2024' || $year === '2025') {
+        $yearInt = (int) $year;
+        $yearStart = sprintf('%04d-01-01', $yearInt);
+        $yearEnd = sprintf('%04d-12-31', $yearInt);
+
+        if (in_array((string) $year, ['2023', '2024', '2025'], true)) {
             return DB::table('r_k_m_s')
-                ->where('status', '0') // Hanya data dengan status 0
-                ->whereYear('tanggal_awal', $year) // Tambahkan kondisi berdasarkan tahun
+                ->where('status', '0')
+                ->whereBetween('tanggal_awal', [$yearStart, $yearEnd])
                 ->select(DB::raw('SUM(CAST(harga_jual AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
                 ->value('total_sales');
         } else {
-            // return DB::table('approval_pendapatans')
-            //     ->whereYear('tanggal_mulai', $year)
-            //     ->select(DB::raw('SUM(CAST(harga_net AS UNSIGNED) * CAST(pax AS UNSIGNED)) as total_sales'))
-            //     ->value('total_sales');
-            // sementara ganti dulu ke rkm
-
             return DB::table('peluangs')
                 ->whereNotNull('merah')
-                ->whereYear('periode_mulai', $year)
+                ->whereBetween('periode_mulai', [$yearStart, $yearEnd])
                 ->select(DB::raw('
                     ROUND(
                         SUM(
