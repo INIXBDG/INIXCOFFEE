@@ -12,14 +12,15 @@ class WebhookController extends Controller
 {
     public function handle(Request $request)
     {
-        Log::info('Webhook received:', $request->all());
+        Log::info('Webhook received:', $request->except(['token']));
         if ($request->isMethod('get')) {
             return response()->json(['status' => 'ok', 'message' => 'Webhook is alive and listening!']);
         }
-        // GANTI DENGAN TOKEN DARI FONNTE ANDA
-        $fonnteToken = env('FONNTE_API_KEY'); 
-        
-        if ($request->token !== $fonnteToken) {
+
+        $fonnteToken = (string) config('services.fonnte.api_key', '');
+        $requestToken = (string) $request->input('token', '');
+
+        if ($fonnteToken === '' || !hash_equals($fonnteToken, $requestToken)) {
             return response()->json(['status' => 'error', 'message' => 'Invalid token'], 401);
         }
 
@@ -82,10 +83,10 @@ class WebhookController extends Controller
 
     private function replyToGroup($message)
     {
-        Http::withHeaders([
-            'Authorization' => env('FONNTE_API_TOKEN'), // Ambil dari .env
-        ])->post('https://api.fonnte.com/send', [
-            'target'  => '120363418574215044@g.us', // Ambil dari .env
+        Http::timeout(10)->withHeaders([
+            'Authorization' => (string) config('services.fonnte.api_token', ''),
+        ])->post((string) config('services.fonnte.url', 'https://api.fonnte.com/send'), [
+            'target'  => (string) config('services.fonnte.target_group', ''),
             'message' => $message,
         ]);
     }

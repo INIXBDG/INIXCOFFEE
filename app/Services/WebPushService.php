@@ -17,12 +17,12 @@ class WebPushService
     public function __construct()
     {
         try {
-            $pubKey = env('VAPID_PUBLIC_KEY');
-            $privKey = env('VAPID_PRIVATE_KEY');
+            $pubKey = config('services.vapid.public_key');
+            $privKey = config('services.vapid.private_key');
             if ($pubKey && $privKey) {
                 $this->webPush = new WebPush([
                     'VAPID' => [
-                        'subject' => env('VAPID_SUBJECT', 'mailto:support@inixindobdg.co.id'),
+                        'subject' => config('services.vapid.subject', 'mailto:support@inixindobdg.co.id'),
                         'publicKey' => $pubKey,
                         'privateKey' => $privKey,
                     ],
@@ -549,7 +549,7 @@ class WebPushService
 
     public function getVapidPublicKey()
     {
-        $key = env('VAPID_PUBLIC_KEY');
+        $key = config('services.vapid.public_key');
 
         if (empty($key)) {
             Log::error('VAPID_PUBLIC_KEY is not set in environment');

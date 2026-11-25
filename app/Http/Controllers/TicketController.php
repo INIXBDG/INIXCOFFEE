@@ -142,8 +142,8 @@ class TicketController extends Controller
         // PENGIRIMAN LANGSUNG KE TELEGRAM DARI INIXCOFFEE
         // =========================================================================
         try {
-            $botToken = env('TELEGRAM_BOT_TOKEN');
-            $groupId = env('TELEGRAM_GROUP_ID');
+            $botToken = config('services.telegram.bot_token');
+            $groupId = config('services.telegram.group_id');
 
             $telegramMessage = "🔔 *Ada Ticketing Masuk:*\n\n"
                 ."ID Tiket: `{$ticket->ticket_id}`\n"
@@ -194,8 +194,8 @@ class TicketController extends Controller
         // PENGIRIMAN UPDATE STATUS LANGSUNG KE TELEGRAM DARI INIXCOFFEE
         // =========================================================================
         try {
-            $botToken = env('TELEGRAM_BOT_TOKEN');
-            $groupId = env('TELEGRAM_GROUP_ID');
+            $botToken = config('services.telegram.bot_token');
+            $groupId = config('services.telegram.group_id');
 
             $picName = $pic ?? ($ticket->pic ?? '-');
             $infoKeterangan = $keterangan ?? '-';
@@ -468,8 +468,8 @@ class TicketController extends Controller
     private function updateTelegramMessage(Tickets $ticket)
     {
         try {
-            $botToken = env('TELEGRAM_BOT_TOKEN');
-            $groupId = env('TELEGRAM_GROUP_ID');
+            $botToken = config('services.telegram.bot_token');
+            $groupId = config('services.telegram.group_id');
 
             if (!$botToken || !$groupId) {
                 return;
@@ -572,11 +572,29 @@ class TicketController extends Controller
         return view('ticket.detail', compact('ticket'));
     }
 
+    private function expectedInternalToken(): string
+    {
+        $configured = (string) config('services.internal_api.ticket_token', '');
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return hash_hmac('sha256', 'internal-ticket-token', (string) config('app.key'));
+    }
+
+    private function hasValidInternalToken(Request $request): bool
+    {
+        $provided = (string) $request->header('X-Internal-Token', '');
+        $expected = $this->expectedInternalToken();
+
+        return $expected !== '' && hash_equals($expected, $provided);
+    }
+
     public function handleInternalUpdate(Request $request)
     {
         $request->headers->set('Accept', 'application/json');
         // Validasi Token Rahasia agar aman
-        if ($request->header('X-Internal-Token') !== 'TOKEN_RAHASIA_KITA_123') {
+        if (!$this->hasValidInternalToken($request)) {
             return response()->json(['message' => 'Unauthorized Access'], 401);
         }
         Log::info('Laravel B: Internal Update Request Received', [
@@ -639,14 +657,14 @@ class TicketController extends Controller
     public function getOpenTickets(Request $request)
     {
         // Validasi Token
-        if ($request->header('X-Internal-Token') !== 'TOKEN_RAHASIA_KITA_123') {
+        if (!$this->hasValidInternalToken($request)) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        // Ambil tiket yang statusnya bukan 'Selesai'
+        // Ambil tiket yang statusnya bukan 'Selesai' (SARGable range tahun berjalan)
         $tickets = Tickets::where('status', '!=', 'Selesai')
             ->select('ticket_id', 'nama_karyawan', 'detail_kendala', 'created_at')
-            ->whereYear('created_at', now()->year) // Sebutkan kolom 'created_at'
+            ->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();

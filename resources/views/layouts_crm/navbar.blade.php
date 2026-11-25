@@ -24,7 +24,7 @@
                         <i class="bx bx-bell" style="font-size: 1.6rem;"></i>
 
                         @php
-                            $unreadCount = auth()->check() ? auth()->user()->unreadNotifications->count() : 0;
+                            $unreadCount = $globalUnreadNotifCount ?? 0;
                         @endphp
 
                         @if($unreadCount > 0)

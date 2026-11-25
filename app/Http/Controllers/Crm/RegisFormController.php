@@ -51,7 +51,7 @@ class RegisFormController extends Controller
         $sales = karyawan::where('id', $user->id)->first();
         $perusahaan = Perusahaan::where('sales_key', $sales->kode_karyawan)->get();
         $perusahaans = Perusahaan::all();
-        $materi = Materi::all();
+        $materi = Materi::cachedAll();
         $ketentuan = KetentuanForm::all();
         $deskripsi = Deskripsi::first();
         $users = karyawan::whereIn('jabatan', ['Sales', 'Adm Sales', 'Spv Sales'])

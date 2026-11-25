@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardRoleLayout extends Model
 {
+    public const CACHE_KEY = 'dashboard_role_layouts_by_role';
+
     protected $table = 'dashboard_role_layouts';
 
     protected $fillable = ['role_name', 'section_order', 'card_order'];
@@ -16,6 +20,26 @@ class DashboardRoleLayout extends Model
         'section_order' => 'array',
         'card_order'    => 'array',
     ];
+
+    public static function cachedByRole(): Collection
+    {
+        return Cache::remember(self::CACHE_KEY, now()->addHours(12), function () {
+            return static::all()->keyBy('role_name');
+        });
+    }
+
+    public static function clearCache(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
+    protected static function booted(): void
+    {
+        $clear = static fn () => static::clearCache();
+
+        static::saved($clear);
+        static::deleted($clear);
+    }
 
     /**
      * Ambil instance override layout untuk user yang sedang login.
@@ -46,8 +70,15 @@ class DashboardRoleLayout extends Model
             return null;
         }
 
-        // Cari layout override pertama yang cocok dengan salah satu role/jabatan user
-        return static::whereIn('role_name', $userRoles)->first();
+        // Cari layout override pertama dari cache Redis berdasarkan role/jabatan user
+        $byRole = static::cachedByRole();
+        foreach ($userRoles as $roleName) {
+            if ($byRole->has($roleName)) {
+                return $byRole->get($roleName);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -96,7 +127,7 @@ class DashboardRoleLayout extends Model
      */
     public static function effective(string $role, array $allowed): array
     {
-        $global   = DashboardLayout::orderBy('sort_order', 'asc')->get();
+        $global   = DashboardLayout::cachedAll();
         $sections = $global->pluck('section_key')->toArray();
         $cards    = [];
 
@@ -109,7 +140,7 @@ class DashboardRoleLayout extends Model
         }
 
         $override = Schema::hasTable('dashboard_role_layouts')
-            ? static::where('role_name', $role)->first()
+            ? static::cachedByRole()->get($role)
             : null;
 
         return self::merge($sections, $cards, $override, $allowed);

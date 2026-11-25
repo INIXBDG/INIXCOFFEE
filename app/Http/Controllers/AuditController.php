@@ -141,7 +141,7 @@ class AuditController extends Controller
         }
 
         // Di bawah Apache, PHP_BINARY bisa httpd.exe / php-cgi.exe. Pakai php.exe (CLI).
-        $override = env('AUDIT_PHP_BINARY');
+        $override = config('audit.php_binary');
         if ($override) {
             $php = $override;
         } elseif (stripos(basename($php), 'php.exe') === false) {

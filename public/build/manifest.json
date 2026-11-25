@@ -38,7 +38,7 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app--KiT1d-z.js",
+    "file": "assets/app-DYtz42vt.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -156,11 +156,6 @@
     "file": "assets/personal-penilaian-BjLjg6be.js",
     "name": "personal-penilaian",
     "src": "resources/js/pages/penilaian360/personal-penilaian.js",
-    "isEntry": true
-  },
-  "resources/sass/app.scss": {
-    "file": "assets/app-B_c9eOtX.css",
-    "src": "resources/sass/app.scss",
     "isEntry": true
   }
 }

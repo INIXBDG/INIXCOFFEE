@@ -26,7 +26,7 @@
         "phpoffice/phpword": "^1.4",
         "pusher/pusher-php-server": "^7.2",
         "rap2hpoutre/laravel-log-viewer": "^2.4",
-        "romanzipp/laravel-queue-monitor": "*",
+        "romanzipp/laravel-queue-monitor": "^5.4",
         "saasscaleup/laravel-log-alarm": "^1.0",
         "sentry/sentry-laravel": "^4.18",
         "setasign/fpdi": "^2.6",

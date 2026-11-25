@@ -13,7 +13,17 @@ class TelegramController extends Controller
 
     public function __construct()
     {
-        $this->botToken = env('TELEGRAM_BOT_TOKEN');
+        $this->botToken = config('services.telegram.bot_token');
+    }
+
+    private function internalTicketToken(): string
+    {
+        $configured = (string) config('services.internal_api.ticket_token', '');
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        return hash_hmac('sha256', 'internal-ticket-token', (string) config('app.key'));
     }
 
     /**
@@ -21,8 +31,15 @@ class TelegramController extends Controller
      */
     public function webhook(Request $request)
     {
-        $webhookSecret = env('TELEGRAM_WEBHOOK_SECRET');
-        if ($webhookSecret && $request->header('X-Telegram-Bot-Api-Secret-Token') !== $webhookSecret) {
+        $webhookSecret = (string) config('services.telegram.webhook_secret', '');
+        $providedSecret = (string) $request->header('X-Telegram-Bot-Api-Secret-Token', '');
+
+        if ($webhookSecret === '') {
+            if (app()->isProduction()) {
+                Log::error('TELEGRAM_WEBHOOK_SECRET belum dikonfigurasi pada production.');
+                return response()->json(['message' => 'Webhook secret not configured'], 500);
+            }
+        } elseif (!hash_equals($webhookSecret, $providedSecret)) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
@@ -130,7 +147,7 @@ class TelegramController extends Controller
             'keterangan' => $keterangan ?? 'Diproses via Telegram',
         ]);
 
-        $internalReq->headers->set('X-Internal-Token', 'TOKEN_RAHASIA_KITA_123');
+        $internalReq->headers->set('X-Internal-Token', $this->internalTicketToken());
 
         return app(TicketController::class)->handleInternalUpdate($internalReq);
     }
@@ -162,14 +179,17 @@ class TelegramController extends Controller
      */
     public function setWebhook(Request $request)
     {
-        if (!$this->botToken || !env('TELEGRAM_WEBHOOK_URL')) {
+        $webhookUrl = config('services.telegram.webhook_url');
+        $webhookSecret = config('services.telegram.webhook_secret');
+
+        if (!$this->botToken || !$webhookUrl) {
             return response()->json([
                 'message' => 'TELEGRAM_BOT_TOKEN dan TELEGRAM_WEBHOOK_URL wajib diisi.',
             ], 422);
         }
 
-        $payload = ['url' => env('TELEGRAM_WEBHOOK_URL')];
-        if ($webhookSecret = env('TELEGRAM_WEBHOOK_SECRET')) {
+        $payload = ['url' => $webhookUrl];
+        if ($webhookSecret) {
             $payload['secret_token'] = $webhookSecret;
         }
 

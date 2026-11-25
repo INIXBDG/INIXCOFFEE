@@ -686,7 +686,8 @@ class MasterKaryawanController extends Controller
     {
         if ($request->hasFile('foto')) {
             $gambar = $request->file('foto');
-            $nama = time() . '_' . Str::random(6) . '.' . $gambar->getClientOriginalExtension();
+            $ext = strtolower((string) ($gambar->extension() ?: 'jpg'));
+            $nama = time() . '_' . Str::random(10) . '.' . $ext;
             $gambar->move(public_path('images'), $nama);
             $k->foto = $nama;
         }
@@ -697,10 +698,12 @@ class MasterKaryawanController extends Controller
             }
 
             $berkas = $request->file($kolom);
-            $nama = time() . '_' . $kolom . '_' . Str::random(6) . '.' . $berkas->getClientOriginalExtension();
+            $ext = strtolower((string) ($berkas->extension() ?: $berkas->getClientOriginalExtension()));
+            $nama = time() . '_' . $kolom . '_' . Str::random(10) . '.' . $ext;
 
-            if ($k->$kolom && file_exists(public_path('dokumen/' . $k->$kolom))) {
-                unlink(public_path('dokumen/' . $k->$kolom));
+            $oldFile = $k->$kolom ? basename((string) $k->$kolom) : null;
+            if ($oldFile && is_file(public_path('dokumen/' . $oldFile))) {
+                unlink(public_path('dokumen/' . $oldFile));
             }
 
             $berkas->move(public_path('dokumen'), $nama);

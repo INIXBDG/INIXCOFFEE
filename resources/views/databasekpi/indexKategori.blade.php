@@ -145,7 +145,7 @@
         <script>Swal.fire({ icon: 'error', title: 'Gagal', text: "{{ session('error') }}", confirmButtonColor: '#ef4444' });</script>
     @endif
     @if ($errors->any())
-        <script>Swal.fire({ icon: 'error', title: 'Validasi Gagal', html: `{!! implode('<br>', $errors->all()) !!}`, confirmButtonColor: '#ef4444' });</script>
+        <script>Swal.fire({ icon: 'error', title: 'Validasi Gagal', html: @json(implode('<br>', array_map('e', $errors->all()))), confirmButtonColor: '#ef4444' });</script>
     @endif
 
     <script>

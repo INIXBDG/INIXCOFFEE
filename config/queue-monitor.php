@@ -28,7 +28,7 @@ return [
         // Accepts route group configuration
         'route' => [
             'prefix' => 'jobs',
-            // 'middleware' => [],
+            'middleware' => ['web', 'auth', 'permission:Akses Development'],
         ],
 
         // Set the monitored jobs count to be displayed per page.

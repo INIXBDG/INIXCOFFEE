@@ -20,7 +20,7 @@
 
     @if ($errors->any())
         <script>
-            Swal.fire({ icon: 'warning', title: 'Validasi Gagal', html: `{!! implode('<br>', $errors->all()) !!}`, confirmButtonColor: '#f59e0b' });
+            Swal.fire({ icon: 'warning', title: 'Validasi Gagal', html: @json(implode('<br>', array_map('e', $errors->all()))), confirmButtonColor: '#f59e0b' });
         </script>
     @endif
 

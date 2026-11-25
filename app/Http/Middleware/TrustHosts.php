@@ -13,8 +13,22 @@ class TrustHosts extends Middleware
      */
     public function hosts(): array
     {
-        return [
+        $hosts = array_filter([
             $this->allSubdomainsOfApplicationUrl(),
-        ];
+        ]);
+
+        $configured = (string) config('app.trusted_hosts', '');
+        foreach (array_filter(array_map('trim', explode(',', $configured))) as $host) {
+            $hosts[] = '^' . preg_quote($host, '/') . '$';
+        }
+
+        if (!app()->isProduction()) {
+            $hosts[] = '^localhost$';
+            $hosts[] = '^127\.0\.0\.1$';
+            $hosts[] = '^192\.168\.\d{1,3}\.\d{1,3}$';
+            $hosts[] = '^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$';
+        }
+
+        return $hosts;
     }
 }
