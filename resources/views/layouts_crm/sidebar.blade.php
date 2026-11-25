@@ -226,7 +226,7 @@
                 </li>
             @endcan
 
-            @can('edit-timeline-webinar')
+            @can('edit-timeline-item')
                 <li class="menu-item {{ request()->routeIs('crm.timeline-webinar.index') ? 'active open' : '' }}">
                     <a href="{{ route('crm.timeline-webinar.index') }}" class="menu-link">
                         <i class='menu-icon tf-icons bx bx-task'></i>
