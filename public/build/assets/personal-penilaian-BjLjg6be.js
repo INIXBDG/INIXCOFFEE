@@ -1,4 +1,4 @@
-let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",()=>{c();const t=document.getElementById("selectPeriode");t&&t.addEventListener("change",function(){m=this.value,c(m)})});function c(t=null){document.getElementById("personal-skeleton-container").style.display="block",document.getElementById("personal-real-container").style.display="none";let i=window.personalConfig.routes.getData;t&&(i+=`?tahun=${encodeURIComponent(t)}`),document.getElementById("groupButtonJenisPenilaian").innerHTML=`
+let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",()=>{c();const n=document.getElementById("selectPeriode");n&&n.addEventListener("change",function(){m=this.value,c(m)})});function c(n=null){document.getElementById("personal-skeleton-container").style.display="block",document.getElementById("personal-real-container").style.display="none";let i=window.personalConfig.routes.getData;n&&(i+=`?tahun=${encodeURIComponent(n)}`),document.getElementById("groupButtonJenisPenilaian").innerHTML=`
         <div class="personal-loading-state w-100">
             <i class="fa-solid fa-spinner fa-spin"></i>
             <p>Memuat jenis penilaian...</p>
@@ -13,7 +13,7 @@ let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",
             <i class="fa-solid fa-spinner fa-spin"></i>
             <p>Memuat form penilaian...</p>
         </div>
-    `,$.ajax({url:i,type:"GET",dataType:"json",success:function(a){if(!a||a.message){document.getElementById("groupButtonJenisPenilaian").innerHTML=`
+    `,$.ajax({url:i,type:"GET",dataType:"json",success:function(a){var l;if(!a||a.message){document.getElementById("groupButtonJenisPenilaian").innerHTML=`
                     <div class="personal-empty-state w-100">
                         <i class="fa-solid fa-inbox"></i>
                         <p>${a.message??"Data kosong"}</p>
@@ -28,7 +28,7 @@ let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",
                         <i class="fa-solid fa-inbox"></i>
                         <p>Data kosong</p>
                     </div>
-                `,r();return}if(a.listPeriode&&document.getElementById("selectPeriode").options.length===0){let l="";a.listPeriode.forEach(e=>{let n=e.tahun==a.tahun?"selected":"";l+=`<option value="${e.tahun}" ${n}>${e.label}</option>`}),document.getElementById("selectPeriode").innerHTML=l}v(a),o=Array.isArray(a.data)?a.data:[],f=a.nama_evaluated?.[0]??"-",o.length>0?y(o):(document.getElementById("groupButtonJenisPenilaian").innerHTML=`
+                `,r();return}if(a.listPeriode&&document.getElementById("selectPeriode").options.length===0){let e="";a.listPeriode.forEach(t=>{let s=t.tahun==a.tahun?"selected":"";e+=`<option value="${t.tahun}" ${s}>${t.label}</option>`}),document.getElementById("selectPeriode").innerHTML=e}v(a),o=Array.isArray(a.data)?a.data:[],f=((l=a.nama_evaluated)==null?void 0:l[0])??"-",o.length>0?y(o):(document.getElementById("groupButtonJenisPenilaian").innerHTML=`
                     <div class="personal-empty-state w-100">
                         <i class="fa-solid fa-inbox"></i>
                         <p>Tidak ada data penilaian</p>
@@ -58,19 +58,19 @@ let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <p>Gagal memuat data</p>
                 </div>
-            `,console.error(a.responseText),r()}})}function r(){document.getElementById("personal-skeleton-container").style.display="none",document.getElementById("personal-real-container").style.display="block"}function v(t){const i=t.dataAbsen??{};document.getElementById("content_body_absen").innerHTML=`
+            `,console.error(a.responseText),r()}})}function r(){document.getElementById("personal-skeleton-container").style.display="none",document.getElementById("personal-real-container").style.display="block"}function v(n){const i=n.dataAbsen??{};document.getElementById("content_body_absen").innerHTML=`
         <tr>
             <td>${i.telat??0}</td>
             <td>${i.sakit??0}</td>
             <td>${i.izin??0}</td>
         </tr>
-    `;let a="Belum ada catatan mengenai Anda.";Array.isArray(t.catatan)?a=t.catatan.join("<br>"):t.catatan&&t.catatan!=="null"&&(a=t.catatan),document.getElementById("content_footer_absen").innerHTML=`
+    `;let a="Belum ada catatan mengenai Anda.";Array.isArray(n.catatan)?a=n.catatan.join("<br>"):n.catatan&&n.catatan!=="null"&&(a=n.catatan),document.getElementById("content_footer_absen").innerHTML=`
         <div class="personal-catatan-box">
             <div class="catatan-label">
                 <i class="fa-solid fa-calendar-day"></i> Periode Absensi
             </div>
             <div class="catatan-content">
-                Tahun <strong>${t.tahun??"-"}</strong>
+                Tahun <strong>${n.tahun??"-"}</strong>
             </div>
         </div>
         <div class="personal-catatan-box">
@@ -79,7 +79,7 @@ let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",
             </div>
             <div class="catatan-content">${a}</div>
         </div>
-    `}function y(t){const i=document.getElementById("groupButtonJenisPenilaian");i.innerHTML="";const a={"General Manager":"fa-crown","Manager/SPV/Team Leader (Atasan Langsung)":"fa-user-tie","Rekan Kerja (Satu Divisi)":"fa-users","Pekerja (Beda Divisi)":"fa-people-arrows","Self Apprisial":"fa-user-check"};t.forEach(e=>{const n=a[e.jenis_penilaian]||"fa-file-lines",s=document.createElement("button");s.className="personal-tab-btn personal-jenis-btn",s.setAttribute("data-jenis",e.jenis_penilaian),s.innerHTML=`<i class="fa-solid ${n} me-1"></i> ${e.jenis_penilaian}`,i.appendChild(s)}),document.querySelectorAll(".personal-jenis-btn").forEach(e=>{e.addEventListener("click",function(){document.querySelectorAll(".personal-jenis-btn").forEach(n=>n.classList.remove("active")),this.classList.add("active"),u=this.getAttribute("data-jenis"),g(u)})});const l=document.querySelector(".personal-jenis-btn");l&&l.click()}function g(t){const i=o.find(e=>e.jenis_penilaian===t);if(!i)return;const a=document.getElementById("groupButtonEvaluator");if(a.innerHTML="",!i.evaluator||!Array.isArray(i.evaluator)||i.evaluator.length===0){a.innerHTML=`
+    `}function y(n){const i=document.getElementById("groupButtonJenisPenilaian");i.innerHTML="";const a={"General Manager":"fa-crown","Manager/SPV/Team Leader (Atasan Langsung)":"fa-user-tie","Rekan Kerja (Satu Divisi)":"fa-users","Pekerja (Beda Divisi)":"fa-people-arrows","Self Apprisial":"fa-user-check"};n.forEach(e=>{const t=a[e.jenis_penilaian]||"fa-file-lines",s=document.createElement("button");s.className="personal-tab-btn personal-jenis-btn",s.setAttribute("data-jenis",e.jenis_penilaian),s.innerHTML=`<i class="fa-solid ${t} me-1"></i> ${e.jenis_penilaian}`,i.appendChild(s)}),document.querySelectorAll(".personal-jenis-btn").forEach(e=>{e.addEventListener("click",function(){document.querySelectorAll(".personal-jenis-btn").forEach(t=>t.classList.remove("active")),this.classList.add("active"),u=this.getAttribute("data-jenis"),g(u)})});const l=document.querySelector(".personal-jenis-btn");l&&l.click()}function g(n){const i=o.find(e=>e.jenis_penilaian===n);if(!i)return;const a=document.getElementById("groupButtonEvaluator");if(a.innerHTML="",!i.evaluator||!Array.isArray(i.evaluator)||i.evaluator.length===0){a.innerHTML=`
             <div class="personal-empty-state w-100">
                 <i class="fa-solid fa-inbox"></i>
                 <p>Tidak ada evaluator</p>
@@ -89,22 +89,22 @@ let o=[],u=null,p=null,f="",m=null;document.addEventListener("DOMContentLoaded",
                 <i class="fa-solid fa-inbox"></i>
                 <p>Tidak ada form penilaian</p>
             </div>
-        `;return}i.evaluator.forEach((e,n)=>{const s=document.createElement("button");s.className="personal-evaluator-pill personal-evaluator-btn",s.setAttribute("data-nama",e.nama_evaluator),s.innerHTML=`
-            <span class="pill-number">${n+1}</span>
-            <span>Evaluator ${n+1}</span>
-        `,a.appendChild(s)}),document.querySelectorAll(".personal-evaluator-btn").forEach(e=>{e.addEventListener("click",function(){document.querySelectorAll(".personal-evaluator-btn").forEach(n=>n.classList.remove("active")),this.classList.add("active"),p=this.getAttribute("data-nama"),b(t,p)})});const l=document.querySelector(".personal-evaluator-btn");l&&l.click()}function b(t,i){const l=o.find(n=>n.jenis_penilaian===t)?.evaluator.find(n=>n.nama_evaluator===i);if(!l){document.getElementById("formContainer").innerHTML=`
+        `;return}i.evaluator.forEach((e,t)=>{const s=document.createElement("button");s.className="personal-evaluator-pill personal-evaluator-btn",s.setAttribute("data-nama",e.nama_evaluator),s.innerHTML=`
+            <span class="pill-number">${t+1}</span>
+            <span>Evaluator ${t+1}</span>
+        `,a.appendChild(s)}),document.querySelectorAll(".personal-evaluator-btn").forEach(e=>{e.addEventListener("click",function(){document.querySelectorAll(".personal-evaluator-btn").forEach(t=>t.classList.remove("active")),this.classList.add("active"),p=this.getAttribute("data-nama"),b(n,p)})});const l=document.querySelector(".personal-evaluator-btn");l&&l.click()}function b(n,i){const a=o.find(t=>t.jenis_penilaian===n),l=a==null?void 0:a.evaluator.find(t=>t.nama_evaluator===i);if(!l){document.getElementById("formContainer").innerHTML=`
             <div class="personal-empty-state w-100">
                 <i class="fa-solid fa-inbox"></i>
                 <p>Data evaluator tidak ditemukan</p>
             </div>
         `;return}let e=`
         <div class="personal-form-header-card">
-            <h4><i class="fa-solid fa-clipboard-check me-2" style="color: #4f46e5;"></i>Penilaian ${t}</h4>
+            <h4><i class="fa-solid fa-clipboard-check me-2" style="color: #4f46e5;"></i>Penilaian ${n}</h4>
             <span class="evaluated-name">
                 <i class="fa-solid fa-user"></i> ${f}
             </span>
         </div>
-    `;l.kriteria&&Array.isArray(l.kriteria)&&l.kriteria.length>0?l.kriteria.forEach(n=>{e+='<div class="personal-kriteria-section">',e+=`<div class="personal-kriteria-header">${n.kriteria??"-"}</div>`,n.subKriteria&&Array.isArray(n.subKriteria)&&n.subKriteria.length>0?n.subKriteria.forEach(s=>{const d=s.deskripsi?s.deskripsi.toString().trim():"";e+=`
+    `;l.kriteria&&Array.isArray(l.kriteria)&&l.kriteria.length>0?l.kriteria.forEach(t=>{e+='<div class="personal-kriteria-section">',e+=`<div class="personal-kriteria-header">${t.kriteria??"-"}</div>`,t.subKriteria&&Array.isArray(t.subKriteria)&&t.subKriteria.length>0?t.subKriteria.forEach(s=>{const d=s.deskripsi?s.deskripsi.toString().trim():"";e+=`
                         <div class="personal-sub-kriteria-item">
                             <div class="sub-label">${s.subKriteria??"-"}</div>
                             <div class="personal-nilai-display">

@@ -1,35 +1,33 @@
 <style>
     .sm-overlay {
         position: fixed;
-        top: 70px;
-        left: 260px;
-        right: 0;
-        bottom: 0;
-        z-index: 1045;
+        inset: 0;
+        z-index: 1090;
         display: none;
     }
 
     .sm-overlay.is-open {
-        display: flex;
+        display: block;
     }
 
     .sm-backdrop {
         position: absolute;
         inset: 0;
-        background: rgba(15, 23, 42, .55);
-        backdrop-filter: blur(6px);
+        background: rgba(15, 23, 42, .5);
     }
 
     .sm-panel {
         position: relative;
-        margin: 0 auto;
-        width: 100%;
+        width: calc(100% - 2.5rem);
         max-width: 1440px;
-        height: 100%;
+        height: calc(100% - 2.5rem);
+        margin: 1.25rem auto;
         background: #f8fafc;
+        border-radius: 14px;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .35);
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, .35);
     }
 
     .sm-top {
@@ -37,35 +35,35 @@
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        padding: .85rem 1.25rem;
+        padding: .8rem 1.25rem;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
-        flex-shrink: 0
+        flex-shrink: 0;
     }
 
     .sm-x {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        background: #f8fafc;
+        background: #fff;
         color: #64748b;
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer
+        cursor: pointer;
     }
 
     .sm-x:hover {
         background: #fee2e2;
         border-color: #fecaca;
-        color: #dc2626
+        color: #dc2626;
     }
 
     .sm-steps {
         display: flex;
         align-items: center;
-        gap: .5rem
+        gap: .5rem;
     }
 
     .sm-step {
@@ -75,41 +73,40 @@
         opacity: .45;
         font-size: .85rem;
         font-weight: 500;
-        color: #475569
+        color: #475569;
     }
 
     .sm-step b {
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         background: #e2e8f0;
         color: #64748b;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: .8rem
+        font-size: .75rem;
     }
 
     .sm-step.active,
     .sm-step.done {
-        opacity: 1
+        opacity: 1;
     }
 
     .sm-step.active b {
-        background: #3b82f6;
+        background: #4f46e5;
         color: #fff;
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, .2)
     }
 
     .sm-step.done b {
-        background: #22c55e;
-        color: #fff
+        background: #16a34a;
+        color: #fff;
     }
 
     .sm-line {
-        width: 30px;
-        height: 2px;
-        background: #e2e8f0
+        width: 28px;
+        height: 1px;
+        background: #cbd5e1;
     }
 
     .sm-body {
@@ -117,14 +114,14 @@
         display: flex;
         gap: 1rem;
         padding: 1rem 1.25rem;
-        overflow: hidden
+        overflow: hidden;
     }
 
     .sm-main {
         flex: 1.5;
         min-width: 0;
         overflow-y: auto;
-        padding-right: 4px
+        padding-right: 4px;
     }
 
     .sm-side {
@@ -132,42 +129,47 @@
         min-width: 0;
         overflow: auto;
         background: #e9ecef;
-        border-radius: 12px;
-        padding: 10px
+        border-radius: 10px;
+        padding: 10px;
     }
 
     .sm-side .docx-wrapper {
         background: transparent !important;
-        padding: 0 !important
+        padding: 0 !important;
     }
 
     .sm-side .docx-wrapper>section.docx {
         zoom: .72;
         margin-bottom: 10px !important;
         background: #fff;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, .12)
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .12);
     }
 
     .sm-card {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 14px;
+        border-radius: 10px;
         margin-bottom: 1rem;
-        overflow: hidden
+        overflow: hidden;
     }
 
     .sm-card-h {
-        padding: .8rem 1rem;
-        border-bottom: 1px solid #f1f5f9;
-        background: #fafbfc;
+        padding: .7rem 1rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: .5rem
+        gap: .5rem;
+    }
+
+    .sm-card-h h6 {
+        font-size: .9rem;
+        font-weight: 600;
     }
 
     .sm-card-b {
-        padding: 1rem
+        padding: 1rem;
     }
 
     .sm-blank {
@@ -175,22 +177,22 @@
         border-radius: 3px;
         padding: 0 3px;
         font-family: monospace;
-        color: #854d0e
+        color: #854d0e;
     }
 
     .sm-mark {
         background: #fef08a;
-        border-radius: 3px
+        border-radius: 3px;
     }
 
     .sm-table td {
         vertical-align: top;
-        font-size: .85rem
+        font-size: .85rem;
     }
 
     .sm-orig {
         max-width: 300px;
-        word-break: break-word
+        word-break: break-word;
     }
 
     .sm-tip {
@@ -199,7 +201,7 @@
         color: #1e40af;
         border-radius: 10px;
         padding: .7rem .9rem;
-        font-size: .82rem
+        font-size: .82rem;
     }
 
     .sm-chips {
@@ -210,7 +212,7 @@
         padding: .5rem;
         border: 1px dashed #cbd5e1;
         border-radius: 10px;
-        background: #f8fafc
+        background: #f8fafc;
     }
 
     .sm-chip {
@@ -221,24 +223,24 @@
         border-radius: 8px;
         font-size: .8rem;
         border: 1px solid #cbd5e1;
-        background: #fff
+        background: #fff;
     }
 
     .sm-chip.tok {
         background: #ede9fe;
         border-color: #c4b5fd;
-        color: #5b21b6
+        color: #5b21b6;
     }
 
     .sm-chip a {
         cursor: pointer;
         color: #64748b;
         text-decoration: none;
-        font-size: .7rem
+        font-size: .7rem;
     }
 
     .sm-chip a:hover {
-        color: #dc2626
+        color: #dc2626;
     }
 
     .sm-chip-in {
@@ -246,39 +248,15 @@
         background: transparent;
         outline: 0;
         min-width: 30px;
-        font-family: monospace
-    }
-
-    #smCfgModal,
-    #smGuideModal {
-        z-index: 1070 !important
-    }
-
-    @media (max-width:992px) {
-        .sm-body {
-            flex-direction: column;
-            overflow-y: auto
-        }
-
-        .sm-side {
-            display: none
-        }
-
-        .sm-step span {
-            display: none
-        }
-    }
-
-    @media (max-width: 1199.98px) {
-        .sm-overlay {
-            left: 0;
-        }
+        font-family: monospace;
     }
 
     @media (max-width: 992px) {
-        .sm-overlay {
-            top: 70px;
-            left: 0;
+        .sm-panel {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border-radius: 0;
         }
 
         .sm-body {
@@ -301,52 +279,48 @@
     <div class="sm-panel">
         <div class="sm-top">
             <div class="d-flex align-items-center gap-3">
-                <button type="button" class="sm-x" id="smClose" title="Tutup"><span class="iconify"
-                        data-icon="mdi:close" style="font-size:1.4rem"></span></button>
+                <button type="button" class="sm-x" id="smClose" title="Tutup">
+                    <span class="iconify" data-icon="mdi:close" style="font-size:1.3rem"></span>
+                </button>
                 <div>
-                    <h5 class="mb-0 fw-bold" id="smTitle">Buat Template Laporan</h5>
-                    <small class="text-muted" id="smSub">Upload → Tinjau → Simpan</small>
+                    <h5 class="mb-0 fw-bold" id="smTitle">Template baru</h5>
+                    <small class="text-muted" id="smSub">Unggah, tinjau, simpan</small>
                 </div>
             </div>
             <div class="sm-steps">
-                <div class="sm-step active" data-s="1"><b>1</b><span>Upload</span></div>
+                <div class="sm-step active" data-s="1"><b>1</b><span>Unggah</span></div>
                 <div class="sm-line"></div>
                 <div class="sm-step" data-s="2"><b>2</b><span>Tinjau</span></div>
                 <div class="sm-line"></div>
                 <div class="sm-step" data-s="3"><b>3</b><span>Simpan</span></div>
             </div>
-            <button type="button" class="btn btn-outline-primary btn-sm" id="smOpenGuide">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="smOpenGuide">
                 <span class="iconify me-1" data-icon="mdi:help-circle-outline"></span>Panduan
             </button>
         </div>
 
         <div class="sm-body">
             <div class="sm-main">
-                {{-- TIP --}}
                 <div class="sm-tip mb-3" id="smTip">
                     <div class="d-flex justify-content-between gap-2">
                         <div>
-                            <strong>Cara mudah:</strong> di Word, ketik label lalu garis bawah, contoh
-                            <code>Nama Karyawan : ____________</code> dan <code>Nomor Surat : ____________</code>.
-                            Upload file-nya, sistem menebak isiannya. Anda tinggal mengecek.
-                            <a href="#" id="smTipGuide">Lihat panduan lengkap</a>
+                            Di Word, ketik label lalu garis bawah, contoh <code>Nama Karyawan : ____________</code>.
+                            Unggah file-nya, sistem menebak isiannya dan Anda tinggal mengecek.
+                            <a href="#" id="smTipGuide">Lihat panduan</a>
                         </div>
                         <button type="button" class="btn-close" id="smTipClose" aria-label="Tutup"></button>
                     </div>
                 </div>
 
-                {{-- STEP 1 --}}
                 <div class="sm-card" id="smUpload">
                     <div class="sm-card-h">
-                        <h6 class="mb-0">1. Upload dokumen Word</h6>
+                        <h6 class="mb-0">1. Unggah dokumen Word</h6>
                     </div>
                     <div class="sm-card-b">
                         <form id="smForm" class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <label class="form-label small fw-semibold">File DOCX <span
-                                        class="text-danger">*</span></label>
-                                <input type="file" id="smFile" class="form-control form-control-sm" accept=".docx"
-                                    required>
+                                <label class="form-label small fw-semibold">File DOCX <span class="text-danger">*</span></label>
+                                <input type="file" id="smFile" class="form-control form-control-sm" accept=".docx" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold">Data diambil dari</label>
@@ -367,16 +341,14 @@
 
                 <div class="sm-card d-none" id="smEditInfo">
                     <div class="sm-card-b small text-muted">
-                        Mode edit. Field yang sudah terpasang aman: dokumen tidak diubah kecuali Anda memetakan garis
-                        bawah baru di bawah.
+                        Mode edit. Field yang sudah terpasang aman. Dokumen hanya berubah jika Anda memetakan garis bawah baru di bawah.
                     </div>
                 </div>
 
-                {{-- FIELD TERPASANG (mode edit) --}}
                 <div class="sm-card d-none" id="smFields">
                     <div class="sm-card-h">
-                        <h6 class="mb-0">Field yang sudah terpasang</h6><span class="badge bg-secondary rounded-pill"
-                            id="smFieldCount">0</span>
+                        <h6 class="mb-0">Field terpasang</h6>
+                        <span class="badge bg-secondary rounded-pill" id="smFieldCount">0</span>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0 sm-table">
@@ -392,7 +364,6 @@
                     </div>
                 </div>
 
-                {{-- STEP 2 --}}
                 <div class="sm-card d-none" id="smReview">
                     <div class="sm-card-h">
                         <h6 class="mb-0" id="smReviewTitle">2. Tinjau hasil tebakan</h6>
@@ -412,11 +383,10 @@
                         </table>
                     </div>
                     <div class="sm-card-b small text-muted border-top">
-                        Baris yang <b>dilewati</b> tidak diubah: garis bawahnya tetap ada di dokumen.
+                        Baris yang dilewati tidak diubah. Garis bawahnya tetap ada di dokumen.
                     </div>
                 </div>
 
-                {{-- STEP 3 --}}
                 <div class="sm-card d-none" id="smSave">
                     <div class="sm-card-h">
                         <h6 class="mb-0">3. Simpan template</h6>
@@ -424,29 +394,31 @@
                     <div class="sm-card-b">
                         <form id="smSaveForm" class="row g-3">
                             <div class="col-md-5">
-                                <label class="form-label small fw-semibold">Nama Template <span
-                                        class="text-danger">*</span></label>
+                                <label class="form-label small fw-semibold">Nama template <span class="text-danger">*</span></label>
                                 <input type="text" id="smName" class="form-control form-control-sm" required
-                                    placeholder="cth: Surat Keputusan Karyawan Tetap">
+                                    placeholder="Contoh: Surat Keputusan Karyawan Tetap">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small fw-semibold">Kode <span
-                                        class="text-danger">*</span></label>
-                                <input type="text" id="smCode" class="form-control form-control-sm" required
-                                    placeholder="otomatis">
+                                <label class="form-label small fw-semibold">Kode <span class="text-danger">*</span></label>
+                                <input type="text" id="smCode" class="form-control form-control-sm" required placeholder="Otomatis">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label small fw-semibold">Kategori</label>
                                 <select id="smCat" class="form-select form-select-sm">
                                     <option value="karyawan">Karyawan</option>
                                     <option value="pelamar">Rekrutan</option>
-                                    <option value="management">Management</option>
-                                    <option value="administrasi">Administrasi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-none" id="smSrcWrap">
+                                <label class="form-label small fw-semibold">Data diambil dari</label>
+                                <select id="smSrc" class="form-select form-select-sm">
+                                    <option value="karyawan">Karyawan</option>
+                                    <option value="pelamar">Rekrutan</option>
                                 </select>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary w-100" id="smSaveBtn">
-                                    <span id="smSaveTxt">Simpan Template</span>
+                                    <span id="smSaveTxt">Simpan template</span>
                                     <span id="smSaveSpin" class="spinner-border spinner-border-sm d-none"></span>
                                 </button>
                             </div>
@@ -457,8 +429,6 @@
 
             <div class="sm-side" id="smPreview">
                 <div class="text-center text-muted py-5">
-                    <span class="iconify mb-2" data-icon="mdi:file-document-outline"
-                        style="font-size:3rem;opacity:.4"></span>
                     <p class="mb-0">Pratinjau dokumen muncul di sini.<br>Garis bawah ditandai kuning.</p>
                 </div>
             </div>
@@ -466,82 +436,68 @@
     </div>
 </div>
 
-{{-- MODAL KONFIGURASI --}}
 <div class="modal fade" id="smCfgModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header">
-                <h5 class="modal-title" id="smCfgTitle">Atur isian</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="smCfgTitle">Atur isian</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body" id="smCfgBody"></div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                 <button type="button" class="btn btn-primary" id="smCfgOk">Terapkan</button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL PANDUAN --}}
 <div class="modal fade" id="smGuideModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header">
-                <h5 class="modal-title">Panduan Membuat Template</h5><button type="button" class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Panduan membuat template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body small">
-                <h6 class="fw-bold">4 langkah saja</h6>
+                <h6 class="fw-bold">4 langkah</h6>
                 <ol>
-                    <li><b>Ketik di Word</b> seperti biasa. Tempat yang harus diisi, beri garis bawah minimal 3
-                        karakter. Contoh: <code>Nama Karyawan : ____________</code></li>
-                    <li><b>Upload</b> file .docx lalu klik <b>Pindai</b>.</li>
+                    <li><b>Ketik di Word</b> seperti biasa. Tempat yang harus diisi diberi garis bawah minimal 3 karakter. Contoh: <code>Nama Karyawan : ____________</code></li>
+                    <li><b>Unggah</b> file .docx lalu klik <b>Pindai</b>.</li>
                     <li><b>Tinjau</b> tabel tebakan. Ubah pilihan di kolom <i>Diisi dengan</i> bila salah.</li>
-                    <li>Isi nama template, klik <b>Simpan</b>. Selesai.</li>
+                    <li>Isi nama template, lalu klik <b>Simpan</b>.</li>
                 </ol>
 
-                <h6 class="fw-bold mt-4">Arti kolom "Tebakan"</h6>
+                <h6 class="fw-bold mt-4">Arti kolom tebakan</h6>
                 <ul>
-                    <li><span class="badge bg-success-subtle text-success">✅ Yakin</span> sudah pernah Anda pilih
-                        sebelumnya / sangat cocok.</li>
-                    <li><span class="badge bg-warning-subtle text-warning">🤔 Cek dulu</span> mirip, tolong pastikan
-                        benar.</li>
-                    <li><span class="badge bg-secondary-subtle text-secondary">❓ Belum dikenali</span> pilih sendiri,
-                        sistem akan mengingatnya.</li>
-                    <li><span class="badge bg-primary-subtle text-primary">Pilihan Anda</span> hasil pilihan manual.
-                    </li>
+                    <li><span class="badge bg-success-subtle text-success">✅ Yakin</span> pernah Anda pilih sebelumnya atau sangat cocok.</li>
+                    <li><span class="badge bg-warning-subtle text-warning">🤔 Cek dulu</span> mirip, pastikan benar.</li>
+                    <li><span class="badge bg-secondary-subtle text-secondary">❓ Belum dikenali</span> pilih sendiri, sistem akan mengingatnya.</li>
+                    <li><span class="badge bg-primary-subtle text-primary">Pilihan Anda</span> hasil pilihan manual.</li>
                 </ul>
 
                 <h6 class="fw-bold mt-4">Pilihan "Diisi dengan"</h6>
                 <ul>
-                    <li><b>Kolom database</b>: diambil otomatis dari data karyawan/rekrutan yang dipilih saat generate.
-                    </li>
-                    <li><b>Rumus / Nomor Surat</b>: susun dari blok, misalnya <code>SK</code> + <code>/</code> + Tahun +
-                        <code>/</code> + Bulan Romawi + <code>/</code> + Urutan 4 digit menjadi
-                        <code>SK/2026/X/0001</code>. Nomor urut naik otomatis setiap generate.</li>
+                    <li><b>Kolom database</b>: diambil otomatis dari data karyawan atau rekrutan yang dipilih saat membuat laporan.</li>
+                    <li><b>Rumus / Nomor surat</b>: susun dari blok, misalnya <code>SK</code> + <code>/</code> + Tahun + <code>/</code> + Bulan Romawi + <code>/</code> + Urutan 4 digit menjadi <code>SK/2026/X/0001</code>. Nomor urut naik otomatis setiap laporan dibuat.</li>
                     <li><b>Tanggal otomatis</b>: tanggal hari ini dengan format pilihan Anda.</li>
-                    <li><b>Diisi manual</b>: muncul sebagai kolom isian saat generate laporan.</li>
+                    <li><b>Diisi manual</b>: muncul sebagai kolom isian saat membuat laporan.</li>
                     <li><b>Lewati</b>: dibiarkan apa adanya.</li>
                 </ul>
 
-                <h6 class="fw-bold mt-4">Sistem belajar dari Anda</h6>
-                <p>Setiap kali template disimpan, pilihan Anda diingat. Upload surat baru bertuliskan <i>"No. Surat :
-                        ____"</i> dan rumus yang dulu Anda buat akan langsung disarankan.</p>
-
                 <h6 class="fw-bold mt-4">Template lama aman</h6>
-                <p>Saat mengedit template yang sudah ada, field lama tidak dihapus. Anda bisa mengubah nama tampil,
-                    kolom sumber, atau rumusnya, dan memetakan garis bawah yang belum diisi.</p>
+                <p>Saat mengedit template yang sudah ada, field lama tidak dihapus. Anda bisa mengubah nama tampil, kolom sumber, atau rumusnya, dan memetakan garis bawah yang belum diisi.</p>
 
                 <h6 class="fw-bold mt-4">Tips</h6>
                 <ul>
                     <li>Tulis label di depan garis bawah, dalam satu baris.</li>
-                    <li>Garis bawah titik-titik (<code>.....</code>) atau <code>……</code> juga terbaca.</li>
+                    <li>Titik-titik (<code>.....</code>) atau <code>……</code> juga terbaca.</li>
                     <li>Jika tidak ada isian terdeteksi, pastikan garis bawah minimal 3 karakter.</li>
                 </ul>
             </div>
-            <div class="modal-footer"><button type="button" class="btn btn-primary"
-                    data-bs-dismiss="modal">Mengerti</button></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Mengerti</button>
+            </div>
         </div>
     </div>
 </div>
@@ -549,6 +505,9 @@
 <script>
     (function() {
         const $ = id => document.getElementById(id);
+
+        ['smOverlay', 'smCfgModal', 'smGuideModal'].forEach(id => document.body.appendChild($(id)));
+
         const H = s => String(s ?? '').replace(/[&<>"']/g, c => ({
             '&': '&amp;',
             '<': '&lt;',
@@ -561,8 +520,7 @@
             scan: "{{ route('HR.reports.smart.scan') }}",
             save: "{{ route('HR.reports.smart.save') }}",
             data: id => "{{ route('HR.reports.smart.data', ['template' => '__ID__']) }}".replace('__ID__', id),
-            update: id => "{{ route('HR.reports.smart.update', ['template' => '__ID__']) }}".replace('__ID__',
-                id),
+            update: id => "{{ route('HR.reports.smart.update', ['template' => '__ID__']) }}".replace('__ID__', id),
         };
         const S = {
             mode: 'create',
@@ -578,7 +536,7 @@
         };
 
         const TYPE_LABEL = {
-            formula: 'Rumus / Nomor Surat',
+            formula: 'Rumus / Nomor surat',
             auto_date: 'Tanggal otomatis',
             auth_field: 'Data user login',
             manual_text: 'Teks manual',
@@ -590,8 +548,45 @@
         };
         const toast = (m, t) => (window.showToast ? window.showToast(m, t || 'success') : alert(m));
         const title = s => String(s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const noCache = url => url + (url.includes('?') ? '&' : '?') + '_=' + Date.now();
 
-        // ------------------------------------------------------------ overlay
+        function isDbField(f) {
+            return !f.is_manual && f.field_type === 'text';
+        }
+
+        function applySource(table) {
+            const cols = S.allColumns[table];
+            if (!cols || table === S.table) return;
+
+            S.table = table;
+            S.columns = cols;
+
+            let unresolved = 0;
+            S.fields.forEach(f => {
+                if (!isDbField(f)) return;
+                const keep = f.origColumn && cols[f.origColumn] ? f.origColumn : '';
+                f.source_column = keep;
+                if (!keep) unresolved++;
+            });
+
+            S.items.forEach(it => {
+                if (it.type === 'db' && !cols[it.key]) {
+                    Object.assign(it, {
+                        type: 'skip',
+                        key: null,
+                        config: null,
+                        origin: null,
+                        confidence: 0
+                    });
+                }
+            });
+
+            renderFields();
+            renderRows();
+
+            if (unresolved) toast(unresolved + ' field database perlu dipilihkan kolom baru.', 'error');
+        }
+
         function show() {
             $('smOverlay').classList.add('is-open');
             $('smOverlay').setAttribute('aria-hidden', 'false');
@@ -601,7 +596,7 @@
         function hide() {
             $('smOverlay').classList.remove('is-open');
             $('smOverlay').setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
+            document.body.style.removeProperty('overflow');
         }
 
         function setStep(n) {
@@ -628,18 +623,23 @@
             $('smTable').value = 'karyawan';
             $('smName').value = '';
             $('smCode').value = '';
+            [...$('smCat').options].forEach(o => {
+                if (!['karyawan', 'pelamar'].includes(o.value)) o.remove();
+            });
             $('smCat').value = 'karyawan';
-            ['smReview', 'smSave', 'smFields', 'smEditInfo'].forEach(i => $(i).classList.add('d-none'));
+            ['smReview', 'smSave', 'smFields', 'smEditInfo', 'smSrcWrap'].forEach(i => $(i).classList.add('d-none'));
+            $('smSrc').value = 'karyawan';
             $('smUpload').classList.remove('d-none');
-            $('smTitle').textContent = 'Buat Template Laporan';
-            $('smSub').textContent = 'Upload → Tinjau → Simpan';
-            $('smSaveTxt').textContent = 'Simpan Template';
+            $('smTitle').textContent = 'Template baru';
+            $('smSub').textContent = 'Unggah, tinjau, simpan';
+            $('smSaveTxt').textContent = 'Simpan template';
             $('smReviewTitle').textContent = '2. Tinjau hasil tebakan';
             $('smPreview').innerHTML =
                 '<div class="text-center text-muted py-5"><p class="mb-0">Pratinjau dokumen muncul di sini.<br>Garis bawah ditandai kuning.</p></div>';
             $('smTip').classList.toggle('d-none', localStorage.getItem('sm_tip_closed') === '1');
             setStep(1);
         }
+
         window.openCreateOverlay = function() {
             reset();
             show();
@@ -654,7 +654,6 @@
             bootstrap.Modal.getOrCreateInstance($('smGuideModal')).show();
         }
 
-        // ------------------------------------------------------------ preview
         async function renderPreview(buf) {
             const box = $('smPreview');
             box.innerHTML = '';
@@ -670,8 +669,7 @@
                 nodes.forEach(n => {
                     if (!/_{3,}|\.{5,}|…{2,}/.test(n.nodeValue)) return;
                     const span = document.createElement('span');
-                    span.innerHTML = H(n.nodeValue).replace(/(_{3,}|\.{5,}|…{2,})/g,
-                        '<span class="sm-mark">$1</span>');
+                    span.innerHTML = H(n.nodeValue).replace(/(_{3,}|\.{5,}|…{2,})/g, '<span class="sm-mark">$1</span>');
                     n.parentNode.replaceChild(span, n);
                 });
             } catch (e) {
@@ -680,7 +678,6 @@
             }
         }
 
-        // ------------------------------------------------------------ items
         function mkItem(b) {
             const p = b.prediction;
             const it = {
@@ -711,20 +708,16 @@
         const labelOf = it => (it.config && it.config.label) || title(it.context);
 
         function badge(it) {
-            if (it.origin === 'manual')
-            return '<span class="badge bg-primary-subtle text-primary">Pilihan Anda</span>';
-            if (it.type === 'skip')
-            return '<span class="badge bg-secondary-subtle text-secondary">❓ Belum dikenali</span>';
+            if (it.origin === 'manual') return '<span class="badge bg-primary-subtle text-primary">Pilihan Anda</span>';
+            if (it.type === 'skip') return '<span class="badge bg-secondary-subtle text-secondary">❓ Belum dikenali</span>';
             if (it.confidence >= 0.85) return '<span class="badge bg-success-subtle text-success">✅ Yakin</span>' +
-                (it.origin === 'history' ?
-                    '<div class="text-muted" style="font-size:.7rem">dari riwayat</div>' : '');
+                (it.origin === 'history' ? '<div class="text-muted" style="font-size:.7rem">dari riwayat</div>' : '');
             return '<span class="badge bg-warning-subtle text-warning">🤔 Cek dulu</span>';
         }
 
         function summary(it) {
             if (it.type === 'db') return 'Kolom <code>' + H(it.key) + '</code>';
-            if (it.type === 'formula') return '<code>' + H(it.config?.template || '') + '</code> → ' + H(fPreview(it
-                .config?.template, it.config?.last_number));
+            if (it.type === 'formula') return '<code>' + H(it.config?.template || '') + '</code> → ' + H(fPreview(it.config?.template, it.config?.last_number));
             if (it.type === 'skip') return '';
             return H(TYPE_LABEL[it.type] || it.type) + (it.config?.label ? ': ' + H(it.config.label) : '');
         }
@@ -732,14 +725,10 @@
         function optionsHtml(it) {
             const cur = curVal(it);
             const o = (v, l) => `<option value="${v}" ${cur === v ? 'selected' : ''}>${l}</option>`;
-            let h = o('skip', '— Lewati (biarkan garis bawah) —');
-            h += '<optgroup label="Diambil dari database">' + Object.entries(S.columns).map(([k, l]) => o('db:' + k,
-                H(l))).join('') + '</optgroup>';
-            h += '<optgroup label="Otomatis">' + o('type:formula', '🔢 Rumus / Nomor Surat') + o('type:auto_date',
-                '📅 Tanggal otomatis') + o('type:auth_field', '👤 Data user login') + '</optgroup>';
-            h += '<optgroup label="Diisi manual saat generate">' + ['manual_text', 'manual_textarea', 'manual_date',
-                'manual_number', 'manual_select', 'manual_checkbox'
-            ].map(t => o('type:' + t, TYPE_LABEL[t])).join('') + '</optgroup>';
+            let h = o('skip', 'Lewati (biarkan garis bawah)');
+            h += '<optgroup label="Diambil dari database">' + Object.entries(S.columns).map(([k, l]) => o('db:' + k, H(l))).join('') + '</optgroup>';
+            h += '<optgroup label="Otomatis">' + o('type:formula', 'Rumus / Nomor surat') + o('type:auto_date', 'Tanggal otomatis') + o('type:auth_field', 'Data user login') + '</optgroup>';
+            h += '<optgroup label="Diisi manual saat membuat laporan">' + ['manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox'].map(t => o('type:' + t, TYPE_LABEL[t])).join('') + '</optgroup>';
             return h;
         }
 
@@ -759,11 +748,10 @@
                 <td style="min-width:230px"><select class="form-select form-select-sm sm-sel" data-i="${i}">${optionsHtml(it)}</select><div class="small text-muted mt-1">${summary(it)}</div></td>
                 <td>${badge(it)}</td>
                 <td class="text-end">${(it.type !== 'skip' && it.type !== 'db') ? `<button type="button" class="btn btn-sm btn-outline-secondary sm-cfg" data-i="${i}">Atur</button>` : ''}</td></tr>`
-                    ).join('');
+                ).join('');
             }
             const mapped = S.items.filter(i => i.type !== 'skip').length;
-            $('smStats').textContent = S.items.length + ' isian · ' + mapped + ' dipetakan · ' + (S.items.length -
-                mapped) + ' dilewati';
+            $('smStats').textContent = S.items.length + ' isian · ' + mapped + ' dipetakan · ' + (S.items.length - mapped) + ' dilewati';
         }
 
         function onSelect(i, val) {
@@ -810,7 +798,6 @@
             });
         }
 
-        // ------------------------------------------------------------ config modal
         const DF = {
             day: [
                 ['none', 'Tidak ditampilkan'],
@@ -835,16 +822,13 @@
         };
         const sel = (id, opts, val) =>
             `<select id="${id}" class="form-select form-select-sm">${opts.map(([v, l]) => `<option value="${v}" ${v === val ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
-        const fld = (l, inner) =>
-            `<div class="mb-3"><label class="form-label small fw-semibold">${l}</label>${inner}</div>`;
-        const dateHtml = c => fld('Hari / Tanggal', sel('c_day', DF.day, c.day_format || 'number')) + fld('Bulan',
-            sel('c_month', DF.month, c.month_format || 'month_name')) + fld('Tahun', sel('c_year', DF.year, c
-            .year_format || 'number')) + fld('Pemisah antar bagian',
-            `<input id="c_sep" class="form-control form-control-sm" value="${H(c.separator ?? ' ')}">`);
+        const fld = (l, inner) => `<div class="mb-3"><label class="form-label small fw-semibold">${l}</label>${inner}</div>`;
+        const dateHtml = c => fld('Hari / tanggal', sel('c_day', DF.day, c.day_format || 'number')) +
+            fld('Bulan', sel('c_month', DF.month, c.month_format || 'month_name')) +
+            fld('Tahun', sel('c_year', DF.year, c.year_format || 'number')) +
+            fld('Pemisah antar bagian', `<input id="c_sep" class="form-control form-control-sm" value="${H(c.separator ?? ' ')}">`);
         const ROM = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-        const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September',
-            'Oktober', 'November', 'Desember'
-        ];
+        const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
         function romanOf(n) {
             const m = [
@@ -892,16 +876,14 @@
             ['tahun', 'Tahun'],
             ['bulan', 'Bulan (angka)'],
             ['bulan_romawi', 'Bulan Romawi'],
-            ['bulan_nama', 'Nama Bulan'],
+            ['bulan_nama', 'Nama bulan'],
             ['tanggal', 'Tanggal'],
             ['urutan:3', 'Urutan 3 digit'],
             ['urutan:4', 'Urutan 4 digit'],
             ['urutan_romawi', 'Urutan Romawi']
         ];
         const tokLabel = v => (TOKS.find(t => t[0] === v) || [v, v])[1];
-        const PRESETS = ['SK/{tahun}/{bulan_romawi}/{urutan:4}', '{urutan:3}/HRD/{bulan_romawi}/{tahun}',
-            'PKWT/{tahun}/{urutan:4}'
-        ];
+        const PRESETS = ['SK/{tahun}/{bulan_romawi}/{urutan:4}', '{urutan:3}/HRD/{bulan_romawi}/{tahun}', 'PKWT/{tahun}/{urutan:4}'];
         const tplToChips = t => String(t || '').split(/(\{[a-z_:0-9]+\})/i).filter(x => x !== '').map(x =>
             /^\{.+\}$/.test(x) ? {
                 t: 'tok',
@@ -915,7 +897,7 @@
         function renderChips() {
             $('fChips').innerHTML = S.chips.length ? S.chips.map((c, i) =>
                 `<span class="sm-chip ${c.t}">${c.t === 'tok' ? '<b>' + H(tokLabel(c.v)) + '</b>' : `<input class="sm-chip-in" data-ci="${i}" value="${H(c.v)}" size="${Math.max(2, c.v.length)}">`}<a data-act="l" data-ci="${i}">◀</a><a data-act="r" data-ci="${i}">▶</a><a data-act="x" data-ci="${i}">✕</a></span>`
-                ).join('') : '<span class="text-muted small">Belum ada blok. Klik blok di bawah.</span>';
+            ).join('') : '<span class="text-muted small">Belum ada blok. Klik blok di bawah.</span>';
             updPrev();
         }
 
@@ -925,8 +907,7 @@
         }
 
         function cfgHtml(type, c, label) {
-            const L = fld('Nama tampil / label',
-                `<input id="c_label" class="form-control form-control-sm" value="${H(label)}">`);
+            const L = fld('Nama tampil / label', `<input id="c_label" class="form-control form-control-sm" value="${H(label)}">`);
             if (type === 'formula') {
                 S.chips = tplToChips(c.template);
                 return L + `<label class="form-label small fw-semibold">Susun rumus dengan blok</label>
@@ -936,18 +917,14 @@
                 <div class="d-flex flex-wrap gap-1 mb-3"><button type="button" class="btn btn-sm btn-outline-secondary" data-text="SK">+ Teks</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text="/">/</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text="-">-</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text=".">.</button></div>
                 <div class="small text-muted mb-1">Contoh siap pakai:</div>
                 <div class="d-flex flex-wrap gap-1 mb-3">${PRESETS.map((p, i) => `<button type="button" class="btn btn-sm btn-light border" data-preset="${i}"><code>${H(p)}</code></button>`).join('')}</div>
-                ${fld('Nomor terakhir yang sudah dipakai (opsional)', `<input id="c_last" type="number" min="0" class="form-control form-control-sm" value="${H(c.last_number ?? '')}" placeholder="cth: 233, nomor berikutnya jadi 234">`)}
+                ${fld('Nomor terakhir yang sudah dipakai (opsional)', `<input id="c_last" type="number" min="0" class="form-control form-control-sm" value="${H(c.last_number ?? '')}" placeholder="Contoh: 233, nomor berikutnya jadi 234">`)}
                 <div class="alert alert-light border small mb-0">Hasil contoh: <b id="fPrev"></b></div>`;
             }
             if (type === 'auto_date') return L + dateHtml(c);
             if (type === 'auth_field') return L + fld('Data yang diambil',
-                `<select id="c_field" class="form-select form-select-sm"><optgroup label="Data User Login">${['username', 'jabatan'].map(f => `<option ${c.field === f ? 'selected' : ''}>${f}</option>`).join('')}</optgroup><optgroup label="Data Karyawan (Login)">${['nama_lengkap', 'nip', 'email', 'whatsapp'].map(f => `<option ${c.field === f ? 'selected' : ''}>${f}</option>`).join('')}</optgroup></select>`
-                );
-            if (type === 'manual_text') return L + fld('Nilai awal (opsional)',
-                `<input id="c_def" class="form-control form-control-sm" value="${H(c.default ?? '')}">`);
-            if (type === 'manual_textarea') return L + fld('Jumlah baris',
-                `<input id="c_rows" type="number" min="2" max="10" class="form-control form-control-sm" value="${H(c.rows ?? 3)}">`
-                );
+                `<select id="c_field" class="form-select form-select-sm"><optgroup label="Data user login">${['username', 'jabatan'].map(f => `<option ${c.field === f ? 'selected' : ''}>${f}</option>`).join('')}</optgroup><optgroup label="Data karyawan (login)">${['nama_lengkap', 'nip', 'email', 'whatsapp'].map(f => `<option ${c.field === f ? 'selected' : ''}>${f}</option>`).join('')}</optgroup></select>`);
+            if (type === 'manual_text') return L + fld('Nilai awal (opsional)', `<input id="c_def" class="form-control form-control-sm" value="${H(c.default ?? '')}">`);
+            if (type === 'manual_textarea') return L + fld('Jumlah baris', `<input id="c_rows" type="number" min="2" max="10" class="form-control form-control-sm" value="${H(c.rows ?? 3)}">`);
             if (type === 'manual_date') return L + dateHtml(c);
             if (type === 'manual_number') return L + fld('Tipe angka', sel('c_ntype', [
                 ['number', 'Angka biasa (1.234,56)'],
@@ -955,9 +932,7 @@
                 ['integer', 'Bulat (1234)']
             ], c.number_type || 'number'));
             if (type === 'manual_select') return L + fld('Pilihan (pisahkan dengan koma)',
-                `<textarea id="c_opts" rows="3" class="form-control form-control-sm" placeholder="Aktif, Nonaktif, Cuti">${H((c.options || []).join(', '))}</textarea>`
-                );
-            if (type === 'manual_checkbox') return L;
+                `<textarea id="c_opts" rows="3" class="form-control form-control-sm" placeholder="Aktif, Nonaktif, Cuti">${H((c.options || []).join(', '))}</textarea>`);
             return L;
         }
 
@@ -1004,6 +979,7 @@
             if (target.type === 'formula') renderChips();
             bootstrap.Modal.getOrCreateInstance($('smCfgModal')).show();
         }
+
         $('smCfgOk').addEventListener('click', () => {
             const c = S.cfg;
             if (!c) return;
@@ -1013,7 +989,7 @@
                 c.onOk(cfg);
                 bootstrap.Modal.getOrCreateInstance($('smCfgModal')).hide();
             } catch (e) {
-                alert(e.message);
+                toast(e.message, 'error');
             }
         });
         $('smCfgModal').addEventListener('hidden.bs.modal', () => {
@@ -1036,10 +1012,8 @@
             else if (b.dataset.act) {
                 const i = +b.dataset.ci;
                 if (b.dataset.act === 'x') S.chips.splice(i, 1);
-                if (b.dataset.act === 'l' && i > 0)[S.chips[i - 1], S.chips[i]] = [S.chips[i], S.chips[i -
-                    1]];
-                if (b.dataset.act === 'r' && i < S.chips.length - 1)[S.chips[i + 1], S.chips[i]] = [S.chips[
-                    i], S.chips[i + 1]];
+                if (b.dataset.act === 'l' && i > 0) [S.chips[i - 1], S.chips[i]] = [S.chips[i], S.chips[i - 1]];
+                if (b.dataset.act === 'r' && i < S.chips.length - 1) [S.chips[i + 1], S.chips[i]] = [S.chips[i], S.chips[i + 1]];
             }
             renderChips();
         });
@@ -1052,14 +1026,11 @@
             if (e.target.id === 'c_last') updPrev();
         });
 
-        // ------------------------------------------------------------ fields (edit mode)
         function renderFields() {
             $('smFieldCount').textContent = S.fields.length;
             $('smFieldRows').innerHTML = S.fields.map((f, i) => {
                 const isDb = !f.is_manual && f.field_type === 'text';
-                const editable = ['auto_date', 'formula', 'auth_field', 'manual_text', 'manual_textarea',
-                    'manual_date', 'manual_number', 'manual_select', 'manual_checkbox'
-                ].includes(f.field_type);
+                const editable = ['auto_date', 'formula', 'auth_field', 'manual_text', 'manual_textarea', 'manual_date', 'manual_number', 'manual_select', 'manual_checkbox'].includes(f.field_type);
                 let ctl = '<span class="text-muted small">Tidak diubah dari sini</span>';
                 if (isDb) ctl =
                     `<select class="form-select form-select-sm sm-fsrc" data-i="${i}">${Object.entries(S.columns).map(([k, l]) => `<option value="${k}" ${f.source_column === k ? 'selected' : ''}>${H(l)}</option>`).join('')}</select>`;
@@ -1069,7 +1040,6 @@
             }).join('');
         }
 
-        // ------------------------------------------------------------ events
         $('smRows').addEventListener('change', e => {
             if (e.target.classList.contains('sm-sel')) onSelect(+e.target.dataset.i, e.target.value);
         });
@@ -1135,28 +1105,33 @@
             localStorage.setItem('sm_tip_closed', '1');
         });
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && $('smOverlay').classList.contains('is-open') && !document
-                .querySelector('.modal.show')) hide();
+            if (e.key === 'Escape' && $('smOverlay').classList.contains('is-open') && !document.querySelector('.modal.show')) hide();
         });
-        ['btnOpenCreateModal', 'btnOpenCreateModalEmpty'].forEach(id => $(id)?.addEventListener('click', window
-            .openCreateOverlay));
+        ['btnOpenCreateModal', 'btnOpenCreateModalEmpty'].forEach(id => $(id)?.addEventListener('click', window.openCreateOverlay));
         $('smName').addEventListener('input', function() {
-            if (!S.codeTouched && S.mode === 'create') $('smCode').value = this.value.split(/\s+/).filter(
-                Boolean).map(w => w[0].toUpperCase()).join('');
+            if (!S.codeTouched && S.mode === 'create') $('smCode').value = this.value.split(/\s+/).filter(Boolean).map(w => w[0].toUpperCase()).join('');
+        });
+        $('smCat').addEventListener('change', function() {
+            if (S.mode === 'edit' && ['karyawan', 'pelamar'].includes(this.value)) {
+                $('smSrc').value = this.value;
+                applySource(this.value);
+            }
+        });
+        $('smSrc').addEventListener('change', function() {
+            if (S.mode === 'edit') applySource(this.value);
         });
         $('smCode').addEventListener('input', () => {
             S.codeTouched = true;
         });
 
-        // ------------------------------------------------------------ scan
         $('smForm').addEventListener('submit', async e => {
             e.preventDefault();
             const f = $('smFile').files[0];
-            if (!f) return alert('Pilih file DOCX dulu.');
+            if (!f) return toast('Pilih file DOCX dulu.', 'error');
             S.file = f;
             S.table = $('smTable').value;
             $('smCat').value = S.table;
-            $('smScanTxt').textContent = 'Memindai...';
+            $('smScanTxt').textContent = 'Memindai';
             $('smScanSpin').classList.remove('d-none');
             $('smScanBtn').disabled = true;
             try {
@@ -1173,8 +1148,7 @@
                     }
                 });
                 const j = await res.json().catch(() => null);
-                if (!res.ok || !j?.success) throw new Error(j?.message || (j?.errors ? Object.values(j
-                    .errors).flat().join('\n') : 'Gagal memindai dokumen'));
+                if (!res.ok || !j?.success) throw new Error(j?.message || (j?.errors ? Object.values(j.errors).flat().join('\n') : 'Gagal memindai dokumen'));
                 S.columns = j.columns || {};
                 S.items = j.data.map(mkItem);
                 await renderPreview(await f.arrayBuffer());
@@ -1187,10 +1161,9 @@
                     block: 'start'
                 });
                 const auto = S.items.filter(i => i.type !== 'skip').length;
-                if (S.items.length) toast('Ditemukan ' + S.items.length + ' isian, ' + auto +
-                    ' berhasil ditebak.');
+                if (S.items.length) toast('Ditemukan ' + S.items.length + ' isian, ' + auto + ' berhasil ditebak.');
             } catch (err) {
-                alert(err.message);
+                toast(err.message, 'error');
             } finally {
                 $('smScanTxt').textContent = 'Pindai';
                 $('smScanSpin').classList.add('d-none');
@@ -1198,7 +1171,6 @@
             }
         });
 
-        // ------------------------------------------------------------ edit mode
         window.openEditOverlay = async function(id) {
             reset();
             S.mode = 'edit';
@@ -1206,7 +1178,8 @@
             show();
             $('smTitle').textContent = 'Memuat...';
             try {
-                const res = await fetch(URLS.data(id), {
+                const res = await fetch(noCache(URLS.data(id)), {
+                    cache: 'no-store',
                     headers: {
                         Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
@@ -1216,18 +1189,28 @@
                 if (!j.success) throw new Error(j.message || 'Gagal memuat template');
                 const d = j.data;
                 S.table = d.source_table;
+                S.origTable = d.source_table;
+                S.allColumns = d.all_columns || {};
+                $('smSrc').value = d.source_table;
+                $('smSrcWrap').classList.remove('d-none');
                 S.columns = d.columns || {};
-                S.fields = d.fields.map(f => Object.assign({
-                    dirty: false
+                S.fields = (d.fields || []).map(f => Object.assign({
+                    dirty: false,
+                    origColumn: f.source_column
                 }, f));
-                S.items = d.blanks.map(mkItem);
-                $('smTitle').textContent = 'Edit Template: ' + d.name;
+                S.items = (d.blanks || []).map(mkItem);
+                $('smTitle').textContent = 'Edit template: ' + d.name;
                 $('smSub').textContent = 'Field lama aman, Anda bisa memetakan isian yang tersisa';
                 $('smName').value = d.name || '';
                 $('smCode').value = d.code || '';
-                $('smCat').value = d.category || 'karyawan';
+                const catSel = $('smCat');
+                const cat = d.category || 'karyawan';
+                if (![...catSel.options].some(o => o.value === cat)) {
+                    catSel.add(new Option(title(cat), cat));
+                }
+                catSel.value = cat;
                 S.codeTouched = true;
-                $('smSaveTxt').textContent = 'Simpan Perubahan';
+                $('smSaveTxt').textContent = 'Simpan perubahan';
                 $('smUpload').classList.add('d-none');
                 $('smEditInfo').classList.remove('d-none');
                 $('smFields').classList.remove('d-none');
@@ -1238,26 +1221,33 @@
                 $('smReview').classList.toggle('d-none', S.items.length === 0);
                 setStep(2);
                 if (d.template_url) {
-                    const r = await fetch(d.template_url);
+                    const r = await fetch(noCache(d.template_url), {
+                        cache: 'no-store'
+                    });
                     if (r.ok) await renderPreview(await r.arrayBuffer());
                 }
             } catch (err) {
-                alert('Gagal membuka editor: ' + err.message);
+                toast('Gagal membuka editor: ' + err.message, 'error');
                 hide();
             }
         };
 
-        // ------------------------------------------------------------ save
         $('smSaveForm').addEventListener('submit', async e => {
             e.preventDefault();
             const mapped = S.items.filter(i => i.type !== 'skip');
             const skipped = S.items.length - mapped.length;
-            if (S.mode === 'create' && !S.file) return alert('Upload dan pindai dokumen dulu.');
-            if (S.mode === 'create' && mapped.length === 0 && !confirm(
-                    'Belum ada isian yang dipetakan. Tetap simpan?')) return;
-            if (skipped > 0 && !confirm(skipped +
-                    ' isian dilewati dan akan dibiarkan seperti semula (garis bawah). Lanjutkan?'))
-                return;
+            const srcTable = S.mode === 'edit' ? $('smSrc').value : S.table;
+            const switched = S.mode === 'edit' && srcTable !== S.origTable;
+            if (switched) {
+                const unresolved = S.fields.filter(f => isDbField(f) && (!f.source_column || !S.columns[f.source_column]));
+                if (unresolved.length) {
+                    toast('Pilih kolom baru untuk: ' + unresolved.map(f => f.label).join(', '), 'error');
+                    return;
+                }
+            }
+            if (S.mode === 'create' && !S.file) return toast('Unggah dan pindai dokumen dulu.', 'error');
+            if (S.mode === 'create' && mapped.length === 0 && !confirm('Belum ada isian yang dipetakan. Tetap simpan?')) return;
+            if (skipped > 0 && !confirm(skipped + ' isian dilewati dan akan dibiarkan seperti semula (garis bawah). Lanjutkan?')) return;
 
             const items = mapped.map(i => ({
                 find: i.original,
@@ -1281,7 +1271,8 @@
                 fd.append('source_table', S.table);
             } else {
                 url = URLS.update(S.id);
-                fd.append('fields', JSON.stringify(S.fields.filter(f => f.dirty).map(f => ({
+                fd.append('source_table', srcTable);
+                fd.append('fields', JSON.stringify(S.fields.filter(f => f.dirty || (switched && isDbField(f))).map(f => ({
                     key: f.key,
                     label: f.label,
                     source_column: f.source_column,
@@ -1289,7 +1280,7 @@
                 }))));
             }
 
-            $('smSaveTxt').textContent = 'Menyimpan...';
+            $('smSaveTxt').textContent = 'Menyimpan';
             $('smSaveSpin').classList.remove('d-none');
             $('smSaveBtn').disabled = true;
             setStep(3);
@@ -1297,6 +1288,7 @@
                 const res = await fetch(url, {
                     method: 'POST',
                     body: fd,
+                    cache: 'no-store',
                     headers: {
                         Accept: 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1304,17 +1296,15 @@
                     }
                 });
                 const j = await res.json().catch(() => null);
-                if (!res.ok || !j?.success) throw new Error(j?.message || (j?.errors ? Object.values(j
-                    .errors).flat().join('\n') : 'Server error (' + res.status + ')'));
+                if (!res.ok || !j?.success) throw new Error(j?.message || (j?.errors ? Object.values(j.errors).flat().join('\n') : 'Server error (' + res.status + ')'));
                 toast(j.message);
                 hide();
                 setTimeout(() => window.location.reload(), 700);
             } catch (err) {
-                alert(err.message);
+                toast(err.message, 'error');
                 setStep(2);
             } finally {
-                $('smSaveTxt').textContent = S.mode === 'create' ? 'Simpan Template' :
-                    'Simpan Perubahan';
+                $('smSaveTxt').textContent = S.mode === 'create' ? 'Simpan template' : 'Simpan perubahan';
                 $('smSaveSpin').classList.add('d-none');
                 $('smSaveBtn').disabled = false;
             }

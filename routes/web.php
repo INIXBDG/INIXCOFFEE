@@ -873,6 +873,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
         Route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
         Route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
+        Route::post('/update-target/{id}', [TargetKPIController::class, 'updateTarget'])->name('updateTarget');
         Route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
         Route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
         Route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');
@@ -1458,6 +1459,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/perbaikan-data/bulk-update', [DaftarTugasController::class, 'bulkUpdatePerbaikan'])->name('bulkUpdatePerbaikan');
             Route::post('/perbaikan/bulk-save', [DaftarTugasController::class, 'bulkSavePerbaikan'])->name('bulkSavePerbaikan');
             Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
+            Route::get('/double/scan',  [DaftarTugasController::class, 'scanDouble'])->name('scanDouble');
+            Route::post('/double/clear', [DaftarTugasController::class, 'clearDouble'])->name('clearDouble');
         });
 
         Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function () {
