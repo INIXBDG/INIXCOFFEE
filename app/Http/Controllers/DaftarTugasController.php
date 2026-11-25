@@ -8,6 +8,7 @@ use App\Models\KontrolTugas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Exports\DaftarTugasReportExport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
@@ -33,7 +34,7 @@ class DaftarTugasController extends Controller
         $this->middleware('permission:Update DaftarTugas OB Kategori', ['only' => ['updateStatus', 'uploadBukti']]);
         $this->middleware('permission:Delete DaftarTugas OB Kategori', ['only' => ['delete', 'bulkDelete']]);
         $this->middleware('permission:Store DaftarTugas OB', ['only' => ['reorderKategori', 'reorderTugas']]);
-        $this->middleware('permission:Perbaiki DaftarTugas Data OB', ['only' => ['perbaikanData', 'getForPerbaikan', 'updatePerbaikan', 'bulkUpdatePerbaikan', 'bulkSavePerbaikan']]);
+        $this->middleware('permission:Perbaiki DaftarTugas Data OB', ['only' => ['perbaikanData', 'getForPerbaikan', 'updatePerbaikan', 'bulkUpdatePerbaikan', 'bulkSavePerbaikan', 'scanDouble', 'clearDouble']]);
     }
 
     public function index()
@@ -245,7 +246,12 @@ class DaftarTugasController extends Controller
             }
 
             if ($canActivate && $deadline) {
-                $exists = KontrolTugas::where('id_karyawan', $user->id)->where('id_DaftarTugas', $kat->id)->whereDate('Deadline_Date', $deadline)->exists();
+                [$awal, $akhir] = $this->rentangPeriode($kat->Tipe, Carbon::parse($deadline));
+
+                $exists = KontrolTugas::where('id_karyawan', $user->id)
+                    ->where('id_DaftarTugas', $kat->id)
+                    ->whereBetween('Deadline_Date', [$awal->toDateString(), $akhir->toDateString()])
+                    ->exists();
 
                 if ($exists) {
                     $canActivate = false;
@@ -441,7 +447,12 @@ class DaftarTugasController extends Controller
                 $deadline = $todayStr;
             }
 
-            $exists = KontrolTugas::where('id_karyawan', $user->id)->where('id_DaftarTugas', $kategori->id)->whereDate('Deadline_Date', $deadline)->exists();
+            [$awal, $akhir] = $this->rentangPeriode($kategori->Tipe, Carbon::parse($deadline));
+
+            $exists = KontrolTugas::where('id_karyawan', $user->id)
+                ->where('id_DaftarTugas', $kategori->id)
+                ->whereBetween('Deadline_Date', [$awal->toDateString(), $akhir->toDateString()])
+                ->exists();
 
             if ($exists) {
                 $skipped++;
@@ -473,6 +484,20 @@ class DaftarTugasController extends Controller
             'skipped' => $skipped,
             'errors' => $errors,
         ]);
+    }
+
+    private function rentangPeriode(string $tipe, Carbon $d): array
+    {
+        return match ($tipe) {
+            'Mingguan' => [$d->copy()->startOfWeek(), $d->copy()->endOfWeek()],
+            'Bulanan' => [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()],
+            'Quartal' => [$d->copy()->startOfQuarter(), $d->copy()->endOfQuarter()],
+            'Semester' => $d->month <= 6
+                ? [Carbon::create($d->year, 1, 1)->startOfDay(), Carbon::create($d->year, 6, 30)->endOfDay()]
+                : [Carbon::create($d->year, 7, 1)->startOfDay(), Carbon::create($d->year, 12, 31)->endOfDay()],
+            'Tahunan' => [$d->copy()->startOfYear(), $d->copy()->endOfYear()],
+            default => [$d->copy()->startOfDay(), $d->copy()->endOfDay()],
+        };
     }
 
     private function hitungDeadline($tipe, $tipe_turunan = null)
@@ -543,11 +568,14 @@ class DaftarTugasController extends Controller
             'bukti_after' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
             'waktu_mulai' => 'nullable|string|max:50',
             'waktu_selesai' => 'nullable|string|max:50',
+            'tanggal_mulai' => 'nullable|date_format:Y-m-d',
+            'tanggal_selesai' => 'nullable|date_format:Y-m-d',
         ]);
 
         $tugas = KontrolTugas::findOrFail($request->tugas_id);
         $buktiData = $this->parseBukti($tugas->bukti);
         $nowTime = Carbon::now('Asia/Jakarta')->format('H:i');
+        $nowDate = Carbon::now('Asia/Jakarta')->toDateString();
 
         if ($request->hasFile('bukti_before')) {
             if ($buktiData['before'] && Storage::disk('public')->exists($buktiData['before'])) {
@@ -555,6 +583,7 @@ class DaftarTugasController extends Controller
             }
             $buktiData['before'] = $request->file('bukti_before')->store('bukti-tugas', 'public');
             $buktiData['waktu_mulai'] = $request->filled('waktu_mulai') ? $request->waktu_mulai : $nowTime;
+            $buktiData['tanggal_mulai'] = $request->filled('tanggal_mulai') ? $request->tanggal_mulai : $nowDate;
         }
 
         if ($request->hasFile('bukti_after')) {
@@ -572,6 +601,7 @@ class DaftarTugasController extends Controller
             }
             $buktiData['after'] = $request->file('bukti_after')->store('bukti-tugas', 'public');
             $buktiData['waktu_selesai'] = $request->filled('waktu_selesai') ? $request->waktu_selesai : $nowTime;
+            $buktiData['tanggal_selesai'] = $request->filled('tanggal_selesai') ? $request->tanggal_selesai : $nowDate;
         }
 
         $tugas->update(['bukti' => json_encode($buktiData)]);
@@ -928,25 +958,182 @@ class DaftarTugasController extends Controller
         }
     }
 
+    private function hapusFileBukti(KontrolTugas $tugas): void
+    {
+        $b = $this->parseBukti($tugas->bukti);
+        foreach (['before', 'after'] as $k) {
+            if (!empty($b[$k]) && Storage::disk('public')->exists($b[$k])) {
+                Storage::disk('public')->delete($b[$k]);
+            }
+        }
+    }
+
+    private function bobotBukti(KontrolTugas $t): int
+    {
+        $b = $this->parseBukti($t->bukti);
+        return !empty($b['after']) ? 2 : (!empty($b['before']) ? 1 : 0);
+    }
+
+    private function periodKey(string $tipe, Carbon $d): string
+    {
+        return match ($tipe) {
+            'Mingguan' => $d->format('o-\WW'),
+            'Bulanan' => $d->format('Y-m'),
+            'Quartal' => $d->year . '-Q' . $d->quarter,
+            'Semester' => $d->year . '-S' . ($d->month <= 6 ? 1 : 2),
+            'Tahunan' => (string) $d->year,
+            default => $d->format('Y-m-d'),
+        };
+    }
+
+    private function findDoubles(Request $request)
+    {
+        $mode = $request->get('mode', 'periode');
+
+        $query = KontrolTugas::with(['kategoriDaftarTugas', 'karyawan']);
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('Deadline_Date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('Deadline_Date', '<=', $request->end_date);
+        }
+        if ($request->filled('karyawan')) {
+            $query->where('id_karyawan', $request->karyawan);
+        }
+        if ($mode === 'sekali') {
+            $query->where('id_DaftarTugas', $request->kategori_id);
+        }
+
+        $groups = $query
+            ->get()
+            ->groupBy(function ($t) use ($mode) {
+                if ($mode === 'sekali') {
+                    return (string) $t->id_DaftarTugas;
+                }
+
+                $base = $t->id_DaftarTugas . '|' . ($t->id_karyawan ?? 'null');
+                $date = Carbon::parse($t->Deadline_Date);
+
+                return $mode === 'error' ? $base . '|' . $date->format('Y-m-d') : $base . '|' . $this->periodKey($t->kategoriDaftarTugas->Tipe ?? 'Harian', $date);
+            })
+            ->filter(fn($g) => $g->count() > 1);
+
+        return $groups
+            ->map(function ($g) {
+                $sorted = $g
+                    ->sort(function ($a, $b) {
+                        $da = Carbon::parse($a->Deadline_Date)->format('Y-m-d');
+                        $db = Carbon::parse($b->Deadline_Date)->format('Y-m-d');
+                        return [$this->bobotBukti($b), (int) $b->status, $da, $a->id] <=> [$this->bobotBukti($a), (int) $a->status, $db, $b->id];
+                    })
+                    ->values();
+
+                return ['keep' => $sorted->first(), 'hapus' => $sorted->slice(1)->values()];
+            })
+            ->values();
+    }
+
+    private function ringkasDouble(KontrolTugas $t): array
+    {
+        return [
+            'id' => $t->id,
+            'deadline' => Carbon::parse($t->Deadline_Date)->format('Y-m-d'),
+            'ob' => $t->karyawan->nama_lengkap ?? 'NULL',
+            'status' => (int) $t->status,
+            'has_bukti' => $this->bobotBukti($t) > 0,
+        ];
+    }
+
+    public function scanDouble(Request $request)
+    {
+        $request->validate([
+            'mode' => 'required|in:error,periode,sekali',
+            'kategori_id' => 'required_if:mode,sekali|nullable|exists:kategori_daftar_tugas,id',
+            'karyawan' => 'nullable|exists:karyawans,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $groups = $this->findDoubles($request);
+
+        return response()->json([
+            'success' => true,
+            'total_group' => $groups->count(),
+            'total_hapus' => $groups->sum(fn($g) => $g['hapus']->count()),
+            'groups' => $groups
+                ->take(300)
+                ->map(
+                    fn($g) => [
+                        'kategori' => $g['keep']->kategoriDaftarTugas->judul_kategori ?? '-',
+                        'tipe' => $g['keep']->kategoriDaftarTugas->Tipe ?? '-',
+                        'keep' => $this->ringkasDouble($g['keep']),
+                        'hapus' => $g['hapus']->map(fn($t) => $this->ringkasDouble($t))->all(),
+                    ],
+                )
+                ->values(),
+        ]);
+    }
+
+    public function clearDouble(Request $request)
+    {
+        $request->validate([
+            'mode' => 'required|in:error,periode,sekali',
+            'kategori_id' => 'required_if:mode,sekali|nullable|exists:kategori_daftar_tugas,id',
+            'karyawan' => 'nullable|exists:karyawans,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $allowed = $this->findDoubles($request)->flatMap(fn($g) => $g['hapus']->pluck('id'))->all();
+        $ids = array_values(array_intersect(array_map('intval', $request->ids), $allowed));
+
+        if (!$ids) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada data double yang valid untuk dihapus'], 422);
+        }
+
+        $deleted = 0;
+        DB::transaction(function () use ($ids, &$deleted) {
+            KontrolTugas::whereIn('id', $ids)
+                ->get()
+                ->each(function ($t) use (&$deleted) {
+                    $this->hapusFileBukti($t);
+                    $t->delete();
+                    $deleted++;
+                });
+        });
+
+        return response()->json(['success' => true, 'message' => "{$deleted} tugas double berhasil dihapus"]);
+    }
+
     private function parseBukti($bukti)
     {
+        $default = [
+            'before' => null,
+            'after' => null,
+            'waktu_mulai' => null,
+            'waktu_selesai' => null,
+            'tanggal_mulai' => null,
+            'tanggal_selesai' => null,
+        ];
+
         if (!$bukti) {
-            return [
-                'before' => null,
-                'after' => null,
-                'waktu_mulai' => null,
-                'waktu_selesai' => null,
-            ];
+            return $default;
         }
-        try {
-            if (is_string($bukti) && str_starts_with($bukti, '{')) {
-                $decoded = json_decode($bukti, true);
-                return is_array($decoded) ? $decoded + ['before' => null, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null] : ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
+        if (is_array($bukti)) {
+            return $bukti + $default;
+        }
+
+        if (is_string($bukti) && str_starts_with($bukti, '{')) {
+            $decoded = json_decode($bukti, true);
+            if (is_array($decoded)) {
+                return $decoded + $default;
             }
-            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
-        } catch (\Exception $e) {
-            return ['before' => $bukti, 'after' => null, 'waktu_mulai' => null, 'waktu_selesai' => null];
         }
+
+        return ['before' => $bukti] + $default;
     }
 
     public function getForPerbaikan(Request $request)

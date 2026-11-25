@@ -27,6 +27,7 @@ export default defineConfig({
                 'resources/js/pages/layout-setting.js',
 
                 // KPI Module JS
+                'resources/js/pages/kpi/kpi-detail-content.js',
                 'resources/js/pages/kpi/kpiGrade.js',
                 'resources/js/pages/kpi/kpiIndex.js',
                 'resources/js/pages/kpi/dataTarget.js',
