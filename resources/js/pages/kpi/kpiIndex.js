@@ -13,6 +13,12 @@ const allowedAssistantRoutes = [
     'mengurangi manual work dan error',
 ];
 
+// [INVERSE] Route dengan logika terbalik: nilai <= target = berhasil, > target = gagal.
+// Hanya memengaruhi status. Tampilan progress tetap mengikuti target.
+const inverseRoutes = [
+    'persentase gap kompetensi tim terhadap standar skill',
+];
+
 const allowedDoubleManualRoutes = [];
 
 const assistantRouteUrlMap = {
@@ -488,22 +494,25 @@ $(document).ready(function() {
                 const startDate = new Date(startOfYear);
                 const deadlineDate = new Date(tenggatWaktu);
 
+                // [INVERSE] Route inverse: sudah ada penilaian DAN progress (gap) <= target.
+                // Route normal: progress >= target.
                 const isInverse = dataDetail.is_inverse === true
-                    || data.condition === 'persentase gap kompetensi tim terhadap standar skill';
+                    || inverseRoutes.includes(data.condition);
 
-                const progressVal = dataDetail.progress ?? 0;
-                const targetVal   = data.nilai_target ?? 0;
+                const progressVal = Number(dataDetail.progress ?? 0);
+                const targetVal   = Number(data.nilai_target ?? 0);
 
                 const capai = isInverse
-                    ? progressVal <= targetVal
+                    ? ((dataDetail.jumlah_dinilai ?? 0) > 0 && progressVal <= targetVal)
                     : progressVal >= targetVal;
+
 
                 if (isNaN(currentDate) || isNaN(startDate) || currentDate < startDate) {
                     Tercapai = "Belum Dimulai";
                 } else if (!isNaN(deadlineDate) && (currentDate > deadlineDate || currentDate.getTime() === deadlineDate.getTime())) {
                     Tercapai = capai ? "Mencapai Target" : "Target Gagal";
                 } else {
-                    Tercapai = capai ? "Mencapai Target" : "Sedang Berjalan";
+                    Tercapai = capai ? (isInverse ? "On Track" : "Mencapai Target") : "Sedang Berjalan";
                 }
 
                 const targetValueRaw = data.nilai_target ?? 0;
@@ -540,9 +549,12 @@ $(document).ready(function() {
                     gapValue = gapValueRaw;
                 }
 
-                let bgCard = Tercapai === "Mencapai Target" ? "success" : Tercapai === "Target Gagal" ? "danger" : Tercapai === "Sedang Berjalan" ? "warning" : "secondary";
-                let gapText = Tercapai === "Mencapai Target" ? "success" : "danger";
+                let bgCard = (Tercapai === "Mencapai Target" || Tercapai === "On Track") ? "success"
+                        : Tercapai === "Target Gagal" ? "danger"
+                        : Tercapai === "Sedang Berjalan" ? "warning" : "secondary";
+                let gapText = (Tercapai === "Mencapai Target" || Tercapai === "On Track") ? "success" : "danger";
 
+                // Visual progress bar tetap mengikuti target (tidak terbalik)
                 let widthProgress;
                 if ((data.tipe_target === "rupiah" || data.tipe_target === "angka") && actualTarget > 0) {
                     widthProgress = Math.min(100, Number(((progressValueRaw / actualTarget) * 100).toFixed(1)));
@@ -637,6 +649,12 @@ $(document).ready(function() {
                         ${contents.kontribusiSales ? `
                             <div class="mt-3">
                                 ${contents.kontribusiSales}
+                            </div>
+                        ` : ''}
+
+                        ${contents.statisticChart ? `
+                            <div class="mt-3">
+                                ${contents.statisticChart}
                             </div>
                         ` : ''}
 
@@ -745,7 +763,7 @@ $(document).ready(function() {
             deskripsi_kpi: $('#updateDeskripsi').val().trim(),
             karyawan: $('#updateKaryawan').val() || []
         };
-        
+
         if (!$('#updateTahun').prop('disabled') && $('#updateTahun').val()) {
             payload.detail_jangka = $('#updateTahun').val();
         }
@@ -769,7 +787,7 @@ $(document).ready(function() {
             }
         });
     });
-    
+
     $(document).on('click', '.buttonHapusTarget', function() {
         let id = $(this).data('id');
         Swal.fire({
@@ -1120,41 +1138,27 @@ function processRawData(details) {
                 progressValueDisplay = fmt1(progressNumeric) + '%';
             }
 
-            let lengthProgress = actualTarget > 0
+            // Visual progress bar tetap mengikuti target (tidak terbalik) untuk semua route
+            const lengthProgress = actualTarget > 0
                 ? Math.min(Math.round((progress / actualTarget) * 100), 100)
                 : 0;
 
+            // [INVERSE] Hanya penentuan tercapai/gagal yang terbalik.
+            // Route inverse: progress (gap) <= target = tercapai. Lainnya: progress >= target.
+            const isInverse = inverseRoutes.includes(item.asistant_route);
             let isTargetReached = false;
 
-            const isGapRoute = item.asistant_route === 'persentase gap kompetensi tim terhadap standar skill';
-
-            if (isGapRoute) {
-                const belumDinilai = item.progress === null || item.progress === undefined;
-                const gapValue = parseFloat(item.progress);
-                const targetGap = parseFloat(item.nilai_target) || 10;
-
-                if (belumDinilai || isNaN(gapValue)) {
-                    isTargetReached = false;
-                    lengthProgress = 0;
-                    progressValueDisplay = 'Belum dinilai';
-                } else {
-                    isTargetReached = gapValue <= targetGap;
-                    lengthProgress = Math.max(0, Math.min(100, Math.round(gapValue)));
-                    progressValueDisplay = `Gap ${fmt1(gapValue)}%`;
-                }
+            if (isInverse) {
+                const nilai = parseFloat(item.progress);
+                const batas = parseFloat(item.nilai_target);
+                isTargetReached = !isNaN(nilai) && !isNaN(batas) && nilai <= batas;
+            } else if (item.tipe_target === 'angka') {
+                isTargetReached = (item.manual_value ?? 0) >= actualTarget;
+            } else if (item.tipe_target === 'rupiah') {
+                isTargetReached = progress >= actualTarget;
             } else {
-                if (item.tipe_target === 'angka') {
-                    isTargetReached = (item.manual_value ?? 0) >= actualTarget;
-                } else if (item.tipe_target === 'rupiah') {
-                    isTargetReached = progress >= actualTarget;
-                } else {
-                    isTargetReached = progressNumeric >= item.nilai_target;
-                }
+                isTargetReached = progressNumeric >= item.nilai_target;
             }
-
-            if (item.tipe_target === 'angka') isTargetReached = (item.manual_value ?? 0) >= actualTarget;
-            else if (item.tipe_target === 'rupiah') isTargetReached = progress >= actualTarget;
-            else isTargetReached = progressNumeric >= item.nilai_target;
 
             let deadline;
             if (item.tenggat_waktu.includes('-')) {
@@ -1168,7 +1172,10 @@ function processRawData(details) {
             const isOverdue = nowDate > deadline;
             const isSameYear = nowDate.getFullYear() === deadline.getFullYear();
 
-            if (!isOverdue && isSameYear) { statusText = 'Sedang Berjalan'; badgeClass = 'bg-warning text-dark'; }
+            if (!isOverdue && isSameYear) {
+                if (isInverse && isTargetReached) { statusText = 'On Track'; badgeClass = 'bg-success'; }
+                else { statusText = 'Sedang Berjalan'; badgeClass = 'bg-warning text-dark'; }
+            }
             else if (isOverdue) { statusText = isTargetReached ? 'Selesai' : 'Gagal'; badgeClass = isTargetReached ? 'bg-success' : 'bg-danger'; }
             else { statusText = 'Dalam Progress'; badgeClass = 'bg-warning text-dark'; }
 
@@ -1187,6 +1194,7 @@ function processRawData(details) {
                 tenggat_waktu: item.tenggat_waktu, buttonIsiForm, routeUrl, asistant_route: item.asistant_route,
                 deskripsi: item.deskripsi === '-' ? '' : (item.deskripsi || ''),
                 detailJangka: item.detail_jangka,
+                jangkaRaw: item.jangka_target,
                 jabatanRaw: Array.isArray(item.jabatan) ? item.jabatan : (item.jabatan ? [item.jabatan] : []),
                 karyawanTerpilih: item.karyawan_terpilih || [],
                 tipeLabel: item.tipe_target === 'persen' ? 'Persen (%)'
