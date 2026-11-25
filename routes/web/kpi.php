@@ -53,6 +53,7 @@ Route::prefix('kpi-data')->name('kpi.')->group(function () {
     Route::post('/create-target', [TargetKPIController::class, 'createTarget'])->name('createTarget');
     Route::get('/get-data-target', [TargetKPIController::class, 'getDataTarget'])->name('getDataTarget');
     Route::get('/detail-data-target', [TargetKPIController::class, 'detailData'])->name('detail');
+    Route::post('/update-target/{id}', [TargetKPIController::class, 'updateTarget'])->name('updateTarget');
     Route::delete('/hapus-data-target/{id}', [TargetKPIController::class, 'hapusTarget'])->name('hapus');
     Route::post('/update-data-target', [TargetKPIController::class, 'updateTarget'])->name('update');
     Route::get('/edit-data-target', [TargetKPIController::class, 'editTarget'])->name('edit');

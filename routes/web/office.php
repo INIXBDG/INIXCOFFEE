@@ -362,6 +362,8 @@ Route::prefix('office')->name('office.')->group(function () {
         Route::post('/perbaikan-data/bulk-update', [DaftarTugasController::class, 'bulkUpdatePerbaikan'])->name('bulkUpdatePerbaikan');
         Route::post('/perbaikan/bulk-save', [DaftarTugasController::class, 'bulkSavePerbaikan'])->name('bulkSavePerbaikan');
         Route::post('import', [DaftarTugasController::class, 'importExcel'])->name('import');
+        Route::get('/double/scan', [DaftarTugasController::class, 'scanDouble'])->name('scanDouble');
+        Route::post('/double/clear', [DaftarTugasController::class, 'clearDouble'])->name('clearDouble');
     });
 
     Route::prefix('koordinasi-ob')->name('KoordinasiOb.')->group(function () {
