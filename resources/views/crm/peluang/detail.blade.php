@@ -522,6 +522,7 @@
                                     <option value="">-- Pilih Materi --</option>
                                     @foreach ($materi as $item)
                                         <option value="{{ $item->id }}"
+                                            data-catatan="{{ $item->catatan }}"
                                             {{ $item->id == $peluang->materi ? 'selected' : '' }}>
                                             {{ $item->nama_materi }}
                                         </option>
@@ -1459,6 +1460,12 @@
                 // Existing JavaScript for Select2 and input formatting
                 initContactSelect2();
                 initMateriSelect2();
+
+                // Saat materi diganti di modal Edit Lead, isi otomatis catatan dari materi
+                $('#edit_id_materi').on('change', function() {
+                    var catatan = $(this).find('option:selected').attr('data-catatan');
+                    $('#catatan').val(catatan ? catatan : '');
+                });
 
                 let peluang = @json($peluang);
                 console.log(peluang);

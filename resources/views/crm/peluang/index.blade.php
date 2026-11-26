@@ -485,6 +485,16 @@
                 initMateriSelect2();
             }, 100);
 
+            // Saat materi dipilih, isi otomatis input catatan dari catatan materi
+            $('#materi').on('select2:select', function (e) {
+                $('#catatan').val(e.params.data.catatan ?? '');
+            });
+
+            // Saat materi dikosongkan, kosongkan juga catatan
+            $('#materi').on('select2:clear', function () {
+                $('#catatan').val('');
+            });
+
             // Event listener Select2 untuk perusahaan
             $('#id_perusahaan').on('change', function() {
                 const perusahaanId = $(this).val();
