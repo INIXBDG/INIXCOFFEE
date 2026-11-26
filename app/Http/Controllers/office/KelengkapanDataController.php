@@ -46,6 +46,31 @@ class KelengkapanDataController extends Controller
         'biaya_exam' => 'exam',
     ];
 
+    // Indeks kolom Excel (A=0) untuk isian utama dan biaya pada template import.
+    private const INDEKS_FORM = [
+        'perusahaan' => 0, 'materi' => 1, 'mulai' => 2, 'selesai' => 3,
+        'id_sales' => 4, 'nama_sales' => 5, 'tgl_pa' => 6, 'tipe' => 7,
+    ];
+
+    private const INDEKS_BIAYA = [
+        'transportasi' => 8, 'akomodasi_peserta' => 10, 'akomodasi_tim' => 11, 'fresh_money' => 13,
+        'entertaint' => 14, 'souvenir' => 16, 'cashback' => 17, 'sewa_laptop' => 18,
+        'oleh_oleh' => 20, 'biaya_lain_lain' => 21, 'biaya_exam' => 23,
+    ];
+
+    private const LABEL_FORM = [
+        'perusahaan' => 'Perusahaan', 'materi' => 'Materi', 'mulai' => 'Tgl mulai kelas',
+        'selesai' => 'Tgl selesai kelas', 'id_sales' => 'ID Sales', 'nama_sales' => 'Nama Sales',
+        'tgl_pa' => 'Tgl PA', 'tipe' => 'Tipe pembayaran',
+        'transportasi' => 'Transportasi', 'akomodasi_peserta' => 'Akomodasi peserta',
+        'akomodasi_tim' => 'Akomodasi tim', 'fresh_money' => 'Fresh money',
+        'entertaint' => 'Entertain', 'souvenir' => 'Souvenir', 'cashback' => 'Cashback',
+        'sewa_laptop' => 'Sewa laptop', 'oleh_oleh' => 'Oleh-oleh',
+        'biaya_lain_lain' => 'Biaya lain-lain', 'biaya_exam' => 'Exam',
+    ];
+
+    private const KOLOM_TANGGAL_FORM = ['mulai', 'selesai', 'tgl_pa'];
+
     private const JABATAN_FINANCE = 'Finance & Accounting';
     private const AKSI_SINKRON = ['sinkronData', 'sinkronKonfirmasi', 'sinkronBatal', 'sinkronSimpan', 'sinkronCatatan'];
     private const MAKS_HARI_SINKRON = 370;
@@ -82,6 +107,8 @@ class KelengkapanDataController extends Controller
         'tanggal_pembayaran' => ['Tanggal pembayaran', 'teks'],
         'biaya_admin'        => ['Biaya admin', 'uang'],
     ];
+
+    private array $memoNama = [];
 
     public function __construct()
     {
@@ -242,12 +269,8 @@ class KelengkapanDataController extends Controller
 
         $barisTerakhir = $sheet->getHighestDataRow();
 
-        $petaPerusahaan = Perusahaan::select('id', 'nama_perusahaan')->get()
-            ->groupBy(fn ($x) => $this->norm($x->nama_perusahaan))
-            ->map(fn ($g) => $g->pluck('id')->all());
-        $petaMateri = Materi::select('id', 'nama_materi')->get()
-            ->groupBy(fn ($x) => $this->norm($x->nama_materi))
-            ->map(fn ($g) => $g->pluck('id')->all());
+        $petaPerusahaan = $this->petaPerusahaan();
+        $petaMateri     = $this->petaMateri();
 
         $hasil = [];
         $terlihat = [];
@@ -274,12 +297,18 @@ class KelengkapanDataController extends Controller
         return response()->json([
             'token'     => $token,
             'ringkasan' => array_merge(['siap' => 0, 'duplikat' => 0, 'tinjau' => 0, 'gagal' => 0], $ringkasan),
-            'baris'     => collect($hasil)->map(fn ($b) => collect($b)->except('data')->all())->values(),
+            'baris'     => collect($hasil)->map(fn ($b) => $this->untukKlien($b))->values(),
         ]);
     }
 
-    private function periksaBaris(int $no, array $c, $petaPerusahaan, $petaMateri, array &$terlihat, array &$berjalan): array
+    private function untukKlien(array $b): array
     {
+        return collect($b)->except(['data', 'mentah', 'asli', 'override'])->all();
+    }
+
+    private function periksaBaris(int $no, array $c, $petaPerusahaan, $petaMateri, array &$terlihat, array &$berjalan, array $override = [], ?array $asli = null): array
+    {
+        $asli = $asli ?? $c;
         $gagal = [];
         $tinjau = [];
         $bedaSales = false;
@@ -303,6 +332,13 @@ class KelengkapanDataController extends Controller
             'tgl_pa' => $tglPa, 'total' => 0, 'peluang_id' => null,
             'beda_sales' => false, 'ada_alasan_lain' => false, 'id_sales_prospek' => null,
             'data' => null,
+            'mentah' => $c,
+            'asli' => $asli,
+            'override' => $override,
+            'form' => $this->bentukForm($c),
+            'diubah' => !empty($override) || $this->bentukForm($asli) !== $this->bentukForm($c),
+            'manual' => [],
+            'saran' => null,
         ];
 
         if ($namaPerusahaan === '') $gagal[] = 'Nama Perusahaan kosong.';
@@ -312,11 +348,8 @@ class KelengkapanDataController extends Controller
         if ($tglPaIsi && !$tglPaTerbaca) $gagal[] = 'Tanggal Pengajuan PA formatnya salah.';
 
         $biaya = [];
-        $peta = ['transportasi' => 8, 'akomodasi_peserta' => 10, 'akomodasi_tim' => 11, 'fresh_money' => 13,
-                'entertaint' => 14, 'souvenir' => 16, 'cashback' => 17, 'sewa_laptop' => 18,
-                'oleh_oleh' => 20, 'biaya_lain_lain' => 21, 'biaya_exam' => 23];
-        foreach ($peta as $nama => $idx) {
-            $v = $c[$idx];
+        foreach (self::INDEKS_BIAYA as $nama => $idx) {
+            $v = $c[$idx] ?? null;
             if ($v === null || trim((string) $v) === '') { $biaya[$nama] = null; continue; }
             $angka = $this->parseUang($v);
             if ($angka === null || $angka < 0) {
@@ -330,52 +363,74 @@ class KelengkapanDataController extends Controller
         $baris['total'] = $total;
         if ($total <= 0 && empty($gagal)) $gagal[] = 'Semua kolom biaya kosong atau 0.';
 
+        // ---- pencarian perusahaan / materi / prospect (bisa diperbaiki manual) ----
         $peluang = null;
-        if (empty($gagal)) {
-            $idP = $petaPerusahaan->get($this->norm($namaPerusahaan), []);
-            $idM = $petaMateri->get($this->norm($namaMateri), []);
+        $idP = [];
+        $idM = [];
+        $tahapCari = empty($gagal);
+        $butuh = ['perusahaan' => false, 'materi' => false, 'peluang' => false];
 
-            if (empty($idP)) $gagal[] = 'Perusahaan tidak ditemukan di sistem.';
-            if (empty($idM)) $gagal[] = 'Materi tidak ditemukan di sistem.';
+        if ($tahapCari) {
+            $idP = !empty($override['perusahaan_id'])
+                ? [(int) $override['perusahaan_id']]
+                : $petaPerusahaan->get($this->norm($namaPerusahaan), []);
+            $idM = !empty($override['materi_id'])
+                ? [(int) $override['materi_id']]
+                : $petaMateri->get($this->norm($namaMateri), []);
+
+            if (empty($idP)) { $gagal[] = 'Perusahaan tidak ditemukan di sistem.'; $butuh['perusahaan'] = true; }
+            if (empty($idM)) { $gagal[] = 'Materi tidak ditemukan di sistem.';     $butuh['materi'] = true; }
         }
 
-        if (empty($gagal)) {
-            $kandidat = Peluang::whereIn('id_contact', $idP)
-                ->whereIn('materi', $idM)
-                ->whereDate('periode_mulai', $mulai)
-                ->whereDate('periode_selesai', $selesai)
-                ->whereNull('deleted_at')
-                ->where('tahap', '!=', 'lost')
-                ->get();
-
-            $awal = $kandidat->count();
+        if ($tahapCari && empty($gagal)) {
             $disaring = false;
 
-            if ($awal > 1) {
-                $disaring = true;
-                $hasil = collect();
-                if ($idSales !== '') {
-                    $hasil = $kandidat->filter(fn ($p) => $this->norm($p->id_sales) === $this->norm($idSales));
+            if (!empty($override['peluang_id'])) {
+                $kandidat = Peluang::whereKey((int) $override['peluang_id'])
+                    ->whereNull('deleted_at')
+                    ->where('tahap', '!=', 'lost')
+                    ->get();
+                if ($kandidat->isEmpty()) {
+                    $gagal[] = 'Prospect yang dipilih sudah tidak ada atau berstatus lost.';
                 }
-                if ($hasil->isEmpty() && $namaSales !== '') {
-                    $ids = $this->idSalesDariNama($namaSales);
-                    $hasil = $kandidat->filter(fn ($p) => in_array($this->norm($p->id_sales), $ids, true));
+            } else {
+                $kandidat = Peluang::whereIn('id_contact', $idP)
+                    ->whereIn('materi', $idM)
+                    ->whereDate('periode_mulai', $mulai)
+                    ->whereDate('periode_selesai', $selesai)
+                    ->whereNull('deleted_at')
+                    ->where('tahap', '!=', 'lost')
+                    ->get();
+
+                $awal = $kandidat->count();
+
+                if ($awal > 1) {
+                    $disaring = true;
+                    $hasil = collect();
+                    if ($idSales !== '') {
+                        $hasil = $kandidat->filter(fn ($p) => $this->norm($p->id_sales) === $this->norm($idSales));
+                    }
+                    if ($hasil->isEmpty() && $namaSales !== '') {
+                        $ids = $this->idSalesDariNama($namaSales);
+                        $hasil = $kandidat->filter(fn ($p) => in_array($this->norm($p->id_sales), $ids, true));
+                    }
+                    if ($idSales === '' && $namaSales === '') {
+                        $gagal[] = "Ditemukan {$awal} peluang yang sama. Isi ID Sales atau Nama Lengkap Sales untuk membedakan, atau pilih prospect manual.";
+                    } elseif ($hasil->isEmpty()) {
+                        $gagal[] = "Ditemukan {$awal} peluang yang sama, tetapi ID/Nama Sales tidak cocok dengan salah satunya.";
+                    } elseif ($hasil->count() > 1) {
+                        $gagal[] = "Masih ditemukan {$hasil->count()} peluang setelah dicocokkan dengan sales. Tidak dapat ditentukan.";
+                    }
+                    $kandidat = $hasil->values();
+                } elseif ($awal === 0) {
+                    $gagal[] = 'Peluang tidak ditemukan (periksa perusahaan, materi, dan tanggal kelas; peluang lost tidak ikut dicari).';
                 }
-                if ($idSales === '' && $namaSales === '') {
-                    $gagal[] = "Ditemukan {$awal} peluang yang sama. Isi ID Sales atau Nama Lengkap Sales untuk membedakan.";
-                } elseif ($hasil->isEmpty()) {
-                    $gagal[] = "Ditemukan {$awal} peluang yang sama, tetapi ID/Nama Sales tidak cocok dengan salah satunya.";
-                } elseif ($hasil->count() > 1) {
-                    $gagal[] = "Masih ditemukan {$hasil->count()} peluang setelah dicocokkan dengan sales. Tidak dapat ditentukan.";
-                }
-                $kandidat = $hasil->values();
-            } elseif ($awal === 0) {
-                $gagal[] = 'Peluang tidak ditemukan (periksa perusahaan, materi, dan tanggal kelas; peluang lost tidak ikut dicari).';
             }
 
+            if (!empty($gagal)) $butuh['peluang'] = true;
             if (empty($gagal)) $peluang = $kandidat->first();
 
-            if ($peluang && !$disaring && $idSales !== '' && $this->norm($peluang->id_sales) !== $this->norm($idSales)) {
+            if ($peluang && !$disaring && empty($override['peluang_id']) && $idSales !== '' && $this->norm($peluang->id_sales) !== $this->norm($idSales)) {
                 $tinjau[] = "ID Sales di file ({$idSales}) berbeda dengan sales pada prospect ({$peluang->id_sales}). ID Sales tidak akan diubah dari file.";
                 $bedaSales = true;
             }
@@ -383,11 +438,31 @@ class KelengkapanDataController extends Controller
 
         if (!empty($gagal)) {
             $baris['alasan'] = $gagal;
+            if ($tahapCari) {
+                $baris['saran'] = $this->susunSaran($butuh, $namaPerusahaan, $namaMateri, $idP, $idM, $mulai);
+            }
             return $baris;
         }
 
         $baris['peluang_id'] = $peluang->id;
-        $baris['perusahaan'] = $namaPerusahaan;
+
+        // ---- jejak perbaikan manual (tidak menahan status; hanya dicatat) ----
+        $manual = $this->ringkasPerubahan($asli, $c);
+        if (!empty($override['perusahaan_id'])) {
+            $namaDb = Perusahaan::whereKey((int) $override['perusahaan_id'])->value('nama_perusahaan');
+            $baris['perusahaan'] = $namaDb ?: $namaPerusahaan;
+            $manual[] = "Perusahaan dipilih dari database: \"{$namaDb}\" (di file: \"{$namaPerusahaan}\")";
+        }
+        if (!empty($override['materi_id'])) {
+            $namaDb = Materi::whereKey((int) $override['materi_id'])->value('nama_materi');
+            $baris['materi'] = $namaDb ?: $namaMateri;
+            $manual[] = "Materi dipilih dari database: \"{$namaDb}\" (di file: \"{$namaMateri}\")";
+        }
+        if (!empty($override['peluang_id'])) {
+            $manual[] = 'Prospect dipilih manual (ID ' . $peluang->id . ', periode ' . substr((string) $peluang->periode_mulai, 0, 10)
+                . ' s/d ' . substr((string) $peluang->periode_selesai, 0, 10) . ')';
+        }
+        $baris['manual'] = $manual;
 
         if ($peluang->tahap !== 'merah') {
             $tinjau[] = "Peluang belum berstatus closed win (tahap saat ini: {$peluang->tahap}).";
@@ -441,10 +516,125 @@ class KelengkapanDataController extends Controller
             'keterangan_entertaint'    => trim((string) $c[15]) ?: null,
             'keterangan_biaya_lain'    => trim((string) ($c[22] ?? '')) ?: null,
             'deskripsi_tambahan'       => trim((string) $c[19]) ?: null,
+            'jejak_manual'             => $manual ? Str::limit(implode('; ', $manual), 400, '...') : null,
             'total'                    => $total,
         ]);
 
         return $baris;
+    }
+
+    /**
+     * Perbaiki satu baris hasil pemeriksaan: pilih data dari database dan/atau edit isian baris,
+     * lalu periksa ulang baris itu saja. Baris yang lolos langsung berstatus siap/duplikat/tinjau
+     * menurut aturan biasa (tanpa tinjauan tambahan hanya karena dipilih manual).
+     */
+    public function perbaiki(Request $request)
+    {
+        $request->validate([
+            'token'         => 'required|string',
+            'no'            => 'required|integer',
+            'reset'         => 'nullable|boolean',
+            'edit'          => 'nullable|array',
+            'edit.*'        => 'nullable|string|max:255',
+            'perusahaan_id' => 'nullable|integer|min:1',
+            'materi_id'     => 'nullable|integer|min:1',
+            'peluang_id'    => 'nullable|integer|min:1',
+        ]);
+
+        $kunci = $this->kunciCache($request->token);
+        $lock = Cache::lock('import_pa_perbaiki:' . $request->token, 15);
+        if (!$lock->get()) {
+            return response()->json(['message' => 'Masih ada proses lain. Coba lagi sebentar.'], 409);
+        }
+
+        try {
+            $rows = Cache::get($kunci);
+            if (!$rows) {
+                return response()->json(['message' => 'Sesi pemeriksaan sudah berakhir. Unggah ulang file Anda.'], 410);
+            }
+
+            $no = (int) $request->input('no');
+            $idx = null;
+            foreach ($rows as $i => $b) {
+                if ((int) $b['no'] === $no) { $idx = $i; break; }
+            }
+            if ($idx === null) {
+                return response()->json(['message' => 'Baris tidak ditemukan.'], 404);
+            }
+
+            $lama = $rows[$idx];
+            if (empty($lama['mentah'])) {
+                return response()->json(['message' => 'Baris ini tidak dapat diperbaiki dari sini.'], 422);
+            }
+
+            $asli = $lama['asli'] ?? $lama['mentah'];
+
+            if ($request->boolean('reset')) {
+                $mentah = $asli;
+                $override = [];
+            } else {
+                $mentah = $lama['mentah'];
+                $override = (array) ($lama['override'] ?? []);
+                $formLama = $this->bentukForm($mentah);
+                $indeks = self::INDEKS_FORM + self::INDEKS_BIAYA;
+
+                foreach ((array) $request->input('edit', []) as $k => $v) {
+                    if (!isset($indeks[$k])) continue;
+                    $v = trim((string) $v);
+                    if ($v === ($formLama[$k] ?? '')) continue;
+                    $mentah[$indeks[$k]] = $v === '' ? null : $v;
+                }
+
+                $formBaru = $this->bentukForm($mentah);
+                if ($formBaru['perusahaan'] !== $formLama['perusahaan']) {
+                    unset($override['perusahaan_id'], $override['peluang_id']);
+                }
+                if ($formBaru['materi'] !== $formLama['materi']) {
+                    unset($override['materi_id'], $override['peluang_id']);
+                }
+                if ($formBaru['mulai'] !== $formLama['mulai'] || $formBaru['selesai'] !== $formLama['selesai']) {
+                    unset($override['peluang_id']);
+                }
+
+                // pilihan baru dari dropdown; memilih perusahaan/materi baru membatalkan pilihan prospek lama
+                if ($request->filled('perusahaan_id') || $request->filled('materi_id')) {
+                    if (!$request->filled('peluang_id')) unset($override['peluang_id']);
+                }
+                foreach (['perusahaan_id', 'materi_id', 'peluang_id'] as $k) {
+                    if ($request->filled($k)) $override[$k] = (int) $request->input($k);
+                }
+            }
+
+            // bangun ulang state duplikat / sisa net sales dari baris lain
+            $terlihat = [];
+            $berjalan = [];
+            foreach ($rows as $b) {
+                if ((int) $b['no'] === $no || empty($b['data'])) continue;
+                $k = $b['data']['id_rkm'] . '|' . $b['data']['tgl_pa'] . '|' . round($b['data']['total'], 2);
+                $terlihat[$k] = $terlihat[$k] ?? $b['no'];
+                if ($b['status'] !== 'duplikat') {
+                    $berjalan[$b['peluang_id']] = ($berjalan[$b['peluang_id']] ?? 0) + $b['data']['total'];
+                }
+            }
+
+            $baru = $this->periksaBaris(
+                $no, $mentah, $this->petaPerusahaan(), $this->petaMateri(),
+                $terlihat, $berjalan, $override, $asli
+            );
+
+            $rows[$idx] = $baru;
+            Cache::put($kunci, $rows, now()->addMinutes(self::CACHE_MENIT));
+
+            return response()->json([
+                'baris'     => $this->untukKlien($baru),
+                'ringkasan' => array_merge(
+                    ['siap' => 0, 'duplikat' => 0, 'tinjau' => 0, 'gagal' => 0],
+                    collect($rows)->countBy('status')->all()
+                ),
+            ]);
+        } finally {
+            optional($lock)->release();
+        }
     }
 
     public function commit(Request $request)
@@ -564,7 +754,8 @@ class KelengkapanDataController extends Controller
         $jejak = '[Import ' . now()->format('d/m/Y H:i') . ' oleh ' . (Auth::user()->username ?? Auth::id()) . ']'
             . ($alasan ? " Dipakai karena: {$alasan}" : '')
             . ($potong ? '' : ' (net sales tidak dikurangi)')
-            . ($dariProspek ? ' Data dari prospect: ID Sales ' . ($d['id_sales_prospek'] ?? '-') . ' dipakai, ID Sales file (' . ($d['id_sales_file'] ?? '-') . ') tidak dipakai.' : '');
+            . ($dariProspek ? ' Data dari prospect: ID Sales ' . ($d['id_sales_prospek'] ?? '-') . ' dipakai, ID Sales file (' . ($d['id_sales_file'] ?? '-') . ') tidak dipakai.' : '')
+            . (!empty($d['jejak_manual']) ? ' Diperbaiki manual saat import: ' . $d['jejak_manual'] . '.' : '');
 
         $n = new perhitunganNetSales();
         $n->id_rkm = $d['id_rkm'];
@@ -581,7 +772,7 @@ class KelengkapanDataController extends Controller
         $n->id_tracking = $tracking->id;
         $n->save();
 
-        KelengkapanDataLog::catatTeks('pa', $d['id_rkm'], 'Dibuat (import) | tgl_pa: ' . $d['tgl_pa'] . '; total: ' . (int) $d['total'] . '; ' . ($potong ? 'net sales dikurangi' : 'net sales tidak dikurangi') . ($alasan ? '; alasan: ' . $alasan : '') . ($dariProspek ? '; ID Sales dari prospect: ' . ($d['id_sales_prospek'] ?? '-') : ''));
+        KelengkapanDataLog::catatTeks('pa', $d['id_rkm'], 'Dibuat (import) | tgl_pa: ' . $d['tgl_pa'] . '; total: ' . (int) $d['total'] . '; ' . ($potong ? 'net sales dikurangi' : 'net sales tidak dikurangi') . ($alasan ? '; alasan: ' . $alasan : '') . ($dariProspek ? '; ID Sales dari prospect: ' . ($d['id_sales_prospek'] ?? '-') : '') . (!empty($d['jejak_manual']) ? '; perbaikan manual: ' . $d['jejak_manual'] : ''));
 
         if ($potong) {
             if ($existing) {
@@ -1322,5 +1513,132 @@ class KelengkapanDataController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Helper perbaikan import
+    // ------------------------------------------------------------------
+
+    /** Isian baris dalam bentuk teks, siap ditampilkan di form edit (tanggal dinormalkan ke Y-m-d). */
+    private function bentukForm(array $c): array
+    {
+        $f = [];
+        foreach (self::INDEKS_FORM as $k => $i) {
+            $v = $c[$i] ?? null;
+            $f[$k] = in_array($k, self::KOLOM_TANGGAL_FORM, true)
+                ? ($this->parseTanggal($v) ?? trim((string) $v))
+                : trim((string) $v);
+        }
+        foreach (self::INDEKS_BIAYA as $k => $i) {
+            $f[$k] = trim((string) ($c[$i] ?? ''));
+        }
+
+        return $f;
+    }
+
+    private function ringkasPerubahan(array $asli, array $c): array
+    {
+        $a = $this->bentukForm($asli);
+        $b = $this->bentukForm($c);
+        $hasil = [];
+
+        foreach (self::LABEL_FORM as $k => $label) {
+            $x = $a[$k] ?? '';
+            $y = $b[$k] ?? '';
+            if ($x !== $y) {
+                $hasil[] = $label . ': "' . ($x !== '' ? $x : '-') . '" -> "' . ($y !== '' ? $y : '-') . '"';
+            }
+        }
+
+        return $hasil;
+    }
+
+    private function petaPerusahaan()
+    {
+        return Perusahaan::select('id', 'nama_perusahaan')->get()
+            ->groupBy(fn ($x) => $this->norm($x->nama_perusahaan))
+            ->map(fn ($g) => $g->pluck('id')->all());
+    }
+
+    private function petaMateri()
+    {
+        return Materi::select('id', 'nama_materi')->get()
+            ->groupBy(fn ($x) => $this->norm($x->nama_materi))
+            ->map(fn ($g) => $g->pluck('id')->all());
+    }
+
+    private function skorMirip(string $a, string $b): float
+    {
+        $bersih = fn (string $s) => trim(preg_replace('/\s+/u', ' ',
+            preg_replace('/\b(pt|cv|tbk|persero|ud)\b|[^\p{L}\p{N}\s]/u', ' ', $this->norm($s))));
+
+        $a = $bersih($a);
+        $b = $bersih($b);
+        if ($a === '' || $b === '') return 0;
+
+        similar_text($a, $b, $persen);
+        if (str_contains($a, $b) || str_contains($b, $a)) $persen = max($persen, 85);
+
+        $ta = array_filter(explode(' ', $a));
+        $tb = array_filter(explode(' ', $b));
+        $token = count(array_intersect($ta, $tb)) / max(1, min(count($ta), count($tb))) * 100;
+
+        return max($persen, $token * 0.9);
+    }
+
+    private function rekomendasi(string $nama, string $jenis, int $limit = 5): array
+    {
+        if (!isset($this->memoNama[$jenis])) {
+            $this->memoNama[$jenis] = $jenis === 'perusahaan'
+                ? Perusahaan::get(['id', 'nama_perusahaan'])
+                    ->map(fn ($x) => ['id' => $x->id, 'nama' => (string) $x->nama_perusahaan])->all()
+                : Materi::get(['id', 'nama_materi'])
+                    ->map(fn ($x) => ['id' => $x->id, 'nama' => (string) $x->nama_materi])->all();
+        }
+
+        $hasil = [];
+        foreach ($this->memoNama[$jenis] as $x) {
+            $skor = $this->skorMirip($nama, $x['nama']);
+            if ($skor >= 40) $hasil[] = $x + ['skor' => (int) round($skor)];
+        }
+        usort($hasil, fn ($p, $q) => $q['skor'] <=> $p['skor']);
+
+        return array_slice($hasil, 0, $limit);
+    }
+
+    private function saranPeluang(array $idP, array $idM, ?string $mulai, int $limit = 10): array
+    {
+        $tm = $mulai ? Carbon::parse($mulai)->startOfDay() : null;
+
+        return Peluang::with('materiRelation:id,nama_materi')
+            ->whereIn('id_contact', $idP)
+            ->whereNull('deleted_at')
+            ->where('tahap', '!=', 'lost')
+            ->get()
+            ->map(function ($p) use ($idM, $tm) {
+                $selisih = ($tm && $p->periode_mulai)
+                    ? abs((int) Carbon::parse($p->periode_mulai)->startOfDay()->diffInDays($tm))
+                    : 999;
+                $skor = (in_array($p->materi, $idM) ? 50 : 0) + (int) round(50 * max(0, 1 - $selisih / 90));
+
+                return [
+                    'id'    => $p->id,
+                    'skor'  => $skor,
+                    'label' => ($p->materiRelation->nama_materi ?? '-') . ' | '
+                        . substr((string) $p->periode_mulai, 0, 10) . ' s/d ' . substr((string) $p->periode_selesai, 0, 10)
+                        . ' | Sales ' . ($p->id_sales ?? '-') . ' | ' . $p->tahap,
+                ];
+            })
+            ->sortByDesc('skor')->take($limit)->values()->all();
+    }
+
+    private function susunSaran(array $butuh, string $namaPerusahaan, string $namaMateri, array $idP, array $idM, ?string $mulai): array
+    {
+        return [
+            'butuh'      => $butuh,
+            'perusahaan' => $butuh['perusahaan'] ? $this->rekomendasi($namaPerusahaan, 'perusahaan') : [],
+            'materi'     => $butuh['materi'] ? $this->rekomendasi($namaMateri, 'materi') : [],
+            'peluang'    => ($butuh['peluang'] && !empty($idP) && !empty($idM)) ? $this->saranPeluang($idP, $idM, $mulai) : [],
+        ];
     }
 }

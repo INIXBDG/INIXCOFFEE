@@ -305,6 +305,8 @@ Route::prefix('HR-dashboard')->name('HR.')->group(function () {
             Route::post('/save', [ReportSmartController::class, 'save'])->name('save');
             Route::get('/{template}/data', [ReportSmartController::class, 'data'])->name('data');
             Route::post('/{template}/update', [ReportSmartController::class, 'updateSmart'])->name('update');
+            Route::get('/{template}/counters', [ReportSmartController::class, 'counters'])->name('counters');
+            Route::post('/{template}/counters/reset', [ReportSmartController::class, 'resetCounterSmart'])->name('counters.reset');
         });
     });
 

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Alur baru: Upload -> Scan garis bawah -> Review tebakan ML -> Simpan.
@@ -359,6 +360,68 @@ class ReportSmartController extends ReportController
 
             return response()->json(['success' => false, 'message' => 'Gagal memperbarui template: ' . $e->getMessage()], 500);
         }
+    }
+
+    // =========================================================
+    // NOMOR SURAT: daftar counter & reset
+    // =========================================================
+    public function counters(ReportTemplate $template): JsonResponse
+    {
+        $counters = ($template->settings ?? [])['counters'] ?? [];
+
+        $rows = $template->placeholders
+            ->where('field_type', 'formula')
+            ->filter(fn ($p) => str_contains((string) ($p->config['template'] ?? ''), 'urutan'))
+            ->map(function ($p) use ($template, $counters) {
+                $cfg = (array) $p->config;
+                $key = $this->generatorService->resolveCounterKey($cfg, $template);
+
+                return [
+                    'key'      => $p->placeholder_key,
+                    'label'    => $p->placeholder_label,
+                    'template' => $cfg['template'] ?? '',
+                    'period'   => $cfg['reset_period'] ?? (isset($cfg['counter_key']) ? 'never' : 'yearly'),
+                    'last'     => (int) ($counters[$key] ?? ($cfg['last_number'] ?? 0)),
+                ];
+            })
+            ->values();
+
+        return response()->json(['success' => true, 'data' => $rows]);
+    }
+
+    public function resetCounterSmart(Request $request, ReportTemplate $template): JsonResponse
+    {
+        if ($template->created_by !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            return response()->json(['success' => false, 'message' => 'Tidak punya akses.'], 403);
+        }
+
+        $v = $request->validate([
+            'placeholder_key' => 'required|string',
+            'mode'            => 'required|in:zero,set,back,skip',
+            'value'           => 'nullable|integer|min:1|max:99999999',
+        ]);
+
+        if ($v['mode'] === 'set' && empty($v['value'])) {
+            return response()->json(['success' => false, 'message' => 'Isi nomor awal yang diinginkan.'], 422);
+        }
+
+        $ph = $template->placeholders()
+            ->where('placeholder_key', $v['placeholder_key'])
+            ->where('field_type', 'formula')
+            ->firstOrFail();
+
+        $cfg = (array) $ph->config;
+        $key = $this->generatorService->resolveCounterKey($cfg, $template);
+
+        $last = $this->generatorService->adjustCounter(
+            $template, $key, $v['mode'], $v['value'] ?? null, (int) ($cfg['last_number'] ?? 0)
+        );
+
+        Log::info('Counter nomor surat diubah', [
+            'template' => $template->id, 'key' => $key, 'mode' => $v['mode'], 'last' => $last, 'by' => Auth::id(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Nomor surat berhasil diatur.', 'last' => $last]);
     }
 
     // =========================================================

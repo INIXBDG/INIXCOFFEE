@@ -225,6 +225,7 @@ Route::prefix('office')->group(function () {
         Route::get('/pa/template', [KelengkapanDataController::class, 'downloadTemplate'])->name('pa.template');
         Route::post('/pa/preview', [KelengkapanDataController::class, 'preview'])->name('pa.preview');
         Route::post('/pa/commit', [KelengkapanDataController::class, 'commit'])->name('pa.commit');
+        Route::post('/pa/perbaiki', [KelengkapanDataController::class, 'perbaiki'])->name('pa.perbaiki');
 
         Route::get('/sinkron/data', [KelengkapanDataController::class, 'sinkronData'])->name('sinkron.data');
         Route::post('/sinkron/konfirmasi', [KelengkapanDataController::class, 'sinkronKonfirmasi'])->name('sinkron.konfirmasi');
