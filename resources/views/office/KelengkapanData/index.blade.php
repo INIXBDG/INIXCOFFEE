@@ -339,7 +339,9 @@
                                                     </li>
                                                     <li class="mb-2">Cek hasil pemeriksaan. Data yang
                                                         <strong>sudah ada</strong> atau <strong>perlu ditinjau</strong>
-                                                        menunggu keputusan Anda.
+                                                        menunggu keputusan Anda. Data yang
+                                                        <strong>tidak dapat diproses</strong> bisa diperbaiki langsung di
+                                                        layar tanpa mengunggah ulang.
                                                     </li>
                                                     <li>Klik <strong>Proses import</strong> untuk menyimpan.</li>
                                                 </ol>
@@ -350,6 +352,9 @@
                                                             Payment Advance ke prospect tersebut.</li>
                                                         <li>Prospect dicari dari nama perusahaan, nama materi, dan tanggal
                                                             kelas. Tulis sama seperti di sistem.</li>
+                                                        <li>Jika perusahaan, materi, atau prospect tidak ditemukan, pilih
+                                                            data yang paling cocok dari database atau edit isian barisnya,
+                                                            lalu periksa ulang baris itu saja.</li>
                                                         <li>Jika ada prospect kembar, ID Sales atau Nama Lengkap Sales
                                                             dipakai
                                                             untuk membedakan.</li>
@@ -400,7 +405,7 @@
                                                         <th>Tgl PA</th>
                                                         <th class="text-end">Total PA</th>
                                                         <th style="width:140px">Status</th>
-                                                        <th style="width:34%">Keterangan dan keputusan</th>
+                                                        <th style="width:42%">Keterangan dan keputusan</th>
                                                     </tr>
                                                 </thead>
                                             </table>
@@ -802,6 +807,22 @@
                 background: #fffbeb;
             }
 
+            .kd-fix>summary {
+                cursor: pointer;
+                color: var(--kd-blue);
+                font-size: .85rem;
+                font-weight: 500;
+                margin-bottom: .35rem;
+            }
+
+            .kd-fix .select2-container {
+                font-size: .85rem;
+            }
+
+            .kd-fix label {
+                display: block;
+            }
+
             .kd-badge--info {
                 background: #dbeafe;
                 color: #1e40af;
@@ -1126,6 +1147,7 @@
                         data: "{{ route('kelengkapan-data.pa.data') }}",
                         preview: "{{ route('kelengkapan-data.pa.preview') }}",
                         commit: "{{ route('kelengkapan-data.pa.commit') }}",
+                        perbaiki: "{{ route('kelengkapan-data.pa.perbaiki') }}",
                         detailPeluang: "{{ url('/crm/peluang/detail') }}"
                     };
 
@@ -1142,6 +1164,35 @@
                             next: 'Berikutnya'
                         }
                     };
+
+                    const DAFTAR_DB = {
+                        materi: @json($daftarMateri ?? []),
+                        perusahaan: @json($daftarPerusahaan ?? [])
+                    };
+
+                    const FORM_UTAMA = [
+                        ['perusahaan', 'Nama perusahaan', 'text'],
+                        ['materi', 'Nama materi / kelas', 'text'],
+                        ['mulai', 'Tanggal mulai kelas', 'date'],
+                        ['selesai', 'Tanggal selesai kelas', 'date'],
+                        ['id_sales', 'ID Sales', 'text'],
+                        ['nama_sales', 'Nama lengkap sales', 'text'],
+                        ['tgl_pa', 'Tanggal pengajuan PA', 'date'],
+                        ['tipe', 'Tipe pembayaran', 'text']
+                    ];
+                    const FORM_BIAYA = [
+                        ['transportasi', 'Transportasi'],
+                        ['akomodasi_peserta', 'Akomodasi peserta'],
+                        ['akomodasi_tim', 'Akomodasi tim'],
+                        ['fresh_money', 'Fresh money'],
+                        ['entertaint', 'Entertain'],
+                        ['souvenir', 'Souvenir'],
+                        ['cashback', 'Cashback'],
+                        ['sewa_laptop', 'Sewa laptop'],
+                        ['oleh_oleh', 'Oleh-oleh'],
+                        ['biaya_lain_lain', 'Biaya lain-lain'],
+                        ['biaya_exam', 'Exam']
+                    ];
 
                     const STATUS = {
                         siap: {
@@ -1164,6 +1215,7 @@
 
                     const rp = n => 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n || 0));
                     const esc = s => $('<div>').text(s ?? '').html();
+                    const escA = s => esc(s).replace(/"/g, '&quot;');
 
                     const fmtPeriode = v => {
                         const m = String(v ?? '').match(/^(\d{4})-(\d{2})-(\d{2}) s\/d (\d{4})-(\d{2})-(\d{2})$/);
@@ -1954,6 +2006,10 @@
                             return esc(j.message || '') + '<ul class="mb-0">' + j.errors.map(e => `<li>${esc(e)}</li>`)
                                 .join('') + '</ul>';
                         }
+                        if (j.errors && typeof j.errors === 'object') {
+                            const p = Object.values(j.errors)[0];
+                            return esc(Array.isArray(p) ? p[0] : p);
+                        }
                         return esc(j.message || 'Terjadi kesalahan. Coba lagi.');
                     }
 
@@ -1991,20 +2047,80 @@
                     });
 
                     function alasanHtml(b) {
-                        return (b.alasan || []).length ?
+                        let h = (b.alasan || []).length ?
                             `<ul class="mb-1 ps-3 small">${b.alasan.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : '';
+                        if ((b.manual || []).length) {
+                            h += `<div class="small text-primary mb-1">Diperbaiki manual: ${b.manual.map(esc).join('; ')}</div>`;
+                        }
+                        return h;
+                    }
+
+                    function opsiSaran(saran, semua) {
+                        const rek = saran || [];
+                        const ids = new Set(rek.map(s => String(s.id)));
+                        const auto = rek.length && rek[0].skor >= 85 ? String(rek[0].id) : '';
+                        const o1 = rek.map(s =>
+                            `<option value="${s.id}"${String(s.id) === auto ? ' selected' : ''}>${esc(s.nama)} (${s.skor}% mirip)</option>`
+                        ).join('');
+                        const o2 = semua.filter(d => !ids.has(String(d[0])))
+                            .map(d => `<option value="${d[0]}">${esc(d[1])}</option>`).join('');
+                        return `<option value="">Pilih dari database...</option>` +
+                            (o1 ? `<optgroup label="Rekomendasi paling cocok">${o1}</optgroup>` : '') +
+                            `<optgroup label="Semua data">${o2}</optgroup>`;
+                    }
+
+                    function perbaikiHtml(b) {
+                        const f = b.form;
+                        if (!f || !(b.status === 'gagal' || b.diubah)) return '';
+                        const s = b.saran;
+                        const tglOk = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : '';
+                        const blok = (judul, j, isi) => `<div class="mb-2"><label class="small fw-semibold mb-1">${judul}</label>
+                            <select class="k-fix" data-j="${j}" style="width:100%">${isi}</select></div>`;
+                        const input = (k, label, tipe) => `<div class="col-12 col-xl-6"><label class="small kd-muted mb-0">${label}</label>
+                            <input type="${tipe}" class="form-control form-control-sm k-ed" data-k="${k}"
+                                value="${escA(tipe === 'date' ? tglOk(f[k]) : f[k])}"></div>`;
+
+                        let h = `<details class="kd-fix mt-1"${b.status === 'gagal' ? ' open' : ''}>
+                            <summary>${b.status === 'gagal' ? 'Perbaiki data baris ini' : 'Ubah perbaikan'}</summary>
+                            <div class="border rounded p-2 bg-white">`;
+
+                        if (s && s.butuh) {
+                            h += '<div class="small fw-semibold mb-2">Cocokkan dengan database</div>';
+                            if (s.butuh.perusahaan) h += blok('Perusahaan di sistem', 'perusahaan', opsiSaran(s.perusahaan, DAFTAR_DB.perusahaan));
+                            if (s.butuh.materi) h += blok('Materi di sistem', 'materi', opsiSaran(s.materi, DAFTAR_DB.materi));
+                            if (s.butuh.peluang) {
+                                const o = (s.peluang || []).map(p =>
+                                    `<option value="${p.id}">${esc(p.label)} (${p.skor}% cocok)</option>`).join('');
+                                h += blok('Prospect', 'peluang', o ?
+                                    `<option value="">Pilih prospect...</option><optgroup label="Rekomendasi paling cocok">${o}</optgroup>` :
+                                    '<option value="">Tidak ada prospect untuk perusahaan ini</option>');
+                            }
+                            h += '<hr class="my-2">';
+                        }
+
+                        h += `<div class="small fw-semibold mb-1">Edit isian baris</div>
+                            <div class="row g-2 mb-2">${FORM_UTAMA.map(([k, l, t]) => input(k, l, t)).join('')}</div>
+                            <details class="mb-2"><summary class="small">Rincian biaya</summary>
+                                <div class="row g-2 mt-0">${FORM_BIAYA.map(([k, l]) => input(k, l, 'text')).join('')}</div></details>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-primary k-terapkan" data-no="${b.no}">Terapkan dan periksa ulang</button>
+                                ${b.diubah ? `<button type="button" class="btn btn-sm btn-outline-secondary k-reset" data-no="${b.no}">Kembalikan ke isi file</button>` : ''}
+                            </div></div></details>`;
+                        return h;
                     }
 
                     function kontrolHtml(b) {
+                        const perbaikan = perbaikiHtml(b);
+                        if (b.status === 'gagal') return perbaikan;
                         if (b.status === 'siap') {
                             return `<div class="form-check">
                                 <input class="form-check-input k-impor" type="checkbox" id="imp${b.no}" checked>
-                                <label class="form-check-label small" for="imp${b.no}">Impor data ini</label></div>`;
+                                <label class="form-check-label small" for="imp${b.no}">Impor data ini</label></div>${perbaikan}`;
                         }
                         if (b.status === 'duplikat') {
                             return `<select class="form-select form-select-sm k-dup">
                                 <option value="lewati" selected>Lewati (jangan simpan lagi)</option>
-                                <option value="tambah">Tetap simpan sebagai data baru</option></select>`;
+                                <option value="tambah">Tetap simpan sebagai data baru</option></select>${perbaikan}`;
                         }
                         if (b.status === 'tinjau') {
                             return `<select class="form-select form-select-sm k-tinjau mb-1" data-lain="${b.ada_alasan_lain ? 1 : 0}">
@@ -2016,9 +2132,22 @@
                                     <select class="form-select form-select-sm k-perlakuan mb-1">
                                         <option value="potong">Simpan dan kurangi net sales</option>
                                         <option value="catat">Simpan sebagai catatan saja (net sales tidak dikurangi)</option></select>
-                                    <input type="text" class="form-control form-control-sm k-alasan" maxlength="200" placeholder="Alasan memakai data ini (opsional)">`;
+                                    <input type="text" class="form-control form-control-sm k-alasan" maxlength="200" placeholder="Alasan memakai data ini (opsional)">
+                                </div>${perbaikan}`;
                         }
                         return '';
+                    }
+
+                    function initSelect2Fix() {
+                        if (!$.fn.select2) return;
+                        $('#tabelPreview .k-fix').not('.select2-hidden-accessible').select2({
+                            dropdownParent: $('#importPaModal'),
+                            width: '100%',
+                            placeholder: 'Pilih...',
+                            language: {
+                                noResults: () => 'Tidak ditemukan'
+                            }
+                        });
                     }
 
                     function siapkanTabelPreview() {
@@ -2029,6 +2158,7 @@
                             pageLength: 25,
                             autoWidth: false,
                             language: BAHASA,
+                            drawCallback: initSelect2Fix,
                             createdRow: function(row, b) {
                                 $(row).attr({
                                     'data-no': b.no,
@@ -2070,17 +2200,20 @@
                         });
                     }
 
-                    function renderPreview(ring) {
+                    function renderFilter(ring) {
                         const hitung = Object.assign({
                             semua: baris.length
                         }, ring);
                         $('#filterStatus').html(['semua', ...Object.keys(STATUS)].map(k => `
-                            <button type="button" class="btn btn-outline-secondary" data-filter="${k}">
+                            <button type="button" class="btn btn-outline-secondary${k === filterAktif ? ' active' : ''}" data-filter="${k}">
                                 ${k === 'semua' ? 'Semua' : STATUS[k].teks}<span class="badge bg-light text-dark border ms-1">${hitung[k] || 0}</span>
                             </button>`).join(''));
 
                         $('#btnUnduhGagal').toggleClass('d-none', !(ring.gagal > 0));
+                    }
 
+                    function renderPreview(ring) {
+                        renderFilter(ring);
                         siapkanTabelPreview();
                         tabelPreview.search('').clear().rows.add(baris);
                         terapkanFilter();
@@ -2098,6 +2231,67 @@
                         });
                         if (tabelPreview) tabelPreview.draw();
                     }
+
+                    // Mengetik nama perusahaan/materi manual membatalkan pilihan dropdown database
+                    $(document).on('input', '.k-ed[data-k="perusahaan"], .k-ed[data-k="materi"]', function() {
+                        const j = $(this).data('k');
+                        $(this).closest('.kd-fix').find(`.k-fix[data-j="${j}"]`).val('').trigger('change');
+                    });
+
+                    $(document).on('click', '.k-terapkan, .k-reset', function() {
+                        const btn = $(this),
+                            no = Number(btn.data('no')),
+                            box = btn.closest('.kd-fix');
+                        const payload = {
+                            token,
+                            no
+                        };
+
+                        if (btn.hasClass('k-reset')) {
+                            payload.reset = true;
+                        } else {
+                            payload.edit = {};
+                            box.find('.k-ed').each(function() {
+                                payload.edit[$(this).data('k')] = $(this).val();
+                            });
+                            ['perusahaan', 'materi', 'peluang'].forEach(j => {
+                                const v = box.find(`.k-fix[data-j="${j}"]`).val();
+                                if (v) payload[j + '_id'] = v;
+                            });
+                        }
+
+                        tampilError(null);
+                        box.find('button').prop('disabled', true);
+
+                        $.ajax({
+                                url: URL_APP.perbaiki,
+                                method: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify(payload)
+                            })
+                            .done(res => {
+                                const b = res.baris;
+                                const i = baris.findIndex(x => x.no === b.no);
+                                if (i >= 0) baris[i] = b;
+
+                                const rowApi = tabelPreview.row((idx, d) => d.no === b.no);
+                                rowApi.data(b);
+
+                                // createdRow tidak dijalankan ulang, jadi atribut baris diperbarui manual
+                                $(rowApi.node())
+                                    .attr('data-status', b.status).data('status', b.status)
+                                    .removeClass('baris-gagal baris-tinjau baris-siap baris-duplikat')
+                                    .addClass('baris-' + b.status);
+
+                                renderFilter(res.ringkasan);
+                                tabelPreview.draw(false);
+                                hitungKesiapan();
+                            })
+                            .fail(xhr => {
+                                tampilError(pesanDariXhr(xhr));
+                                box.find('button').prop('disabled', false);
+                            });
+                    });
 
                     $(document).on('change', '.k-tinjau', function() {
                         const v = $(this).val();

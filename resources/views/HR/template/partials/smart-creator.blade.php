@@ -363,6 +363,14 @@
                         </table>
                     </div>
                 </div>
+                
+                <div class="sm-card d-none" id="smCounters">
+                    <div class="sm-card-h">
+                        <h6 class="mb-0">Nomor surat</h6>
+                        <span class="badge bg-secondary rounded-pill" id="smCounterCount">0</span>
+                    </div>
+                    <div class="sm-card-b" id="smCounterRows"></div>
+                </div>
 
                 <div class="sm-card d-none" id="smReview">
                     <div class="sm-card-h">
@@ -521,6 +529,8 @@
             save: "{{ route('HR.reports.smart.save') }}",
             data: id => "{{ route('HR.reports.smart.data', ['template' => '__ID__']) }}".replace('__ID__', id),
             update: id => "{{ route('HR.reports.smart.update', ['template' => '__ID__']) }}".replace('__ID__', id),
+            counters: id => "{{ route('HR.reports.smart.counters', ['template' => '__ID__']) }}".replace('__ID__', id),
+            counterReset: id => "{{ route('HR.reports.smart.counters.reset', ['template' => '__ID__']) }}".replace('__ID__', id),
         };
         const S = {
             mode: 'create',
@@ -530,6 +540,7 @@
             columns: {},
             items: [],
             fields: [],
+            counters: [],
             cfg: null,
             chips: [],
             codeTouched: false
@@ -616,6 +627,7 @@
                 columns: {},
                 items: [],
                 fields: [],
+                counters: [],
                 cfg: null,
                 codeTouched: false
             });
@@ -627,7 +639,7 @@
                 if (!['karyawan', 'pelamar'].includes(o.value)) o.remove();
             });
             $('smCat').value = 'karyawan';
-            ['smReview', 'smSave', 'smFields', 'smEditInfo', 'smSrcWrap'].forEach(i => $(i).classList.add('d-none'));
+            ['smReview', 'smSave', 'smFields', 'smEditInfo', 'smSrcWrap', 'smCounters'].forEach(i => $(i).classList.add('d-none'));
             $('smSrc').value = 'karyawan';
             $('smUpload').classList.remove('d-none');
             $('smTitle').textContent = 'Template baru';
@@ -917,6 +929,11 @@
                 <div class="d-flex flex-wrap gap-1 mb-3"><button type="button" class="btn btn-sm btn-outline-secondary" data-text="SK">+ Teks</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text="/">/</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text="-">-</button><button type="button" class="btn btn-sm btn-outline-secondary" data-text=".">.</button></div>
                 <div class="small text-muted mb-1">Contoh siap pakai:</div>
                 <div class="d-flex flex-wrap gap-1 mb-3">${PRESETS.map((p, i) => `<button type="button" class="btn btn-sm btn-light border" data-preset="${i}"><code>${H(p)}</code></button>`).join('')}</div>
+                ${fld('Reset nomor urut otomatis', sel('c_reset', [
+                    ['yearly', 'Tiap tahun (mulai 0001 lagi tiap 1 Januari)'],
+                    ['monthly', 'Tiap bulan (mulai 0001 lagi tiap tanggal 1)'],
+                    ['never', 'Tidak pernah (hanya reset manual)']
+                ], c.reset_period || (c.counter_key ? 'never' : 'yearly')))}
                 ${fld('Nomor terakhir yang sudah dipakai (opsional)', `<input id="c_last" type="number" min="0" class="form-control form-control-sm" value="${H(c.last_number ?? '')}" placeholder="Contoh: 233, nomor berikutnya jadi 234">`)}
                 <div class="alert alert-light border small mb-0">Hasil contoh: <b id="fPrev"></b></div>`;
             }
@@ -951,10 +968,11 @@
                 const t = chipsToTpl().trim();
                 if (!t) throw new Error('Rumus masih kosong. Tambahkan blok dulu.');
                 const ls = $('c_last').value.trim();
-                Object.assign(cfg, {
-                    template: t,
-                    last_number: ls === '' ? null : parseInt(ls)
-                });
+                    Object.assign(cfg, {
+                        template: t,
+                        last_number: ls === '' ? null : parseInt(ls),
+                        reset_period: $('c_reset').value
+                    });
             } else if (type === 'auto_date' || type === 'manual_date') Object.assign(cfg, date());
             else if (type === 'auth_field') cfg.field = $('c_field').value;
             else if (type === 'manual_text') cfg.default = $('c_def').value.trim();
@@ -1039,6 +1057,94 @@
                 return `<tr><td><input class="form-control form-control-sm sm-flabel" data-i="${i}" value="${H(f.label)}"><div class="small text-muted"><code>${H(f.key)}</code></div></td><td class="small">${isDb ? 'Kolom database' : H(TYPE_LABEL[f.field_type] || f.field_type)}</td><td>${ctl}</td></tr>`;
             }).join('');
         }
+
+        const PERIOD = {
+            yearly: 'Reset otomatis tiap tahun',
+            monthly: 'Reset otomatis tiap bulan',
+            never: 'Tidak reset otomatis'
+        };
+
+        async function loadCounters() {
+            try {
+                const r = await fetch(noCache(URLS.counters(S.id)), {
+                    cache: 'no-store',
+                    headers: { Accept: 'application/json' }
+                });
+                const j = await r.json();
+                S.counters = j.success ? j.data : [];
+            } catch (e) {
+                S.counters = [];
+            }
+            renderCounters();
+        }
+
+        function renderCounters() {
+            $('smCounters').classList.toggle('d-none', !S.counters.length);
+            $('smCounterCount').textContent = S.counters.length;
+            $('smCounterRows').innerHTML = S.counters.map((c, i) => `
+                <div class="border rounded p-2 mb-2">
+                    <div class="d-flex justify-content-between flex-wrap gap-1">
+                        <div><b>${H(c.label)}</b> <code class="small">${H(c.template)}</code></div>
+                        <span class="small text-muted">${H(PERIOD[c.period] || '')}</span>
+                    </div>
+                    <div class="small mt-1">Terakhir dipakai: <b>${H(c.last)}</b> · Nomor berikutnya: <b>${H(fPreview(c.template, c.last))}</b></div>
+                    <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
+                        <select class="form-select form-select-sm sm-cmode" data-i="${i}" style="width:auto">
+                            <option value="zero">Reset ke 0001 (mulai dari awal)</option>
+                            <option value="set">Mulai dari nomor tertentu</option>
+                            <option value="back">Mundur 1 nomor</option>
+                            <option value="skip">Lewati 1 nomor</option>
+                        </select>
+                        <input type="number" min="1" class="form-control form-control-sm d-none sm-cval" data-i="${i}" placeholder="Mulai dari" style="width:120px">
+                        <button type="button" class="btn btn-sm btn-outline-danger sm-creset" data-i="${i}">Terapkan</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        $('smCounterRows').addEventListener('change', e => {
+            if (!e.target.classList.contains('sm-cmode')) return;
+            const val = e.target.closest('div').querySelector('.sm-cval');
+            val.classList.toggle('d-none', e.target.value !== 'set');
+        });
+
+        $('smCounterRows').addEventListener('click', async e => {
+            const b = e.target.closest('.sm-creset');
+            if (!b) return;
+            const c = S.counters[+b.dataset.i];
+            const wrap = b.closest('div');
+            const mode = wrap.querySelector('.sm-cmode').value;
+            const value = parseInt(wrap.querySelector('.sm-cval').value) || null;
+
+            if (mode === 'set' && !value) return toast('Isi nomor awal yang diinginkan.', 'error');
+
+            const msg = {
+                zero: 'Nomor berikutnya akan kembali ke 1 (contoh: ' + fPreview(c.template, 0) + '). Lanjutkan?',
+                set: 'Nomor berikutnya akan menjadi ' + fPreview(c.template, value - 1) + '. Lanjutkan?',
+                back: 'Counter mundur 1 nomor. Lanjutkan?',
+                skip: 'Counter maju 1 nomor (1 nomor dilewati). Lanjutkan?'
+            } [mode];
+            if (!confirm(msg)) return;
+
+            b.disabled = true;
+            try {
+                const res = await fetch(URLS.counterReset(S.id), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': CSRF
+                    },
+                    body: JSON.stringify({ placeholder_key: c.key, mode, value })
+                });
+                const j = await res.json().catch(() => null);
+                if (!res.ok || !j?.success) throw new Error(j?.message || (j?.errors ? Object.values(j.errors).flat().join('\n') : 'Gagal mengatur nomor'));
+                toast(j.message);
+                await loadCounters();
+            } catch (err) {
+                toast(err.message, 'error');
+                b.disabled = false;
+            }
+        });
 
         $('smRows').addEventListener('change', e => {
             if (e.target.classList.contains('sm-sel')) onSelect(+e.target.dataset.i, e.target.value);
@@ -1217,6 +1323,7 @@
                 $('smSave').classList.remove('d-none');
                 $('smReviewTitle').textContent = 'Isian yang belum dipetakan';
                 renderFields();
+                loadCounters();
                 renderRows();
                 $('smReview').classList.toggle('d-none', S.items.length === 0);
                 setStep(2);

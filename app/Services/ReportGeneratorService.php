@@ -573,7 +573,7 @@ class ReportGeneratorService
 
         $templateStr = preg_replace('/(?<!\{)\{([a-z_:0-9]+)\}(?!\})/i', '{{$1}}', $templateStr) ?? $templateStr;
 
-        $counterKey = $config['counter_key'] ?? ('tpl_' . ($template?->id ?? 0) . '_' . date('Y'));
+        $counterKey = $this->resolveCounterKey($config, $template);
 
         return preg_replace_callback('/\{\{\s*([a-z_:0-9]+)\s*\}\}/i', function ($m) use ($config, $counterKey, $sourceData, $template) {
             $var = trim($m[1]);
@@ -627,6 +627,42 @@ class ReportGeneratorService
 
             return $m[0];
         }, $templateStr);
+    }
+
+    public function resolveCounterKey(array $config, ?ReportTemplate $template): string
+    {
+        $base = $config['counter_key'] ?? ('tpl_' . ($template?->id ?? 0));
+
+        return match ($config['reset_period'] ?? null) {
+            'never'   => $base,
+            'monthly' => $base . '_' . date('Y_m'),
+            'yearly'  => $base . '_' . date('Y'),
+            default   => isset($config['counter_key']) ? $base : $base . '_' . date('Y'),
+        };
+    }
+
+    public function adjustCounter(ReportTemplate $template, string $key, string $mode, ?int $value = null, int $startFrom = 0): int
+    {
+        return DB::transaction(function () use ($template, $key, $mode, $value, $startFrom) {
+            $tpl = ReportTemplate::where('id', $template->id)->lockForUpdate()->first();
+            $settings = $tpl->settings ?? [];
+            $counters = $settings['counters'] ?? [];
+            $current = (int) ($counters[$key] ?? $startFrom);
+
+            $new = match ($mode) {
+                'zero' => 0,
+                'set'  => max(0, (int) $value - 1),
+                'back' => max(0, $current - 1),
+                'skip' => $current + 1,
+                default => $current,
+            };
+
+            $counters[$key] = $new;
+            $settings['counters'] = $counters;
+            $tpl->update(['settings' => $settings]);
+
+            return $new;
+        });
     }
 
     private function incrementCounter(?ReportTemplate $template, string $key, int $startFrom = 0): int

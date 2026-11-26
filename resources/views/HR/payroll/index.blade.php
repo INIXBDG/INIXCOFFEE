@@ -522,7 +522,7 @@
                                         <th>No</th>
                                         <th>Nama / Kode</th>
                                         <th>Divisi / Jabatan</th>
-                                        <th class="text-end">Gaji Pokok</th>
+                                        <th class="text-end">Gaji + Tunj. Jabatan</th>
                                         <th class="text-end">Tunjangan</th>
                                         <th class="text-end">Potongan</th>
                                         <th class="text-end">Gaji Bersih</th>
@@ -627,7 +627,6 @@
         </div>
     </div>
 
-    <!-- ========== MODAL PANDUAN PAYROLL (versi awam) ========== -->
     <div class="modal fade" id="guidePayrollModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content" style="border:none;border-radius:14px;overflow:hidden">
@@ -669,7 +668,6 @@
                     </ul>
                     <div class="tab-content p-4">
 
-                        <!-- ========== TAB 1: CARA PAKAI ========== -->
                         <div class="tab-pane fade show active" id="guide-cara">
                             <div class="mb-4">
                                 <h6 class="fw-bold text-primary mb-3">1. Pilih bulan & tahun</h6>
@@ -705,7 +703,8 @@
                                 <h6 class="fw-bold text-primary mb-3">3. Lihat daftar karyawan</h6>
                                 <p class="mb-2">Pindah ke tab <strong>Data Payroll</strong>.</p>
                                 <ul>
-                                    <li>Ada tabel daftar nama karyawan.</li>
+                                    <li>Ada tabel daftar nama karyawan yang masih aktif.</li>
+                                    <li>Kolom <strong>Gaji + Tunj. Jabatan</strong> adalah gaji ditambah tunjangan jabatan.</li>
                                     <li>Bisa mencari nama, kode, divisi, atau jabatan di kotak pencarian.</li>
                                     <li>Klik ikon mata (👁) di samping nama untuk melihat rincian gaji, tunjangan, dan
                                         potongan orang tersebut.</li>
@@ -722,7 +721,6 @@
                             </div>
                         </div>
 
-                        <!-- ========== TAB 2: ARTI ANGKA & GRAFIK ========== -->
                         <div class="tab-pane fade" id="guide-arti">
                             <div class="mb-4">
                                 <h6 class="fw-bold text-success mb-3">Arti kartu ringkasan</h6>
@@ -731,13 +729,13 @@
                                         <thead class="table-light">
                                             <tr>
                                                 <th>Kartu</th>
-                                                <th>Artinya</th inter>
+                                                <th>Artinya</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
                                                 <td><strong>Total Karyawan</strong></td>
-                                                <td>Berapa banyak karyawan yang seharusnya masuk perhitungan di bulan ini.
+                                                <td>Berapa banyak karyawan aktif yang masuk perhitungan di bulan ini.
                                                 </td>
                                             </tr>
                                             <tr>
@@ -793,7 +791,6 @@
                             </div>
                         </div>
 
-                        <!-- ========== TAB 3: DATA TIDAK MUNCUL ========== -->
                         <div class="tab-pane fade" id="guide-tips">
                             <div class="mb-4">
                                 <h6 class="fw-bold text-warning mb-3">Kalau data kosong atau aneh, coba ini dulu</h6>
@@ -822,9 +819,14 @@
                                                 <td>Cek lagi data tunjangan apakah sudah di generate atau belum</td>
                                             </tr>
                                             <tr>
-                                                <td>Gaji Pokok muncul 0</td>
+                                                <td>Gaji + Tunj. Jabatan muncul 0</td>
                                                 <td>Data gaji belum diisi</td>
                                                 <td>coba cek update data gaji karyawan yang bersangkutan</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Karyawan tertentu tidak muncul padahal punya data tunjangan</td>
+                                                <td>Status aktif karyawan bukan 1 (sudah nonaktif) dan resign-nya bukan di bulan yang dipilih</td>
+                                                <td>Cek kolom status aktif di data karyawan. Hanya karyawan aktif yang ditampilkan</td>
                                             </tr>
                                             <tr>
                                                 <td>Karyawan yang sudah resign masih muncul</td>
@@ -858,7 +860,6 @@
                             </div>
                         </div>
 
-                        <!-- ========== TAB 4: CONTOH KASUS ========== -->
                         <div class="tab-pane fade" id="guide-contoh">
                             <div class="mb-4">
                                 <h6 class="fw-bold text-danger mb-2">Contoh 1 — Karyawan yang masih aktif</h6>
@@ -893,13 +894,13 @@
                             </div>
 
                             <div class="mb-4">
-                                <h6 class="fw-bold text-danger mb-2">Contoh 4 — Data tunjangan masih ada meski sudah lama
-                                    resign</h6>
+                                <h6 class="fw-bold text-danger mb-2">Contoh 4 — Karyawan nonaktif yang masih punya data tunjangan</h6>
                                 <div class="p-3 rounded bg-light border">
-                                    <p class="mb-1"><strong>Situasi:</strong> Dedi sudah resign tahun 2024, tapi masih
-                                        ada data tunjangan di Maret 2026 (data lama).</p>
-                                    <p class="mb-0"><strong>Hasil:</strong> Dedi tetap muncul di daftar karena sistem
-                                        tetap menampilkan orang yang punya data tunjangan di bulan tersebut.</p>
+                                    <p class="mb-1"><strong>Situasi:</strong> Dedi sudah resign tahun 2024 dan status
+                                        aktifnya bukan 1, tapi masih ada data tunjangan di Maret 2026 (data lama).</p>
+                                    <p class="mb-0"><strong>Hasil:</strong> Dedi tidak muncul di daftar karena hanya
+                                        karyawan aktif (status aktif 1) atau yang resign di bulan yang dipilih yang
+                                        ditampilkan.</p>
                                 </div>
                             </div>
 
@@ -1058,7 +1059,6 @@
             return html;
         }
 
-        /* ========== INSIGHT MODAL (berbeda per jenis) ========== */
         function openInsight(type, extra = {}) {
             const s = lastSummary;
             const c = lastCharts;
@@ -1069,7 +1069,6 @@
                 headerBg = 'linear-gradient(135deg,#4f46e5,#3730a3)';
             let body = '';
 
-            // ========== STAT CARDS ==========
             if (type === 'total_karyawan') {
                 title = 'Total Karyawan Eligible';
                 headerBg = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
@@ -1139,14 +1138,14 @@
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm insight-table">
-                            <thead class="table-light"><tr><th>Nama</th><th>Divisi</th><th>Jabatan</th><th class="text-end">Gaji Pokok</th><th>Status</th></tr></thead>
+                            <thead class="table-light"><tr><th>Nama</th><th>Divisi</th><th>Jabatan</th><th class="text-end">Gaji + Tunj. Jabatan</th><th>Status</th></tr></thead>
                             <tbody>
                                 ${list.map(r => `
                                                 <tr>
                                                     <td><strong>${r.nama}</strong></td>
                                                     <td>${r.divisi}</td>
                                                     <td>${r.jabatan}</td>
-                                                    <td class="text-end">${formatIDR(r.gaji_pokok)}</td>
+                                                    <td class="text-end">${formatIDR(r.basic_salary)}</td>
                                                     <td><span class="badge badge-soft-warning">${r.status}</span></td>
                                                 </tr>`).join('') || '<tr><td colspan="5" class="text-center text-muted py-4">Semua karyawan sudah dihitung (di halaman ini)</td></tr>'}
                             </tbody>
@@ -1266,10 +1265,7 @@
                         </table>
                     </div>
                 </div>`;
-            }
-
-            // ========== CHARTS ==========
-            else if (type === 'salary_range') {
+            } else if (type === 'salary_range') {
                 title = 'Distribusi Gaji Bersih';
                 headerBg = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
                 const ranges = c.salary_ranges || {
@@ -1398,7 +1394,6 @@
             new bootstrap.Modal(document.getElementById('modalInsight')).show();
         }
 
-        /* ========== MAIN ========== */
         $(document).ready(function() {
             for (let i = 1; i <= 12; i++) {
                 const monthName = new Date(2000, i - 1).toLocaleString('id-ID', {
@@ -1784,7 +1779,7 @@
                             <td class="text-muted">${no}</td>
                             <td><strong class="d-block text-dark">${row.nama}</strong><small class="text-muted">${row.kode || '-'}</small></td>
                             <td><span class="d-block">${row.divisi}</span><small class="text-muted">${row.jabatan}</small></td>
-                            <td class="text-end text-muted">${formatIDR(row.gaji_pokok)}</td>
+                            <td class="text-end text-muted">${formatIDR(row.basic_salary)}</td>
                             <td class="text-end text-success fw-semibold">${formatSigned(row.total_tunjangan)}</td>
                             <td class="text-end text-danger">-${formatIDR(row.total_potongan)}</td>
                             <td class="text-end fw-bold text-primary">${formatIDR(row.gaji_bersih)}</td>

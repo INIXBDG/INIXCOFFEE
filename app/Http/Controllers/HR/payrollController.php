@@ -166,7 +166,7 @@ class payrollController extends Controller
         $sheet->getStyle('A2')->getFont()->setItalic(true);
         $sheet->getRowDimension(2)->setRowHeight(20);
 
-        $headers = ['No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 'Gaji Pokok', 'Total Tunjangan', 'Tunjangan Bersih', 'Total Potongan', 'Gaji Bersih', 'Status'];
+        $headers = ['No', 'Nama', 'Kode', 'Divisi', 'Jabatan', 'Gaji + Tunj. Jabatan', 'Total Tunjangan', 'Tunjangan Bersih', 'Total Potongan', 'Gaji Bersih', 'Status'];
         $sheet->fromArray($headers, null, 'A3');
         $sheet->getStyle('A3:K3')->applyFromArray($headerStyle);
         $sheet->getRowDimension(3)->setRowHeight(25);
@@ -174,7 +174,7 @@ class payrollController extends Controller
         $rowNum = 4;
         $i = 1;
         $totals = [
-            'gaji_pokok' => 0,
+            'basic_salary' => 0,
             'total_tunjangan' => 0,
             'tunjangan_bersih' => 0,
             'total_potongan' => 0,
@@ -187,14 +187,14 @@ class payrollController extends Controller
             $sheet->setCellValue("C{$rowNum}", $row['kode']);
             $sheet->setCellValue("D{$rowNum}", $row['divisi']);
             $sheet->setCellValue("E{$rowNum}", $row['jabatan']);
-            $sheet->setCellValue("F{$rowNum}", $row['gaji_pokok']);
+            $sheet->setCellValue("F{$rowNum}", $row['basic_salary']);
             $sheet->setCellValue("G{$rowNum}", $row['total_tunjangan']);
             $sheet->setCellValue("H{$rowNum}", $row['tunjangan_bersih']);
             $sheet->setCellValue("I{$rowNum}", $row['total_potongan']);
             $sheet->setCellValue("J{$rowNum}", $row['gaji_bersih']);
             $sheet->setCellValue("K{$rowNum}", $row['status']);
 
-            $totals['gaji_pokok'] += (float) $row['gaji_pokok'];
+            $totals['basic_salary'] += (float) $row['basic_salary'];
             $totals['total_tunjangan'] += (float) $row['total_tunjangan'];
             $totals['tunjangan_bersih'] += (float) $row['tunjangan_bersih'];
             $totals['total_potongan'] += (float) $row['total_potongan'];
@@ -215,7 +215,7 @@ class payrollController extends Controller
         $totalRow = $rowNum;
         $sheet->mergeCells("A{$totalRow}:E{$totalRow}");
         $sheet->setCellValue("A{$totalRow}", 'TOTAL');
-        $sheet->setCellValue("F{$totalRow}", $totals['gaji_pokok']);
+        $sheet->setCellValue("F{$totalRow}", $totals['basic_salary']);
         $sheet->setCellValue("G{$totalRow}", $totals['total_tunjangan']);
         $sheet->setCellValue("H{$totalRow}", $totals['tunjangan_bersih']);
         $sheet->setCellValue("I{$totalRow}", $totals['total_potongan']);
@@ -264,13 +264,11 @@ class payrollController extends Controller
         $payrollList = $payrollData['payrollList'];
         $totalEligible = count($payrollData['eligibleIds']);
 
-        
-
         $summary = [
             'total_karyawan' => $totalEligible,
             'sudah_dihitung' => $payrollList->where('status', 'Sudah Dihitung')->count(),
             'belum_dihitung' => $payrollList->where('status', 'Belum Dihitung')->count(),
-            'total_gaji_pokok' => $payrollList->sum('gaji_pokok'),
+            'total_gaji_pokok' => $payrollList->sum('basic_salary'),
             'total_tunjangan' => $payrollList->sum('tunjangan_bersih'),
             'total_tunjangan_kotor' => $payrollList->sum('total_tunjangan'),
             'total_potongan' => $payrollList->sum('total_potongan'),
@@ -308,6 +306,14 @@ class payrollController extends Controller
         return $pdf->download("laporan_payroll_{$bulan}_{$tahun}.pdf");
     }
 
+    private function terapkanStatusAktif($query, $periodStart, $periodEnd)
+    {
+        return $query->where(function ($w) use ($periodStart, $periodEnd) {
+            $w->where('status_aktif', '1')
+                ->orWhereBetween('resigned_at', [$periodStart, $periodEnd]);
+        });
+    }
+
     private function getPayrollData($bulan, $tahun, $search = '')
     {
         $periodStart = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
@@ -320,6 +326,7 @@ class payrollController extends Controller
             ->toArray();
 
         $baseQuery = $this->baseKaryawanQuery();
+        $this->terapkanStatusAktif($baseQuery, $periodStart, $periodEnd);
 
         if (!empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
@@ -340,7 +347,9 @@ class payrollController extends Controller
 
         $finalIds = array_unique(array_merge($karyawanIdsFromTunjangan, $eligibleIdsByDate));
 
-        $finalKaryawan = karyawan::whereIn('id', $finalIds)->get();
+        $finalQuery = karyawan::whereIn('id', $finalIds);
+        $this->terapkanStatusAktif($finalQuery, $periodStart, $periodEnd);
+        $finalKaryawan = $finalQuery->get();
 
         if (!empty($search)) {
             $finalKaryawan = $finalKaryawan->filter(function ($emp) use ($search) {
@@ -1526,12 +1535,12 @@ class payrollController extends Controller
         [$bulan, $tahun] = $this->currentPeriod($request);
         $awalPeriode = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $prevDate = $awalPeriode->copy()->subMonth();
- 
+
         $list = $this->pphKaryawanPeriode($bulan, $tahun);
         $ids = $list->pluck('id')->all();
         $ctx = $this->pphContext($bulan, $tahun, $ids);
         $laporan = Pph21Laporan::where('bulan', $bulan)->where('tahun', $tahun)->first();
- 
+
         $anomali = [];
         $tambah = function (string $tipe, string $level, $k, string $pesan) use (&$anomali) {
             $anomali[] = [
@@ -1544,7 +1553,7 @@ class payrollController extends Controller
             ];
         };
         $rp = fn($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
- 
+
         $rows = [];
         foreach ($list as $k) {
             $ptkp = $k->pph21->ptkp ?? null;
@@ -1552,7 +1561,7 @@ class payrollController extends Controller
             $res = $this->resolvePph($k, $ctx);
             $awal = $ctx['awal'][$k->id] ?? null;
             $rec = $ctx['records']->get($k->id);
- 
+
             $rows[] = [
                 'id' => $k->id,
                 'nip' => $k->nip ?? '-',
@@ -1563,8 +1572,7 @@ class payrollController extends Controller
                 'nilai' => $res ? (int) $res['nilai'] : null,
                 'tersimpan' => (bool) ($res['tersimpan'] ?? false),
             ];
- 
-            // Nilai tersimpan tidak lagi sama dengan hasil hitung saat ini (PTKP / penghasilan berubah)
+
             if ($rec && $ptkp && ($rec->sumber ?? '') !== 'tunjangan' && abs((int) $rec->total_pph - $hit['nilai']) > 1000) {
                 $ptkpDiubah = $k->pph21 && $k->pph21->updated_at && $rec->updated_at
                     && $k->pph21->updated_at->gt($rec->updated_at->copy()->addMinute());
@@ -1576,8 +1584,7 @@ class payrollController extends Controller
                     . 'Tersimpan ' . $rp($rec->total_pph) . ', hasil hitung sekarang ' . $rp($hit['nilai']) . '.'
                 );
             }
- 
-            // Nilai dari Tunjangan vs hasil hitung (TER / tahunan)
+
             if ($awal && $ptkp) {
                 $selisih = abs((int) $awal['total'] - $hit['nilai']);
                 $dasar = max((int) $awal['total'], $hit['nilai'], 1);
@@ -1587,13 +1594,12 @@ class payrollController extends Controller
                         . ' dari hasil hitung ' . ($hit['masa_terakhir'] ? 'tahunan' : 'TER') . ' ' . $rp($hit['nilai']) . '.');
                 }
             }
- 
+
             foreach ($hit['peringatan'] as $p) {
                 $tambah('masa_terakhir', 'sedang', $k, $p);
             }
         }
- 
-        // Karyawan resign tetapi status masih aktif (tidak ikut periode ini)
+
         $resign = $this->pphKaryawanQuery()
             ->whereNotNull('resigned_at')
             ->where('resigned_at', '<', $awalPeriode)
@@ -1602,8 +1608,7 @@ class payrollController extends Controller
             $tambah('resign_masih_aktif', 'tinggi', $k,
                 'Resign ' . Carbon::parse($k->resigned_at)->format('d/m/Y') . ' tetapi status karyawan masih aktif. Perbarui status aktif di data karyawan.');
         }
- 
-        // Ada nilai tersimpan untuk karyawan yang tidak eligible periode ini
+
         $yatim = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->whereNotIn('karyawan_id', $ids)->get();
         if ($yatim->isNotEmpty()) {
             $namaKaryawan = karyawan::whereIn('id', $yatim->pluck('karyawan_id'))->get()->keyBy('id');
@@ -1614,11 +1619,11 @@ class payrollController extends Controller
                     'Ada nilai PPH 21 tersimpan (' . $rp($y->total_pph) . ') padahal karyawan tidak eligible pada periode ini (sudah resign / belum bergabung / dikecualikan).');
             }
         }
- 
+
         $urut = ['tinggi' => 0, 'sedang' => 1, 'rendah' => 2];
         usort($anomali, fn($a, $b) => $urut[$a['level']] <=> $urut[$b['level']]);
         $jumlahTinggi = count(array_filter($anomali, fn($a) => $a['level'] === 'tinggi'));
- 
+
         $koleksi = collect($rows);
         $total = $koleksi->count();
         $punyaPtkp = $koleksi->whereNotNull('ptkp')->count();
@@ -1626,7 +1631,7 @@ class payrollController extends Controller
         $totalPph = (int) $koleksi->sum(fn($r) => $r['nilai'] ?? 0);
         $totalPrev = (int) Pph21Bulanan::where('bulan', $prevDate->month)->where('tahun', $prevDate->year)
             ->whereIn('karyawan_id', $ids)->sum('total_pph');
- 
+
         $kesehatan = [
             'total_eligible' => $total,
             'punya_ptkp' => $punyaPtkp,
@@ -1639,7 +1644,7 @@ class payrollController extends Controller
             'persen' => $totalPrev > 0 ? round((($totalPph - $totalPrev) / $totalPrev) * 100, 1) : null,
             'bulan_lalu_label' => str_pad((string) $prevDate->month, 2, '0', STR_PAD_LEFT) . '/' . $prevDate->year,
         ];
- 
+
         $isiLengkap = $total > 0 && $tersimpan === $total;
         $steps = [
             ['kode' => 'ptkp', 'judul' => 'Setup PTKP', 'selesai' => $total > 0 && $punyaPtkp === $total, 'detail' => "{$punyaPtkp}/{$total} karyawan"],
@@ -1651,14 +1656,14 @@ class payrollController extends Controller
         ];
         $aktif = collect($steps)->search(fn($s) => !$s['selesai']);
         $aktif = $aktif === false ? count($steps) : $aktif;
- 
+
         $perKategori = ['A' => ['jumlah' => 0, 'total' => 0], 'B' => ['jumlah' => 0, 'total' => 0], 'C' => ['jumlah' => 0, 'total' => 0], 'Belum PTKP' => ['jumlah' => 0, 'total' => 0]];
         foreach ($rows as $r) {
             $key = $r['kategori'] ?? 'Belum PTKP';
             $perKategori[$key]['jumlah']++;
             $perKategori[$key]['total'] += (int) ($r['nilai'] ?? 0);
         }
- 
+
         $rentang = [
             ['label' => 'Rp 0', 'min' => 0, 'max' => 0],
             ['label' => '1 - 500 rb', 'min' => 1, 'max' => 500000],
@@ -1672,17 +1677,17 @@ class payrollController extends Controller
             $rg['jumlah'] = $koleksi->filter(fn($r) => $r['nilai'] !== null && $r['nilai'] >= $rg['min'] && $r['nilai'] <= $rg['max'])->count();
         }
         unset($rg);
- 
+
         $top = $koleksi->whereNotNull('nilai')->sortByDesc('nilai')->take(10)->values()
             ->map(fn($r) => ['nip' => $r['nip'], 'nama' => $r['nama'], 'divisi' => $r['divisi'], 'ptkp' => $r['ptkp'], 'nilai' => $r['nilai']]);
- 
+
         $perDivisi = $koleksi->groupBy('divisi')->map(fn($g, $d) => [
             'divisi' => $d,
             'jumlah' => $g->count(),
             'total' => (int) $g->sum(fn($r) => $r['nilai'] ?? 0),
             'rata_rata' => $g->count() ? (int) round($g->sum(fn($r) => $r['nilai'] ?? 0) / $g->count()) : 0,
         ])->sortByDesc('total')->values();
- 
+
         return response()->json([
             'success' => true,
             'meta' => ['bulan' => $bulan, 'tahun' => $tahun, 'terkunci' => (bool) ($laporan && $laporan->lapor_kortex_at)],
@@ -2032,7 +2037,7 @@ class payrollController extends Controller
     {
         $awal = Carbon::createFromDate($tahun, $bulan, 1)->startOfMonth();
         $akhir = $awal->copy()->endOfMonth();
- 
+
         return $this->pphKaryawanQuery($bulan, $tahun)->get()
             ->filter(fn($k) => $this->isEmployeeEligibleForPeriod($k, $awal, $akhir))
             ->values();
@@ -2089,28 +2094,28 @@ class payrollController extends Controller
             ] : null,
         ];
     }
- 
+
     private function pphContext(int $bulan, int $tahun, ?array $ids = null): array
     {
         $key = ($tahun * 12) + $bulan;
         $scope = fn($q, string $kolom = 'karyawan_id') => $ids !== null ? $q->whereIn($kolom, $ids) : $q;
- 
+
         $records = $scope(Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun))
             ->get()->keyBy('karyawan_id');
- 
+
         $previous = $scope(Pph21Bulanan::whereRaw('(tahun * 12 + bulan) < ?', [$key]))
             ->orderByDesc('tahun')->orderByDesc('bulan')
             ->get()->unique('karyawan_id')->keyBy('karyawan_id');
- 
+
         $tahunIni = $scope(Pph21Bulanan::where('tahun', $tahun)->where('bulan', '<', $bulan))
             ->get()->groupBy('karyawan_id');
- 
+
         $iuran = $scope(PerhitunganTunjanganHR::where('tahun', $tahun)->where('bulan', '<=', $bulan))
             ->get()->groupBy('karyawan_id');
- 
+
         $logs = $scope(LogGaji::where('tahun', '<=', $tahun), 'id_karyawan')
             ->get()->groupBy('id_karyawan');
- 
+
         return [
             'bulan' => $bulan,
             'tahun' => $tahun,
@@ -2127,24 +2132,24 @@ class payrollController extends Controller
     {
         $ptkp = $k->pph21->ptkp ?? null;
         $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
- 
+
         $base = [
             'dari' => null,
             'tersimpan' => false,
             'masa_terakhir' => $hit['masa_terakhir'],
             'peringatan' => $hit['peringatan'],
         ];
- 
+
         $record = $ctx['records']->get($k->id);
         if ($record) {
             return array_merge($base, ['nilai' => (int) $record->total_pph, 'sumber' => 'tersimpan', 'tersimpan' => true]);
         }
- 
+
         $awal = $ctx['awal'][$k->id] ?? null;
         if ($awal) {
             return array_merge($base, ['nilai' => (int) $awal['total'], 'sumber' => 'tunjangan']);
         }
- 
+
         $prev = $ctx['previous']->get($k->id);
         if (
             $prev && !$hit['masa_terakhir']
@@ -2160,11 +2165,11 @@ class payrollController extends Controller
                 'peringatan' => [],
             ];
         }
- 
+
         if ($ptkp) {
             return array_merge($base, ['nilai' => $hit['nilai'], 'sumber' => 'hitung']);
         }
- 
+
         return null;
     }
 
@@ -2219,12 +2224,12 @@ class payrollController extends Controller
         [$bulan, $tahun] = $this->currentPeriod($request);
         $list = $this->pphKaryawanPeriode($bulan, $tahun);
         $ctx = $this->pphContext($bulan, $tahun, $list->pluck('id')->all());
- 
+
         $data = $list->map(function ($k) use ($ctx, $bulan, $tahun) {
             $awal = $ctx['awal'][$k->id] ?? null;
             $ptkp = $k->pph21->ptkp ?? null;
             $hit = $this->hitungPphKaryawan($k, $ctx, $ptkp);
- 
+
             return [
                 'id' => $k->id,
                 'nip' => $k->nip ?? '-',
@@ -2251,9 +2256,9 @@ class payrollController extends Controller
                 ] : null,
             ];
         })->values();
- 
+
         $laporan = Pph21Laporan::where('bulan', $bulan)->where('tahun', $tahun)->first();
- 
+
         return response()->json([
             'success' => true,
             'data' => $data,
@@ -2358,7 +2363,6 @@ class payrollController extends Controller
         ][$status] ?? 'Semua';
     }
 
-    /** Dipakai bersama oleh tabel, export Excel, dan export PDF agar filternya identik. */
     private function dataDesember(Request $request): array
     {
         $tahun = (int) ($request->input('tahun') ?: now()->year);
@@ -2448,7 +2452,6 @@ class payrollController extends Controller
             ->groupBy('karyawan_id')
             ->map(fn($g) => $g->keyBy('bulan'));
 
-        // THR dari fitur THR (periode terbaru), hanya yang ikut dihitung
         $periodeThr = $this->periodeThrDesember($tahun)['period'];
         $thrData = $periodeThr
             ? ThrItem::where('thr_period_id', $periodeThr->id)
@@ -2472,7 +2475,6 @@ class payrollController extends Controller
                 }
             }
 
-            // 1) Data PPh yang benar-benar tersimpan pada rentang bulan kerja
             $asli = [];
             for ($m = $mulai; $m <= $akhir; $m++) {
                 $rec = $pphBulanan->get($k->id)?->get($m);
@@ -2482,8 +2484,6 @@ class payrollController extends Controller
             }
             $bulanAsli = array_keys($asli);
 
-            // 2) Susun Jan-Des: bulan kosong memakai data tersimpan terdekat sebelumnya,
-            //    bulan sebelum data pertama memakai data pertama
             $gajiBulan = [];
             $pphBulan = [];
             $pphSumber = [];
@@ -2533,7 +2533,6 @@ class payrollController extends Controller
             $bruto = $totalGaji + $thr;
             $jumlahBulan = max(1, $akhir - $mulai + 1);
 
-            // 5% dari bruto, maksimal Rp6.000.000 setahun (Rp500.000 x jumlah bulan bekerja)
             $maksBiayaJabatan = 500000 * $jumlahBulan;
             $biayaJabatan = (int) min(round($bruto * 0.05), $maksBiayaJabatan);
 
@@ -2822,7 +2821,6 @@ class payrollController extends Controller
         $sheet->setCellValue("A{$r}", 'TOTAL');
         $sheet->mergeCells("A{$r}:D{$r}");
 
-        // kolom: E = gaji pokok, F-Q gaji, R-AC pph, AD..AM sisanya
         $kolThr = 5 + 24 + 1;
         $totalMap = [
             $kolThr => $t['thr'],
@@ -2845,7 +2843,6 @@ class payrollController extends Controller
         $sheet->getStyle("A{$headerRow}:{$lastLetter}{$r}")
             ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
-        // format angka: semua kolom nominal kecuali Status PTKP
         $kolPtkpKode = $kolThr + 4;
         $sheet->getStyle('E' . ($headerRow + 1) . ":{$lastLetter}{$r}")->getNumberFormat()->setFormatCode('#,##0');
         $sheet->getStyle(Coordinate::stringFromColumnIndex($kolPtkpKode) . ($headerRow + 1) . ':' .
@@ -2892,15 +2889,15 @@ class payrollController extends Controller
             'bulan' => 'nullable|integer|between:1,12',
             'tahun' => 'nullable|integer|min:2000|max:2100',
         ]);
- 
+
         [$bulan, $tahun] = $this->currentPeriod($request);
         $k = karyawan::findOrFail($request->karyawan_id);
         $ctx = $this->pphContext($bulan, $tahun, [(int) $k->id]);
         $hit = $this->hitungPphKaryawan($k, $ctx, $request->ptkp);
- 
+
         return response()->json(['success' => true, 'hasil' => $hit]);
     }
- 
+
     public function storePph(Request $request)
     {
         $request->validate([
@@ -2911,26 +2908,23 @@ class payrollController extends Controller
             'bulan' => 'nullable|integer|between:1,12',
             'tahun' => 'nullable|integer|min:2000|max:2100',
         ]);
- 
+
         [$bulan, $tahun] = $this->currentPeriod($request);
- 
+
         if ($this->pphTerkunci($bulan, $tahun)) {
             return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu untuk mengubah data.');
         }
- 
+
         $anak = collect($request->anak ?? [])
             ->filter(fn($a) => !empty(trim($a['nama'] ?? '')))
             ->values()
             ->map(fn($a) => ['nama' => trim($a['nama'])])
             ->toArray();
- 
+
         $karyawan = karyawan::findOrFail($request->karyawan_id);
         $pphLama = Pph21Karyawan::where('karyawan_id', $karyawan->id)->first();
         $ptkpBerubah = !$pphLama || $pphLama->ptkp !== $request->ptkp;
- 
-        // Tentukan nilai dengan urutan prioritas yang sama seperti tampilan.
-        // Nilai "tersimpan" diabaikan (kita sedang menyimpan ulang); "bulan_lalu" hanya
-        // dipakai untuk tombol "simpan" (pakai_data) dan hanya jika PTKP tidak berubah.
+
         $ctx = $this->pphContext($bulan, $tahun, [(int) $karyawan->id]);
         $ctx['records'] = collect();
         if (!$request->boolean('pakai_data') || $ptkpBerubah) {
@@ -2938,28 +2932,28 @@ class payrollController extends Controller
         }
         $karyawan->setRelation('pph21', new Pph21Karyawan(['ptkp' => $request->ptkp]));
         $resolved = $this->resolvePph($karyawan, $ctx);
- 
+
         $total = (int) $resolved['nilai'];
         $sumber = $resolved['sumber'];
- 
+
         DB::beginTransaction();
         try {
             $mode = $pphLama ? 'update' : 'create';
- 
+
             $payload = [
                 'ptkp' => $request->ptkp,
                 'status_menikah' => (int) $request->status_menikah,
                 'anak' => $anak,
                 'total_pph' => $total,
             ];
- 
+
             if ($pphLama) {
                 $pphLama->update($payload);
                 $pph = $pphLama;
             } else {
                 $pph = Pph21Karyawan::create(array_merge(['karyawan_id' => $karyawan->id], $payload));
             }
- 
+
             Pph21Bulanan::updateOrCreate(
                 ['karyawan_id' => $karyawan->id, 'bulan' => $bulan, 'tahun' => $tahun],
                 [
@@ -2968,17 +2962,17 @@ class payrollController extends Controller
                     'created_by' => Auth::id(),
                 ]
             );
- 
+
             $this->syncPphProfileTotal((int) $karyawan->id);
- 
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->respondError('Gagal menyimpan: ' . $e->getMessage(), 500);
         }
- 
+
         $pph->refresh();
- 
+
         return response()->json([
             'success' => true,
             'mode' => $mode,
@@ -2996,43 +2990,43 @@ class payrollController extends Controller
             ],
         ]);
     }
- 
+
     public function isiOtomatisPph(Request $request)
     {
         $request->validate([
             'bulan' => 'required|integer|between:1,12',
             'tahun' => 'required|integer|min:2000|max:2100',
         ]);
- 
+
         [$bulan, $tahun] = $this->currentPeriod($request);
- 
+
         if ($this->pphTerkunci($bulan, $tahun)) {
             return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu.');
         }
- 
+
         $list = $this->pphKaryawanPeriode($bulan, $tahun);
         $ctx = $this->pphContext($bulan, $tahun, $list->pluck('id')->all());
         $dibuat = 0;
         $tanpaPtkp = 0;
         $peringatan = [];
- 
+
         DB::beginTransaction();
         try {
             foreach ($list as $k) {
                 if ($ctx['records']->has($k->id)) {
                     continue;
                 }
- 
+
                 if (!$k->pph21) {
                     $tanpaPtkp++;
                     continue;
                 }
- 
+
                 $r = $this->resolvePph($k, $ctx);
                 if (!$r) {
                     continue;
                 }
- 
+
                 Pph21Bulanan::create([
                     'karyawan_id' => $k->id,
                     'bulan' => $bulan,
@@ -3041,25 +3035,25 @@ class payrollController extends Controller
                     'sumber' => $r['sumber'],
                     'created_by' => Auth::id(),
                 ]);
- 
+
                 foreach ($r['peringatan'] ?? [] as $p) {
                     $peringatan[] = ($k->nama_lengkap ?? $k->nip) . ': ' . $p;
                 }
- 
+
                 $this->syncPphProfileTotal((int) $k->id);
                 $dibuat++;
             }
- 
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->respondError('Gagal mengisi otomatis: ' . $e->getMessage(), 500);
         }
- 
+
         if ($dibuat === 0) {
             return $this->respondError('Tidak ada data yang perlu diisi. Semua karyawan yang punya status PTKP sudah terisi' . ($tanpaPtkp ? ", dan {$tanpaPtkp} karyawan belum punya status PTKP." : '.'));
         }
- 
+
         return response()->json([
             'success' => true,
             'message' => "{$dibuat} karyawan berhasil diisi otomatis." . ($tanpaPtkp ? " {$tanpaPtkp} karyawan dilewati karena belum punya status PTKP." : '')
@@ -3083,23 +3077,23 @@ class payrollController extends Controller
             'bulan' => 'required|integer|between:1,12',
             'tahun' => 'required|integer|min:2000|max:2100',
         ]);
- 
+
         [$bulan, $tahun] = $this->currentPeriod($request);
- 
+
         if ($this->pphTerkunci($bulan, $tahun)) {
             return $this->respondError('Periode ini sudah dilaporkan ke Kortex.');
         }
- 
+
         if (!Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->exists()) {
             return $this->respondError('Belum ada data PPH 21 yang tersimpan pada periode ini.');
         }
- 
+
         $laporan = Pph21Laporan::firstOrCreate(['bulan' => $bulan, 'tahun' => $tahun]);
         $laporan->update([
             'lapor_kortex_at' => now(),
             'lapor_kortex_by' => Auth::id(),
         ]);
- 
+
         return response()->json([
             'success' => true,
             'message' => 'Lapor Kortex berhasil dicatat untuk seluruh karyawan.',
@@ -3399,24 +3393,24 @@ class payrollController extends Controller
             'bulan' => 'required|integer|between:1,12',
             'tahun' => 'required|integer|min:2000|max:2100',
         ]);
- 
+
         [$bulan, $tahun] = $this->currentPeriod($request);
- 
+
         if ($this->pphTerkunci($bulan, $tahun)) {
             return $this->respondError('Periode ' . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . '/' . $tahun . ' sudah dilaporkan ke Kortex sehingga data terkunci. Batalkan lapor Kortex terlebih dahulu.');
         }
- 
+
         try {
             DB::beginTransaction();
- 
+
             $ids = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->pluck('karyawan_id')->all();
             $deleted = Pph21Bulanan::where('bulan', $bulan)->where('tahun', $tahun)->delete();
             foreach ($ids as $id) {
                 $this->syncPphProfileTotal((int) $id);
             }
- 
+
             DB::commit();
- 
+
             return response()->json([
                 'success' => true,
                 'message' => "Berhasil menghapus {$deleted} data PPH 21 periode " . str_pad((string) $bulan, 2, '0', STR_PAD_LEFT) . "/{$tahun}. Status PTKP karyawan tidak dihapus.",
@@ -3532,7 +3526,7 @@ class payrollController extends Controller
     {
         return self::TER_KATEGORI[$ptkp] ?? null;
     }
- 
+
     private function terTarif(int $bruto, string $kategori): float
     {
         foreach (self::TER_TABEL[$kategori] as [$batas, $tarif]) {
@@ -3542,15 +3536,14 @@ class payrollController extends Controller
         }
         return 34.0;
     }
- 
-    /** Tarif Pasal 17 ayat (1) huruf a UU PPh. */
+
     private function pasal17(int $pkp): int
     {
         $layers = [
             [60000000, 0.05], [250000000, 0.15], [500000000, 0.25],
             [5000000000, 0.30], [INF, 0.35],
         ];
- 
+
         $sisa = $pkp;
         $prev = 0;
         $pph = 0.0;
@@ -3561,7 +3554,7 @@ class payrollController extends Controller
             $sisa -= $kena;
             $prev = $limit;
         }
- 
+
         return (int) round($pph);
     }
 
@@ -3571,10 +3564,10 @@ class payrollController extends Controller
         if (!$kategori || $brutoBulanan <= 0) {
             return ['kategori' => $kategori, 'tarif' => 0.0, 'bulanan' => 0, 'tahunan' => 0, 'metode' => 'ter'];
         }
- 
+
         $tarif = $this->terTarif($brutoBulanan, $kategori);
         $bulanan = (int) round($brutoBulanan * $tarif / 100);
- 
+
         return [
             'kategori' => $kategori,
             'tarif' => $tarif,
@@ -3590,9 +3583,9 @@ class payrollController extends Controller
         $neto = $brutoSetahun - $biayaJabatan - $iuranPengurang;
         $ptkp = self::PTKP_TAHUNAN[$ptkpCode] ?? 0;
         $pkp = max(0, $neto - $ptkp);
-        $pkp = intdiv($pkp, 1000) * 1000; // PKP dibulatkan ke bawah ribuan penuh
+        $pkp = intdiv($pkp, 1000) * 1000;
         $terutang = $this->pasal17($pkp);
- 
+
         return [
             'bruto_setahun' => $brutoSetahun,
             'jumlah_bulan' => $jumlahBulan,
@@ -3606,7 +3599,7 @@ class payrollController extends Controller
             'selisih' => $terutang - $sudahDipotong,
         ];
     }
- 
+
     private function masaTerakhir($k, int $bulan, int $tahun): bool
     {
         if ($bulan === 12) {
@@ -3618,8 +3611,7 @@ class payrollController extends Controller
         }
         return false;
     }
- 
-    /** Bulan pertama bekerja dalam tahun pajak (karyawan baru di tengah tahun). */
+
     private function bulanMulaiKerja($k, int $tahun): int
     {
         $raw = $k->awal_probation ?? $k->awal_kontrak;
@@ -3648,7 +3640,7 @@ class payrollController extends Controller
         $tahun = $ctx['tahun'];
         $bruto = $this->brutoBulan($k, $bulan, $tahun, $ctx);
         $ter = $this->hitungPph21($bruto, $ptkp);
- 
+
         $out = [
             'bruto' => $bruto,
             'kategori' => $ter['kategori'],
@@ -3659,40 +3651,39 @@ class payrollController extends Controller
             'rincian' => null,
             'peringatan' => [],
         ];
- 
+
         if (!$ptkp || !$this->masaTerakhir($k, $bulan, $tahun)) {
             return $out;
         }
- 
+
         $mulai = $this->bulanMulaiKerja($k, $tahun);
         $jumlah = max(1, $bulan - $mulai + 1);
- 
+
         $brutoSetahun = 0;
         for ($m = $mulai; $m <= $bulan; $m++) {
             $brutoSetahun += $this->brutoBulan($k, $m, $tahun, $ctx);
         }
- 
-        // JHT + JP porsi karyawan = pengurang penghasilan bruto (Tabel 8.1 buku PPh 21).
+
         $iuran = (int) $ctx['iuran']->get($k->id, collect())
             ->where('bulan', '>=', $mulai)
             ->sum(fn($p) => (int) ($p->jht_karyawan ?? 0) + (int) ($p->jp_karyawan ?? 0));
- 
+
         $sebelumnya = $ctx['tahun_ini']->get($k->id, collect())->where('bulan', '>=', $mulai);
         $sudah = (int) $sebelumnya->sum('total_pph');
- 
+
         $kosong = [];
         for ($m = $mulai; $m < $bulan; $m++) {
             if (!$sebelumnya->contains('bulan', $m)) {
                 $kosong[] = str_pad((string) $m, 2, '0', STR_PAD_LEFT);
             }
         }
- 
+
         $r = $this->hitungPph21MasaTerakhir($brutoSetahun, $jumlah, $iuran, $ptkp, $sudah);
- 
+
         $out['masa_terakhir'] = true;
         $out['rincian'] = $r;
         $out['nilai'] = max(0, $r['selisih']);
- 
+
         if ($r['selisih'] < 0) {
             $out['peringatan'][] = 'Kelebihan potong Rp ' . number_format(abs($r['selisih']), 0, ',', '.')
                 . ' pada masa pajak terakhir. Nilai yang disimpan Rp 0; kelebihan harus dikembalikan ke karyawan.';
@@ -3701,7 +3692,7 @@ class payrollController extends Controller
             $out['peringatan'][] = 'PPh 21 bulan ' . implode(', ', $kosong) . '/' . $tahun
                 . ' belum tersimpan, sehingga "sudah dipotong" mungkin terlalu kecil dan selisih terlalu besar.';
         }
- 
+
         return $out;
     }
 
