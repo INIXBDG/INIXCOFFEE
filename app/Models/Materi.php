@@ -26,6 +26,7 @@ class Materi extends Model
         'kode_alias',
         'alias_exam',
         'kategori_exam',
+        'catatan',
     ];
 
     public function rkms()

@@ -263,7 +263,7 @@ class PeluangController extends Controller
         }
 
         // 3. Pengambilan dependensi entitas tunggal
-        $materi = Materi::where('status', '!=', 'Nonaktif')->select('id', 'nama_materi')->get();
+        $materi = Materi::where('status', '!=', 'Nonaktif')->select('id', 'nama_materi', 'catatan')->get();
 
         $netsales = perhitunganNetSales::with('trackingNetSales', 'approvedNetSales', 'peserta')
             ->where('id_rkm', $peluang->id_rkm)
@@ -1335,7 +1335,7 @@ class PeluangController extends Controller
     {
         $search = $request->input('q');
 
-        $query = Materi::select('id', 'nama_materi')->where('status', '!=', 'Nonaktif');
+        $query = Materi::select('id', 'nama_materi', 'catatan')->where('status', '!=', 'Nonaktif');
 
         if (!empty($search)) {
             $query->where('nama_materi', 'like', "%{$search}%");
@@ -1348,7 +1348,8 @@ class PeluangController extends Controller
         foreach ($materi as $item) {
             $formattedData[] = [
                 'id' => $item->id,
-                'text' => $item->nama_materi
+                'text' => $item->nama_materi,
+                'catatan' => $item->catatan,
             ];
         }
 

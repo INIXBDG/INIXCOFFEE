@@ -106,6 +106,16 @@
                             </div>
                         </div>
 
+                        <div class="row mb-3">
+                            <label for="catatan" class="col-md-4 col-form-label text-md-start">{{ __('Catatan') }}</label>
+                            <div class="col-md-6">
+                                <textarea id="catatan" name="catatan" rows="4" placeholder="Masukan Catatan" class="form-control @error('catatan') is-invalid @enderror" {{ $canEditCatatan ? '' : 'disabled' }}>{{ old('catatan', $materis->catatan) }}</textarea>
+                                @error('catatan')
+                                    <div class="text-danger">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
                         <div class="row mb-0">
                             <div class="col-md-6 offset-md-4">
                                 <button type="submit" class="btn click-primary">

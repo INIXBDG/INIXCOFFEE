@@ -34,6 +34,7 @@
                                 <th scope="col">Vendor</th>
                                 <th scope="col">Status</th>
                                 <th scope="col">Keterangan</th>
+                                <th scope="col">Catatan</th>
                                 <th scope="col">Tipe Materi</th>
                                 <th scope="col">Silabus</th>
                                 <th scope="col">Aksi</th>
@@ -93,6 +94,16 @@
         color: #999;
         }
     }
+    }
+
+    /* Lebar kolom Keterangan & Catatan disamakan */
+    #materitable th.col-wide,
+    #materitable td.col-wide {
+        width: 250px;
+        min-width: 250px;
+        max-width: 250px;
+        white-space: normal;
+        word-break: break-word;
     }
 </style>
 @push('js')
@@ -215,6 +226,12 @@
                     }
                 },
                 {"data": "keterangan"},
+                {
+                    "data": "catatan",
+                    "render": function(data) {
+                        return data ? data : '';
+                    }
+                },
                 {"data": "tipe_materi"},
                 {
                     "data": null,
@@ -265,6 +282,10 @@
                     "targets": 7, // Indeks kolom status
                     "orderData": 7,
                     "orderDataType": "custom-status"
+                },
+                {
+                    "targets": [8, 9], // Keterangan & Catatan
+                    "className": "col-wide"
                 }
             ],
 

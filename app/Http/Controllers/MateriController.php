@@ -26,6 +26,14 @@ class MateriController extends Controller
         $this->middleware('permission:View Alias', ['only' => ['indexAlias', 'indexJsonAlias']]);
         $this->middleware('permission:Update Alias', ['only' => ['updateAlias']]);
     }
+
+    private function canEditCatatan(): bool
+    {
+        $divisi = auth()->user()->karyawan?->divisi;
+
+        return in_array($divisi, ['IT Service Management', 'Education'], true);
+    }
+
     public function index(): View
     {
         $materis = Materi::latest()->paginate(5);
@@ -120,8 +128,9 @@ class MateriController extends Controller
     public function edit(string $id): View
     {
         $materis = Materi::findOrFail($id);
+        $canEditCatatan = $this->canEditCatatan();
 
-        return view('materi.edit', compact('materis'));
+        return view('materi.edit', compact('materis', 'canEditCatatan'));
     }
 
     public function editstatusmateri(string $id): View
@@ -140,18 +149,19 @@ class MateriController extends Controller
      */
     public function update(Request $request, $id): RedirectResponse
     {
-        // dd($request->all());
-
         $materi = Materi::findOrFail($id);
+
         if ($request->nama_materi) {
             $validatedData = $this->validate($request, [
-                'nama_materi' => 'required',
-                'kode_materi' => 'nullable',
+                'nama_materi'     => 'required',
+                'kode_materi'     => 'nullable',
                 'kategori_materi' => 'nullable',
-                'vendor' => 'nullable',
-                'durasi' => 'nullable',
-                'silabus' => 'nullable|file|mimes:pdf|max:2048' // tambahkan validasi untuk file PDF
+                'vendor'          => 'nullable',
+                'durasi'          => 'nullable',
+                'catatan'         => 'nullable|string',
+                'silabus'         => 'nullable|file|mimes:pdf|max:2048' // validasi untuk file PDF
             ]);
+
             if ($request->hasFile('silabus')) {
                 // Hapus file sebelumnya jika ada
                 if ($materi->silabus) {
@@ -166,28 +176,26 @@ class MateriController extends Controller
                     return redirect()->back()->withErrors(['silabus' => 'File upload failed: ' . $e->getMessage()]);
                 }
             }
-            // $materi->update([
-            //     'nama_materi' => $request->nama_materi,
-            //     'kategori_materi' => $request->kategori_materi,
-            //     'durasi' => $request->durasi,
-            //     'kode_materi' => $request->kode_materi,
-            //     'vendor' => $request->vendor,
-            //     'silabus' => $path,
-            // ]);
-            $materi->nama_materi = $request->nama_materi;
-            $materi->kode_materi = $request->kode_materi;
+
+            $materi->nama_materi     = $request->nama_materi;
+            $materi->kode_materi     = $request->kode_materi;
             $materi->kategori_materi = $request->kategori_materi;
-            $materi->vendor = $request->vendor;
-            $materi->durasi = $request->durasi;
+            $materi->vendor          = $request->vendor;
+            $materi->durasi          = $request->durasi;
+
+            // Catatan hanya boleh diubah divisi IT Service Management / Education
+            if ($this->canEditCatatan()) {
+                $materi->catatan = $request->catatan;
+            }
+
             $materi->save();
         } else {
             $materi->update([
-                'status' => $request->status,
-                'keterangan' => $request->keterangan,
+                'status'      => $request->status,
+                'keterangan'  => $request->keterangan,
                 'tipe_materi' => $request->tipe_materi,
             ]);
         }
-
 
         return redirect()->route('materi.index')
             ->with(['success' => 'Data Berhasil Diubah!'])
