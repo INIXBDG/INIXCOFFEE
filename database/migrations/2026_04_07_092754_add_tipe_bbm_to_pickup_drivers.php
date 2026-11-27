@@ -11,18 +11,36 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('pickup_drivers', function (Blueprint $table) {
-            $table->string('KM_awal')->nullable();
-            $table->string('KM_akhir')->nullable();
-            $table->string('tipe_perjalanan')->nullable();
-        });
+        if (Schema::hasTable('pickup_drivers')) {
+            Schema::table('pickup_drivers', function (Blueprint $table) {
+                if (!Schema::hasColumn('pickup_drivers', 'KM_awal')) {
+                    $table->string('KM_awal')->nullable();
+                }
+                if (!Schema::hasColumn('pickup_drivers', 'KM_akhir')) {
+                    $table->string('KM_akhir')->nullable();
+                }
+                if (!Schema::hasColumn('pickup_drivers', 'tipe_perjalanan')) {
+                    $table->string('tipe_perjalanan')->nullable();
+                }
+            });
+        }
 
-        Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
-            $table->date('tanggal_perbaikan')->nullable();
-            $table->string('selesai_perbaikan')->nullable();
-            $table->text('detail_perbaikan')->nullable();
-            $table->string('document')->nullable();
-        });
+        if (Schema::hasTable('perbaikan_kendaraans')) {
+            Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'tanggal_perbaikan')) {
+                    $table->date('tanggal_perbaikan')->nullable();
+                }
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'selesai_perbaikan')) {
+                    $table->string('selesai_perbaikan')->nullable();
+                }
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'detail_perbaikan')) {
+                    $table->text('detail_perbaikan')->nullable();
+                }
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'document')) {
+                    $table->string('document')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -11,39 +11,41 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('approval_pendapatan_sales', function (Blueprint $table) {
-            $table->id();
+        if (!Schema::hasTable('approval_pendapatan_sales')) {
+            Schema::create('approval_pendapatan_sales', function (Blueprint $table) {
+                $table->id();
 
-            $table->unsignedBigInteger('id_rkm');
+                $table->unsignedBigInteger('id_rkm');
 
-            $table->string('no_faktur')->nullable();
-            $table->string('no_invoice')->nullable();
+                $table->string('no_faktur')->nullable();
+                $table->string('no_invoice')->nullable();
 
-            $table->bigInteger('harga_net')->nullable();
-            $table->integer('pax')->nullable();
+                $table->bigInteger('harga_net')->nullable();
+                $table->integer('pax')->nullable();
 
-            $table->bigInteger('diskon')->nullable();
-            $table->bigInteger('total_diskon')->nullable();
-            $table->bigInteger('total_pa')->nullable();
-            $table->bigInteger('total_cashback')->nullable();
-            $table->bigInteger('total_uang_saku')->nullable();
-            $table->bigInteger('total_akomodasi')->nullable();
+                $table->bigInteger('diskon')->nullable();
+                $table->bigInteger('total_diskon')->nullable();
+                $table->bigInteger('total_pa')->nullable();
+                $table->bigInteger('total_cashback')->nullable();
+                $table->bigInteger('total_uang_saku')->nullable();
+                $table->bigInteger('total_akomodasi')->nullable();
 
-            $table->string('jenis_transport')->nullable();
-            $table->bigInteger('biaya_transport')->nullable();
+                $table->string('jenis_transport')->nullable();
+                $table->bigInteger('biaya_transport')->nullable();
 
-            $table->bigInteger('oleh_oleh')->nullable();
-            $table->bigInteger('total_penjualan_sales')->nullable();
+                $table->bigInteger('oleh_oleh')->nullable();
+                $table->bigInteger('total_penjualan_sales')->nullable();
 
-            $table->enum('status', ['valid', 'belum tervalidasi'])->nullable();
+                $table->enum('status', ['valid', 'belum tervalidasi'])->nullable();
 
-            $table->unsignedBigInteger('materi')->nullable();
-            $table->unsignedBigInteger('perusahaan')->nullable();
+                $table->unsignedBigInteger('materi')->nullable();
+                $table->unsignedBigInteger('perusahaan')->nullable();
 
-            $table->date('tanggal_mulai')->nullable();
-            $table->date('tanggal_selesai')->nullable();
-            $table->timestamps();
-        });
+                $table->date('tanggal_mulai')->nullable();
+                $table->date('tanggal_selesai')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

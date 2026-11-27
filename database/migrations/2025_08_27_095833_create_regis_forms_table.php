@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('regis_forms', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_peluang');
-            $table->string('name');
-            $table->string('path');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('regis_forms')) {
+            Schema::create('regis_forms', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_peluang');
+                $table->string('name');
+                $table->string('path');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('registrasis', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_rkm');
-            $table->string('id_peserta');
-            $table->string('id_materi');
-            $table->string('id_instruktur');
-            $table->string('id_sales');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('registrasis')) {
+            Schema::create('registrasis', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_rkm');
+                $table->string('id_peserta');
+                $table->string('id_materi');
+                $table->string('id_instruktur');
+                $table->string('id_sales');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

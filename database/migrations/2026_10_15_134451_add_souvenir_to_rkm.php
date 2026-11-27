@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('r_k_m_s', function (Blueprint $table) {
-            $table->boolean('souvenir')->default(true)->after('authorize');
-        });
+        if (Schema::hasTable('r_k_m_s')) {
+            Schema::table('r_k_m_s', function (Blueprint $table) {
+                if (!Schema::hasColumn('r_k_m_s', 'souvenir')) {
+                    $table->boolean('souvenir')->default(true)->after('authorize');
+                }
+            });
+        }
     }
 
     /**

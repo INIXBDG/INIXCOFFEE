@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-            $table->renameColumn('tanggal_perusahaan', 'tanggal_pelaksanaan');
-        });
+        if (
+            Schema::hasTable('dokumentasi_exams')
+            && Schema::hasColumn('dokumentasi_exams', 'tanggal_perusahaan')
+            && !Schema::hasColumn('dokumentasi_exams', 'tanggal_pelaksanaan')
+        ) {
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                $table->renameColumn('tanggal_perusahaan', 'tanggal_pelaksanaan');
+            });
+        }
     }
 
     /**
@@ -21,8 +27,14 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-            $table->renameColumn('tanggal_pelaksanaan', 'tanggal_perusahaan');
-        });
+        if (
+            Schema::hasTable('dokumentasi_exams')
+            && Schema::hasColumn('dokumentasi_exams', 'tanggal_pelaksanaan')
+            && !Schema::hasColumn('dokumentasi_exams', 'tanggal_perusahaan')
+        ) {
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                $table->renameColumn('tanggal_pelaksanaan', 'tanggal_perusahaan');
+            });
+        }
     }
 };

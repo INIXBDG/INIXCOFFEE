@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('analisisrkmmingguans', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_kelasanalisis');
-            $table->string('nama_materi');
-            $table->string('nett_penjualan');
-            $table->decimal('fixcost', 15, 2, false);
-            $table->decimal('profit', 15, 2, false);
-            $table->string('tahun');
-            $table->string('bulan');
-            $table->string('minggu');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('analisisrkmmingguans')) {
+            Schema::create('analisisrkmmingguans', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_kelasanalisis');
+                $table->string('nama_materi');
+                $table->string('nett_penjualan');
+                $table->decimal('fixcost', 15, 2, false);
+                $table->decimal('profit', 15, 2, false);
+                $table->string('tahun');
+                $table->string('bulan');
+                $table->string('minggu');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

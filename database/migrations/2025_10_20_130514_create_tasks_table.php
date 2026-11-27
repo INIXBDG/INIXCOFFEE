@@ -8,16 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tasks', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('user_id');
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('state')->default('todo');
-            $table->date('date_start')->nullable();
-            $table->date('date_end')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tasks')) {
+            Schema::create('tasks', function (Blueprint $table) {
+                $table->id();
+                $table->bigInteger('user_id');
+                $table->string('title');
+                $table->text('description')->nullable();
+                $table->string('state')->default('todo');
+                $table->date('date_start')->nullable();
+                $table->date('date_end')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

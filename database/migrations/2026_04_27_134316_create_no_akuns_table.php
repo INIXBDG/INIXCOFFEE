@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('no_akuns', function (Blueprint $table) {
-            $table->id();
-            $table->string('no');
-            $table->string('nama_akun');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('no_akuns')) {
+            Schema::create('no_akuns', function (Blueprint $table) {
+                $table->id();
+                $table->string('no');
+                $table->string('nama_akun');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

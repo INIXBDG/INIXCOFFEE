@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('karyawans', function (Blueprint $table) {
-            $table->decimal('tunjangan_jabatan', 15, 2)->nullable()->after('gaji');
-        });
+        if (Schema::hasTable('karyawans')) {
+            Schema::table('karyawans', function (Blueprint $table) {
+                if (!Schema::hasColumn('karyawans', 'tunjangan_jabatan')) {
+                    $table->decimal('tunjangan_jabatan', 15, 2)->nullable()->after('gaji');
+                }
+            });
+        }
     }
 
     /**

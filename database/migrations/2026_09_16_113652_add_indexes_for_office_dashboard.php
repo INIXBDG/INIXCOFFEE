@@ -1,8 +1,7 @@
 <?php
 
+use App\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -11,21 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('absensi_karyawans', function (Blueprint $table) {
-            $table->index(['tanggal', 'id_karyawan'], 'idx_absensi_tgl_id');
-        });
-
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->index(['created_at'], 'idx_tickets_created_at');
-        });
-
-        Schema::table('administrasi_karyawans', function (Blueprint $table) {
-            $table->index(['dateline'], 'idx_admin_dateline');
-        });
-
-        Schema::table('r_k_m_s', function (Blueprint $table) {
-            $table->index(['status', 'tanggal_awal'], 'idx_rkms_status_tgl');
-        });
+        MigrationHelper::addIndexIfNotExists('absensi_karyawans', ['tanggal', 'id_karyawan'], 'idx_absensi_tgl_id');
+        MigrationHelper::addIndexIfNotExists('tickets', ['created_at'], 'idx_tickets_created_at');
+        MigrationHelper::addIndexIfNotExists('administrasi_karyawans', ['dateline'], 'idx_admin_dateline');
+        MigrationHelper::addIndexIfNotExists('r_k_m_s', ['status', 'tanggal_awal'], 'idx_rkms_status_tgl');
     }
 
     /**
@@ -33,20 +21,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('absensi_karyawans', function (Blueprint $table) {
-            $table->dropIndex('idx_absensi_tgl_id');
-        });
-
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->dropIndex('idx_tickets_created_at');
-        });
-
-        Schema::table('administrasi_karyawans', function (Blueprint $table) {
-            $table->dropIndex('idx_admin_dateline');
-        });
-
-        Schema::table('r_k_m_s', function (Blueprint $table) {
-            $table->dropIndex('idx_rkms_status_tgl');
-        });
+        MigrationHelper::dropIndexIfExists('absensi_karyawans', 'idx_absensi_tgl_id');
+        MigrationHelper::dropIndexIfExists('tickets', 'idx_tickets_created_at');
+        MigrationHelper::dropIndexIfExists('administrasi_karyawans', 'idx_admin_dateline');
+        MigrationHelper::dropIndexIfExists('r_k_m_s', 'idx_rkms_status_tgl');
     }
 };

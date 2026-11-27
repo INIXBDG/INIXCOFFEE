@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('registexams', function (Blueprint $table) {
-            $table->string('email_exam')->nullable();
-            $table->text('akun_exam')->nullable();
-        });
+        if (Schema::hasTable('registexams')) {
+            Schema::table('registexams', function (Blueprint $table) {
+                if (!Schema::hasColumn('registexams', 'email_exam')) {
+                    $table->string('email_exam')->nullable();
+                }
+                if (!Schema::hasColumn('registexams', 'akun_exam')) {
+                    $table->text('akun_exam')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -7,36 +7,36 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::dropIfExists('job_desks');
+        if (!Schema::hasTable('job_desks')) {
+            Schema::create('job_desks', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_org');
+                
+                // === JOB PROFILE ===
+                $table->text('fungsi_utama')->nullable();
+                $table->text('tujuan_jabatan')->nullable();
+                $table->text('kualifikasi_pendidikan')->nullable();
+                $table->text('pengalaman_kerja')->nullable();
+                $table->json('kompetensi')->nullable(); 
+                $table->text('karakteristik_pribadi')->nullable();
 
-        Schema::create('job_desks', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_org');
-            
-            // === JOB PROFILE ===
-            $table->text('fungsi_utama')->nullable();
-            $table->text('tujuan_jabatan')->nullable();
-            $table->text('kualifikasi_pendidikan')->nullable();
-            $table->text('pengalaman_kerja')->nullable();
-            $table->json('kompetensi')->nullable(); 
-            $table->text('karakteristik_pribadi')->nullable();
+                // === JOB DESK (Parent-Child) ===
+                $table->json('tugas_tanggung_jawab')->nullable();  
+                $table->json('wewenang')->nullable();               
 
-            // === JOB DESK (Parent-Child) ===
-            $table->json('tugas_tanggung_jawab')->nullable();  
-            $table->json('wewenang')->nullable();               
+                // === SOP (Parent-Child) ===
+                $table->json('sop')->nullable();              
 
-            // === SOP (Parent-Child) ===
-            $table->json('sop')->nullable();              
+                $table->timestamps();
 
-            $table->timestamps();
+                $table->foreign('id_org')
+                      ->references('id')
+                      ->on('org_structures')
+                      ->onDelete('cascade');
 
-            $table->foreign('id_org')
-                  ->references('id')
-                  ->on('org_structures')
-                  ->onDelete('cascade');
-
-            $table->unique('id_org');
-        });
+                $table->unique('id_org');
+            });
+        }
     }
 
     public function down(): void

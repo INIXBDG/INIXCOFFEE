@@ -8,14 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('schedule_logs', function (Blueprint $table) {
-            $table->id();
-            $table->string('command_name');
-            $table->string('status');
-            $table->date('execution_date');
-            $table->text('error_message')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('schedule_logs')) {
+            Schema::create('schedule_logs', function (Blueprint $table) {
+                $table->id();
+                $table->string('command_name');
+                $table->string('status');
+                $table->date('execution_date');
+                $table->text('error_message')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

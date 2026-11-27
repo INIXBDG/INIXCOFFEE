@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('koordinasi_office_boys', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_tugas');
-            $table->integer('karyawan');
-            $table->string('status')->default('Dikerjakan');
-            $table->dateTime('deadline');
-            $table->text('catatan')->nullable();
-            $table->integer('created_by');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('koordinasi_office_boys')) {
+            Schema::create('koordinasi_office_boys', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_tugas');
+                $table->integer('karyawan');
+                $table->string('status')->default('Dikerjakan');
+                $table->dateTime('deadline');
+                $table->text('catatan')->nullable();
+                $table->integer('created_by');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

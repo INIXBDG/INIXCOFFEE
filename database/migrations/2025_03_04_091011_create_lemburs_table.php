@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lemburs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_karyawan')->nullable();
-            $table->date('tanggal_spl')->nullable();
-            $table->text('uraian_tugas')->nullable();
-            $table->enum('waktu_lembur', ['Kerja', 'Libur'])->nullable();
-            $table->date('tanggal_lembur')->nullable();
-            $table->string('jam_mulai')->nullable();
-            // $table->string('foto_masuk')->nullable();
-            $table->string('jam_selesai')->nullable();
-            // $table->string('foto_selesai')->nullable();
-            $table->string('approval_karyawan')->nullable();
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('lemburs')) {
+            Schema::create('lemburs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_karyawan')->nullable();
+                $table->date('tanggal_spl')->nullable();
+                $table->text('uraian_tugas')->nullable();
+                $table->enum('waktu_lembur', ['Kerja', 'Libur'])->nullable();
+                $table->date('tanggal_lembur')->nullable();
+                $table->string('jam_mulai')->nullable();
+                // $table->string('foto_masuk')->nullable();
+                $table->string('jam_selesai')->nullable();
+                // $table->string('foto_selesai')->nullable();
+                $table->string('approval_karyawan')->nullable();
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

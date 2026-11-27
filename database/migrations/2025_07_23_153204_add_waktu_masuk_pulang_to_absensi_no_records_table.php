@@ -11,10 +11,16 @@ return new class extends Migration
      */
 public function up()
 {
-    Schema::table('absensi_no_records', function (Blueprint $table) {
-        $table->time('waktu_masuk')->nullable();
-        $table->time('waktu_pulang')->nullable();
-    });
+    if (Schema::hasTable('absensi_no_records')) {
+        Schema::table('absensi_no_records', function (Blueprint $table) {
+            if (!Schema::hasColumn('absensi_no_records', 'waktu_masuk')) {
+                $table->time('waktu_masuk')->nullable();
+            }
+            if (!Schema::hasColumn('absensi_no_records', 'waktu_pulang')) {
+                $table->time('waktu_pulang')->nullable();
+            }
+        });
+    }
 }
 
 public function down()

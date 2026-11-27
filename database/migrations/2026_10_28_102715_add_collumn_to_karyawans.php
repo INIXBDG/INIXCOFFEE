@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('karyawans', function (Blueprint $table) {
-            $table->string('pendidikan_terakhir')->nullable()->after('tanggal_lahir');
-            $table->string('kejuruan')->nullable()->after('pendidikan_terakhir');
-        });
+        if (Schema::hasTable('karyawans')) {
+            Schema::table('karyawans', function (Blueprint $table) {
+                if (!Schema::hasColumn('karyawans', 'pendidikan_terakhir')) {
+                    $table->string('pendidikan_terakhir')->nullable()->after('tanggal_lahir');
+                }
+                if (!Schema::hasColumn('karyawans', 'kejuruan')) {
+                    $table->string('kejuruan')->nullable()->after('pendidikan_terakhir');
+                }
+            });
+        }
     }
 
     /**

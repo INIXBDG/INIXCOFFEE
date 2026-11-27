@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tipe_kategori_tabels', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_kategori');
-            $table->string('ket_tipe')->nullable();
-            $table->string('nilai_ket_tipe')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tipe_kategori_tabels')) {
+            Schema::create('tipe_kategori_tabels', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_kategori');
+                $table->string('ket_tipe')->nullable();
+                $table->string('nilai_ket_tipe')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

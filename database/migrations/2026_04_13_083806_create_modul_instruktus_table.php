@@ -10,16 +10,18 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('module_instructors', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+        if (!Schema::hasTable('module_instructors')) {
+            Schema::create('module_instructors', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
+                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
-            // Mencegah duplikasi instruktur pada modul yang sama
-            $table->unique(['module_id', 'user_id']);
+                // Mencegah duplikasi instruktur pada modul yang sama
+                $table->unique(['module_id', 'user_id']);
 
-            $table->timestamps();
-        });
+                $table->timestamps();
+            });
+        }
     }
 
     /**

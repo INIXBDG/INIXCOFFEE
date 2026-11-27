@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('absensi_no_records', function (Blueprint $table) {
-            $table->timestamp('approval_date')->nullable();
-        });
+        if (Schema::hasTable('absensi_no_records')) {
+            Schema::table('absensi_no_records', function (Blueprint $table) {
+                if (!Schema::hasColumn('absensi_no_records', 'approval_date')) {
+                    $table->timestamp('approval_date')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ccs', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_pemilik');
-            $table->string('angka_terakhir');
-            $table->string('bank');
-            $table->string('tipe_kartu');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('ccs')) {
+            Schema::create('ccs', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_pemilik');
+                $table->string('angka_terakhir');
+                $table->string('bank');
+                $table->string('tipe_kartu');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

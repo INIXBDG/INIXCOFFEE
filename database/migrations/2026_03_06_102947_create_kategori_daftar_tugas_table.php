@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kategori_daftar_tugas', function (Blueprint $table) {
-            $table->id();
-            $table->string('Jabatan_Pembuat');
-            $table->enum('Tipe', ['Harian', 'Mingguan', 'Bulanan', 'Quartal', 'Semester', 'Tahunan']);
-            $table->string('judul_kategori');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('kategori_daftar_tugas')) {
+            Schema::create('kategori_daftar_tugas', function (Blueprint $table) {
+                $table->id();
+                $table->string('Jabatan_Pembuat');
+                $table->enum('Tipe', ['Harian', 'Mingguan', 'Bulanan', 'Quartal', 'Semester', 'Tahunan']);
+                $table->string('judul_kategori');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

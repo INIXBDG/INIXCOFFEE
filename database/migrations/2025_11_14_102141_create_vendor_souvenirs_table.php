@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vendor_souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama');
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('vendor_souvenirs')) {
+            Schema::create('vendor_souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama');
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

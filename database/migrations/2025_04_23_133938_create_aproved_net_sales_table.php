@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('approved_net_sales', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_netSales');
-            $table->boolean('status');
-            $table->string('level_status')->nullable();
-            $table->text('keterangan')->nullable();
-            $table->date('tanggal');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('approved_net_sales')) {
+            Schema::create('approved_net_sales', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_netSales');
+                $table->boolean('status');
+                $table->string('level_status')->nullable();
+                $table->text('keterangan')->nullable();
+                $table->date('tanggal');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -7,9 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('report_generations', function (Blueprint $table) {
-            $table->string('output_file_path')->nullable()->change();
-        });
+        if (Schema::hasTable('report_generations')) {
+            Schema::table('report_generations', function (Blueprint $table) {
+                if (Schema::hasColumn('report_generations', 'output_file_path')) {
+                    $table->string('output_file_path')->nullable()->change();
+                }
+            });
+        }
     }
 
     public function down(): void

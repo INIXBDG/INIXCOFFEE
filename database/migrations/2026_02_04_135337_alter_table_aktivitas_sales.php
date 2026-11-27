@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('aktivitas', function (Blueprint $table) {
-            $table->string('foto_lokasi')->nullable();
-            $table->text('latitude')->nullable();
-            $table->text('longitude')->nullable();
-        });
+        if (Schema::hasTable('aktivitas')) {
+            Schema::table('aktivitas', function (Blueprint $table) {
+                if (!Schema::hasColumn('aktivitas', 'foto_lokasi')) {
+                    $table->string('foto_lokasi')->nullable();
+                }
+                if (!Schema::hasColumn('aktivitas', 'latitude')) {
+                    $table->text('latitude')->nullable();
+                }
+                if (!Schema::hasColumn('aktivitas', 'longitude')) {
+                    $table->text('longitude')->nullable();
+                }
+            });
+        }
     }
 
     /**

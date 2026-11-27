@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('izin_tiga_jams', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_karyawan');
-            $table->time('jam_mulai');
-            $table->time('jam_selesai');
-            $table->text('alasan');
-            $table->integer('durasi');
-            $table->text('alasan_approval')->nullable();
-            $table->integer('approval')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('izin_tiga_jams')) {
+            Schema::create('izin_tiga_jams', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_karyawan');
+                $table->time('jam_mulai');
+                $table->time('jam_selesai');
+                $table->text('alasan');
+                $table->integer('durasi');
+                $table->text('alasan_approval')->nullable();
+                $table->integer('approval')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

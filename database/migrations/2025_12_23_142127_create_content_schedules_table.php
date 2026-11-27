@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('content_schedules', function (Blueprint $table) {
-            $table->id();
-            $table->enum('content_form', ['Reels', 'Youtube', 'Feed', 'Story']);
-            $table->date('upload_date')->nullable();
-            $table->string('talents');
-            $table->text('description')->nullable();
-            $table->longText('proof_script')->nullable();
-            $table->string('proof_image_path')->nullable();
-            $table->boolean('is_tiktok')->default(false);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('content_schedules')) {
+            Schema::create('content_schedules', function (Blueprint $table) {
+                $table->id();
+                $table->enum('content_form', ['Reels', 'Youtube', 'Feed', 'Story']);
+                $table->date('upload_date')->nullable();
+                $table->string('talents');
+                $table->text('description')->nullable();
+                $table->longText('proof_script')->nullable();
+                $table->string('proof_image_path')->nullable();
+                $table->boolean('is_tiktok')->default(false);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

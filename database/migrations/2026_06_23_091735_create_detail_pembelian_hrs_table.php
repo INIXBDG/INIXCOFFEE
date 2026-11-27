@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_pembelian_hrs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_pembelian')->constrained('pembelian_hrs')->cascadeOnDelete();
-            $table->string('nama_barang');
-            $table->integer('qty');
-            $table->decimal('harga', 15, 2);
-            $table->text('url')->nullable();
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('detail_pembelian_hrs')) {
+            Schema::create('detail_pembelian_hrs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_pembelian')->constrained('pembelian_hrs')->cascadeOnDelete();
+                $table->string('nama_barang');
+                $table->integer('qty');
+                $table->decimal('harga', 15, 2);
+                $table->text('url')->nullable();
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

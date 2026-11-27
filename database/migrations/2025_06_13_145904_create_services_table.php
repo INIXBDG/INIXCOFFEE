@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('services', function (Blueprint $table) {
-            $table->id();
-            $table->text('idbarang'); // Barang yang diservis
-            $table->date('tanggal_service'); // Tanggal service
-            $table->text('deskripsi'); // Deskripsi service, e.g., "Service laptop sales Bu Hera"
-            $table->decimal('harga', 15, 2)->nullable(); // Biaya service
-            $table->text('user'); // Pengguna yang mencatat service
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('services')) {
+            Schema::create('services', function (Blueprint $table) {
+                $table->id();
+                $table->text('idbarang'); // Barang yang diservis
+                $table->date('tanggal_service'); // Tanggal service
+                $table->text('deskripsi'); // Deskripsi service, e.g., "Service laptop sales Bu Hera"
+                $table->decimal('harga', 15, 2)->nullable(); // Biaya service
+                $table->text('user'); // Pengguna yang mencatat service
+                $table->timestamps();
+            });
+        }
     }
 
     /**

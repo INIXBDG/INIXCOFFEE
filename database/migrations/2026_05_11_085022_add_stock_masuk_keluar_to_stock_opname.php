@@ -7,20 +7,24 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('stock_opnames', function (Blueprint $table) {
-            if (!Schema::hasColumn('stock_opnames', 'stock_masuk')) {
-                $table->integer('stock_masuk')->default(0)->after('stock_awal');
-            }
-            if (!Schema::hasColumn('stock_opnames', 'stock_keluar')) {
-                $table->integer('stock_keluar')->default(0)->after('stock_masuk');
-            }
-        });
+        if (Schema::hasTable('stock_opnames')) {
+            Schema::table('stock_opnames', function (Blueprint $table) {
+                if (!Schema::hasColumn('stock_opnames', 'stock_masuk')) {
+                    $table->integer('stock_masuk')->default(0)->after('stock_awal');
+                }
+                if (!Schema::hasColumn('stock_opnames', 'stock_keluar')) {
+                    $table->integer('stock_keluar')->default(0)->after('stock_masuk');
+                }
+            });
+        }
 
-        Schema::table('stock_opname_logs', function (Blueprint $table) {
-            if (!Schema::hasColumn('stock_opname_logs', 'jenis_transaksi')) {
-                $table->string('jenis_transaksi')->default('masuk')->after('tanggal');
-            }
-        });
+        if (Schema::hasTable('stock_opname_logs')) {
+            Schema::table('stock_opname_logs', function (Blueprint $table) {
+                if (!Schema::hasColumn('stock_opname_logs', 'jenis_transaksi')) {
+                    $table->string('jenis_transaksi')->default('masuk')->after('tanggal');
+                }
+            });
+        }
     }
 
     public function down(): void

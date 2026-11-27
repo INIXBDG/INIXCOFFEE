@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tunjangan_karyawans', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_karyawan')->nullable();
-            $table->string('bulan')->nullable();
-            $table->string('tahun')->nullable();
-            $table->string('jenis_tunjangan')->nullable();
-            $table->string('keterangan')->nullable();
-            // $table->string('jumlah_absensi')->nullable();
-            $table->decimal('total', 15, 2)->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tunjangan_karyawans')) {
+            Schema::create('tunjangan_karyawans', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_karyawan')->nullable();
+                $table->string('bulan')->nullable();
+                $table->string('tahun')->nullable();
+                $table->string('jenis_tunjangan')->nullable();
+                $table->string('keterangan')->nullable();
+                // $table->string('jumlah_absensi')->nullable();
+                $table->decimal('total', 15, 2)->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

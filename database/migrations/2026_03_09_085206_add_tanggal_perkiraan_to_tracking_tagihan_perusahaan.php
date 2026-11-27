@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tracking_tagihan_perusahaans', function (Blueprint $table) {
-            $table->date('tanggal_perkiraan_mulai');
-            $table->date('tanggal_perkiraan_selesai')->nullable();
-        });
+        if (Schema::hasTable('tracking_tagihan_perusahaans')) {
+            Schema::table('tracking_tagihan_perusahaans', function (Blueprint $table) {
+                if (!Schema::hasColumn('tracking_tagihan_perusahaans', 'tanggal_perkiraan_mulai')) {
+                    $table->date('tanggal_perkiraan_mulai');
+                }
+                if (!Schema::hasColumn('tracking_tagihan_perusahaans', 'tanggal_perkiraan_selesai')) {
+                    $table->date('tanggal_perkiraan_selesai')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -10,11 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('detail_target_k_p_i_s', function (Blueprint $table) {
+        if (Schema::hasTable('detail_target_k_p_i_s') && Schema::hasColumn('detail_target_k_p_i_s', 'manual_value')) {
             Schema::table('detail_target_k_p_i_s', function (Blueprint $table) {
                 $table->string('manual_value', 100)->change();
             });
-        });
+        }
     }
 
     /**
@@ -22,8 +22,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('detail_target_k_p_i_s', function (Blueprint $table) {
-            $table->string('manual_value', 100)->change();
-        });
+        if (Schema::hasTable('detail_target_k_p_i_s') && Schema::hasColumn('detail_target_k_p_i_s', 'manual_value')) {
+            Schema::table('detail_target_k_p_i_s', function (Blueprint $table) {
+                $table->string('manual_value', 100)->change();
+            });
+        }
     }
 };

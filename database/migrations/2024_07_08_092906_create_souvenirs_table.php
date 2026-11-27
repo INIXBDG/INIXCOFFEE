@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_souvenir');
-            $table->string('harga');
-            $table->string('min_harga_pelatihan');
-            $table->string('max_harga_pelatihan');
-            $table->string('stok');
-            $table->string('foto');
-            $table->binary('blob_foto');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('souvenirs')) {
+            Schema::create('souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_souvenir');
+                $table->string('harga');
+                $table->string('min_harga_pelatihan');
+                $table->string('max_harga_pelatihan');
+                $table->string('stok');
+                $table->string('foto');
+                $table->binary('blob_foto');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

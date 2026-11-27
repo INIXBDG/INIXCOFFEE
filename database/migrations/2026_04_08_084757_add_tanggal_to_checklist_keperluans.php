@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('checklist_keperluans', function (Blueprint $table) {
-            $table->date('tanggal_keperluan')->nullable()->after('id_rkm');
-        });
+        if (Schema::hasTable('checklist_keperluans')) {
+            Schema::table('checklist_keperluans', function (Blueprint $table) {
+                if (!Schema::hasColumn('checklist_keperluans', 'tanggal_keperluan')) {
+                    $table->date('tanggal_keperluan')->nullable()->after('id_rkm');
+                }
+            });
+        }
     }
 
     /**

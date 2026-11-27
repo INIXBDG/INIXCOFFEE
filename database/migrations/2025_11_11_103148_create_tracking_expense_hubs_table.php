@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_expense_hubs', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_expenseHub');
-            $table->string('tracking');
-            $table->date('tanggal');
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_expense_hubs')) {
+            Schema::create('tracking_expense_hubs', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_expenseHub');
+                $table->string('tracking');
+                $table->date('tanggal');
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

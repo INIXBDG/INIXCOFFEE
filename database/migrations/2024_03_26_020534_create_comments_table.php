@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comments', function (Blueprint $table) {
-            $table->id();
-            $table->string('rkm_key');
-            $table->string('materi_key');
-            $table->string('karyawan_key');
-            $table->string('content');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('comments')) {
+            Schema::create('comments', function (Blueprint $table) {
+                $table->id();
+                $table->string('rkm_key');
+                $table->string('materi_key');
+                $table->string('karyawan_key');
+                $table->string('content');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

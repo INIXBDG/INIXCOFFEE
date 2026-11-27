@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('perhitungan_net_sales', function (Blueprint $table) {
-            $table->string('bukti')->nullable()->after('tipe_pembayaran');
-        });
+        if (Schema::hasTable('perhitungan_net_sales')) {
+            Schema::table('perhitungan_net_sales', function (Blueprint $table) {
+                if (!Schema::hasColumn('perhitungan_net_sales', 'bukti')) {
+                    $table->string('bukti')->nullable()->after('tipe_pembayaran');
+                }
+            });
+        }
     }
 
     /**

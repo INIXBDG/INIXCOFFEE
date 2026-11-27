@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hari_liburs', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama');
-            $table->date('tanggal');
-            $table->year('year');
-            $table->enum('tipe', ['nasional', 'perusahaan']);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('hari_liburs')) {
+            Schema::create('hari_liburs', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama');
+                $table->date('tanggal');
+                $table->year('year');
+                $table->enum('tipe', ['nasional', 'perusahaan']);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

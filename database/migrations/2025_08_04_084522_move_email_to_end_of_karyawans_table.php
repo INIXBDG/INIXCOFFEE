@@ -7,31 +7,20 @@ return new class extends Migration
 {
     public function up()
     {
-        // Drop kolom kalau memang ada
-        if (Schema::hasColumn('karyawans', 'email')) {
-            Schema::table('karyawans', function (Blueprint $table) {
-                $table->dropColumn('email');
-            });
+        if (!Schema::hasTable('karyawans')) {
+            return;
         }
 
-        // Tambahkan ulang kolom email di akhir
-        Schema::table('karyawans', function (Blueprint $table) {
-            $table->string('email')->nullable();
-        });
+        // Tambahkan kolom email di akhir hanya jika belum ada (hindari dropColumn agar tidak menghapus data existing)
+        if (!Schema::hasColumn('karyawans', 'email')) {
+            Schema::table('karyawans', function (Blueprint $table) {
+                $table->string('email')->nullable();
+            });
+        }
     }
 
     public function down()
     {
-        // Drop kalau ada
-        if (Schema::hasColumn('karyawans', 'email')) {
-            Schema::table('karyawans', function (Blueprint $table) {
-                $table->dropColumn('email');
-            });
-        }
-
-        // Tambahkan kembali di posisi setelah nama_lengkap
-        Schema::table('karyawans', function (Blueprint $table) {
-            $table->string('email')->nullable()->after('nama_lengkap');
-        });
+        // Tidak menghapus kolom email agar data karyawan tetap aman saat rollback
     }
 };

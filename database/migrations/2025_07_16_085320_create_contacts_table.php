@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('contacts', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_perusahaan');
-            $table->text('sales_key');
-            $table->string('nama')->nullable();
-            $table->enum('status', ['0', '1'])->default('1');
-            $table->text('email')->nullable();
-            $table->text('cp')->nullable();
-            $table->text('divisi')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('contacts')) {
+            Schema::create('contacts', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_perusahaan');
+                $table->text('sales_key');
+                $table->string('nama')->nullable();
+                $table->enum('status', ['0', '1'])->default('1');
+                $table->text('email')->nullable();
+                $table->text('cp')->nullable();
+                $table->text('divisi')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jenis_tunjangans', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_tunjangan');  
-            $table->decimal('nilai', 15, 2);
-            $table->enum('tipe', ['Tunjangan', 'Potongan']);
-            $table->enum('hitung', ['Perhari', 'Perbulan']);
-            $table->string('divisi');  
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('jenis_tunjangans')) {
+            Schema::create('jenis_tunjangans', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_tunjangan');  
+                $table->decimal('nilai', 15, 2);
+                $table->enum('tipe', ['Tunjangan', 'Potongan']);
+                $table->enum('hitung', ['Perhari', 'Perbulan']);
+                $table->string('divisi');  
+                $table->timestamps();
+            });
+        }
     }
 
     /**

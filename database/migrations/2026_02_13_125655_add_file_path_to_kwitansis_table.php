@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('approved_net_sales', function (Blueprint $table) {
-            $table->renameColumn('id_netSales', 'id_rkm');
-        });
+        if (Schema::hasTable('kwitansis')) {
+            Schema::table('kwitansis', function (Blueprint $table) {
+                if (!Schema::hasColumn('kwitansis', 'file_path')) {
+                    $table->string('file_path')->nullable()->after('dicetak_oleh');
+                }
+            });
+        }
     }
 
     /**
@@ -21,7 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('approved_net_sales', function (Blueprint $table) {
+        Schema::table('kwitansis', function (Blueprint $table) {
             //
         });
     }

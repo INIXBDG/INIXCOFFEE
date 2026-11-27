@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('eksams', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_pengajuan_barang')->nullable()->after('mata_uang');
-        });
+        if (Schema::hasTable('eksams')) {
+            Schema::table('eksams', function (Blueprint $table) {
+                if (!Schema::hasColumn('eksams', 'id_pengajuan_barang')) {
+                    $table->unsignedBigInteger('id_pengajuan_barang')->nullable()->after('mata_uang');
+                }
+            });
+        }
     }
 
     public function down()

@@ -11,12 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('rincian_kegiatans', function (Blueprint $table) {
-            $table->string('id_karyawan');
-            $table->string('tipe');
-            $table->string('status');
-            $table->date('tanggal');
-        });
+        if (Schema::hasTable('rincian_kegiatans')) {
+            Schema::table('rincian_kegiatans', function (Blueprint $table) {
+                if (!Schema::hasColumn('rincian_kegiatans', 'id_karyawan')) {
+                    $table->string('id_karyawan');
+                }
+                if (!Schema::hasColumn('rincian_kegiatans', 'tipe')) {
+                    $table->string('tipe');
+                }
+                if (!Schema::hasColumn('rincian_kegiatans', 'status')) {
+                    $table->string('status');
+                }
+                if (!Schema::hasColumn('rincian_kegiatans', 'tanggal')) {
+                    $table->date('tanggal');
+                }
+            });
+        }
     }
 
     /**

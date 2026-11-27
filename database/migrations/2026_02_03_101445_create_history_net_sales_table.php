@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('history_net_sales', function (Blueprint $table) {
-            $table->id();
-            $table->text('id_user');
-            $table->text('id_rkm');
-            $table->text('data');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('history_net_sales')) {
+            Schema::create('history_net_sales', function (Blueprint $table) {
+                $table->id();
+                $table->text('id_user');
+                $table->text('id_rkm');
+                $table->text('data');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

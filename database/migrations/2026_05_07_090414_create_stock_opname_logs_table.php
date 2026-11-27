@@ -10,17 +10,19 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('stock_opname_logs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('barang_id')->constrained('stock_opnames')->onDelete('cascade');
-            $table->date('tanggal');
-            $table->integer('stock_sebelumnya')->default(0);
-            $table->integer('stock_hari_ini')->default(0);
-            $table->integer('selisih')->default(0);
-            $table->text('notes')->nullable();
-            $table->string('updated_by')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('stock_opname_logs')) {
+            Schema::create('stock_opname_logs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('barang_id')->constrained('stock_opnames')->onDelete('cascade');
+                $table->date('tanggal');
+                $table->integer('stock_sebelumnya')->default(0);
+                $table->integer('stock_hari_ini')->default(0);
+                $table->integer('selisih')->default(0);
+                $table->text('notes')->nullable();
+                $table->string('updated_by')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

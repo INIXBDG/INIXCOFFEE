@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('r_k_m_s', function (Blueprint $table) {
-            $table->boolean('hide_materi')->default(false)->after('hide');
-            $table->boolean('hide_perusahaan')->default(false)->after('hide');
-        });
+        if (Schema::hasTable('r_k_m_s')) {
+            Schema::table('r_k_m_s', function (Blueprint $table) {
+                if (!Schema::hasColumn('r_k_m_s', 'hide_materi')) {
+                    $table->boolean('hide_materi')->default(false)->after('hide');
+                }
+                if (!Schema::hasColumn('r_k_m_s', 'hide_perusahaan')) {
+                    $table->boolean('hide_perusahaan')->default(false)->after('hide');
+                }
+            });
+        }
     }
 
     /**

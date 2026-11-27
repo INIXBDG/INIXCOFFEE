@@ -13,16 +13,18 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('project_handovers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
-            $table->string('bast_file')->nullable(); // Dokumen Berita Acara Serah Terima
-            $table->string('final_report_file')->nullable(); // Dokumen Laporan Akhir Proyek
-            $table->date('handover_date')->nullable();
-            $table->enum('status', ['pending', 'disetujui_klien', 'selesai'])->default('pending');
-            $table->text('notes')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('project_handovers')) {
+            Schema::create('project_handovers', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
+                $table->string('bast_file')->nullable(); // Dokumen Berita Acara Serah Terima
+                $table->string('final_report_file')->nullable(); // Dokumen Laporan Akhir Proyek
+                $table->date('handover_date')->nullable();
+                $table->enum('status', ['pending', 'disetujui_klien', 'selesai'])->default('pending');
+                $table->text('notes')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

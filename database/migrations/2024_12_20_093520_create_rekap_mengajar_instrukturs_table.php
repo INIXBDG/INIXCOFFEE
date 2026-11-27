@@ -11,26 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rekap_mengajar_instrukturs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_rkm');  
-            $table->string('id_instruktur');  
-            $table->string('feedback');  
-            $table->string('pax');  
-            $table->string('level');  
-            $table->string('durasi');  
-            $table->date('tanggal_awal');
-            $table->date('tanggal_akhir');
-            $table->string('bulan');  
-            $table->string('tahun');  
-            $table->string('poin_durasi')->nullable();  
-            $table->string('poin_pax')->nullable();  
-            $table->string('tunjangan_feedback')->nullable(); 
-            $table->string('total_tunjangan')->nullable();  
-            $table->string('status')->nullable();   
-            $table->text('keterangan')->nullable();  
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('rekap_mengajar_instrukturs')) {
+            Schema::create('rekap_mengajar_instrukturs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_rkm');  
+                $table->string('id_instruktur');  
+                $table->string('feedback');  
+                $table->string('pax');  
+                $table->string('level');  
+                $table->string('durasi');  
+                $table->date('tanggal_awal');
+                $table->date('tanggal_akhir');
+                $table->string('bulan');  
+                $table->string('tahun');  
+                $table->string('poin_durasi')->nullable();  
+                $table->string('poin_pax')->nullable();  
+                $table->string('tunjangan_feedback')->nullable(); 
+                $table->string('total_tunjangan')->nullable();  
+                $table->string('status')->nullable();   
+                $table->text('keterangan')->nullable();  
+                $table->timestamps();
+            });
+        }
     }
 
     /**

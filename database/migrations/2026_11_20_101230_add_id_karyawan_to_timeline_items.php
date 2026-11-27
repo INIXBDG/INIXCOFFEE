@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('timeline_items', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_karyawan')->nullable()->after('year_mapping_id');
-        });
+        if (Schema::hasTable('timeline_items')) {
+            Schema::table('timeline_items', function (Blueprint $table) {
+                if (!Schema::hasColumn('timeline_items', 'id_karyawan')) {
+                    $table->unsignedBigInteger('id_karyawan')->nullable()->after('year_mapping_id');
+                }
+            });
+        }
     }
 
     /**

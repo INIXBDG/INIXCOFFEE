@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('knowledge_managements', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->enum('category', ['SOP', 'FAQ', 'TUTORIAL', 'Panduan Instalasi'])->default('SOP');
-            $table->longText('content');
-            $table->string('file_path')->nullable();
-            $table->string('file_name')->nullable();
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('knowledge_managements')) {
+            Schema::create('knowledge_managements', function (Blueprint $table) {
+                $table->id();
+                $table->string('title');
+                $table->enum('category', ['SOP', 'FAQ', 'TUTORIAL', 'Panduan Instalasi'])->default('SOP');
+                $table->longText('content');
+                $table->string('file_path')->nullable();
+                $table->string('file_name')->nullable();
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
 
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
-        });
+                $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+                $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
+            });
+        }
     }
 
     /**

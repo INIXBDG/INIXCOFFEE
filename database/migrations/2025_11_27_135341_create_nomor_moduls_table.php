@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('nomor_moduls', function (Blueprint $table) {
-            $table->id();
-            $table->text('no_modul');
-            $table->enum('type', ['Regular', 'Authorize']);
-            $table->enum('status', ['Menunggu', 'Disetujui'])->default('Menunggu');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('nomor_moduls')) {
+            Schema::create('nomor_moduls', function (Blueprint $table) {
+                $table->id();
+                $table->text('no_modul');
+                $table->enum('type', ['Regular', 'Authorize']);
+                $table->enum('status', ['Menunggu', 'Disetujui'])->default('Menunggu');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

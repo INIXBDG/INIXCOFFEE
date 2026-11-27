@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('analysis_reports', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->text('description')->nullable();
-            $table->json('file_paths')->nullable(); // Kolom tunggal untuk Excel dan PDF
-            $table->year('year');
-            $table->tinyInteger('month');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('analysis_reports')) {
+            Schema::create('analysis_reports', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->text('description')->nullable();
+                $table->json('file_paths')->nullable(); // Kolom tunggal untuk Excel dan PDF
+                $table->year('year');
+                $table->tinyInteger('month');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

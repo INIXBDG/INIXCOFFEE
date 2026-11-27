@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('pengajuanbarangs', function (Blueprint $table) {
-            $table->string('no_kk')->nullable();
-            $table->date('tanggal_pencairan')->nullable();
-            $table->date('tanggal_terima_finance')->nullable();
-        });
+        if (Schema::hasTable('pengajuanbarangs')) {
+            Schema::table('pengajuanbarangs', function (Blueprint $table) {
+                if (!Schema::hasColumn('pengajuanbarangs', 'no_kk')) {
+                    $table->string('no_kk')->nullable();
+                }
+                if (!Schema::hasColumn('pengajuanbarangs', 'tanggal_pencairan')) {
+                    $table->date('tanggal_pencairan')->nullable();
+                }
+                if (!Schema::hasColumn('pengajuanbarangs', 'tanggal_terima_finance')) {
+                    $table->date('tanggal_terima_finance')->nullable();
+                }
+            });
+        }
     }
 
     /**

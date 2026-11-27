@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('outstandings', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_rkm');
-            $table->decimal('net_sales', 15, 2)->nullable();
-            $table->enum('status_pembayaran', ['0', '1']);//0 belum 1 sudah
-            $table->date('due_date');
-            $table->date('tanggal_bayar')->nullable();
-            $table->string('pic')->nullable();
-            $table->string('sales_key')->nullable();
-            $table->string('no_regist')->nullable();
-            $table->string('no_invoice')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('outstandings')) {
+            Schema::create('outstandings', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_rkm');
+                $table->decimal('net_sales', 15, 2)->nullable();
+                $table->enum('status_pembayaran', ['0', '1']);//0 belum 1 sudah
+                $table->date('due_date');
+                $table->date('tanggal_bayar')->nullable();
+                $table->string('pic')->nullable();
+                $table->string('sales_key')->nullable();
+                $table->string('no_regist')->nullable();
+                $table->string('no_invoice')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

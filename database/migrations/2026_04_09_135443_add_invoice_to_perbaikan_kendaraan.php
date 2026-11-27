@@ -11,12 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
-            $table->foreignId('pengajuanbarangs_id')->nullable()->constrained()->nullOnDelete()->after('bukti');
-            // $table->date('tanggal_perbaikan')->nullable()->after('pengajuanbarangs_id');
-            $table->string('invoice')->nullable()->after('tanggal_perbaikan');
-            $table->text('deskripsi_perbaikan')->nullable()->after('invoice');
-        });
+        if (Schema::hasTable('perbaikan_kendaraans')) {
+            Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'pengajuanbarangs_id')) {
+                    $table->foreignId('pengajuanbarangs_id')->nullable()->constrained()->nullOnDelete()->after('bukti');
+                }
+                // $table->date('tanggal_perbaikan')->nullable()->after('pengajuanbarangs_id');
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'invoice')) {
+                    $table->string('invoice')->nullable()->after('tanggal_perbaikan');
+                }
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'deskripsi_perbaikan')) {
+                    $table->text('deskripsi_perbaikan')->nullable()->after('invoice');
+                }
+            });
+        }
     }
 
     /**

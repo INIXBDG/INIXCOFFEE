@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('quarter_events', function (Blueprint $table) {
-            $table->id();
-            // Relasi ke Mapping (Tanpa Constraint Database)
-            $table->unsignedBigInteger('year_mapping_id')->index();
+        if (!Schema::hasTable('quarter_events')) {
+            Schema::create('quarter_events', function (Blueprint $table) {
+                $table->id();
+                // Relasi ke Mapping (Tanpa Constraint Database)
+                $table->unsignedBigInteger('year_mapping_id')->index();
 
-            $table->string('title')->nullable();        // Judul Webinar
-            $table->string('speaker_name')->nullable(); // Narasumber
-            $table->text('description')->nullable();    // Keterangan
-            $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->string('title')->nullable();        // Judul Webinar
+                $table->string('speaker_name')->nullable(); // Narasumber
+                $table->text('description')->nullable();    // Keterangan
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     /**

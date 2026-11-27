@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('moduls', function (Blueprint $table) {
-            $table->id();
-            $table->text('no_modul');
-            $table->text('kode_materi');
-            $table->text('nama_materi');
-            $table->date('awal_training');
-            $table->date('akhir_training');
-            $table->integer('jumlah');
-            $table->decimal('harga_satuan', 15,2);
-            $table->decimal('total', 15,2);
-            $table->text('note')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('moduls')) {
+            Schema::create('moduls', function (Blueprint $table) {
+                $table->id();
+                $table->text('no_modul');
+                $table->text('kode_materi');
+                $table->text('nama_materi');
+                $table->date('awal_training');
+                $table->date('akhir_training');
+                $table->integer('jumlah');
+                $table->decimal('harga_satuan', 15,2);
+                $table->decimal('total', 15,2);
+                $table->text('note')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

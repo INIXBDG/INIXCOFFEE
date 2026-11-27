@@ -11,12 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('todo_administrasis', function (Blueprint $table) {
-            $table->longText('solusi')->nullable()->change();
-            $table->longText('catatan')->nullable()->change();
-            $table->date('tanggal_selesai')->nullable();
-            $table->string('dokumen')->nullable();
-        });
+        if (Schema::hasTable('todo_administrasis')) {
+            Schema::table('todo_administrasis', function (Blueprint $table) {
+                if (Schema::hasColumn('todo_administrasis', 'solusi')) {
+                    $table->longText('solusi')->nullable()->change();
+                }
+                if (Schema::hasColumn('todo_administrasis', 'catatan')) {
+                    $table->longText('catatan')->nullable()->change();
+                }
+                if (!Schema::hasColumn('todo_administrasis', 'tanggal_selesai')) {
+                    $table->date('tanggal_selesai')->nullable();
+                }
+                if (!Schema::hasColumn('todo_administrasis', 'dokumen')) {
+                    $table->string('dokumen')->nullable();
+                }
+            });
+        }
     }
 
     /**

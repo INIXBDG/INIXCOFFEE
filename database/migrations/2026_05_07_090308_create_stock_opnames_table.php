@@ -10,18 +10,20 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('stock_opnames', function (Blueprint $table) {
-            $table->id();
-            $table->string('kode_barang')->unique();
-            $table->string('nama_barang');
-            $table->string('kategori')->nullable();
-            $table->string('satuan')->nullable();
-            $table->integer('stock_awal')->default(0);
-            $table->integer('stock_sekarang')->default(0);
-            $table->text('notes')->nullable();
-            $table->string('pic')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('stock_opnames')) {
+            Schema::create('stock_opnames', function (Blueprint $table) {
+                $table->id();
+                $table->string('kode_barang')->unique();
+                $table->string('nama_barang');
+                $table->string('kategori')->nullable();
+                $table->string('satuan')->nullable();
+                $table->integer('stock_awal')->default(0);
+                $table->integer('stock_sekarang')->default(0);
+                $table->text('notes')->nullable();
+                $table->string('pic')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

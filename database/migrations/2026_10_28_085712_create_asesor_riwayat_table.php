@@ -8,25 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('asesor_riwayat', function (Blueprint $table) {
-            $table->id();
+        if (!Schema::hasTable('asesor_riwayat')) {
+            Schema::create('asesor_riwayat', function (Blueprint $table) {
+                $table->id();
 
-            // NULL = orang di luar data asesor (instruktur eksternal) -> isi nama_manual
-            $table->foreignId('asesor_id')->nullable()
-                ->constrained('lsp_asesors')
-                ->cascadeOnDelete();
+                // NULL = orang di luar data asesor (instruktur eksternal) -> isi nama_manual
+                $table->foreignId('asesor_id')->nullable()
+                    ->constrained('lsp_asesors')
+                    ->cascadeOnDelete();
 
-            $table->enum('jenis', ['uji_kompetensi', 'mengajar', 'pembayaran']);
+                $table->enum('jenis', ['uji_kompetensi', 'mengajar', 'pembayaran']);
 
-            $table->string('nama_manual')->nullable();
-            $table->date('tanggal')->nullable();
-            $table->decimal('harga', 15, 2)->nullable();
-            $table->text('keterangan')->nullable();
+                $table->string('nama_manual')->nullable();
+                $table->date('tanggal')->nullable();
+                $table->decimal('harga', 15, 2)->nullable();
+                $table->text('keterangan')->nullable();
 
-            $table->timestamps();
+                $table->timestamps();
 
-            $table->index(['jenis', 'tanggal']);
-        });
+                $table->index(['jenis', 'tanggal']);
+            });
+        }
     }
 
     public function down(): void

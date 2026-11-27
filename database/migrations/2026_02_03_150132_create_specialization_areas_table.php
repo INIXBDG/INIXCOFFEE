@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('specialization_areas', function (Blueprint $table) {
-            $table->id();
-            $table->string('specialization');
-            $table->string('detail_specialization');
-            $table->string('kode_instruktur')->unique();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('specialization_areas')) {
+            Schema::create('specialization_areas', function (Blueprint $table) {
+                $table->id();
+                $table->string('specialization');
+                $table->string('detail_specialization');
+                $table->string('kode_instruktur')->unique();
+                $table->timestamps();
+            });
+        }
     }
 };

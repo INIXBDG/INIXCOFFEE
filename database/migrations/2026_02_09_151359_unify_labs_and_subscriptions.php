@@ -12,39 +12,63 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Modifikasi Tabel Labs (Master Data Utama)
-        Schema::table('labs', function (Blueprint $table) {
-            // Menambahkan kolom Tipe untuk pembeda
-            $table->enum('tipe', ['one-time', 'subscription'])
-                  ->default('one-time')
-                  ->after('nama_labs')
-                  ->comment('One-time: Sekali beli. Subscription: Berlangganan/Bisa dipakai ulang.');
+        if (Schema::hasTable('labs')) {
+            Schema::table('labs', function (Blueprint $table) {
+                if (!Schema::hasColumn('labs', 'tipe')) {
+                    // Menambahkan kolom Tipe untuk pembeda
+                    $col = $table->enum('tipe', ['one-time', 'subscription'])
+                        ->default('one-time')
+                        ->comment('One-time: Sekali beli. Subscription: Berlangganan/Bisa dipakai ulang.');
+                    if (Schema::hasColumn('labs', 'nama_labs')) {
+                        $col->after('nama_labs');
+                    }
+                }
 
-            // Menambahkan kolom 'merk' (sebelumnya hanya ada di subs)
-            $table->string('merk')->nullable()->after('nama_labs');
+                if (!Schema::hasColumn('labs', 'merk')) {
+                    // Menambahkan kolom 'merk' (sebelumnya hanya ada di subs)
+                    $col = $table->string('merk')->nullable();
+                    if (Schema::hasColumn('labs', 'nama_labs')) {
+                        $col->after('nama_labs');
+                    }
+                }
 
-            // Menambahkan status aktif/tidak (untuk keperluan reuse)
-            $table->boolean('is_active')->default(true)->after('status');
-        });
+                if (!Schema::hasColumn('labs', 'is_active')) {
+                    // Menambahkan status aktif/tidak (untuk keperluan reuse)
+                    $col = $table->boolean('is_active')->default(true);
+                    if (Schema::hasColumn('labs', 'status')) {
+                        $col->after('status');
+                    }
+                }
+            });
+        }
 
         // 2. Bersihkan Tabel Pengajuan (Hapus ketergantungan ke Subs)
-        Schema::table('pengajuan_lab_subs', function (Blueprint $table) {
-            // Hapus Foreign Key & Kolom ID Subs jika ada
-            // Pastikan cek nama foreign key di database Anda, biasanya: pengajuan_lab_subs_id_subs_foreign
-            // $table->dropForeign(['id_subs']);
-            $table->dropColumn('id_subs');
+        if (Schema::hasTable('pengajuan_lab_subs')) {
+            Schema::table('pengajuan_lab_subs', function (Blueprint $table) {
+                if (Schema::hasColumn('pengajuan_lab_subs', 'id_subs')) {
+                    $table->dropColumn('id_subs');
+                }
 
-            // Hapus snapshot subs lama
-            $table->dropColumn('subs_snapshot');
+                if (Schema::hasColumn('pengajuan_lab_subs', 'subs_snapshot')) {
+                    $table->dropColumn('subs_snapshot');
+                }
 
-            // Tambah penanda apakah ini pengadaan baru atau pakai aset lama
-            $table->enum('jenis_transaksi', ['baru', 'existing', 'pembaharuan'])
-                  ->default('baru')
-                  ->after('id_labs')
-                  ->comment('Baru: Beli dari vendor. Existing: Pakai lab langganan kantor. Pembaharuan: Pembaruan lab yang sudah ada.');
-        });
+                if (!Schema::hasColumn('pengajuan_lab_subs', 'jenis_transaksi')) {
+                    // Tambah penanda apakah ini pengadaan baru atau pakai aset lama
+                    $col = $table->enum('jenis_transaksi', ['baru', 'existing', 'pembaharuan'])
+                        ->default('baru')
+                        ->comment('Baru: Beli dari vendor. Existing: Pakai lab langganan kantor. Pembaharuan: Pembaruan lab yang sudah ada.');
+                    if (Schema::hasColumn('pengajuan_lab_subs', 'id_labs')) {
+                        $col->after('id_labs');
+                    }
+                }
+            });
+        }
 
-        // 3. Hapus Tabel Subscriptions (Karena sudah tidak dipakai)
-        Schema::dropIfExists('subscriptions');
+        // 3. Hapus Tabel Subscriptions lama hanya jika belum menggunakan skema baru (kolom 'tipe')
+        if (Schema::hasTable('subscriptions') && !Schema::hasColumn('subscriptions', 'tipe')) {
+            Schema::dropIfExists('subscriptions');
+        }
     }
 
     /**

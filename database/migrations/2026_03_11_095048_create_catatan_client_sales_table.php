@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('catatan_client_sales', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('laporan_id')->constrained('laporan_harian_sales')->cascadeOnDelete();
-            $table->string('nama_perusahaan');
-            $table->string('kebutuhan')->nullable();
-            $table->string('rekomendasi_silabus')->nullable();
-            $table->string('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('catatan_client_sales')) {
+            Schema::create('catatan_client_sales', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('laporan_id')->constrained('laporan_harian_sales')->cascadeOnDelete();
+                $table->string('nama_perusahaan');
+                $table->string('kebutuhan')->nullable();
+                $table->string('rekomendasi_silabus')->nullable();
+                $table->string('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

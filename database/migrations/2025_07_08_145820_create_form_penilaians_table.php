@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('form_penilaians', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_penilaian');
-            $table->integer( 'id_karyawan');
-            $table->string('kode_kategori');
-            $table->string('kode_form');
-            $table->string('quartal');
-            $table->year('tahun');
-            $table->text('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('form_penilaians')) {
+            Schema::create('form_penilaians', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_penilaian');
+                $table->integer( 'id_karyawan');
+                $table->string('kode_kategori');
+                $table->string('kode_form');
+                $table->string('quartal');
+                $table->year('tahun');
+                $table->text('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

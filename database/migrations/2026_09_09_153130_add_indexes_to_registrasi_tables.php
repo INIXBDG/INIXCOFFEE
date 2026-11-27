@@ -1,8 +1,7 @@
 <?php
 
+use App\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -11,15 +10,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('registrasis', function (Blueprint $table) {
-            $table->index('id_instruktur');
-            $table->index('id_sales');
-            $table->index('created_at'); // Mempercepat proses order by terbaru
-        });
+        MigrationHelper::addIndexIfNotExists('registrasis', 'id_instruktur');
+        MigrationHelper::addIndexIfNotExists('registrasis', 'id_sales');
+        MigrationHelper::addIndexIfNotExists('registrasis', 'created_at');
 
-        Schema::table('pesertas', function (Blueprint $table) {
-            $table->index('nama'); // Mempercepat proses pencarian nama
-        });
+        MigrationHelper::addIndexIfNotExists('pesertas', 'nama');
     }
 
     /**
@@ -27,14 +22,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('registrasis', function (Blueprint $table) {
-            $table->dropIndex('registrasis_id_instruktur_index');
-            $table->dropIndex('registrasis_id_sales_index');
-            $table->dropIndex('registrasis_created_at_index');
-        });
+        MigrationHelper::dropIndexIfExists('registrasis', 'registrasis_id_instruktur_index');
+        MigrationHelper::dropIndexIfExists('registrasis', 'registrasis_id_sales_index');
+        MigrationHelper::dropIndexIfExists('registrasis', 'registrasis_created_at_index');
 
-        Schema::table('pesertas', function (Blueprint $table) {
-            $table->dropIndex('pesertas_nama_index');
-        });
+        MigrationHelper::dropIndexIfExists('pesertas', 'pesertas_nama_index');
     }
 };

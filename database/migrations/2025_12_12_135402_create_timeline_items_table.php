@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('timeline_items', function (Blueprint $table) {
-            $table->id();
-            // Relasi Opsional ke Mapping (agar tahu item ini milik event bulan apa)
-            $table->unsignedBigInteger('year_mapping_id')->nullable()->index();
+        if (!Schema::hasTable('timeline_items')) {
+            Schema::create('timeline_items', function (Blueprint $table) {
+                $table->id();
+                // Relasi Opsional ke Mapping (agar tahu item ini milik event bulan apa)
+                $table->unsignedBigInteger('year_mapping_id')->nullable()->index();
 
-            $table->date('item_date')->index();         // Tanggal Item
-            $table->text('content');                    // Isi Teks (misal: "Posting IG")
-            $table->string('color')->nullable();        // Opsional: Warna Label
-            $table->timestamps();
-        });
+                $table->date('item_date')->index();         // Tanggal Item
+                $table->text('content');                    // Isi Teks (misal: "Posting IG")
+                $table->string('color')->nullable();        // Opsional: Warna Label
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_caterings', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_catering');
-            $table->integer('id_karyawan')->nullable();
-            $table->string('tracking');
-            $table->date('tanggal');
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_caterings')) {
+            Schema::create('tracking_caterings', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_catering');
+                $table->integer('id_karyawan')->nullable();
+                $table->string('tracking');
+                $table->date('tanggal');
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

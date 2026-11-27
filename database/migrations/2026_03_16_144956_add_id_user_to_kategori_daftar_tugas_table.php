@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kategori_daftar_tugas', function (Blueprint $table) {
-            $table->integer('id_user')->nullable()->after('Jabatan_Pembuat');
-        });
+        if (Schema::hasTable('kategori_daftar_tugas')) {
+            Schema::table('kategori_daftar_tugas', function (Blueprint $table) {
+                if (!Schema::hasColumn('kategori_daftar_tugas', 'id_user')) {
+                    $table->integer('id_user')->nullable()->after('Jabatan_Pembuat');
+                }
+            });
+        }
     }
 
     /**

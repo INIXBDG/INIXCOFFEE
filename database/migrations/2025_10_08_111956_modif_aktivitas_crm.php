@@ -12,11 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE aktivitas MODIFY aktivitas ENUM('Call', 'Email', 'Visit', 'Meet', 'Incharge', 'PA', 'PI', 'Telemarketing', 'Form_Masuk', 'Form_Keluar', 'DB', 'Contact') NOT NULL");
+        if (Schema::hasTable('aktivitas')) {
+            if (Schema::hasColumn('aktivitas', 'aktivitas')) {
+                DB::statement("ALTER TABLE aktivitas MODIFY aktivitas ENUM('Call', 'Email', 'Visit', 'Meet', 'Incharge', 'PA', 'PI', 'Telemarketing', 'Form_Masuk', 'Form_Keluar', 'DB', 'Contact') NOT NULL");
+            }
 
-        Schema::table('aktivitas', function (Blueprint $table) {
-            $table->dropColumn('subject');
-        });
+            if (Schema::hasColumn('aktivitas', 'subject')) {
+                Schema::table('aktivitas', function (Blueprint $table) {
+                    $table->dropColumn('subject');
+                });
+            }
+        }
     }
 
     /**

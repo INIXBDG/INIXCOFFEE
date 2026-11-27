@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('registrasis', function (Blueprint $table) {
-            $table->string('cekexam')->nullable();
-            
-        });
+        if (Schema::hasTable('registrasis')) {
+            Schema::table('registrasis', function (Blueprint $table) {
+                if (!Schema::hasColumn('registrasis', 'cekexam')) {
+                    $table->string('cekexam')->nullable();
+                }
+
+            });
+        }
     }
 
     /**

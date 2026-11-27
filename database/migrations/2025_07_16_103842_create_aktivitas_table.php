@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('aktivitas', function (Blueprint $table) {
-            $table->id();
-            $table->text('id_sales');
-            $table->integer('id_contact')->nullable();
-            $table->integer('id_peserta')->nullable();
-            $table->integer('id_peluang')->nullable();
-            $table->enum('aktivitas', ['Call', 'Email', 'Visit', 'Meet', 'Incharge']);
-            $table->text('subject');
-            $table->text('deskripsi')->nullable();
-            $table->date('waktu_aktivitas');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('aktivitas')) {
+            Schema::create('aktivitas', function (Blueprint $table) {
+                $table->id();
+                $table->text('id_sales');
+                $table->integer('id_contact')->nullable();
+                $table->integer('id_peserta')->nullable();
+                $table->integer('id_peluang')->nullable();
+                $table->enum('aktivitas', ['Call', 'Email', 'Visit', 'Meet', 'Incharge']);
+                $table->text('subject');
+                $table->text('deskripsi')->nullable();
+                $table->date('waktu_aktivitas');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

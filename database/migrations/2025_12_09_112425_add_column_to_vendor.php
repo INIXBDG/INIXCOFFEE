@@ -15,11 +15,17 @@ return new class extends Migration
             'vendor_souvenirs',
         ];
 
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                $table->string('foto')->nullable();
-                $table->text('keterangan')->nullable();
-            });
+        foreach ($tables as $tableName) {
+            if (Schema::hasTable($tableName)) {
+                Schema::table($tableName, function (Blueprint $table) use ($tableName) {
+                    if (!Schema::hasColumn($tableName, 'foto')) {
+                        $table->string('foto')->nullable();
+                    }
+                    if (!Schema::hasColumn($tableName, 'keterangan')) {
+                        $table->text('keterangan')->nullable();
+                    }
+                });
+            }
         }
     }
 
@@ -32,10 +38,18 @@ return new class extends Migration
             'vendor_souvenirs',
         ];
 
-        foreach ($tables as $table) {
-            Schema::table($table, function (Blueprint $table) {
-                $table->dropColumn(['foto', 'keterangan']);
-            });
+        foreach ($tables as $tableName) {
+            if (Schema::hasTable($tableName)) {
+                $cols = array_values(array_filter(
+                    ['foto', 'keterangan'],
+                    fn (string $col) => Schema::hasColumn($tableName, $col)
+                ));
+                if (!empty($cols)) {
+                    Schema::table($tableName, function (Blueprint $table) use ($cols) {
+                        $table->dropColumn($cols);
+                    });
+                }
+            }
         }
     }
 };

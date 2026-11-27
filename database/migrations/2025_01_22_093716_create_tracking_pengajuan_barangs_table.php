@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_pengajuan_barangs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_pengajuan_barang')->nullable();
-            $table->string('tracking')->nullable();
-            $table->timestamp('tanggal')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_pengajuan_barangs')) {
+            Schema::create('tracking_pengajuan_barangs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_pengajuan_barang')->nullable();
+                $table->string('tracking')->nullable();
+                $table->timestamp('tanggal')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengajuancutis', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_karyawan');
-            $table->string('tipe');
-            $table->date('tanggal_awal');
-            $table->date('tanggal_akhir');
-            $table->string('durasi');
-            $table->string('kontak')->nullable();
-            $table->string('alasan')->nullable();
-            $table->string('surat_sakit')->nullable();
-            $table->string('alasan_manager')->nullable();
-            $table->enum('approval_manager', ['0', '1', '2']);//0 = proses, 1 = disetujui, 2 = ditolak 
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('pengajuancutis')) {
+            Schema::create('pengajuancutis', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_karyawan');
+                $table->string('tipe');
+                $table->date('tanggal_awal');
+                $table->date('tanggal_akhir');
+                $table->string('durasi');
+                $table->string('kontak')->nullable();
+                $table->string('alasan')->nullable();
+                $table->string('surat_sakit')->nullable();
+                $table->string('alasan_manager')->nullable();
+                $table->enum('approval_manager', ['0', '1', '2']);//0 = proses, 1 = disetujui, 2 = ditolak 
+                $table->timestamps();
+            });
+        }
     }
 
     /**

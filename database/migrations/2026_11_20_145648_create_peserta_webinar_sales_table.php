@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('peserta_webinar_sales', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('year_mapping_id');
-            $table->text('email_peserta');
-            $table->text('nama_peserta');
-            $table->text('no_hp')->nullable();
-            $table->text('domisili')->nullable();
-            $table->text('id_perusahaan')->nullable();
-            $table->text('id_sales')->nullable();
-            $table->text('info')->nullable();
-            $table->text('paket')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('peserta_webinar_sales')) {
+            Schema::create('peserta_webinar_sales', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('year_mapping_id');
+                $table->text('email_peserta');
+                $table->text('nama_peserta');
+                $table->text('no_hp')->nullable();
+                $table->text('domisili')->nullable();
+                $table->text('id_perusahaan')->nullable();
+                $table->text('id_sales')->nullable();
+                $table->text('info')->nullable();
+                $table->text('paket')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -8,12 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('analysis_year_descriptions', function (Blueprint $table) {
-            $table->id();
-            $table->year('year')->unique();
-            $table->text('description')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('analysis_year_descriptions')) {
+            Schema::create('analysis_year_descriptions', function (Blueprint $table) {
+                $table->id();
+                $table->year('year')->unique();
+                $table->text('description')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

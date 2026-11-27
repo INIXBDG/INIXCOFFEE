@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('perusahaans', function (Blueprint $table) {
-            $table->dropColumn('history_status');
-        });
+        if (Schema::hasTable('perusahaans') && Schema::hasColumn('perusahaans', 'history_status')) {
+            Schema::table('perusahaans', function (Blueprint $table) {
+                $table->dropColumn('history_status');
+            });
+        }
     }
 
     /**
@@ -21,9 +23,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('perusahaans', function (Blueprint $table) {
-            // Menggunakan tipe text atau json sesuai dengan implementasi sebelumnya
-            $table->text('history_status')->nullable();
-        });
+        if (Schema::hasTable('perusahaans') && !Schema::hasColumn('perusahaans', 'history_status')) {
+            Schema::table('perusahaans', function (Blueprint $table) {
+                // Menggunakan tipe text atau json sesuai dengan implementasi sebelumnya
+                $table->text('history_status')->nullable();
+            });
+        }
     }
 };

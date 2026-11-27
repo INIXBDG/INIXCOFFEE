@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('souvenirinhouses', function (Blueprint $table) {
-            $table->integer('id_souvenir')->after('id_rkm')->nullable();
-        });
+        if (Schema::hasTable('souvenirinhouses')) {
+            Schema::table('souvenirinhouses', function (Blueprint $table) {
+                if (!Schema::hasColumn('souvenirinhouses', 'id_souvenir')) {
+                    $table->integer('id_souvenir')->after('id_rkm')->nullable();
+                }
+            });
+        }
     }
 
     /**

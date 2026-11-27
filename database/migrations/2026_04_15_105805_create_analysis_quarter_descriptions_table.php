@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('analysis_quarter_descriptions', function (Blueprint $table) {
-            $table->id();
-            $table->integer('year');
-            $table->integer('quarter');
-            $table->text('description')->nullable();
-            $table->text('file_paths')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('analysis_quarter_descriptions')) {
+            Schema::create('analysis_quarter_descriptions', function (Blueprint $table) {
+                $table->id();
+                $table->integer('year');
+                $table->integer('quarter');
+                $table->text('description')->nullable();
+                $table->text('file_paths')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

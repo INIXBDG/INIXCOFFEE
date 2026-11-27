@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('pembatalan_cutis', function (Blueprint $table) {
-            $table->timestamp('approval_date')->nullable();
-        });
+        if (Schema::hasTable('pembatalan_cutis')) {
+            Schema::table('pembatalan_cutis', function (Blueprint $table) {
+                if (!Schema::hasColumn('pembatalan_cutis', 'approval_date')) {
+                    $table->timestamp('approval_date')->nullable();
+                }
+            });
+        }
     }
 
     /**

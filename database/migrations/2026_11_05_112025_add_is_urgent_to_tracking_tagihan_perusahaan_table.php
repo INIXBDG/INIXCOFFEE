@@ -8,16 +8,28 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('tracking_tagihan_perusahaans', function (Blueprint $table) {
-            $table->boolean('is_urgent')->default(false)->after('status');
-            $table->string('urgent_order')->nullable()->after('is_urgent');
+        if (Schema::hasTable('tracking_tagihan_perusahaans')) {
+            Schema::table('tracking_tagihan_perusahaans', function (Blueprint $table) {
+                if (!Schema::hasColumn('tracking_tagihan_perusahaans', 'is_urgent')) {
+                    $table->boolean('is_urgent')->default(false)->after('status');
+                }
+                if (!Schema::hasColumn('tracking_tagihan_perusahaans', 'urgent_order')) {
+                    $table->string('urgent_order')->nullable()->after('is_urgent');
+                }
 
-            $table->string('nominal')->nullable()->change();
-        });
+                if (Schema::hasColumn('tracking_tagihan_perusahaans', 'nominal')) {
+                    $table->string('nominal')->nullable()->change();
+                }
+            });
+        }
 
-        Schema::table('tagihan_perusahaans', function (Blueprint $table) {
-            $table->string('nominal')->nullable()->change();
-        });
+        if (Schema::hasTable('tagihan_perusahaans')) {
+            Schema::table('tagihan_perusahaans', function (Blueprint $table) {
+                if (Schema::hasColumn('tagihan_perusahaans', 'nominal')) {
+                    $table->string('nominal')->nullable()->change();
+                }
+            });
+        }
     }
 
     public function down()

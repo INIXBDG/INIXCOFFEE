@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('materis', function (Blueprint $table) {
-            $table->enum('status', ['Aktif', 'Retired', 'Nonaktif'])->nullable();
-            $table->string('tipe_materi')->nullable();
-            $table->text('keterangan')->nullable();
-        });
+        if (Schema::hasTable('materis')) {
+            Schema::table('materis', function (Blueprint $table) {
+                if (!Schema::hasColumn('materis', 'status')) {
+                    $table->enum('status', ['Aktif', 'Retired', 'Nonaktif'])->nullable();
+                }
+                if (!Schema::hasColumn('materis', 'tipe_materi')) {
+                    $table->string('tipe_materi')->nullable();
+                }
+                if (!Schema::hasColumn('materis', 'keterangan')) {
+                    $table->text('keterangan')->nullable();
+                }
+            });
+        }
     }
 
     /**

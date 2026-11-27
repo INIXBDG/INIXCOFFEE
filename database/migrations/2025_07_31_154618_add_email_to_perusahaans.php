@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('perusahaans', function (Blueprint $table) {
-             $table->string('email')->nullable()->after('no_telp');
-        });
+        if (Schema::hasTable('perusahaans')) {
+            Schema::table('perusahaans', function (Blueprint $table) {
+                 if (!Schema::hasColumn('perusahaans', 'email')) {
+                     $table->string('email')->nullable()->after('no_telp');
+                 }
+            });
+        }
     }
 
     /**

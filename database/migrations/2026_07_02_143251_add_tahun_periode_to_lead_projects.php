@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('lead_projects', function (Blueprint $table) {
-            $table->integer('tahun_periode')->nullable()->after('estimasi_nilai');
-        });
+        if (Schema::hasTable('lead_projects')) {
+            Schema::table('lead_projects', function (Blueprint $table) {
+                if (!Schema::hasColumn('lead_projects', 'tahun_periode')) {
+                    $table->integer('tahun_periode')->nullable()->after('estimasi_nilai');
+                }
+            });
+        }
     }
 
     /**

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('share_forms', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_evaluator');
-            $table->integer('id_evaluated');
-            $table->string('divisi_evaluator');
-            $table->string('kode_form');
-            $table->text('jenis_penilaian');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('share_forms')) {
+            Schema::create('share_forms', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_evaluator');
+                $table->integer('id_evaluated');
+                $table->string('divisi_evaluator');
+                $table->string('kode_form');
+                $table->text('jenis_penilaian');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

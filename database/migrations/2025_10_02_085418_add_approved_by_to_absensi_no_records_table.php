@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('absensi_no_records', function (Blueprint $table) {
-            $table->string('approved_by')->nullable()->after('approval');
-        });
+        if (Schema::hasTable('absensi_no_records')) {
+            Schema::table('absensi_no_records', function (Blueprint $table) {
+                if (!Schema::hasColumn('absensi_no_records', 'approved_by')) {
+                    $table->string('approved_by')->nullable()->after('approval');
+                }
+            });
+        }
     }
 
     public function down()

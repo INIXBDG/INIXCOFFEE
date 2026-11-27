@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('todo_administrasis', function (Blueprint $table) {
-            $table->id();
-            $table->string('case');
-            $table->enum('status', ['progres', 'selesai', 'gagal'])->default('progres');
-            $table->string('solusi')->nullable();
-            $table->string('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('todo_administrasis')) {
+            Schema::create('todo_administrasis', function (Blueprint $table) {
+                $table->id();
+                $table->string('case');
+                $table->enum('status', ['progres', 'selesai', 'gagal'])->default('progres');
+                $table->string('solusi')->nullable();
+                $table->string('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

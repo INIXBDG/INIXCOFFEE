@@ -13,10 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::statement("
-            ALTER TABLE `r_k_m_s`
-            MODIFY `status` ENUM('0','1','2','3') NOT NULL
-        ");
+        if (Schema::hasTable('r_k_m_s') && Schema::hasColumn('r_k_m_s', 'status')) {
+            DB::statement("
+                ALTER TABLE `r_k_m_s`
+                MODIFY `status` ENUM('0','1','2','3') NOT NULL
+            ");
+        }
     }
 
     /**
@@ -24,11 +26,13 @@ return new class extends Migration
      */
     public function down()
     {
-        DB::statement("UPDATE `r_k_m_s` SET `status` = '2' WHERE `status` = '3'");
+        if (Schema::hasTable('r_k_m_s') && Schema::hasColumn('r_k_m_s', 'status')) {
+            DB::statement("UPDATE `r_k_m_s` SET `status` = '2' WHERE `status` = '3'");
 
-        DB::statement("
-            ALTER TABLE `r_k_m_s`
-            MODIFY `status` ENUM('0','1','2') NOT NULL
-        ");
+            DB::statement("
+                ALTER TABLE `r_k_m_s`
+                MODIFY `status` ENUM('0','1','2') NOT NULL
+            ");
+        }
     }
 };

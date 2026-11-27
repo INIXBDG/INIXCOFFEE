@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -9,40 +10,49 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-            $table->dropForeign(['id_registrasi']);
-        });
+        if (!Schema::hasTable('dokumentasi_exams') || !Schema::hasColumn('dokumentasi_exams', 'id_registrasi')) {
+            return;
+        }
 
-        DB::statement("
-            DELETE d
-            FROM dokumentasi_exams d
-            LEFT JOIN registexams r
-            ON d.id_registrasi = r.id
-            WHERE r.id IS NULL
-        ");
+        if (MigrationHelper::foreignKeyExistsOnColumn('dokumentasi_exams', 'id_registrasi', 'registexams')) {
+            return;
+        }
 
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
+        MigrationHelper::dropForeignIfExists('dokumentasi_exams', ['id_registrasi']);
 
-            $table->foreign('id_registrasi')
-                ->references('id')
-                ->on('registexams')
-                ->onDelete('cascade');
-        });
+        if (Schema::hasTable('registexams')) {
+            DB::statement("
+                DELETE d
+                FROM dokumentasi_exams d
+                LEFT JOIN registexams r
+                ON d.id_registrasi = r.id
+                WHERE r.id IS NULL
+            ");
+
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                $table->foreign('id_registrasi')
+                    ->references('id')
+                    ->on('registexams')
+                    ->onDelete('cascade');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
+        if (!Schema::hasTable('dokumentasi_exams') || !Schema::hasColumn('dokumentasi_exams', 'id_registrasi')) {
+            return;
+        }
 
-            $table->dropForeign(['id_registrasi']);
-        });
+        MigrationHelper::dropForeignIfExists('dokumentasi_exams', ['id_registrasi']);
 
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-
-            $table->foreign('id_registrasi')
-                ->references('id')
-                ->on('registrasis')
-                ->onDelete('cascade');
-        });
+        if (Schema::hasTable('registrasis') && !MigrationHelper::foreignKeyExistsOnColumn('dokumentasi_exams', 'id_registrasi', 'registrasis')) {
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                $table->foreign('id_registrasi')
+                    ->references('id')
+                    ->on('registrasis')
+                    ->onDelete('cascade');
+            });
+        }
     }
 };

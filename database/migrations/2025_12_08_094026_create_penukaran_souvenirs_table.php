@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('penukaran_souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_rkm');
-            $table->unsignedBigInteger('id_regist'); // Relasi ke peserta
-            $table->unsignedBigInteger('id_souvenir_lama');
-            $table->unsignedBigInteger('id_souvenir_baru');
-            $table->dateTime('tanggal_tukar');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('penukaran_souvenirs')) {
+            Schema::create('penukaran_souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_rkm');
+                $table->unsignedBigInteger('id_regist'); // Relasi ke peserta
+                $table->unsignedBigInteger('id_souvenir_lama');
+                $table->unsignedBigInteger('id_souvenir_baru');
+                $table->dateTime('tanggal_tukar');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

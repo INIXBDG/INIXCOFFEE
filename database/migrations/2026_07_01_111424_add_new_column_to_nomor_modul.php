@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->enum('delay', ['client', 'admin'])->nullable()->after('status');
-            $table->string('keterangan')->nullable()->after('delay');
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            Schema::table('nomor_moduls', function (Blueprint $table) {
+                if (!Schema::hasColumn('nomor_moduls', 'delay')) {
+                    $table->enum('delay', ['client', 'admin'])->nullable()->after('status');
+                }
+                if (!Schema::hasColumn('nomor_moduls', 'keterangan')) {
+                    $table->string('keterangan')->nullable()->after('delay');
+                }
+            });
+        }
     }
 
     /**

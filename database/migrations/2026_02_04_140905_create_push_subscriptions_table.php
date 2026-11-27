@@ -8,17 +8,19 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('push_subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->string('endpoint', 500)->unique();
-            $table->text('public_key');
-            $table->text('auth_token');
-            $table->string('content_encoding')->default('aes128gcm');
-            $table->timestamps();
+        if (!Schema::hasTable('push_subscriptions')) {
+            Schema::create('push_subscriptions', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id');
+                $table->string('endpoint', 500)->unique();
+                $table->text('public_key');
+                $table->text('auth_token');
+                $table->string('content_encoding')->default('aes128gcm');
+                $table->timestamps();
 
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            });
+        }
     }
 
     public function down()

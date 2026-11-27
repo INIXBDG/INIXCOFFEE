@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('data_targets', function (Blueprint $table) {
-            $table->id();
-            $table->string('asistant_route');
-            $table->string('jangka_target');
-            $table->string('tipe_target');
-            $table->bigInteger('nilai_target');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('data_targets')) {
+            Schema::create('data_targets', function (Blueprint $table) {
+                $table->id();
+                $table->string('asistant_route');
+                $table->string('jangka_target');
+                $table->string('tipe_target');
+                $table->bigInteger('nilai_target');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

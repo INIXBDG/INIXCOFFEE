@@ -11,9 +11,13 @@ return new class extends Migration
      */
    public function up()
 {
-    Schema::table('izin_tiga_jams', function (Blueprint $table) {
-        $table->date('tanggal_pengajuan')->after('alasan')->nullable();
-    });
+    if (Schema::hasTable('izin_tiga_jams')) {
+        Schema::table('izin_tiga_jams', function (Blueprint $table) {
+            if (!Schema::hasColumn('izin_tiga_jams', 'tanggal_pengajuan')) {
+                $table->date('tanggal_pengajuan')->after('alasan')->nullable();
+            }
+        });
+    }
 }
 
 public function down()

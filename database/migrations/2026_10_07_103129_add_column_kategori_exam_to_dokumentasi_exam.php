@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-            $table->enum('kategori_exam', ['BNSP', 'Internasional', 'Inixcert', 'Authorize'])->nullable()->after('nama_exam');
-        });
+        if (Schema::hasTable('dokumentasi_exams')) {
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                if (!Schema::hasColumn('dokumentasi_exams', 'kategori_exam')) {
+                    $table->enum('kategori_exam', ['BNSP', 'Internasional', 'Inixcert', 'Authorize'])->nullable()->after('nama_exam');
+                }
+            });
+        }
     }
 
     /**

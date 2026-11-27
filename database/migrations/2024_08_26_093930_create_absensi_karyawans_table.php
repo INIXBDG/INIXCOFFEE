@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('absensi_karyawans', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_karyawan');
-            $table->date('tanggal');
-            $table->time('jam_masuk')->nullable();
-            $table->time('jam_keluar')->nullable();
-            $table->string('keterangan')->nullable();
-            $table->time('waktu_keterlambatan')->nullable();
-            $table->string('foto')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('absensi_karyawans')) {
+            Schema::create('absensi_karyawans', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_karyawan');
+                $table->date('tanggal');
+                $table->time('jam_masuk')->nullable();
+                $table->time('jam_keluar')->nullable();
+                $table->string('keterangan')->nullable();
+                $table->time('waktu_keterlambatan')->nullable();
+                $table->string('foto')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

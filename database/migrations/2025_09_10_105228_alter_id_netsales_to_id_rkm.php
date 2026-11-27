@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('tracking_net_sales', function (Blueprint $table) {
-            $table->renameColumn('id_netSales', 'id_rkm');
-        });
+        if (
+            Schema::hasTable('tracking_net_sales')
+            && Schema::hasColumn('tracking_net_sales', 'id_netSales')
+            && !Schema::hasColumn('tracking_net_sales', 'id_rkm')
+        ) {
+            Schema::table('tracking_net_sales', function (Blueprint $table) {
+                $table->renameColumn('id_netSales', 'id_rkm');
+            });
+        }
     }
 
     /**
@@ -23,8 +29,14 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('tracking_net_sales', function (Blueprint $table) {
-            $table->renameColumn('id_rkm', 'id_netSales');
-        });
+        if (
+            Schema::hasTable('tracking_net_sales')
+            && Schema::hasColumn('tracking_net_sales', 'id_rkm')
+            && !Schema::hasColumn('tracking_net_sales', 'id_netSales')
+        ) {
+            Schema::table('tracking_net_sales', function (Blueprint $table) {
+                $table->renameColumn('id_rkm', 'id_netSales');
+            });
+        }
     }
 };

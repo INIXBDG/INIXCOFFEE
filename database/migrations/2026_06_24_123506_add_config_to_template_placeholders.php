@@ -10,17 +10,21 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('template_placeholders', function (Blueprint $table) {
-            if (!Schema::hasColumn('template_placeholders', 'config')) {
-                $table->json('config')->nullable()->after('options');
-            }
-        });
+        if (Schema::hasTable('template_placeholders')) {
+            Schema::table('template_placeholders', function (Blueprint $table) {
+                if (!Schema::hasColumn('template_placeholders', 'config')) {
+                    $table->json('config')->nullable()->after('options');
+                }
+            });
+        }
 
-        Schema::table('report_templates', function (Blueprint $table) {
-            if (!Schema::hasColumn('report_templates', 'settings')) {
-                $table->json('settings')->nullable()->after('edited_text');
-            }
-        });
+        if (Schema::hasTable('report_templates')) {
+            Schema::table('report_templates', function (Blueprint $table) {
+                if (!Schema::hasColumn('report_templates', 'settings')) {
+                    $table->json('settings')->nullable()->after('edited_text');
+                }
+            });
+        }
     }
 
     /**

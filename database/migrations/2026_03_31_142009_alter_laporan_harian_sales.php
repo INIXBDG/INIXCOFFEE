@@ -11,13 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('laporan_harian_sales', function (Blueprint $table) {
-            $table->date('tanggal_pelaksanaan')->nullable()->change();
-            $table->time('waktu_pelaksanaan')->nullable()->change();
-            $table->integer('jumlah_peserta_hadir')->nullable()->change();
-            $table->string('jenis_meeting')->nullable()->change();
-            $table->boolean('is_draft')->default(false)->after('catatan');
-        });
+        if (Schema::hasTable('laporan_harian_sales')) {
+            Schema::table('laporan_harian_sales', function (Blueprint $table) {
+                if (Schema::hasColumn('laporan_harian_sales', 'tanggal_pelaksanaan')) {
+                    $table->date('tanggal_pelaksanaan')->nullable()->change();
+                }
+                if (Schema::hasColumn('laporan_harian_sales', 'waktu_pelaksanaan')) {
+                    $table->time('waktu_pelaksanaan')->nullable()->change();
+                }
+                if (Schema::hasColumn('laporan_harian_sales', 'jumlah_peserta_hadir')) {
+                    $table->integer('jumlah_peserta_hadir')->nullable()->change();
+                }
+                if (Schema::hasColumn('laporan_harian_sales', 'jenis_meeting')) {
+                    $table->string('jenis_meeting')->nullable()->change();
+                }
+                if (!Schema::hasColumn('laporan_harian_sales', 'is_draft')) {
+                    $table->boolean('is_draft')->default(false)->after('catatan');
+                }
+            });
+        }
     }
 
     /**

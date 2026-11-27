@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('hasilexams', function (Blueprint $table) {
-            $table->string('hasil', 50)->nullable()->change();
-            $table->string('pdf', 50)->nullable()->change();
-        });
+        if (Schema::hasTable('hasilexams')) {
+            Schema::table('hasilexams', function (Blueprint $table) {
+                if (Schema::hasColumn('hasilexams', 'hasil')) {
+                    $table->string('hasil', 50)->nullable()->change();
+                }
+                if (Schema::hasColumn('hasilexams', 'pdf')) {
+                    $table->string('pdf', 50)->nullable()->change();
+                }
+            });
+        }
     }
 
     /**
@@ -22,8 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('nullable_hasilexam', function (Blueprint $table) {
-            //
-        });
+        if (Schema::hasTable('hasilexams')) {
+            Schema::table('hasilexams', function (Blueprint $table) {
+                //
+            });
+        }
     }
 };

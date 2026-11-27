@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('event_todos', function (Blueprint $table) {
-            $table->id();
-            // Relasi Manual
-            $table->unsignedBigInteger('year_mapping_id')->index();
-            $table->unsignedBigInteger('todo_id')->index();
+        if (!Schema::hasTable('event_todos')) {
+            Schema::create('event_todos', function (Blueprint $table) {
+                $table->id();
+                // Relasi Manual
+                $table->unsignedBigInteger('year_mapping_id')->index();
+                $table->unsignedBigInteger('todo_id')->index();
 
-            $table->boolean('is_checked')->default(false); // Status Selesai
-            $table->string('pic')->nullable();             // PJ
-            $table->text('notes')->nullable();             // Catatan
-            $table->timestamps();
-        });
+                $table->boolean('is_checked')->default(false); // Status Selesai
+                $table->string('pic')->nullable();             // PJ
+                $table->text('notes')->nullable();             // Catatan
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('targets', function (Blueprint $table) {
-            $table->id();
-            $table->string('objek');
-            $table->string('quartal');
-            $table->string('tahun');
-            $table->string('target');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('targets')) {
+            Schema::create('targets', function (Blueprint $table) {
+                $table->id();
+                $table->string('objek');
+                $table->string('quartal');
+                $table->string('tahun');
+                $table->string('target');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

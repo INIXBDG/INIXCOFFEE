@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('comments', function (Blueprint $table) {
-            $table->text('content')->change(); // Ubah dari string ke text
-        });
+        if (Schema::hasTable('comments')) {
+            Schema::table('comments', function (Blueprint $table) {
+                if (Schema::hasColumn('comments', 'content')) {
+                    $table->text('content')->change();
+                } // Ubah dari string ke text
+            });
+        }
     }
 
     public function down(): void

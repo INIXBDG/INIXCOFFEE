@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('surat_perjalanans', function (Blueprint $table) {
-            $table->enum('approval_gm', ['0', '1', '2'])->default('0')->after('approval_hrd');
-        });
+        if (Schema::hasTable('surat_perjalanans')) {
+            Schema::table('surat_perjalanans', function (Blueprint $table) {
+                if (!Schema::hasColumn('surat_perjalanans', 'approval_gm')) {
+                    $table->enum('approval_gm', ['0', '1', '2'])->default('0')->after('approval_hrd');
+                }
+            });
+        }
     }
 
     /**

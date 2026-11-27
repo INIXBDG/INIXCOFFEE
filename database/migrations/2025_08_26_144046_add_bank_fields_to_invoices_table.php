@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            // Tambah kolom bank_name setelah 'amount'
-            if (!Schema::hasColumn('invoices', 'bank_name')) {
-                $table->string('bank_name')->nullable()->after('amount');
-            }
+        if (Schema::hasTable('invoices')) {
+            Schema::table('invoices', function (Blueprint $table) {
+                // Tambah kolom bank_name setelah 'amount'
+                if (!Schema::hasColumn('invoices', 'bank_name')) {
+                    $table->string('bank_name')->nullable()->after('amount');
+                }
 
-            // Tambah kolom account_number setelah 'bank_name'
-            if (!Schema::hasColumn('invoices', 'account_number')) {
-                $table->string('account_number')->nullable()->after('bank_name');
-            }
-        });
+                // Tambah kolom account_number setelah 'bank_name'
+                if (!Schema::hasColumn('invoices', 'account_number')) {
+                    $table->string('account_number')->nullable()->after('bank_name');
+                }
+            });
+        }
     }
 
     /**

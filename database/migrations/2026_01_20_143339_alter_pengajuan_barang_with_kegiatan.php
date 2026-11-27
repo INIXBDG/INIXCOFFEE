@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('pengajuanbarangs', function (Blueprint $table) {
-            $table->text('id_kegiatan')->nullable();
-        });    }
+        if (Schema::hasTable('pengajuanbarangs')) {
+            Schema::table('pengajuanbarangs', function (Blueprint $table) {
+                if (!Schema::hasColumn('pengajuanbarangs', 'id_kegiatan')) {
+                    $table->text('id_kegiatan')->nullable();
+                }
+            });
+        }    }
 
     /**
      * Reverse the migrations.

@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('analysis_reports', function (Blueprint $table) {
-            $table->bigInteger('nilai')->nullable();
-        });
+        if (Schema::hasTable('analysis_reports')) {
+            Schema::table('analysis_reports', function (Blueprint $table) {
+                if (!Schema::hasColumn('analysis_reports', 'nilai')) {
+                    $table->bigInteger('nilai')->nullable();
+                }
+            });
+        }
     }
 
     /**

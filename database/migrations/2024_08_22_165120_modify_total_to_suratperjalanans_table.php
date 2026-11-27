@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('surat_perjalanans', function (Blueprint $table) {
-                $table->decimal('total', 15, 2)->nullable()->change();
-        });
+        if (Schema::hasTable('surat_perjalanans')) {
+            Schema::table('surat_perjalanans', function (Blueprint $table) {
+                    if (Schema::hasColumn('surat_perjalanans', 'total')) {
+                        $table->decimal('total', 15, 2)->nullable()->change();
+                    }
+            });
+        }
     }
 
     /**

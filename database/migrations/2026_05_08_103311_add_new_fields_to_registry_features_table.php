@@ -8,12 +8,22 @@ class AddNewFieldsToRegistryFeaturesTable extends Migration
 {
     public function up()
     {
-        Schema::table('registry_features', function (Blueprint $table) {
-            $table->text('fakta')->nullable();
-            $table->text('harapan')->nullable();
-            $table->string('waktu_perkiraan')->nullable();
-           $table->string('ticket_id')->nullable();
-        });
+        if (Schema::hasTable('registry_features')) {
+            Schema::table('registry_features', function (Blueprint $table) {
+                if (!Schema::hasColumn('registry_features', 'fakta')) {
+                    $table->text('fakta')->nullable();
+                }
+                if (!Schema::hasColumn('registry_features', 'harapan')) {
+                    $table->text('harapan')->nullable();
+                }
+                if (!Schema::hasColumn('registry_features', 'waktu_perkiraan')) {
+                    $table->string('waktu_perkiraan')->nullable();
+                }
+               if (!Schema::hasColumn('registry_features', 'ticket_id')) {
+                   $table->string('ticket_id')->nullable();
+               }
+            });
+        }
     }
 
     public function down()

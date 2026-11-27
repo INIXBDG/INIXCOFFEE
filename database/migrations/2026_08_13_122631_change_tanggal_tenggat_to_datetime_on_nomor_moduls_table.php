@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->dateTime('tanggal_tenggat')->nullable()->change();
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            Schema::table('nomor_moduls', function (Blueprint $table) {
+                if (Schema::hasColumn('nomor_moduls', 'tanggal_tenggat')) {
+                    $table->dateTime('tanggal_tenggat')->nullable()->change();
+                }
+            });
+        }
     }
 
     /**

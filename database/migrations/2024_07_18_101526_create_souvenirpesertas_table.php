@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('souvenirpesertas', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_souvenir');
-            $table->string('id_regist');
-            $table->string('id_rkm');
+        if (!Schema::hasTable('souvenirpesertas')) {
+            Schema::create('souvenirpesertas', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_souvenir');
+                $table->string('id_regist');
+                $table->string('id_rkm');
 
-            $table->timestamps();
-        });
+                $table->timestamps();
+            });
+        }
     }
 
     /**
