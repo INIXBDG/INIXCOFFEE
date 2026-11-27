@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
-            $table->text('keterangan')->nullable()->after('id_materi');
-        });
+        if (Schema::hasTable('rekomendasi_lanjutans')) {
+            Schema::table('rekomendasi_lanjutans', function (Blueprint $table) {
+                if (!Schema::hasColumn('rekomendasi_lanjutans', 'keterangan')) {
+                    $table->text('keterangan')->nullable()->after('id_materi');
+                }
+            });
+        }
     }
 
     public function down()

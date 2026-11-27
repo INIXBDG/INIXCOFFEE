@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_pembelian_hrs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_pembelian')->constrained('pembelian_hrs')->cascadeOnDelete();
-            $table->string('tracking');
-            $table->integer('id_karyawan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_pembelian_hrs')) {
+            Schema::create('tracking_pembelian_hrs', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_pembelian')->constrained('pembelian_hrs')->cascadeOnDelete();
+                $table->string('tracking');
+                $table->integer('id_karyawan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

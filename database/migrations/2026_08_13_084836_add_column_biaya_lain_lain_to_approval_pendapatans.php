@@ -11,15 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('approval_pendapatans', function (Blueprint $table) {
-            $table->bigInteger('biaya_lain_lain')->nullable()->after('oleh_oleh');
-            $table->bigInteger('pengurangan_pph')->nullable()->after('biaya_lain_lain');
-        });
+        if (Schema::hasTable('approval_pendapatans')) {
+            Schema::table('approval_pendapatans', function (Blueprint $table) {
+                if (!Schema::hasColumn('approval_pendapatans', 'biaya_lain_lain')) {
+                    $table->bigInteger('biaya_lain_lain')->nullable()->after('oleh_oleh');
+                }
+                if (!Schema::hasColumn('approval_pendapatans', 'pengurangan_pph')) {
+                    $table->bigInteger('pengurangan_pph')->nullable()->after('biaya_lain_lain');
+                }
+            });
+        }
 
-        Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
-            $table->bigInteger('biaya_lain_lain')->nullable()->after('oleh_oleh');
-            $table->bigInteger('exam')->nullable()->after('biaya_lain_lain');
-        });
+        if (Schema::hasTable('approval_pendapatan_sales')) {
+            Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
+                if (!Schema::hasColumn('approval_pendapatan_sales', 'biaya_lain_lain')) {
+                    $table->bigInteger('biaya_lain_lain')->nullable()->after('oleh_oleh');
+                }
+                if (!Schema::hasColumn('approval_pendapatan_sales', 'exam')) {
+                    $table->bigInteger('exam')->nullable()->after('biaya_lain_lain');
+                }
+            });
+        }
     }
 
     /**

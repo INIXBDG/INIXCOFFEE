@@ -11,24 +11,26 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('peluang_histories', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_peluang');
-            $table->string('tahap_sebelumnya');
-            $table->string('tahap_baru');
-            $table->double('harga_sebelumnya');
-            $table->double('harga_baru');
-            $table->integer('pax_sebelumnya');
-            $table->integer('pax_baru');
-            $table->date('periode_mulai_sebelumnya')->nullable();
-            $table->date('periode_mulai_baru')->nullable();
-            $table->date('periode_selesai_sebelumnya')->nullable();
-            $table->date('periode_selesai_baru')->nullable();
-            $table->string('keterangan')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('peluang_histories')) {
+            Schema::create('peluang_histories', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_peluang');
+                $table->string('tahap_sebelumnya');
+                $table->string('tahap_baru');
+                $table->double('harga_sebelumnya');
+                $table->double('harga_baru');
+                $table->integer('pax_sebelumnya');
+                $table->integer('pax_baru');
+                $table->date('periode_mulai_sebelumnya')->nullable();
+                $table->date('periode_mulai_baru')->nullable();
+                $table->date('periode_selesai_sebelumnya')->nullable();
+                $table->date('periode_selesai_baru')->nullable();
+                $table->string('keterangan')->nullable();
+                $table->timestamps();
 
-            $table->foreign('id_peluang')->references('id')->on('peluangs')->onDelete('cascade');
-        });
+                $table->foreign('id_peluang')->references('id')->on('peluangs')->onDelete('cascade');
+            });
+        }
     }
 
     /**

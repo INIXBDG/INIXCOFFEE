@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('caterings', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_karyawan');
-            $table->enum('tipe', ['Makanan']);
-            $table->string('invoice')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('caterings')) {
+            Schema::create('caterings', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_karyawan');
+                $table->enum('tipe', ['Makanan']);
+                $table->string('invoice')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

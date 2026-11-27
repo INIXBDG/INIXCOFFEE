@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('absensi_p_d_f_s', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_rkm');
-            $table->string('pdf_name');
-            $table->string('pdf_path');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('absensi_p_d_f_s')) {
+            Schema::create('absensi_p_d_f_s', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_rkm');
+                $table->string('pdf_name');
+                $table->string('pdf_path');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

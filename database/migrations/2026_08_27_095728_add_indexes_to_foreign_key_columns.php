@@ -62,7 +62,7 @@ return new class extends Migration
                     continue;
                 }
 
-                if (Schema::hasTable($table)) {
+                if (Schema::hasTable($table) && Schema::hasColumn($table, $column)) {
                     Schema::table($table, function (Blueprint $blueprint) use ($column) {
                         $blueprint->index($column);
                     });

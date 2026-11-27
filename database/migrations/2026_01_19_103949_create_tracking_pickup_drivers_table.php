@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_pickup_drivers', function (Blueprint $table) {
-            $table->id();
-            $table->integer('pickup_driver_id');
-            $table->text('status');
-            $table->integer('diubah_oleh');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_pickup_drivers')) {
+            Schema::create('tracking_pickup_drivers', function (Blueprint $table) {
+                $table->id();
+                $table->integer('pickup_driver_id');
+                $table->text('status');
+                $table->integer('diubah_oleh');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

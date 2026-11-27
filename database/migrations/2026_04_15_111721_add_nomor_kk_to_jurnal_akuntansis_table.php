@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('jurnal_akuntansis', function (Blueprint $table) {
-            $table->string('nomor_kk', 20)->nullable()->after('id');
-            $table->string('no_akun')->nullable()->after('keterangan');
-        });
+        if (Schema::hasTable('jurnal_akuntansis')) {
+            Schema::table('jurnal_akuntansis', function (Blueprint $table) {
+                if (!Schema::hasColumn('jurnal_akuntansis', 'nomor_kk')) {
+                    $table->string('nomor_kk', 20)->nullable()->after('id');
+                }
+                if (!Schema::hasColumn('jurnal_akuntansis', 'no_akun')) {
+                    $table->string('no_akun')->nullable()->after('keterangan');
+                }
+            });
+        }
     }
 
     public function down()

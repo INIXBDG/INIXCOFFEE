@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kondisi_kendaraans', function (Blueprint $table) {
-            $table->text('keluhan')->nullable()->after('tanggal_pemeriksaan')->nullable();
-        });
+        if (Schema::hasTable('kondisi_kendaraans')) {
+            Schema::table('kondisi_kendaraans', function (Blueprint $table) {
+                if (!Schema::hasColumn('kondisi_kendaraans', 'keluhan')) {
+                    $table->text('keluhan')->nullable()->after('tanggal_pemeriksaan')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('catatansouvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_souvenir');
-            $table->string('catatan');
-            $table->string('stok_terakhir')->nullable();
-            $table->string('stok_perubahan')->nullable();
-            $table->string('stok_terbaru')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('catatansouvenirs')) {
+            Schema::create('catatansouvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_souvenir');
+                $table->string('catatan');
+                $table->string('stok_terakhir')->nullable();
+                $table->string('stok_perubahan')->nullable();
+                $table->string('stok_terbaru')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

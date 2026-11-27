@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('approvalexams', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_exam');
-            $table->string('sales');
-            $table->boolean('spv_sales');
-            $table->boolean('technical_support');
-            $table->boolean('office_manager');
-            $table->string('status')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('approvalexams')) {
+            Schema::create('approvalexams', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_exam');
+                $table->string('sales');
+                $table->boolean('spv_sales');
+                $table->boolean('technical_support');
+                $table->boolean('office_manager');
+                $table->string('status')->nullable();
+                $table->timestamps();
+            });
+        }
 
     }
 

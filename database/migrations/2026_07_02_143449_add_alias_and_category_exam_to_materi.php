@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('materis', function (Blueprint $table) {
-            $table->string('alias')->nullable()->after('nama_materi');
-            $table->string('kode_alias')->nullable()->after('alias');
-            $table->string('kategori_exam')->nullable()->after('kategori_materi');
-        });
+        if (Schema::hasTable('materis')) {
+            Schema::table('materis', function (Blueprint $table) {
+                if (!Schema::hasColumn('materis', 'alias')) {
+                    $table->string('alias')->nullable()->after('nama_materi');
+                }
+                if (!Schema::hasColumn('materis', 'kode_alias')) {
+                    $table->string('kode_alias')->nullable()->after('alias');
+                }
+                if (!Schema::hasColumn('materis', 'kategori_exam')) {
+                    $table->string('kategori_exam')->nullable()->after('kategori_materi');
+                }
+            });
+        }
     }
 
     /**

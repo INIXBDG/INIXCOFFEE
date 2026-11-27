@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_pengajuan_barangs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_pengajuan_barang')->nullable();
-            $table->string('nama_barang')->nullable();
-            $table->string('qty')->nullable();
-            $table->decimal('harga', 15,2)->nullable();
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('detail_pengajuan_barangs')) {
+            Schema::create('detail_pengajuan_barangs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_pengajuan_barang')->nullable();
+                $table->string('nama_barang')->nullable();
+                $table->string('qty')->nullable();
+                $table->decimal('harga', 15,2)->nullable();
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

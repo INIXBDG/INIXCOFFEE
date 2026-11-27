@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('project_activities', function (Blueprint $table) {
-            $table->id();
-            $table->string('project_task_id')->nullable();
-            $table->string('user_id')->nullable();
-            $table->string('activity')->nullable();
-            $table->string('status')->nullable();
-            $table->string('activity_date')->nullable();
-            $table->string('doc')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('project_activities')) {
+            Schema::create('project_activities', function (Blueprint $table) {
+                $table->id();
+                $table->string('project_task_id')->nullable();
+                $table->string('user_id')->nullable();
+                $table->string('activity')->nullable();
+                $table->string('status')->nullable();
+                $table->string('activity_date')->nullable();
+                $table->string('doc')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

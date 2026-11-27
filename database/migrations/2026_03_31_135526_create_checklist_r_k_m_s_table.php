@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('checklist_r_k_m_s', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('id_rkm');
-            $table->boolean('registrasi_form');
-            $table->boolean('surat_kontrak');
-            $table->boolean('PA');
-            $table->boolean('PO');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('checklist_r_k_m_s')) {
+            Schema::create('checklist_r_k_m_s', function (Blueprint $table) {
+                $table->id();
+                $table->bigInteger('id_rkm');
+                $table->boolean('registrasi_form');
+                $table->boolean('surat_kontrak');
+                $table->boolean('PA');
+                $table->boolean('PO');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

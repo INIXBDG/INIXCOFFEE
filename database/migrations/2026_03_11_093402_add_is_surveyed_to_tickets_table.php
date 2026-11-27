@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tickets', function (Blueprint $table) {
-            $table->boolean('is_surveyed')->default(false)->after('status');
-        });
+        if (Schema::hasTable('tickets')) {
+            Schema::table('tickets', function (Blueprint $table) {
+                if (!Schema::hasColumn('tickets', 'is_surveyed')) {
+                    $table->boolean('is_surveyed')->default(false)->after('status');
+                }
+            });
+        }
     }
 
     /**

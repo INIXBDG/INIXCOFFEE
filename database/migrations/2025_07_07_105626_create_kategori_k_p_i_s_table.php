@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kategori_k_p_i_s', function (Blueprint $table) {
-            $table->id();
-            $table->string('judul_kategori');
-            $table->string('tipe_kategori');
-            $table->integer('bobot');
-            $table->string('level');
-            $table->string('kode_kategori');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('kategori_k_p_i_s')) {
+            Schema::create('kategori_k_p_i_s', function (Blueprint $table) {
+                $table->id();
+                $table->string('judul_kategori');
+                $table->string('tipe_kategori');
+                $table->integer('bobot');
+                $table->string('level');
+                $table->string('kode_kategori');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

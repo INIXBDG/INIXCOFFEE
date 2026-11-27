@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('log_gajis', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_karyawan');
-            $table->string('gaji')->nullable();
-            $table->year('tahun');
-            $table->tinyInteger('bulan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('log_gajis')) {
+            Schema::create('log_gajis', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_karyawan');
+                $table->string('gaji')->nullable();
+                $table->year('tahun');
+                $table->tinyInteger('bulan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

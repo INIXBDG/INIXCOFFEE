@@ -9,9 +9,13 @@ return new class extends Migration
 
     public function up(): void
     {
-        Schema::table('target_activities', function (Blueprint $table) {
-            $table->date('deadline')->nullable()->after('FormK');
-        });
+        if (Schema::hasTable('target_activities')) {
+            Schema::table('target_activities', function (Blueprint $table) {
+                if (!Schema::hasColumn('target_activities', 'deadline')) {
+                    $table->date('deadline')->nullable()->after('FormK');
+                }
+            });
+        }
     }
 
     public function down(): void

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_expense_hubs', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_expenseHub');
-            $table->string('nama_pengajuan');
-            $table->integer('jumlah');
-            $table->decimal('harga_pengajuan');
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('detail_expense_hubs')) {
+            Schema::create('detail_expense_hubs', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_expenseHub');
+                $table->string('nama_pengajuan');
+                $table->integer('jumlah');
+                $table->decimal('harga_pengajuan');
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

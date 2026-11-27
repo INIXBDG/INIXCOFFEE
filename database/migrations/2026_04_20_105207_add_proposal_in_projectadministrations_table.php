@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('project_administrations', function (Blueprint $table) {
-            $table->string('proposal_file')->nullable()->after('project_id');
-            $table->string('surat_pekerjaan_dimulai_file')->nullable()->after('payment_doc_file');
-            $table->string('project_handover_id')->nullable();
-        });
+        if (Schema::hasTable('project_administrations')) {
+            Schema::table('project_administrations', function (Blueprint $table) {
+                if (!Schema::hasColumn('project_administrations', 'proposal_file')) {
+                    $table->string('proposal_file')->nullable()->after('project_id');
+                }
+                if (!Schema::hasColumn('project_administrations', 'surat_pekerjaan_dimulai_file')) {
+                    $table->string('surat_pekerjaan_dimulai_file')->nullable()->after('payment_doc_file');
+                }
+                if (!Schema::hasColumn('project_administrations', 'project_handover_id')) {
+                    $table->string('project_handover_id')->nullable();
+                }
+            });
+        }
     }
 
     /**

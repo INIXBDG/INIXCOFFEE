@@ -8,16 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('instruktur_ol_silabus', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('instruktur_ol_id')->constrained('instruktur_ols')->cascadeOnDelete();
-            $table->string('judul');
-            $table->string('keterangan', 500)->nullable();
-            $table->string('file_path');
-            $table->string('file_nama_asli')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('instruktur_ol_silabus')) {
+            Schema::create('instruktur_ol_silabus', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('instruktur_ol_id')->constrained('instruktur_ols')->cascadeOnDelete();
+                $table->string('judul');
+                $table->string('keterangan', 500)->nullable();
+                $table->string('file_path');
+                $table->string('file_nama_asli')->nullable();
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     public function down(): void

@@ -9,27 +9,39 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->dateTime('uploaded')->nullable()->after('status');
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            if (!Schema::hasColumn('nomor_moduls', 'uploaded')) {
+                Schema::table('nomor_moduls', function (Blueprint $table) {
+                    $table->dateTime('uploaded')->nullable()->after('status');
+                });
+            }
 
-        DB::statement("
-            ALTER TABLE nomor_moduls 
-            MODIFY status ENUM('Menunggu','Disetujui','Uploaded') 
-            DEFAULT 'Menunggu'
-        ");
+            if (Schema::hasColumn('nomor_moduls', 'status')) {
+                DB::statement("
+                    ALTER TABLE nomor_moduls 
+                    MODIFY status ENUM('Menunggu','Disetujui','Uploaded') 
+                    DEFAULT 'Menunggu'
+                ");
+            }
+        }
     }
 
     public function down()
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->dropColumn('upload_po');
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            if (Schema::hasColumn('nomor_moduls', 'uploaded')) {
+                Schema::table('nomor_moduls', function (Blueprint $table) {
+                    $table->dropColumn('uploaded');
+                });
+            }
 
-        DB::statement("
-            ALTER TABLE nomor_moduls 
-            MODIFY status ENUM('Menunggu','Disetujui') 
-            DEFAULT 'Menunggu'
-        ");
+            if (Schema::hasColumn('nomor_moduls', 'status')) {
+                DB::statement("
+                    ALTER TABLE nomor_moduls 
+                    MODIFY status ENUM('Menunggu','Disetujui') 
+                    DEFAULT 'Menunggu'
+                ");
+            }
+        }
     }
 };

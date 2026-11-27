@@ -11,11 +11,15 @@ return new class extends Migration
      */
  public function up(): void
     {
-        Schema::table('r_k_m_s', function (Blueprint $table) {
-            $table->enum('makanan', ['0', '1', '2',])
-                  ->default('0')
-                  ->after('exam');
-        });
+        if (Schema::hasTable('r_k_m_s')) {
+            Schema::table('r_k_m_s', function (Blueprint $table) {
+                if (!Schema::hasColumn('r_k_m_s', 'makanan')) {
+                    $table->enum('makanan', ['0', '1', '2',])
+                          ->default('0')
+                          ->after('exam');
+                }
+            });
+        }
     }
 
     public function down(): void

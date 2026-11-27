@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('approval_pendapatan_locks', function (Blueprint $table) {
-            $table->id();
-            $table->string('password');
-            $table->unsignedBigInteger('created_by')->nullable();
-            $table->unsignedBigInteger('updated_by')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('approval_pendapatan_locks')) {
+            Schema::create('approval_pendapatan_locks', function (Blueprint $table) {
+                $table->id();
+                $table->string('password');
+                $table->unsignedBigInteger('created_by')->nullable();
+                $table->unsignedBigInteger('updated_by')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

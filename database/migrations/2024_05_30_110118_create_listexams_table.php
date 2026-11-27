@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('listexams', function (Blueprint $table) {
-            $table->id();
-            $table->string('provider');
-            $table->string('kode_exam');
-            $table->string('nama_exam');
-            $table->string('vendor');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('listexams')) {
+            Schema::create('listexams', function (Blueprint $table) {
+                $table->id();
+                $table->string('provider');
+                $table->string('kode_exam');
+                $table->string('nama_exam');
+                $table->string('vendor');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

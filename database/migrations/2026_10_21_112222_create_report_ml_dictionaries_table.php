@@ -23,17 +23,19 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('report_ml_dictionaries', function (Blueprint $t) {
-            if (!Schema::hasColumn('report_ml_dictionaries', 'hit_count')) {
-                $t->unsignedInteger('hit_count')->default(1);
-            }
-            if (!Schema::hasColumn('report_ml_dictionaries', 'last_used_at')) {
-                $t->timestamp('last_used_at')->nullable();
-            }
-            if (!Schema::hasColumn('report_ml_dictionaries', 'created_by')) {
-                $t->unsignedBigInteger('created_by')->nullable();
-            }
-        });
+        if (Schema::hasTable('report_ml_dictionaries')) {
+            Schema::table('report_ml_dictionaries', function (Blueprint $t) {
+                if (!Schema::hasColumn('report_ml_dictionaries', 'hit_count')) {
+                    $t->unsignedInteger('hit_count')->default(1);
+                }
+                if (!Schema::hasColumn('report_ml_dictionaries', 'last_used_at')) {
+                    $t->timestamp('last_used_at')->nullable();
+                }
+                if (!Schema::hasColumn('report_ml_dictionaries', 'created_by')) {
+                    $t->unsignedBigInteger('created_by')->nullable();
+                }
+            });
+        }
 
         try {
             Schema::table('report_ml_dictionaries', function (Blueprint $t) {

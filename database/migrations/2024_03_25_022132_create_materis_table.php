@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('materis', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_materi');
-            $table->string('kode_materi')->nullable();
-            $table->string('kategori_materi')->nullable();
-            $table->string('vendor')->nullable();
-            $table->string('silabus')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('materis')) {
+            Schema::create('materis', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_materi');
+                $table->string('kode_materi')->nullable();
+                $table->string('kategori_materi')->nullable();
+                $table->string('vendor')->nullable();
+                $table->string('silabus')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

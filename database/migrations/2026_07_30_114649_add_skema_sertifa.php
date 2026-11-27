@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('po_exam_sertifa', function (Blueprint $table) {
-            $table->string('skema')->nullable()->after('harga');
-        });
+        if (Schema::hasTable('po_exam_sertifa')) {
+            Schema::table('po_exam_sertifa', function (Blueprint $table) {
+                if (!Schema::hasColumn('po_exam_sertifa', 'skema')) {
+                    $table->string('skema')->nullable()->after('harga');
+                }
+            });
+        }
     }
 
     /**

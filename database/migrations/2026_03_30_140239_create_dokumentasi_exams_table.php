@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('dokumentasi_exams', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_registrasi')->constrained('registrasis')->onDelete('cascade');
-            $table->string('nama_exam');
-            $table->date('tanggal_perusahaan')->nullable();
-            $table->decimal('skor', 15, 2)->nullable();
-            $table->string('dokumentasi')->nullable();
-            $table->string('invoice')->nullable();
-            $table->enum('keterangan_lulus', ['lulus', 'tidak lulus'])->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('dokumentasi_exams')) {
+            Schema::create('dokumentasi_exams', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_registrasi')->constrained('registrasis')->onDelete('cascade');
+                $table->string('nama_exam');
+                $table->date('tanggal_perusahaan')->nullable();
+                $table->decimal('skor', 15, 2)->nullable();
+                $table->string('dokumentasi')->nullable();
+                $table->string('invoice')->nullable();
+                $table->enum('keterangan_lulus', ['lulus', 'tidak lulus'])->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

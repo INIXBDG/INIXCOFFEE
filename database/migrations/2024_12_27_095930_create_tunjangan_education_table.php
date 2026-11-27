@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tunjangan_education', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_rekap');
-            $table->string('total_tunjangan');  
-            $table->string('status');  
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tunjangan_education')) {
+            Schema::create('tunjangan_education', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_rekap');
+                $table->string('total_tunjangan');  
+                $table->string('status');  
+                $table->timestamps();
+            });
+        }
     }
 
     /**

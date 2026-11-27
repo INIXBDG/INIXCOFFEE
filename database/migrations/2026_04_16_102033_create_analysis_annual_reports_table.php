@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('analysis_annual_reports', function (Blueprint $table) {
-            $table->id();
-            $table->year('year')->unique();
-            $table->text('description')->nullable();
-            $table->json('file_paths')->nullable(); // Untuk menyimpan banyak file
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('analysis_annual_reports')) {
+            Schema::create('analysis_annual_reports', function (Blueprint $table) {
+                $table->id();
+                $table->year('year')->unique();
+                $table->text('description')->nullable();
+                $table->json('file_paths')->nullable(); // Untuk menyimpan banyak file
+                $table->timestamps();
+            });
+        }
     }
 
     /**

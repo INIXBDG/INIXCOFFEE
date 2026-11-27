@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_outstandings', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_outstanding')->nullable();  
-            $table->string('invoice')->nullable();  
-            $table->string('faktur_pajak')->nullable();  
-            $table->string('dokumen_tambahan')->nullable();  
-            $table->string('konfir_cs')->nullable();  
-            $table->string('tracking_dokumen')->nullable();
-            $table->string('no_resi')->nullable();
-            $table->string('konfir_pic')->nullable();
-            $table->string('pembayaran')->nullable();
-            $table->string('status_resi')->nullable();
-            $table->string('status_pic')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_outstandings')) {
+            Schema::create('tracking_outstandings', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_outstanding')->nullable();  
+                $table->string('invoice')->nullable();  
+                $table->string('faktur_pajak')->nullable();  
+                $table->string('dokumen_tambahan')->nullable();  
+                $table->string('konfir_cs')->nullable();  
+                $table->string('tracking_dokumen')->nullable();
+                $table->string('no_resi')->nullable();
+                $table->string('konfir_pic')->nullable();
+                $table->string('pembayaran')->nullable();
+                $table->string('status_resi')->nullable();
+                $table->string('status_pic')->nullable();
+                $table->timestamps();
+            });
+        }
     }
     //CATATAN : JIKA MENGUPDATE UBAH DI CONTROLLER OUTSTANDINGNYA JUGA AGAR SELARAS
 

@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('biaya_transportasi_drivers', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('id_pengajuan_barang')->nullable();
-            $table->integer('id_karyawan');
-            $table->integer('id_pickup_driver');
-            $table->string('tipe');
-            $table->integer('harga');
-            $table->text('bukti');
-            $table->string('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('biaya_transportasi_drivers')) {
+            Schema::create('biaya_transportasi_drivers', function (Blueprint $table) {
+                $table->id();
+                $table->bigInteger('id_pengajuan_barang')->nullable();
+                $table->integer('id_karyawan');
+                $table->integer('id_pickup_driver');
+                $table->string('tipe');
+                $table->integer('harga');
+                $table->text('bukti');
+                $table->string('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

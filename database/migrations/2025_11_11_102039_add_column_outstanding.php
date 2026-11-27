@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('outstandings', function (Blueprint $table) {
-            $table->string('path_faktur_pajak')->nullable();
-            $table->string('path_dokumen_tambahan')->nullable();
-        });
+        if (Schema::hasTable('outstandings')) {
+            Schema::table('outstandings', function (Blueprint $table) {
+                if (!Schema::hasColumn('outstandings', 'path_faktur_pajak')) {
+                    $table->string('path_faktur_pajak')->nullable();
+                }
+                if (!Schema::hasColumn('outstandings', 'path_dokumen_tambahan')) {
+                    $table->string('path_dokumen_tambahan')->nullable();
+                }
+            });
+        }
     }
 
     /**

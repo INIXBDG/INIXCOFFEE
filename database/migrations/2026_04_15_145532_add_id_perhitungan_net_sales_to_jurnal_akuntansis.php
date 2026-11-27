@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('jurnal_akuntansis', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_perhitungan_net_sales')->nullable()->after('id_pengajuan_barang');
-        });
+        if (Schema::hasTable('jurnal_akuntansis')) {
+            Schema::table('jurnal_akuntansis', function (Blueprint $table) {
+                if (!Schema::hasColumn('jurnal_akuntansis', 'id_perhitungan_net_sales')) {
+                    $table->unsignedBigInteger('id_perhitungan_net_sales')->nullable()->after('id_pengajuan_barang');
+                }
+            });
+        }
     }
 
     public function down()

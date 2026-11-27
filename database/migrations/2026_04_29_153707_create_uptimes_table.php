@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('uptimes', function (Blueprint $table) {
-            $table->id();
-            $table->string('url');
-            $table->string('status');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('uptimes')) {
+            Schema::create('uptimes', function (Blueprint $table) {
+                $table->id();
+                $table->string('url');
+                $table->string('status');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('moduls', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_materi')->nullable()->after('no_modul');
-        });
+        if (Schema::hasTable('moduls')) {
+            Schema::table('moduls', function (Blueprint $table) {
+                if (!Schema::hasColumn('moduls', 'id_materi')) {
+                    $table->unsignedBigInteger('id_materi')->nullable()->after('no_modul');
+                }
+            });
+        }
     }
 
     /**

@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pesertas', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama');
-            $table->string('jenis_kelamin');
-            $table->string('email');
-            $table->string('no_hp')->nullable();
-            $table->string('alamat')->nullable();
-            $table->string('perusahaan_key');
-            $table->string('tanggal_lahir')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('pesertas')) {
+            Schema::create('pesertas', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama');
+                $table->string('jenis_kelamin');
+                $table->string('email');
+                $table->string('no_hp')->nullable();
+                $table->string('alamat')->nullable();
+                $table->string('perusahaan_key');
+                $table->string('tanggal_lahir')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

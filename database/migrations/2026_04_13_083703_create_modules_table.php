@@ -10,15 +10,17 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('modules', function (Blueprint $table) {
-            $table->id();
-            $table->string('title', 255);
-            $table->string('category', 100);
-            $table->text('link');
-            $table->text('description')->nullable();
-            $table->string('kode_karyawan', 100);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('modules')) {
+            Schema::create('modules', function (Blueprint $table) {
+                $table->id();
+                $table->string('title', 255);
+                $table->string('category', 100);
+                $table->text('link');
+                $table->text('description')->nullable();
+                $table->string('kode_karyawan', 100);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

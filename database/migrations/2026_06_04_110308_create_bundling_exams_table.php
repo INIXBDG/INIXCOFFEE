@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bundling_exams', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_rkm');
-            $table->string('id_exam')->nullable();
-            $table->boolean('bundling');
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('bundling_exams')) {
+            Schema::create('bundling_exams', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_rkm');
+                $table->string('id_exam')->nullable();
+                $table->boolean('bundling');
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

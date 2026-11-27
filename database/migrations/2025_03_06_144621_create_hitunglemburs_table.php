@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hitunglemburs', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_lembur')->nullable();
-            $table->decimal('nilai_lembur', 15, 2)->nullable();
-            $table->string('approval_gm')->nullable();
-            $table->string('alasan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('hitunglemburs')) {
+            Schema::create('hitunglemburs', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_lembur')->nullable();
+                $table->decimal('nilai_lembur', 15, 2)->nullable();
+                $table->string('approval_gm')->nullable();
+                $table->string('alasan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_net_sales', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_netSales');
-            $table->text('tracking')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_net_sales')) {
+            Schema::create('tracking_net_sales', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_netSales');
+                $table->text('tracking')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

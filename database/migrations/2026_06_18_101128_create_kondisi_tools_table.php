@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kondisi_tools', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_alat')->constrained('ob_tools')->cascadeOnDelete();
-            $table->string('kondisi');
-            $table->date('tanggal_pemeriksaan');
-            $table->text('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('kondisi_tools')) {
+            Schema::create('kondisi_tools', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_alat')->constrained('ob_tools')->cascadeOnDelete();
+                $table->string('kondisi');
+                $table->date('tanggal_pemeriksaan');
+                $table->text('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

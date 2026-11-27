@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('inventaris', function (Blueprint $table) {
-            if (!Schema::hasColumn('inventaris', 'idinventaris')) {
-                $table->string('idinventaris')->nullable()->after('idbarang');
-            }
-            if (!Schema::hasColumn('inventaris', 'kategori')) {
-                $table->string('kategori')->nullable()->after('name');
-            }
-            if (!Schema::hasColumn('inventaris', 'no_kk')) {
-                $table->string('no_kk')->nullable()->after('ruangan');
-            }
-        });
+        if (Schema::hasTable('inventaris')) {
+            Schema::table('inventaris', function (Blueprint $table) {
+                if (!Schema::hasColumn('inventaris', 'idinventaris')) {
+                    $table->string('idinventaris')->nullable()->after('idbarang');
+                }
+                if (!Schema::hasColumn('inventaris', 'kategori')) {
+                    $table->string('kategori')->nullable()->after('name');
+                }
+                if (!Schema::hasColumn('inventaris', 'no_kk')) {
+                    $table->string('no_kk')->nullable()->after('ruangan');
+                }
+            });
+        }
     }
 
     /**

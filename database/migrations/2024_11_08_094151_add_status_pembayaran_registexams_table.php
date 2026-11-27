@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('registexams', function (Blueprint $table) {
-            $table->string('status_pembayaran')->nullable();//0 sudah 1 belum
-        });
+        if (Schema::hasTable('registexams')) {
+            Schema::table('registexams', function (Blueprint $table) {
+                if (!Schema::hasColumn('registexams', 'status_pembayaran')) {
+                    $table->string('status_pembayaran')->nullable();
+                }//0 sudah 1 belum
+            });
+        }
     }
 
     /**

@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_pengajuan_lab_subs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_pengajuan_lab_subs');
-            $table->string('tracking');
-            $table->date('tanggal');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_pengajuan_lab_subs')) {
+            Schema::create('tracking_pengajuan_lab_subs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_pengajuan_lab_subs');
+                $table->string('tracking');
+                $table->date('tanggal');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

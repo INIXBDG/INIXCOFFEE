@@ -11,20 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('maintenances', function (Blueprint $table) {
-            $table->id();
-            $table->string('kategori')->nullable(); // Kendaraan / Fasilitas Kantor
-            $table->string('divisi')->nullable();
-            $table->string('teknisi')->nullable();
-            $table->string('nama_barang')->nullable();
-            $table->date('tanggal_mulai')->nullable();
-            $table->date('tanggal_selesai')->nullable();
-            $table->string('no_voucher')->nullable();
-            $table->decimal('biaya', 15, 2)->nullable();
-            $table->text('keterangan')->nullable();
-            $table->string('status')->default('On Progress');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('maintenances')) {
+            Schema::create('maintenances', function (Blueprint $table) {
+                $table->id();
+                $table->string('kategori')->nullable(); // Kendaraan / Fasilitas Kantor
+                $table->string('divisi')->nullable();
+                $table->string('teknisi')->nullable();
+                $table->string('nama_barang')->nullable();
+                $table->date('tanggal_mulai')->nullable();
+                $table->date('tanggal_selesai')->nullable();
+                $table->string('no_voucher')->nullable();
+                $table->decimal('biaya', 15, 2)->nullable();
+                $table->text('keterangan')->nullable();
+                $table->string('status')->default('On Progress');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

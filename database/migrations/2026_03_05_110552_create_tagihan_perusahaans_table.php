@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tagihan_perusahaans', function (Blueprint $table) {
-            $table->id();
-            $table->string('kegiatan');
-            $table->enum('tipe', ['bulanan', 'tahunan']);
-            $table->decimal( 'nominal', 15, 2)->nullable();
-            $table->date('tanggal_perkiraan_mulai');
-            $table->date('tanggal_perkiraan_selesai')->nullable();
-            $table->date('last_generate');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tagihan_perusahaans')) {
+            Schema::create('tagihan_perusahaans', function (Blueprint $table) {
+                $table->id();
+                $table->string('kegiatan');
+                $table->enum('tipe', ['bulanan', 'tahunan']);
+                $table->decimal( 'nominal', 15, 2)->nullable();
+                $table->date('tanggal_perkiraan_mulai');
+                $table->date('tanggal_perkiraan_selesai')->nullable();
+                $table->date('last_generate');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

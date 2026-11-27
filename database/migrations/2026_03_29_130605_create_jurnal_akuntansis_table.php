@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('jurnal_akuntansis', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_pengajuan_barang')->nullable();
-            $table->date('tanggal_transaksi');
-            $table->string('keterangan');
-            $table->decimal('debit', 15, 2)->default(0);
-            $table->decimal('kredit', 15, 2)->default(0);
-            $table->timestamps();
+        if (!Schema::hasTable('jurnal_akuntansis')) {
+            Schema::create('jurnal_akuntansis', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_pengajuan_barang')->nullable();
+                $table->date('tanggal_transaksi');
+                $table->string('keterangan');
+                $table->decimal('debit', 15, 2)->default(0);
+                $table->decimal('kredit', 15, 2)->default(0);
+                $table->timestamps();
 
-            $table->foreign('id_pengajuan_barang')->references('id')->on('pengajuanbarangs')->onDelete('set null');
-        });
+                $table->foreign('id_pengajuan_barang')->references('id')->on('pengajuanbarangs')->onDelete('set null');
+            });
+        }
     }
 
     /**

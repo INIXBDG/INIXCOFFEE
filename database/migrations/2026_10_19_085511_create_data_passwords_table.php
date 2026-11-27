@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('data_passwords', function (Blueprint $table) {
-            $table->id();
-            $table->string('judul');
-            $table->string('kategori');
-            $table->string('identifier')->nullable();
-            $table->string('password');
-            $table->text('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('data_passwords')) {
+            Schema::create('data_passwords', function (Blueprint $table) {
+                $table->id();
+                $table->string('judul');
+                $table->string('kategori');
+                $table->string('identifier')->nullable();
+                $table->string('password');
+                $table->text('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

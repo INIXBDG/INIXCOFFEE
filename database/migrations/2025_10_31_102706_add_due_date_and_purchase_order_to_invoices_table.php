@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->date('due_date')->nullable()->after('tanggal_invoice');
-            $table->string('purchase_order', 255)->nullable()->after('invoice_number');
-        });
+        if (Schema::hasTable('invoices')) {
+            Schema::table('invoices', function (Blueprint $table) {
+                if (!Schema::hasColumn('invoices', 'due_date')) {
+                    $table->date('due_date')->nullable()->after('tanggal_invoice');
+                }
+                if (!Schema::hasColumn('invoices', 'purchase_order')) {
+                    $table->string('purchase_order', 255)->nullable()->after('invoice_number');
+                }
+            });
+        }
     }
 
     /**

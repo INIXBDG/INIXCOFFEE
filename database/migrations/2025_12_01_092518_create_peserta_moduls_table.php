@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('peserta_moduls', function (Blueprint $table) {
-            $table->id();
-            $table->integer('no_modul');            
-            $table->integer('modul');
-            $table->text('nama_peserta');
-            $table->text('perusahaan_id');
-            $table->text('email');
-            $table->date('awal_training');
-            $table->date('akhir_training');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('peserta_moduls')) {
+            Schema::create('peserta_moduls', function (Blueprint $table) {
+                $table->id();
+                $table->integer('no_modul');            
+                $table->integer('modul');
+                $table->text('nama_peserta');
+                $table->text('perusahaan_id');
+                $table->text('email');
+                $table->date('awal_training');
+                $table->date('akhir_training');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

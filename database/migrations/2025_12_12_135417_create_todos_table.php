@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('todos', function (Blueprint $table) {
-            $table->id();
-            $table->string('task_name');                // Nama Tugas
-            $table->string('category')->nullable();     // Kategori
-            $table->integer('sort_order')->default(0);  // Urutan
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('todos')) {
+            Schema::create('todos', function (Blueprint $table) {
+                $table->id();
+                $table->string('task_name');                // Nama Tugas
+                $table->string('category')->nullable();     // Kategori
+                $table->integer('sort_order')->default(0);  // Urutan
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

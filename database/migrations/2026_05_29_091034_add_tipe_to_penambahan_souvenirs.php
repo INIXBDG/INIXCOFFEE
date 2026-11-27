@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('penambahan_souvenirs', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_rkm')->nullable()->change();
-            $table->string('tipe')->after('id_souvenir')->nullable();
-        });
+        if (Schema::hasTable('penambahan_souvenirs')) {
+            Schema::table('penambahan_souvenirs', function (Blueprint $table) {
+                if (Schema::hasColumn('penambahan_souvenirs', 'id_rkm')) {
+                    $table->unsignedBigInteger('id_rkm')->nullable()->change();
+                }
+                if (!Schema::hasColumn('penambahan_souvenirs', 'tipe')) {
+                    $table->string('tipe')->after('id_souvenir')->nullable();
+                }
+            });
+        }
     }
 
     /**

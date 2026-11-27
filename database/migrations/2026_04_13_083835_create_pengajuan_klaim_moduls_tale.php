@@ -10,14 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('pengajuan_klaim_modul', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
-            $table->decimal('price', 15, 2)->nullable();
-            $table->string('status');
-            $table->timestamp('approved_at')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('pengajuan_klaim_modul')) {
+            Schema::create('pengajuan_klaim_modul', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('module_id')->constrained('modules')->cascadeOnDelete();
+                $table->decimal('price', 15, 2)->nullable();
+                $table->string('status');
+                $table->timestamp('approved_at')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

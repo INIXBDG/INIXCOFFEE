@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->boolean('status_subscode')->nullable()->after('note_peserta');
-            $table->datetime('tanggal_subscode_masuk')->nullable()->after('status_subscode');
-            $table->text('catatan')->nullable()->after('tanggal_subscode_masuk');
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            Schema::table('nomor_moduls', function (Blueprint $table) {
+                if (!Schema::hasColumn('nomor_moduls', 'status_subscode')) {
+                    $table->boolean('status_subscode')->nullable()->after('note_peserta');
+                }
+                if (!Schema::hasColumn('nomor_moduls', 'tanggal_subscode_masuk')) {
+                    $table->datetime('tanggal_subscode_masuk')->nullable()->after('status_subscode');
+                }
+                if (!Schema::hasColumn('nomor_moduls', 'catatan')) {
+                    $table->text('catatan')->nullable()->after('tanggal_subscode_masuk');
+                }
+            });
+        }
     }
 
     /**

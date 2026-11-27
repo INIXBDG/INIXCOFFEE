@@ -14,12 +14,14 @@ class ChangeBlobFotoToMediumblobInSouvenirsTable extends Migration
      */
     public function up()
     {
-        Schema::table('souvenirs', function (Blueprint $table) {
-            $table->binary('blob_foto')->change();
-        });
+        if (Schema::hasTable('souvenirs') && Schema::hasColumn('souvenirs', 'blob_foto')) {
+            Schema::table('souvenirs', function (Blueprint $table) {
+                $table->binary('blob_foto')->change();
+            });
 
-        // Mengubah tipe kolom menjadi MEDIUMBLOB menggunakan raw SQL
-        DB::statement('ALTER TABLE souvenirs MODIFY COLUMN blob_foto MEDIUMBLOB');
+            // Mengubah tipe kolom menjadi MEDIUMBLOB menggunakan raw SQL
+            DB::statement('ALTER TABLE souvenirs MODIFY COLUMN blob_foto MEDIUMBLOB');
+        }
     }
 
     /**
@@ -29,12 +31,14 @@ class ChangeBlobFotoToMediumblobInSouvenirsTable extends Migration
      */
     public function down()
     {
-        Schema::table('souvenirs', function (Blueprint $table) {
-            $table->binary('blob_foto')->change();
-        });
+        if (Schema::hasTable('souvenirs') && Schema::hasColumn('souvenirs', 'blob_foto')) {
+            Schema::table('souvenirs', function (Blueprint $table) {
+                $table->binary('blob_foto')->change();
+            });
 
-        // Mengubah tipe kolom kembali ke BLOB menggunakan raw SQL
-        DB::statement('ALTER TABLE souvenirs MODIFY COLUMN blob_foto BLOB');
+            // Mengubah tipe kolom kembali ke BLOB menggunakan raw SQL
+            DB::statement('ALTER TABLE souvenirs MODIFY COLUMN blob_foto BLOB');
+        }
     }
 }
 

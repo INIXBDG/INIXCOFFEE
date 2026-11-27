@@ -11,14 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('target_activities', function (Blueprint $table) {
-            $table->integer('DB');
-            $table->integer('PA');
-            $table->integer('PI');
-            $table->integer('Telemarketing');
-            $table->integer('FormM');
-            $table->integer('FormK');
-        });
+        if (Schema::hasTable('target_activities')) {
+            Schema::table('target_activities', function (Blueprint $table) {
+                if (!Schema::hasColumn('target_activities', 'DB')) {
+                    $table->integer('DB');
+                }
+                if (!Schema::hasColumn('target_activities', 'PA')) {
+                    $table->integer('PA');
+                }
+                if (!Schema::hasColumn('target_activities', 'PI')) {
+                    $table->integer('PI');
+                }
+                if (!Schema::hasColumn('target_activities', 'Telemarketing')) {
+                    $table->integer('Telemarketing');
+                }
+                if (!Schema::hasColumn('target_activities', 'FormM')) {
+                    $table->integer('FormM');
+                }
+                if (!Schema::hasColumn('target_activities', 'FormK')) {
+                    $table->integer('FormK');
+                }
+            });
+        }
     }
 
     /**

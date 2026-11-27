@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('lead_projects', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_lead');
-            $table->string('perusahaan_id');
-            $table->decimal('estimasi_nilai', 15, 2);
-            $table->enum('status', ['new', 'negosiasi', 'won', 'lost'])->default('new');
-            $table->string('sales_id'); // Merujuk ke kode_karyawan
-            $table->timestamps();
+        if (!Schema::hasTable('lead_projects')) {
+            Schema::create('lead_projects', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_lead');
+                $table->string('perusahaan_id');
+                $table->decimal('estimasi_nilai', 15, 2);
+                $table->enum('status', ['new', 'negosiasi', 'won', 'lost'])->default('new');
+                $table->string('sales_id'); // Merujuk ke kode_karyawan
+                $table->timestamps();
 
-        });
+            });
+        }
     }
 
     /**

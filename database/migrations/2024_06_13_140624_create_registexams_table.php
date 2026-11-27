@@ -11,22 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('registexams', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_peserta');
-            $table->string('id_exam');
-            $table->string('email');
-            $table->string('kode_exam');
-            $table->date('tanggal_exam');
-            $table->time('pukul');
-            $table->string('nama_perguruan_tinggi')->nullable();
-            $table->string('alamat_perguruan_tinggi')->nullable();
-            $table->string('jurusan')->nullable();
-            $table->string('tahun_lulus')->nullable();
-            $table->string('invoice')->nullable();
-            $table->string('cc')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('registexams')) {
+            Schema::create('registexams', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_peserta');
+                $table->string('id_exam');
+                $table->string('email');
+                $table->string('kode_exam');
+                $table->date('tanggal_exam');
+                $table->time('pukul');
+                $table->string('nama_perguruan_tinggi')->nullable();
+                $table->string('alamat_perguruan_tinggi')->nullable();
+                $table->string('jurusan')->nullable();
+                $table->string('tahun_lulus')->nullable();
+                $table->string('invoice')->nullable();
+                $table->string('cc')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

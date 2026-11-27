@@ -8,10 +8,16 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('project_handovers', function (Blueprint $table) {
-            $table->text('bast_file')->nullable()->change();
-            $table->text('final_report_file')->nullable()->change();
-        });
+        if (Schema::hasTable('project_handovers')) {
+            Schema::table('project_handovers', function (Blueprint $table) {
+                if (Schema::hasColumn('project_handovers', 'bast_file')) {
+                    $table->text('bast_file')->nullable()->change();
+                }
+                if (Schema::hasColumn('project_handovers', 'final_report_file')) {
+                    $table->text('final_report_file')->nullable()->change();
+                }
+            });
+        }
     }
 
     public function down()

@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengajuan_souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_karyawan');
-            $table->unsignedBigInteger('id_vendor');
-            $table->unsignedBigInteger('id_tracking')->nullable();
-            $table->decimal('total_keseluruhan', 15, 2)->nullable();
-            $table->string('invoice')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('pengajuan_souvenirs')) {
+            Schema::create('pengajuan_souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_karyawan');
+                $table->unsignedBigInteger('id_vendor');
+                $table->unsignedBigInteger('id_tracking')->nullable();
+                $table->decimal('total_keseluruhan', 15, 2)->nullable();
+                $table->string('invoice')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

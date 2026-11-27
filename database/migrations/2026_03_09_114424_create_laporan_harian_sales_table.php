@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('laporan_harian_sales', function (Blueprint $table) {
-            $table->id();
-            $table->date('tanggal_pelaksanaan');
-            $table->time('waktu_pelaksanaan');
-            $table->string('tempat_or_media')->nullable();
-            $table->integer('jumlah_peserta_hadir');
-            $table->integer('jumlah_peserta_tidak_hadir')->nullable();
-            $table->string('alasan_peserta_tidak_hadir')->nullable();
-            $table->string('jenis_meeting');
-            $table->foreignId('pic')->nullable()->constrained('karyawans')->nullOnDelete();
-            $table->foreignId('notulis')->nullable()->constrained('karyawans')->nullOnDelete();
-            $table->string('topic');
-            $table->string('catatan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('laporan_harian_sales')) {
+            Schema::create('laporan_harian_sales', function (Blueprint $table) {
+                $table->id();
+                $table->date('tanggal_pelaksanaan');
+                $table->time('waktu_pelaksanaan');
+                $table->string('tempat_or_media')->nullable();
+                $table->integer('jumlah_peserta_hadir');
+                $table->integer('jumlah_peserta_tidak_hadir')->nullable();
+                $table->string('alasan_peserta_tidak_hadir')->nullable();
+                $table->string('jenis_meeting');
+                $table->foreignId('pic')->nullable()->constrained('karyawans')->nullOnDelete();
+                $table->foreignId('notulis')->nullable()->constrained('karyawans')->nullOnDelete();
+                $table->string('topic');
+                $table->string('catatan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

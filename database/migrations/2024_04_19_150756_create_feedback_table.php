@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('feedback', function (Blueprint $table) {
-            $table->id();
-            $table->string('kategori_feedback');
-            $table->string('pertanyaan');
-            $table->string('key');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('feedback')) {
+            Schema::create('feedback', function (Blueprint $table) {
+                $table->id();
+                $table->string('kategori_feedback');
+                $table->string('pertanyaan');
+                $table->string('key');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('year_mappings', function (Blueprint $table) {
-            $table->id();
-            $table->year('year')->index();              // Tahun (2025)
-            $table->tinyInteger('quarter')->index();    // Triwulan (1-4)
-            $table->tinyInteger('month');               // Bulan (1-12)
-            $table->string('theme');                    // Tema Fixed
-            $table->date('planned_date');               // Tanggal D-Day
-            $table->integer('duration_minutes')->default(120);
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if (!Schema::hasTable('year_mappings')) {
+            Schema::create('year_mappings', function (Blueprint $table) {
+                $table->id();
+                $table->year('year')->index();              // Tahun (2025)
+                $table->tinyInteger('quarter')->index();    // Triwulan (1-4)
+                $table->tinyInteger('month');               // Bulan (1-12)
+                $table->string('theme');                    // Tema Fixed
+                $table->date('planned_date');               // Tanggal D-Day
+                $table->integer('duration_minutes')->default(120);
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     /**

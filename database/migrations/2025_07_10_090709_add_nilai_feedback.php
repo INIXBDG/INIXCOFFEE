@@ -11,15 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('nilaifeedbacks', function (Blueprint $table) {
-            $table->string('s1')->nullable();
-            $table->string('s2')->nullable();
-            $table->string('s3')->nullable();
-            $table->string('s4')->nullable();
-            $table->string('s5')->nullable();
-            $table->string('s6')->nullable();
-            $table->text('s7')->nullable();
-        });
+        if (Schema::hasTable('nilaifeedbacks')) {
+            Schema::table('nilaifeedbacks', function (Blueprint $table) {
+                if (!Schema::hasColumn('nilaifeedbacks', 's1')) {
+                    $table->string('s1')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's2')) {
+                    $table->string('s2')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's3')) {
+                    $table->string('s3')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's4')) {
+                    $table->string('s4')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's5')) {
+                    $table->string('s5')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's6')) {
+                    $table->string('s6')->nullable();
+                }
+                if (!Schema::hasColumn('nilaifeedbacks', 's7')) {
+                    $table->text('s7')->nullable();
+                }
+            });
+        }
     }
 
     /**

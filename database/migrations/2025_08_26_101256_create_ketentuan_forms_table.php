@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ketentuan_forms', function (Blueprint $table) {
-            $table->id();
-            $table->text('ketentuan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('ketentuan_forms')) {
+            Schema::create('ketentuan_forms', function (Blueprint $table) {
+                $table->id();
+                $table->text('ketentuan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

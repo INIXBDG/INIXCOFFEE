@@ -11,13 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kontrol_tugas', function (Blueprint $table) {
-            $table->integer('urutan')->nullable()->default(0);
-        });
+        if (Schema::hasTable('kontrol_tugas')) {
+            Schema::table('kontrol_tugas', function (Blueprint $table) {
+                if (!Schema::hasColumn('kontrol_tugas', 'urutan')) {
+                    $table->integer('urutan')->nullable()->default(0);
+                }
+            });
+        }
 
-        Schema::table('kategori_daftar_tugas', function (Blueprint $table) {
-            $table->integer('urutan')->nullable()->default(0);
-        });
+        if (Schema::hasTable('kategori_daftar_tugas')) {
+            Schema::table('kategori_daftar_tugas', function (Blueprint $table) {
+                if (!Schema::hasColumn('kategori_daftar_tugas', 'urutan')) {
+                    $table->integer('urutan')->nullable()->default(0);
+                }
+            });
+        }
     }
 
     /**

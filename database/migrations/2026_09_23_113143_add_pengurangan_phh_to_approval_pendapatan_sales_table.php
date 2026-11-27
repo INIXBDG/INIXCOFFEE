@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
-            $table->decimal('pengurangan_phh', 15, 2)->default(0)->after('biaya_lain_lain');
-        });
+        if (Schema::hasTable('approval_pendapatan_sales')) {
+            Schema::table('approval_pendapatan_sales', function (Blueprint $table) {
+                if (!Schema::hasColumn('approval_pendapatan_sales', 'pengurangan_phh')) {
+                    $table->decimal('pengurangan_phh', 15, 2)->default(0)->after('biaya_lain_lain');
+                }
+            });
+        }
     }
 
     public function down()

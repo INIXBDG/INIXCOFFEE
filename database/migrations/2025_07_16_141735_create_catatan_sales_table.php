@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('catatan_sales', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_aktivitas');
-            $table->text('id_sales');
-            $table->text('catatan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('catatan_sales')) {
+            Schema::create('catatan_sales', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_aktivitas');
+                $table->text('id_sales');
+                $table->text('catatan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

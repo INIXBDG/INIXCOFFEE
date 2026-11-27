@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('form_penilaians', function (Blueprint $table) {
-            $table->string('jenis_form')->after('catatan')->nullable();
-        });
+        if (Schema::hasTable('form_penilaians')) {
+            Schema::table('form_penilaians', function (Blueprint $table) {
+                if (!Schema::hasColumn('form_penilaians', 'jenis_form')) {
+                    $table->string('jenis_form')->after('catatan')->nullable();
+                }
+            });
+        }
     }
 
     /**

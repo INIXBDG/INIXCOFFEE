@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('komplain_pesertas', function (Blueprint $table) {
-            $table->id();
-            $table->text('komplain');
-            $table->date('tanggal_selesai')->nullable();
-            $table->enum('status', ['on progress', 'completed', 'delayed'])->default('on progress');
-            $table->foreignId('nilaifeedback_id')->constrained()->cascadeOnDelete();
-            $table->string('kategori_feedback');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('komplain_pesertas')) {
+            Schema::create('komplain_pesertas', function (Blueprint $table) {
+                $table->id();
+                $table->text('komplain');
+                $table->date('tanggal_selesai')->nullable();
+                $table->enum('status', ['on progress', 'completed', 'delayed'])->default('on progress');
+                $table->foreignId('nilaifeedback_id')->constrained()->cascadeOnDelete();
+                $table->string('kategori_feedback');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

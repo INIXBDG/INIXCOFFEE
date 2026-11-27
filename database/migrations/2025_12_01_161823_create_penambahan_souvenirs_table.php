@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('penambahan_souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_rkm');
-            $table->unsignedBigInteger('id_karyawan');
-            $table->unsignedBigInteger('id_souvenir');
-            $table->string('nama');
-            $table->string('jabatan');
-            $table->integer('qty');
-            $table->date('tanggal');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('penambahan_souvenirs')) {
+            Schema::create('penambahan_souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_rkm');
+                $table->unsignedBigInteger('id_karyawan');
+                $table->unsignedBigInteger('id_souvenir');
+                $table->string('nama');
+                $table->string('jabatan');
+                $table->integer('qty');
+                $table->date('tanggal');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

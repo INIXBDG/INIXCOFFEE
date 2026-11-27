@@ -8,13 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('costs', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('type');
-            $table->enum('status', ['variable', 'fixed']);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('costs')) {
+            Schema::create('costs', function (Blueprint $table) {
+                $table->id();
+                $table->string('name');
+                $table->string('type');
+                $table->enum('status', ['variable', 'fixed']);
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

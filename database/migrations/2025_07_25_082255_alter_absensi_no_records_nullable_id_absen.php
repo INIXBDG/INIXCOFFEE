@@ -11,9 +11,13 @@ return new class extends Migration
      */
 public function up()
 {
-    Schema::table('absensi_no_records', function (Blueprint $table) {
-        $table->unsignedBigInteger('id_absen')->nullable()->change();
-    });
+    if (Schema::hasTable('absensi_no_records')) {
+        Schema::table('absensi_no_records', function (Blueprint $table) {
+            if (Schema::hasColumn('absensi_no_records', 'id_absen')) {
+                $table->unsignedBigInteger('id_absen')->nullable()->change();
+            }
+        });
+    }
 }
 
 public function down()

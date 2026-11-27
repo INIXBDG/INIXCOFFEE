@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kontrol_tugas', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_karyawan');
-            $table->integer('id_DaftarTugas');
-            $table->boolean('status');
-            $table->date('Deadline_Date');
-            $table->string('bukti')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('kontrol_tugas')) {
+            Schema::create('kontrol_tugas', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_karyawan');
+                $table->integer('id_DaftarTugas');
+                $table->boolean('status');
+                $table->date('Deadline_Date');
+                $table->string('bukti')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

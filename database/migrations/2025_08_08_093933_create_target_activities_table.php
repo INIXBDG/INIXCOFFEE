@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('target_activities', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_sales');
-            $table->integer('Contact');
-            $table->integer('Call');
-            $table->integer('Visit');
-            $table->integer('Email');
-            $table->integer('Meet');
-            $table->integer('Incharge');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('target_activities')) {
+            Schema::create('target_activities', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_sales');
+                $table->integer('Contact');
+                $table->integer('Call');
+                $table->integer('Visit');
+                $table->integer('Email');
+                $table->integer('Meet');
+                $table->integer('Incharge');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

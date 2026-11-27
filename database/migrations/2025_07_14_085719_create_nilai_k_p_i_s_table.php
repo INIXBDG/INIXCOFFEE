@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('nilai_k_p_i_s', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_evaluator');
-            $table->integer('id_evaluated');
-            $table->string('kode_form');
-            $table->string('kode_kategori');
-            $table->string('name_variabel');
-            $table->text('pesan')->nullable();
-            $table->integer('nilai')->nullable();
-            $table->string('jenis_penilaian');
-            $table->boolean('status');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('nilai_k_p_i_s')) {
+            Schema::create('nilai_k_p_i_s', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_evaluator');
+                $table->integer('id_evaluated');
+                $table->string('kode_form');
+                $table->string('kode_kategori');
+                $table->string('name_variabel');
+                $table->text('pesan')->nullable();
+                $table->integer('nilai')->nullable();
+                $table->string('jenis_penilaian');
+                $table->boolean('status');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

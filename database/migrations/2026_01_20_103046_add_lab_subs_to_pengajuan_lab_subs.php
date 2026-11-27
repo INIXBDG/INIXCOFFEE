@@ -11,10 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('pengajuan_lab_subs', function (Blueprint $table) {
-            $table->json('lab_snapshot')->nullable()->after('id_labs');
-            $table->json('subs_snapshot')->nullable()->after('id_subs');
-        });
+        if (Schema::hasTable('pengajuan_lab_subs')) {
+            Schema::table('pengajuan_lab_subs', function (Blueprint $table) {
+                if (!Schema::hasColumn('pengajuan_lab_subs', 'lab_snapshot')) {
+                    $col = $table->json('lab_snapshot')->nullable();
+                    if (Schema::hasColumn('pengajuan_lab_subs', 'id_labs')) {
+                        $col->after('id_labs');
+                    }
+                }
+                if (
+                    Schema::hasColumn('pengajuan_lab_subs', 'id_subs')
+                    && !Schema::hasColumn('pengajuan_lab_subs', 'subs_snapshot')
+                ) {
+                    $table->json('subs_snapshot')->nullable()->after('id_subs');
+                }
+            });
+        }
     }
 
 };

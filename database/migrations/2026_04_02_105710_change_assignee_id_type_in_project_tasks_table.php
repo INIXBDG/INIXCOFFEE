@@ -13,10 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('project_tasks', function (Blueprint $table) {
-            // Mengubah tipe kolom menjadi string agar dapat menyimpan kode_karyawan (misal: 'MA')
-            $table->string('assignee_id')->nullable()->change();
-        });
+        if (Schema::hasTable('project_tasks')) {
+            Schema::table('project_tasks', function (Blueprint $table) {
+                // Mengubah tipe kolom menjadi string agar dapat menyimpan kode_karyawan (misal: 'MA')
+                if (Schema::hasColumn('project_tasks', 'assignee_id')) {
+                    $table->string('assignee_id')->nullable()->change();
+                }
+            });
+        }
     }
 
     /**

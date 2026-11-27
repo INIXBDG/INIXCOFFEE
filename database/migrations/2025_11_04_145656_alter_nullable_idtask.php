@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('daily_activities', function (Blueprint $table) {
-            $table->bigInteger('id_task')->nullable()->change();
-        });
+        if (Schema::hasTable('daily_activities')) {
+            Schema::table('daily_activities', function (Blueprint $table) {
+                if (Schema::hasColumn('daily_activities', 'id_task')) {
+                    $table->bigInteger('id_task')->nullable()->change();
+                }
+            });
+        }
     }
 
     /**

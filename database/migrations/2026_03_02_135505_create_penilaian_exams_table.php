@@ -13,15 +13,17 @@ class CreatePenilaianExamsTable extends Migration
      */
     public function up()
     {
-        Schema::create('penilaian_exams', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_rkm');
-            $table->tinyInteger('nilai_emote')->comment('Nilai representasi emote dari 1 hingga 4');
-            $table->timestamps();
+        if (!Schema::hasTable('penilaian_exams')) {
+            Schema::create('penilaian_exams', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_rkm');
+                $table->tinyInteger('nilai_emote')->comment('Nilai representasi emote dari 1 hingga 4');
+                $table->timestamps();
 
-            // Mendefinisikan Foreign Key
-            $table->foreign('id_rkm')->references('id')->on('r_k_m_s')->onDelete('cascade');
-        });
+                // Mendefinisikan Foreign Key
+                $table->foreign('id_rkm')->references('id')->on('r_k_m_s')->onDelete('cascade');
+            });
+        }
     }
 
     /**

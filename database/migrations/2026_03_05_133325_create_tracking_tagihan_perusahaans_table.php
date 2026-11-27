@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_tagihan_perusahaans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_tagihan_perusahaan')->nullable()->constrained('tagihan_perusahaans')->nullOnDelete();
-            $table->decimal( 'nominal', 15, 2)->nullable();
-            $table->string('tracking')->nullable();
-            $table->enum('status', ['proses', 'pending', 'selesai', 'telat'])->default('proses');
-            $table->date('tanggal_selesai')->nullable();
-            $table->string('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_tagihan_perusahaans')) {
+            Schema::create('tracking_tagihan_perusahaans', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_tagihan_perusahaan')->nullable()->constrained('tagihan_perusahaans')->nullOnDelete();
+                $table->decimal( 'nominal', 15, 2)->nullable();
+                $table->string('tracking')->nullable();
+                $table->enum('status', ['proses', 'pending', 'selesai', 'telat'])->default('proses');
+                $table->date('tanggal_selesai')->nullable();
+                $table->string('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('daily_activities', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('user_id');
-            $table->bigInteger('id_task');
-            $table->string('activity');
-            $table->enum('status', ['On Progres', 'On Progres Dilanjutkan Besok','Gagal','Selesai'])->default('On Progres');
-            $table->text('description')->nullable();
-            $table->string('doc')->nullable();
-            $table->date('start_date')->default(now());
-            $table->timestamp('on_progress_at')->nullable();
-            $table->timestamp('on_progress_next_day_at')->nullable();
-            $table->timestamp('failed_at')->nullable();
-            $table->timestamp('completed_at')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('daily_activities')) {
+            Schema::create('daily_activities', function (Blueprint $table) {
+                $table->id();
+                $table->bigInteger('user_id');
+                $table->bigInteger('id_task');
+                $table->string('activity');
+                $table->enum('status', ['On Progres', 'On Progres Dilanjutkan Besok','Gagal','Selesai'])->default('On Progres');
+                $table->text('description')->nullable();
+                $table->string('doc')->nullable();
+                $table->date('start_date')->default(now());
+                $table->timestamp('on_progress_at')->nullable();
+                $table->timestamp('on_progress_next_day_at')->nullable();
+                $table->timestamp('failed_at')->nullable();
+                $table->timestamp('completed_at')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

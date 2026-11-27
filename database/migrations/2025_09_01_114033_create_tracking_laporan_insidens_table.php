@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_laporan_insidens', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_laporanInsiden');
-            $table->integer('responder')->nullable();
-            $table->text('solusi')->nullable();
-            $table->date('tanggal_response');
-            $table->time('waktu_response');
-            $table->enum('status', ['Baru','Dalam Penanganan','Selesai','Tidak Ditangani'])->default('Baru');
-            $table->text('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_laporan_insidens')) {
+            Schema::create('tracking_laporan_insidens', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_laporanInsiden');
+                $table->integer('responder')->nullable();
+                $table->text('solusi')->nullable();
+                $table->date('tanggal_response');
+                $table->time('waktu_response');
+                $table->enum('status', ['Baru','Dalam Penanganan','Selesai','Tidak Ditangani'])->default('Baru');
+                $table->text('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

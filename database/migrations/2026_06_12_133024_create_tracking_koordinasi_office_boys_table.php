@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tracking_koordinasi_office_boys', function (Blueprint $table) {
-            $table->id();
-            $table->integer('koordinasi_id');
-            $table->string('status');
-            $table->integer('updated_by');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tracking_koordinasi_office_boys')) {
+            Schema::create('tracking_koordinasi_office_boys', function (Blueprint $table) {
+                $table->id();
+                $table->integer('koordinasi_id');
+                $table->string('status');
+                $table->integer('updated_by');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

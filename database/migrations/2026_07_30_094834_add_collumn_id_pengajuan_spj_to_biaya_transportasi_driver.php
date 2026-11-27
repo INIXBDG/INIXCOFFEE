@@ -9,19 +9,34 @@ return new class extends Migration {
 
     public function up(): void
     {
-        Schema::table('biaya_transportasi_drivers', function (Blueprint $table) {
-            $table->bigInteger('id_pengajuan_spj')->after('id_pickup_driver')->nullable();
-        });
+        if (Schema::hasTable('biaya_transportasi_drivers')) {
+            if (!Schema::hasColumn('biaya_transportasi_drivers', 'id_pengajuan_spj')) {
+                Schema::table('biaya_transportasi_drivers', function (Blueprint $table) {
+                    $col = $table->bigInteger('id_pengajuan_spj')->nullable();
+                    if (Schema::hasColumn('biaya_transportasi_drivers', 'id_pickup_driver')) {
+                        $col->after('id_pickup_driver');
+                    }
+                });
+            }
 
-        DB::statement('ALTER TABLE biaya_transportasi_drivers MODIFY id_pickup_driver INT NULL');
+            if (Schema::hasColumn('biaya_transportasi_drivers', 'id_pickup_driver')) {
+                DB::statement('ALTER TABLE biaya_transportasi_drivers MODIFY id_pickup_driver INT NULL');
+            }
+        }
     }
 
     public function down(): void
     {
-        Schema::table('biaya_transportasi_drivers', function (Blueprint $table) {
-            $table->dropColumn('id_pengajuan_spj');
-        });
+        if (Schema::hasTable('biaya_transportasi_drivers')) {
+            if (Schema::hasColumn('biaya_transportasi_drivers', 'id_pengajuan_spj')) {
+                Schema::table('biaya_transportasi_drivers', function (Blueprint $table) {
+                    $table->dropColumn('id_pengajuan_spj');
+                });
+            }
 
-        DB::statement('ALTER TABLE biaya_transportasi_drivers MODIFY id_pickup_driver INT NOT NULL');
+            if (Schema::hasColumn('biaya_transportasi_drivers', 'id_pickup_driver')) {
+                DB::statement('ALTER TABLE biaya_transportasi_drivers MODIFY id_pickup_driver INT NOT NULL');
+            }
+        }
     }
 };

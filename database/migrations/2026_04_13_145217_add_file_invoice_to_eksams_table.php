@@ -8,10 +8,14 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('eksams', function (Blueprint $table) {
-            // Mengubah tipe data menjadi text/json untuk menyimpan array
-            $table->text('file_invoice')->nullable()->after('invoice');
-        });
+        if (Schema::hasTable('eksams')) {
+            Schema::table('eksams', function (Blueprint $table) {
+                // Mengubah tipe data menjadi text/json untuk menyimpan array
+                if (!Schema::hasColumn('eksams', 'file_invoice')) {
+                    $table->text('file_invoice')->nullable()->after('invoice');
+                }
+            });
+        }
     }
 
     public function down()

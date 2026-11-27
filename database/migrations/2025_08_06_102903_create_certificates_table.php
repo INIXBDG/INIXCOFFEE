@@ -11,31 +11,33 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('certificates', function (Blueprint $table) {
-            $table->id(); 
-            $table->string('nomor_sertifikat')->unique();
-            
-            $table->unsignedBigInteger('rkm_id');
-            $table->unsignedBigInteger('id_peserta');
-            
-            $table->string('nama_peserta');
-            $table->string('nama_materi');
-            $table->string('tanggal_pelatihan');
-            $table->string('pdf_path')->nullable();
-            
-            $table->timestamps(); 
+        if (!Schema::hasTable('certificates')) {
+            Schema::create('certificates', function (Blueprint $table) {
+                $table->id(); 
+                $table->string('nomor_sertifikat')->unique();
 
-            $table->foreign('rkm_id')
-                  ->references('id')
-                  ->on('r_k_m_s')
-                  ->onDelete('cascade');
+                $table->unsignedBigInteger('rkm_id');
+                $table->unsignedBigInteger('id_peserta');
+
+                $table->string('nama_peserta');
+                $table->string('nama_materi');
+                $table->string('tanggal_pelatihan');
+                $table->string('pdf_path')->nullable();
+
+                $table->timestamps(); 
+
+                $table->foreign('rkm_id')
+                      ->references('id')
+                      ->on('r_k_m_s')
+                      ->onDelete('cascade');
 
 
-            $table->foreign('id_peserta')
-                  ->references('id')
-                  ->on('pesertas')
-                  ->onDelete('cascade');
-        });
+                $table->foreign('id_peserta')
+                      ->references('id')
+                      ->on('pesertas')
+                      ->onDelete('cascade');
+            });
+        }
     }
 
     public function down(): void

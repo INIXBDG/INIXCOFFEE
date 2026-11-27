@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ide_inovasis', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_karyawan');
-            $table->string('judul');
-            $table->text('deskripsi');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('ide_inovasis')) {
+            Schema::create('ide_inovasis', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_karyawan');
+                $table->string('judul');
+                $table->text('deskripsi');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

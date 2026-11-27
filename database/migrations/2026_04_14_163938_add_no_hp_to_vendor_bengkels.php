@@ -11,15 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vendor_bengkels', function (Blueprint $table) {
-            $table->string('no_hp')->nullable();
-            $table->string('no_rekening')->nullable();
-            $table->text('alamat')->nullable();
-        });
+        if (Schema::hasTable('vendor_bengkels')) {
+            Schema::table('vendor_bengkels', function (Blueprint $table) {
+                if (!Schema::hasColumn('vendor_bengkels', 'no_hp')) {
+                    $table->string('no_hp')->nullable();
+                }
+                if (!Schema::hasColumn('vendor_bengkels', 'no_rekening')) {
+                    $table->string('no_rekening')->nullable();
+                }
+                if (!Schema::hasColumn('vendor_bengkels', 'alamat')) {
+                    $table->text('alamat')->nullable();
+                }
+            });
+        }
 
-        Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
-            $table->string('id_vendor')->nullable();
-        });
+        if (Schema::hasTable('perbaikan_kendaraans')) {
+            Schema::table('perbaikan_kendaraans', function (Blueprint $table) {
+                if (!Schema::hasColumn('perbaikan_kendaraans', 'id_vendor')) {
+                    $table->string('id_vendor')->nullable();
+                }
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_pengajuan_souvenirs', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_pengajuan_souvenir');
-            $table->unsignedBigInteger('id_souvenir');
-            $table->integer('pax');
-            $table->decimal('harga_satuan', 15, 2);
-            $table->decimal('harga_total', 15, 2);
-        });
+        if (!Schema::hasTable('detail_pengajuan_souvenirs')) {
+            Schema::create('detail_pengajuan_souvenirs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_pengajuan_souvenir');
+                $table->unsignedBigInteger('id_souvenir');
+                $table->integer('pax');
+                $table->decimal('harga_satuan', 15, 2);
+                $table->decimal('harga_total', 15, 2);
+            });
+        }
     }
 
     /**

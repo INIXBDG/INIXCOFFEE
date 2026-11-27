@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('survey_kepuasans', function (Blueprint $table) {
-            $table->string('ticket_id')->nullable()->after('id_user');
-        });
+        if (Schema::hasTable('survey_kepuasans')) {
+            Schema::table('survey_kepuasans', function (Blueprint $table) {
+                if (!Schema::hasColumn('survey_kepuasans', 'ticket_id')) {
+                    $table->string('ticket_id')->nullable()->after('id_user');
+                }
+            });
+        }
     }
 
     /**

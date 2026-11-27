@@ -11,9 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('target_k_p_i_s', function (Blueprint $table) {
-            $table->dropColumn(['jabatan', 'divisi', 'jangka_target', 'detail_jangka', 'tipe_target', 'nilai_target']);
-        });
+        if (Schema::hasTable('target_k_p_i_s')) {
+            $cols = array_values(array_filter(
+                ['jabatan', 'divisi', 'jangka_target', 'detail_jangka', 'tipe_target', 'nilai_target'],
+                fn (string $col) => Schema::hasColumn('target_k_p_i_s', $col)
+            ));
+
+            if (!empty($cols)) {
+                Schema::table('target_k_p_i_s', function (Blueprint $table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+            }
+        }
     }
 
     /**
@@ -21,13 +30,27 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('target_k_p_i_s', function (Blueprint $table) {
-            $table->string('jabatan')->nullable();
-            $table->string('divisi')->nullable();
-            $table->text('jangka_target')->nullable();
-            $table->text('detail_jangka')->nullable();
-            $table->string('tipe_target')->nullable();
-            $table->bigInteger('nilai_target')->nullable();
-        });
+        if (Schema::hasTable('target_k_p_i_s')) {
+            Schema::table('target_k_p_i_s', function (Blueprint $table) {
+                if (!Schema::hasColumn('target_k_p_i_s', 'jabatan')) {
+                    $table->string('jabatan')->nullable();
+                }
+                if (!Schema::hasColumn('target_k_p_i_s', 'divisi')) {
+                    $table->string('divisi')->nullable();
+                }
+                if (!Schema::hasColumn('target_k_p_i_s', 'jangka_target')) {
+                    $table->text('jangka_target')->nullable();
+                }
+                if (!Schema::hasColumn('target_k_p_i_s', 'detail_jangka')) {
+                    $table->text('detail_jangka')->nullable();
+                }
+                if (!Schema::hasColumn('target_k_p_i_s', 'tipe_target')) {
+                    $table->string('tipe_target')->nullable();
+                }
+                if (!Schema::hasColumn('target_k_p_i_s', 'nilai_target')) {
+                    $table->bigInteger('nilai_target')->nullable();
+                }
+            });
+        }
     }
 };

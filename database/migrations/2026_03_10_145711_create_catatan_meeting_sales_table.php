@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('catatan_meeting_sales', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('laporan_id')->constrained('laporan_harian_sales')->cascadeOnDelete();
-            $table->foreignId('sales_id')->constrained('karyawans')->cascadeOnDelete();
-            $table->string('catatan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('catatan_meeting_sales')) {
+            Schema::create('catatan_meeting_sales', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('laporan_id')->constrained('laporan_harian_sales')->cascadeOnDelete();
+                $table->foreignId('sales_id')->constrained('karyawans')->cascadeOnDelete();
+                $table->string('catatan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

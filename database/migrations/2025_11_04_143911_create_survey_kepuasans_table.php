@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('survey_kepuasans', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_user');
-            $table->integer('q1');
-            $table->string('q2');
-            $table->text('q3')->nullable();
-            $table->integer('q4');
-            $table->text('q5')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('survey_kepuasans')) {
+            Schema::create('survey_kepuasans', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_user');
+                $table->integer('q1');
+                $table->string('q2');
+                $table->text('q3')->nullable();
+                $table->integer('q4');
+                $table->text('q5')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

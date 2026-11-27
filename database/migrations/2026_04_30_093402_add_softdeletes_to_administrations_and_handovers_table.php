@@ -8,13 +8,21 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('project_administrations', function (Blueprint $table) {
-            $table->softDeletes();
-        });
+        if (Schema::hasTable('project_administrations')) {
+            Schema::table('project_administrations', function (Blueprint $table) {
+                if (!Schema::hasColumn('project_administrations', 'deleted_at')) {
+                    $table->softDeletes();
+                }
+            });
+        }
 
-        Schema::table('project_handovers', function (Blueprint $table) {
-            $table->softDeletes();
-        });
+        if (Schema::hasTable('project_handovers')) {
+            Schema::table('project_handovers', function (Blueprint $table) {
+                if (!Schema::hasColumn('project_handovers', 'deleted_at')) {
+                    $table->softDeletes();
+                }
+            });
+        }
     }
 
     public function down()

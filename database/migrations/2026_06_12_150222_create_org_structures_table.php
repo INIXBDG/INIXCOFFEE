@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('org_structures', function (Blueprint $table) {
-            $table->id();
-            $table->string('jabatan');
-            $table->string('divisi')->nullable();
-            $table->json('karyawan_ids')->nullable();
-            $table->foreignId('parent_id')->nullable()->constrained('org_structures')->nullOnDelete();
-            $table->integer('sort_order')->default(0);
-            $table->json('additional_parents')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('org_structures')) {
+            Schema::create('org_structures', function (Blueprint $table) {
+                $table->id();
+                $table->string('jabatan');
+                $table->string('divisi')->nullable();
+                $table->json('karyawan_ids')->nullable();
+                $table->foreignId('parent_id')->nullable()->constrained('org_structures')->nullOnDelete();
+                $table->integer('sort_order')->default(0);
+                $table->json('additional_parents')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

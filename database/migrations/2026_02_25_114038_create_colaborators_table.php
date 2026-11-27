@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('colaborators', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_partner');
-            $table->string('title');
-            $table->string('type');
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->string('status');
-            $table->text('desc');
-            $table->string('document_mou')->nullable();
-            $table->string('quartal')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('colaborators')) {
+            Schema::create('colaborators', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_partner');
+                $table->string('title');
+                $table->string('type');
+                $table->date('start_date');
+                $table->date('end_date');
+                $table->string('status');
+                $table->text('desc');
+                $table->string('document_mou')->nullable();
+                $table->string('quartal')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

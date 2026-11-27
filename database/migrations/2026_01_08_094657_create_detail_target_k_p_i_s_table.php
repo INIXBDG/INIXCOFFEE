@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('detail_target_k_p_i_s', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_targetKPI');
-            $table->string('jabatan')->nullable();
-            $table->string('divisi')->nullable();
-            $table->text('jangka_target')->nullable();
-            $table->text('detail_jangka')->nullable();
-            $table->string('tipe_target')->nullable();
-            $table->bigInteger('nilai_target')->nullable();
-            $table->bigInteger('manual_value')->nullable();
-            $table->string('manual_document')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('detail_target_k_p_i_s')) {
+            Schema::create('detail_target_k_p_i_s', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('id_targetKPI');
+                $table->string('jabatan')->nullable();
+                $table->string('divisi')->nullable();
+                $table->text('jangka_target')->nullable();
+                $table->text('detail_jangka')->nullable();
+                $table->string('tipe_target')->nullable();
+                $table->bigInteger('nilai_target')->nullable();
+                $table->bigInteger('manual_value')->nullable();
+                $table->string('manual_document')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

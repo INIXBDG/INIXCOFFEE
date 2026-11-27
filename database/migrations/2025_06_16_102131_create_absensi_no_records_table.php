@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('absensi_no_records', function (Blueprint $table) {
-            $table->id();
-            $table->integer('id_karyawan');
-            $table->string('jenis_PK');
-            $table->string('kendala')->nullable();
-            $table->integer('id_absen');
-            $table->string('bukti_gambar')->nullable();
-            $table->text('kronologi')->nullable();
-            $table->string('alasan_approval')->nullable();
-            $table->integer('approval');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('absensi_no_records')) {
+            Schema::create('absensi_no_records', function (Blueprint $table) {
+                $table->id();
+                $table->integer('id_karyawan');
+                $table->string('jenis_PK');
+                $table->string('kendala')->nullable();
+                $table->integer('id_absen');
+                $table->string('bukti_gambar')->nullable();
+                $table->text('kronologi')->nullable();
+                $table->string('alasan_approval')->nullable();
+                $table->integer('approval');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

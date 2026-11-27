@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('lemburs', function (Blueprint $table) {
-            $table->unsignedBigInteger('id_hitung_lembur')->nullable(); // Adjust the type as needed
-        });
+        if (Schema::hasTable('lemburs')) {
+            Schema::table('lemburs', function (Blueprint $table) {
+                if (!Schema::hasColumn('lemburs', 'id_hitung_lembur')) {
+                    $table->unsignedBigInteger('id_hitung_lembur')->nullable();
+                } // Adjust the type as needed
+            });
+        }
     }
 
 

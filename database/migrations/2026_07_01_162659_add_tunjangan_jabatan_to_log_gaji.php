@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('log_gajis', function (Blueprint $table) {
-            $table->decimal('tunjangan_jabatan', 15, 2)->default(0)->after('gaji');
-        });
+        if (Schema::hasTable('log_gajis')) {
+            Schema::table('log_gajis', function (Blueprint $table) {
+                if (!Schema::hasColumn('log_gajis', 'tunjangan_jabatan')) {
+                    $table->decimal('tunjangan_jabatan', 15, 2)->default(0)->after('gaji');
+                }
+            });
+        }
     }
 
     /**

@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('activity_logs', function (Blueprint $table) {
-            $table->boolean('is_up')->nullable();
-            $table->integer('response_time_ms')->nullable();
-            $table->timestamp('checked_at')->nullable();
-        });
+        if (Schema::hasTable('activity_logs')) {
+            Schema::table('activity_logs', function (Blueprint $table) {
+                if (!Schema::hasColumn('activity_logs', 'is_up')) {
+                    $table->boolean('is_up')->nullable();
+                }
+                if (!Schema::hasColumn('activity_logs', 'response_time_ms')) {
+                    $table->integer('response_time_ms')->nullable();
+                }
+                if (!Schema::hasColumn('activity_logs', 'checked_at')) {
+                    $table->timestamp('checked_at')->nullable();
+                }
+            });
+        }
     }
 
     /**
@@ -23,6 +31,17 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activity_logs');
+        if (Schema::hasTable('activity_logs')) {
+            $cols = array_values(array_filter(
+                ['is_up', 'response_time_ms', 'checked_at'],
+                fn (string $col) => Schema::hasColumn('activity_logs', $col)
+            ));
+
+            if (!empty($cols)) {
+                Schema::table('activity_logs', function (Blueprint $table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+            }
+        }
     }
 };

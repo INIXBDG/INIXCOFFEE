@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('checklist_eksams', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('id_exam')->constrained('eksams')->cascadeOnDelete();
-            $table->integer('status');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('checklist_eksams')) {
+            Schema::create('checklist_eksams', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('id_exam')->constrained('eksams')->cascadeOnDelete();
+                $table->integer('status');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

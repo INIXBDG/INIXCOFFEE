@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('peluangs', function (Blueprint $table) {
-            $table->softDeletes();
-            $table->string('deleted_by')->nullable();
-        });
+        if (Schema::hasTable('peluangs')) {
+            Schema::table('peluangs', function (Blueprint $table) {
+                if (!Schema::hasColumn('peluangs', 'deleted_at')) {
+                    $table->softDeletes();
+                }
+                if (!Schema::hasColumn('peluangs', 'deleted_by')) {
+                    $table->string('deleted_by')->nullable();
+                }
+            });
+        }
     }
 
     /**

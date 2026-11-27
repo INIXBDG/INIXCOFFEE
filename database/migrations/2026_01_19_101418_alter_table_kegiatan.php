@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kegiatans', function (Blueprint $table) {
-            $table->enum('tipe',['kegiatan', 'pembelian']);
-            $table->text('id_peserta')->nullable();
-        });
+        if (Schema::hasTable('kegiatans')) {
+            Schema::table('kegiatans', function (Blueprint $table) {
+                if (!Schema::hasColumn('kegiatans', 'tipe')) {
+                    $table->enum('tipe',['kegiatan', 'pembelian']);
+                }
+                if (!Schema::hasColumn('kegiatans', 'id_peserta')) {
+                    $table->text('id_peserta')->nullable();
+                }
+            });
+        }
     }
 
     /**

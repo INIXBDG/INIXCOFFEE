@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('nilai_k_p_i_s', function (Blueprint $table) {
-            $table->timestamp('finished_at')->nullable()->after('updated_at');
-        });
+        if (Schema::hasTable('nilai_k_p_i_s')) {
+            Schema::table('nilai_k_p_i_s', function (Blueprint $table) {
+                if (!Schema::hasColumn('nilai_k_p_i_s', 'finished_at')) {
+                    $table->timestamp('finished_at')->nullable()->after('updated_at');
+                }
+            });
+        }
     }
 
     /**

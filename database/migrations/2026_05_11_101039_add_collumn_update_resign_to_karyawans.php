@@ -10,10 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::table('karyawans', function (Blueprint $table) {
-            $table->dateTime('resigned_at')->nullable();
-            $table->text('alasan_resign')->nullable();
-        });
+        if (Schema::hasTable('karyawans')) {
+            Schema::table('karyawans', function (Blueprint $table) {
+                if (!Schema::hasColumn('karyawans', 'resigned_at')) {
+                    $table->dateTime('resigned_at')->nullable();
+                }
+                if (!Schema::hasColumn('karyawans', 'alasan_resign')) {
+                    $table->text('alasan_resign')->nullable();
+                }
+            });
+        }
     }
 
     /**

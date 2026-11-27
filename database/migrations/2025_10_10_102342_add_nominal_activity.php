@@ -11,11 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('aktivitas', function (Blueprint $table) {
-            $table->integer('pax')->nullable();
-            $table->decimal('harga', 15, 2)->nullable();
-            $table->decimal('total', 15, 2)->nullable();
-        });
+        if (Schema::hasTable('aktivitas')) {
+            Schema::table('aktivitas', function (Blueprint $table) {
+                if (!Schema::hasColumn('aktivitas', 'pax')) {
+                    $table->integer('pax')->nullable();
+                }
+                if (!Schema::hasColumn('aktivitas', 'harga')) {
+                    $table->decimal('harga', 15, 2)->nullable();
+                }
+                if (!Schema::hasColumn('aktivitas', 'total')) {
+                    $table->decimal('total', 15, 2)->nullable();
+                }
+            });
+        }
     }
 
     /**

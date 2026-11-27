@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hasilexams', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_peserta');
-            $table->string('id_registexam');
-            $table->string('hasil');
-            $table->string('pdf');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('hasilexams')) {
+            Schema::create('hasilexams', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_peserta');
+                $table->string('id_registexam');
+                $table->string('hasil');
+                $table->string('pdf');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

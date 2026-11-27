@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kegiatans', function (Blueprint $table) {
-            $table->id();
-            $table->text('nama_kegiatan');
-            $table->dateTime('waktu_kegiatan')->nullable();
-            $table->text('lama_kegiatan')->nullable();
-            $table->text('pic')->nullable();
-            $table->enum('status', ['Diajukan', 'Menunggu', 'Approved', 'Pencairan', 'Selesai'])->default('Diajukan');
-            $table->dateTime('menunggu')->nullable();
-            $table->dateTime('approved')->nullable();
-            $table->dateTime('pencairan')->nullable();
-            $table->dateTime('selesai')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('kegiatans')) {
+            Schema::create('kegiatans', function (Blueprint $table) {
+                $table->id();
+                $table->text('nama_kegiatan');
+                $table->dateTime('waktu_kegiatan')->nullable();
+                $table->text('lama_kegiatan')->nullable();
+                $table->text('pic')->nullable();
+                $table->enum('status', ['Diajukan', 'Menunggu', 'Approved', 'Pencairan', 'Selesai'])->default('Diajukan');
+                $table->dateTime('menunggu')->nullable();
+                $table->dateTime('approved')->nullable();
+                $table->dateTime('pencairan')->nullable();
+                $table->dateTime('selesai')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

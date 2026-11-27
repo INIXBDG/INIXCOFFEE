@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invoices', function (Blueprint $table) {
-            $table->id();
-            $table->string('invoice_number')->unique();
-            $table->date('tanggal_invoice');
-            $table->foreignId('id_rkm')->constrained('r_k_m_s')->onDelete('cascade');
-            $table->decimal('amount', 15, 2);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('invoices')) {
+            Schema::create('invoices', function (Blueprint $table) {
+                $table->id();
+                $table->string('invoice_number')->unique();
+                $table->date('tanggal_invoice');
+                $table->foreignId('id_rkm')->constrained('r_k_m_s')->onDelete('cascade');
+                $table->decimal('amount', 15, 2);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

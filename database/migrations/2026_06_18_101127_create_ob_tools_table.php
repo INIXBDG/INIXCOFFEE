@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ob_tools', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_alat');
-            $table->string('kategori');
-            $table->integer('qty');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('ob_tools')) {
+            Schema::create('ob_tools', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_alat');
+                $table->string('kategori');
+                $table->integer('qty');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

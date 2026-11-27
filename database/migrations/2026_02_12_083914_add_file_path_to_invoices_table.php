@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->string('file_path')->after('account_number')->nullable();
-        });
+        if (Schema::hasTable('invoices')) {
+            Schema::table('invoices', function (Blueprint $table) {
+                if (!Schema::hasColumn('invoices', 'file_path')) {
+                    $table->string('file_path')->after('account_number')->nullable();
+                }
+            });
+        }
     }
 
     /**

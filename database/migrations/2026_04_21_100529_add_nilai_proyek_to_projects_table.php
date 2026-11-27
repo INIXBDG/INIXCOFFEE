@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->decimal('nilai_proyek', 15, 2)->nullable()->after('phase');
-            $table->unsignedBigInteger('lead_id')->nullable()->after('id');
-        });
+        if (Schema::hasTable('projects')) {
+            Schema::table('projects', function (Blueprint $table) {
+                if (!Schema::hasColumn('projects', 'nilai_proyek')) {
+                    $table->decimal('nilai_proyek', 15, 2)->nullable()->after('phase');
+                }
+                if (!Schema::hasColumn('projects', 'lead_id')) {
+                    $table->unsignedBigInteger('lead_id')->nullable()->after('id');
+                }
+            });
+        }
     }
 
     /**

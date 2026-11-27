@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->date('tanggal_awal')->nullable();
-            $table->date('tanggal_akhir')->nullable();
-        });
+        if (Schema::hasTable('projects')) {
+            Schema::table('projects', function (Blueprint $table) {
+                if (!Schema::hasColumn('projects', 'tanggal_awal')) {
+                    $table->date('tanggal_awal')->nullable();
+                }
+                if (!Schema::hasColumn('projects', 'tanggal_akhir')) {
+                    $table->date('tanggal_akhir')->nullable();
+                }
+            });
+        }
     }
 
     /**

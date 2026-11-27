@@ -8,9 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('analysis_year_descriptions', function (Blueprint $table) {
-            $table->text('note')->nullable()->after('description');
-        });
+        if (Schema::hasTable('analysis_year_descriptions')) {
+            Schema::table('analysis_year_descriptions', function (Blueprint $table) {
+                if (!Schema::hasColumn('analysis_year_descriptions', 'note')) {
+                    $table->text('note')->nullable()->after('description');
+                }
+            });
+        }
     }
 
     public function down(): void

@@ -8,10 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('nomor_moduls', function (Blueprint $table) {
-            $table->text('note_modul')->nullable();
-            $table->text('note_peserta')->nullable();
-        });
+        if (Schema::hasTable('nomor_moduls')) {
+            Schema::table('nomor_moduls', function (Blueprint $table) {
+                if (!Schema::hasColumn('nomor_moduls', 'note_modul')) {
+                    $table->text('note_modul')->nullable();
+                }
+                if (!Schema::hasColumn('nomor_moduls', 'note_peserta')) {
+                    $table->text('note_peserta')->nullable();
+                }
+            });
+        }
     }
 
     public function down(): void

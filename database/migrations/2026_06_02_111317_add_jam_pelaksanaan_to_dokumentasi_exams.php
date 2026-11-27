@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('dokumentasi_exams', function (Blueprint $table) {
-            $table->time('jam_pelaksanaan')->nullable()->after('tanggal_pelaksanaan');
-        });
+        if (Schema::hasTable('dokumentasi_exams')) {
+            Schema::table('dokumentasi_exams', function (Blueprint $table) {
+                if (!Schema::hasColumn('dokumentasi_exams', 'jam_pelaksanaan')) {
+                    $table->time('jam_pelaksanaan')->nullable()->after('tanggal_pelaksanaan');
+                }
+            });
+        }
     }
 
     /**

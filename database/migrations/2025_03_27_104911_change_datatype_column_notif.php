@@ -11,12 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('notifs', function (Blueprint $table) {
+        if (Schema::hasTable('notifs')) {
+            Schema::table('notifs', function (Blueprint $table) {
 
-            $table->date('tanggal_awal')->change();
-            $table->date('tanggal_akhir')->change();
+                if (Schema::hasColumn('notifs', 'tanggal_awal')) {
+                    $table->date('tanggal_awal')->change();
+                }
+                if (Schema::hasColumn('notifs', 'tanggal_akhir')) {
+                    $table->date('tanggal_akhir')->change();
+                }
 
-        });
+            });
+        }
     }
 
     /**

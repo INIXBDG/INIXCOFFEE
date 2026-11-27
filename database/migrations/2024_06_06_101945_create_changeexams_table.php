@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('changeexams', function (Blueprint $table) {
-            $table->id();
-            $table->string('id_exam');
-            $table->string('keterangan');
-            $table->string('status');
-            $table->string('kode_karyawan');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('changeexams')) {
+            Schema::create('changeexams', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_exam');
+                $table->string('keterangan');
+                $table->string('status');
+                $table->string('kode_karyawan');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

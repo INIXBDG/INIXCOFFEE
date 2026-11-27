@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('administrasi_karyawans', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_administrasi');
-            $table->enum('status', ['proses', 'selesai', 'pending', 'terlambat'])->default('proses');
-            $table->date('dateline');
-            $table->string('bukti_transfer')->nullable();
-            $table->date('tanggal_selesai')->nullable();
-            $table->string('keterangan')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('administrasi_karyawans')) {
+            Schema::create('administrasi_karyawans', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama_administrasi');
+                $table->enum('status', ['proses', 'selesai', 'pending', 'terlambat'])->default('proses');
+                $table->date('dateline');
+                $table->string('bukti_transfer')->nullable();
+                $table->date('tanggal_selesai')->nullable();
+                $table->string('keterangan')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
